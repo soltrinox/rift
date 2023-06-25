@@ -54,10 +54,10 @@ class HuggingFaceClient(AbstractCodeCompletionProvider):
 
     def __init__(self, model_name = None):
         model_name = model_name or "Salesforce/codegen-350m-mono"
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name, trust_remote_code=True
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     def infer(self, kwargs):
         return self.model(**kwargs)
