@@ -58,9 +58,7 @@ class RequestFutureWithProgress(Generic[Q, R]):
         self.token = token
         self._q = asyncio.Queue()
         self._r = result_fut
-        self._r.add_done_callback(
-            lambda _: self._q.put_nowait(StopAsyncIteration("request done"))
-        )
+        self._r.add_done_callback(lambda _: self._q.put_nowait(StopAsyncIteration("request done")))
 
     def _put(self, progress_item: Q):
         if self._r.done():

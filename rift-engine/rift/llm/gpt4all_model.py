@@ -229,9 +229,7 @@ Answer the user's question."""
         num_old_messages = len(messages)
         messages = auto_truncate(messages)
 
-        logger.info(
-            f"Truncated {num_old_messages - len(messages)} due to context length overflow."
-        )
+        logger.info(f"Truncated {num_old_messages - len(messages)} due to context length overflow.")
 
         def build_prompt(msgs: List[Message]) -> str:
             result = """### Instruction:

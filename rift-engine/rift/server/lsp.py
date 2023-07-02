@@ -43,7 +43,7 @@ class LspLogHandler(logging.Handler):
     def __init__(self, server: "LspServer"):
         super().__init__()
         self.server = server
-        self.tasks : set[asyncio.Task] = set()
+        self.tasks: set[asyncio.Task] = set()
 
     def emit(self, record: logging.LogRecord) -> None:
         if self.server.status != RpcServerStatus.running:
@@ -151,10 +151,7 @@ class ChatAgent:
         pos = self.cursor
         offset = None if pos is None else self.document.position_to_offset(pos)
 
-
-        stream = await self.model.run_chat(
-            doc_text, self.cfg.messages, self.cfg.message, offset
-        )
+        stream = await self.model.run_chat(doc_text, self.cfg.messages, self.cfg.message, offset)
 
         async for delta in stream.text:
             response += delta
@@ -208,9 +205,7 @@ class LspServer(BaseLspServer):
         self.logger.addHandler(LspLogHandler(self))
 
     @rpc_method("workspace/didChangeConfiguration")
-    async def on_workspace_did_change_configuration(
-        self, params: lsp.DidChangeConfigurationParams
-    ):
+    async def on_workspace_did_change_configuration(self, params: lsp.DidChangeConfigurationParams):
         logger.info("workspace/didChangeConfiguration")
         await self.get_config()
 
@@ -230,16 +225,12 @@ class LspServer(BaseLspServer):
             except (asyncio.CancelledError, TypeError):
                 pass
             if self._loading_idx != idx:
-                logger.debug(
-                    f"loading task {idx} was cancelled, but a new one was started"
-                )
+                logger.debug(f"loading task {idx} was cancelled, but a new one was started")
                 return
             # only the most recent request will make it here.
         settings = await self.get_workspace_configuration(section="rift")
         if not isinstance(settings, list) or len(settings) != 1:
-            raise RuntimeError(
-                f"Invalid settings:\n{settings}\nExpected a list of dictionaries."
-            )
+            raise RuntimeError(f"Invalid settings:\n{settings}\nExpected a list of dictionaries.")
         settings = settings[0]
         config = ModelConfig.parse_obj(settings)
         if self.chat_model and self.completions_model and self.model_config == config:
@@ -323,9 +314,7 @@ class LspServer(BaseLspServer):
             agent = Agent(params, model=model, server=self)
         except LookupError:
             # [hack] wait a bit for textDocumentChanged notification to come in
-            logger.debug(
-                "request too early: waiting for textDocumentChanged notification"
-            )
+            logger.debug("request too early: waiting for textDocumentChanged notification")
             await asyncio.sleep(3)
             agent = Agent(params, model=model, server=self)
         logger.debug(f"starting agent {agent.id}")

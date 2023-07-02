@@ -58,9 +58,7 @@ class LspServer(ExtraRpc):
         self, uri: lsp.DocumentUri, position: lsp.Position, text: str, version: int = 0
     ):
         assert version is not None, "version must be given, or we get no edit."
-        textDocument = lsp.TextDocumentIdentifier(
-            uri=uri, version=version
-        )  # [todo] version
+        textDocument = lsp.TextDocumentIdentifier(uri=uri, version=version)  # [todo] version
         newText = text
         pos = position
         params = lsp.ApplyWorkspaceEditParams(

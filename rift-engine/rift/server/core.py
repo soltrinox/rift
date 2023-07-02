@@ -82,9 +82,7 @@ class CodeCapabilitiesServer:
     async def run_lsp_tcp(self):
         assert isinstance(self.lsp_port, int)
         try:
-            server = await asyncio.start_server(
-                self.on_lsp_connection, "127.0.0.1", self.lsp_port
-            )
+            server = await asyncio.start_server(self.on_lsp_connection, "127.0.0.1", self.lsp_port)
         except OSError as e:
             logger.error(str(e))
             logger.info(f"try connecting to {self.lsp_port}")
@@ -96,9 +94,7 @@ class CodeCapabilitiesServer:
                 await server.serve_forever()
 
     async def run_lsp_stdio(self):
-        reader, writer = await create_pipe_streams(
-            in_pipe=sys.stdin, out_pipe=sys.stdout
-        )
+        reader, writer = await create_pipe_streams(in_pipe=sys.stdin, out_pipe=sys.stdout)
         transport = AsyncStreamTransport(reader, writer)
         await self.run_lsp(transport)
 

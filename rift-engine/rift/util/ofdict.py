@@ -63,9 +63,7 @@ def ofdict_dataclass(A: Type[T], a: JsonLike) -> T:
             if f.type is not None and is_optional(f.type):
                 v = None
             else:
-                raise OfDictError(
-                    f"Missing {f.name} on input dict. Decoding {a} to type {A}."
-                )
+                raise OfDictError(f"Missing {f.name} on input dict. Decoding {a} to type {A}.")
         else:
             v = a[k]
         if f.type is not None:
@@ -178,9 +176,7 @@ def ofdict(A: Type[T], a: JsonLike) -> T:
         if isinstance(a, A):
             return a  # type: ignore
         else:
-            raise OfDictError(
-                f"Expected a {A.__name__} but was {type(a).__name__}: {a}"
-            )
+            raise OfDictError(f"Expected a {A.__name__} but was {type(a).__name__}: {a}")
     try:
         if isinstance(a, A):
             return a  # type: ignore
@@ -278,12 +274,7 @@ def validate(t: Type, item) -> bool:
 
     if isinstance(item, t):
         if is_dataclass(item):
-            return all(
-                [
-                    validate(field.type, getattr(item, field.name))
-                    for field in fields(item)
-                ]
-            )
+            return all([validate(field.type, getattr(item, field.name)) for field in fields(item)])
         return True
     raise NotImplementedError(f"Don't know how to validate {t}")
 
@@ -400,15 +391,11 @@ def todict_key(x: Any) -> JsonKey:
     if tdk is not None:
         r = tdk()
         if not is_json_key(r):
-            raise TypeError(
-                f"{type(x)}.__todict_key__ returned {type(r)} instead of str or int."
-            )
+            raise TypeError(f"{type(x)}.__todict_key__ returned {type(r)} instead of str or int.")
         return r
     j = todict(x)
     if j is NotImplemented:
-        raise NotImplementedError(
-            f"Don't know how to convert {type(x)} to a dictionary key."
-        )
+        raise NotImplementedError(f"Don't know how to convert {type(x)} to a dictionary key.")
     elif not is_json_key(j):
         raise TypeError(
             f"Type {type(x)} is being used as a dictionary key but {type(j)} is not a string or integer. "

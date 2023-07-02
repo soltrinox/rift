@@ -25,9 +25,7 @@ def accumulate(
 
 
 @overload
-def accumulate(
-    asg: AsyncIterable[A], func: Callable[[B, A], B]
-) -> AsyncGenerator[B, None]:
+def accumulate(asg: AsyncIterable[A], func: Callable[[B, A], B]) -> AsyncGenerator[B, None]:
     ...
 
 

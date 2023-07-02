@@ -95,9 +95,7 @@ class DidChangeConfigurationClientCapabilities:
 class ClientWorkspaceCapabilities:
     applyEdit: opt[bool] = field(default=None)
     # workspaceEdit: opt[WorkspaceEditClientCapabilities] = field(default=None)
-    didChangeConfiguration: Optional[DidChangeConfigurationClientCapabilities] = field(
-        default=None
-    )
+    didChangeConfiguration: Optional[DidChangeConfigurationClientCapabilities] = field(default=None)
 
 
 @dataclass
@@ -367,9 +365,7 @@ class WorkDoneProgressEnd:
     message: Optional[str] = field(default=None)
 
 
-WorkDoneProgressValue = Union[
-    WorkDoneProgressBegin, WorkDoneProgressReport, WorkDoneProgressEnd
-]
+WorkDoneProgressValue = Union[WorkDoneProgressBegin, WorkDoneProgressReport, WorkDoneProgressEnd]
 
 ChangeAnnotationIdentifier: TypeAlias = str
 
@@ -443,9 +439,9 @@ class WorkspaceEdit:
     documentChanges: Optional[
         list[Union[TextDocumentEdit, CreateFile, RenameFile, DeleteFile]]
     ] = field(default=None)
-    changeAnnotations: Optional[
-        dict[ChangeAnnotationIdentifier, ChangeAnnotation]
-    ] = field(default=None)
+    changeAnnotations: Optional[dict[ChangeAnnotationIdentifier, ChangeAnnotation]] = field(
+        default=None
+    )
 
 
 @dataclass
