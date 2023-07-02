@@ -25,7 +25,7 @@
   "main": "./out/main.js",
   "contributes": {
     "keybindings": {
-      "command": "rift.run_helper",
+      "command": "rift.run_agent",
       "key": "ctrl+m",
       "when": "editorTextFocus"
     },
@@ -89,7 +89,7 @@
     ],
     "commands": [
       {
-        "command": "rift.run_helper",
+        "command": "rift.run_agent",
         "title": "Rift: Code Completion"
       }
     ]

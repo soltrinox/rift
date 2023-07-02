@@ -17,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('rift.run_helper', async () => {
+    let disposable = vscode.commands.registerCommand('rift.run_agent', async () => {
         // get the current active cursor position
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
@@ -31,13 +31,13 @@ export function activate(context: vscode.ExtensionContext) {
         let task = await vscode.window.showInputBox({
             ignoreFocusOut: true,
             placeHolder: 'Write the function body',
-            prompt: 'Enter a description of what you want the helper to do...',
+            prompt: 'Enter a description of what you want the agent to do...',
         });
         if (task === undefined) {
-            console.log('run_helper task was cancelled')
+            console.log('run_agent task was cancelled')
             return
         }
-        const r = await hslc.run_helper({ position, textDocument, task })
+        const r = await hslc.run_agent({ position, textDocument, task })
     });
 
     context.subscriptions.push(disposable);

@@ -22,21 +22,21 @@ class Status(Enum):
 
 
 @dataclass
-class RunHelperParams:
+class RunAgentParams:
     task: str
     textDocument: lsp.TextDocumentIdentifier
     position: lsp.Position
 
 
 @dataclass
-class HelperIdParams:
+class AgentIdParams:
     id: int
 
 
-class Helper:
+class Agent:
     count: ClassVar[int] = 0
     id: int
-    cfg: RunHelperParams
+    cfg: RunAgentParams
     status: Status
     server: Any
     change_futures: dict[str, asyncio.Future[None]]
@@ -55,10 +55,10 @@ class Helper:
         return self.cfg.textDocument.uri
 
     def __init__(
-        self, cfg: RunHelperParams, model: AbstractCodeCompletionProvider, server: Any
+        self, cfg: RunAgentParams, model: AbstractCodeCompletionProvider, server: Any
     ):
-        Helper.count += 1
-        self.id = Helper.count
+        Agent.count += 1
+        self.id = Agent.count
         self.cfg = cfg
         self.model = model
         self.server = server
@@ -128,7 +128,7 @@ class Helper:
         return self.task
 
     async def send_progress(self, message: Optional[str] = None):
-        await self.server.send_helper_progress(
+        await self.server.send_agent_progress(
             self.id,
             textDocument=self.document.id,
             cursor=self.cursor,
@@ -263,6 +263,6 @@ class Helper:
 
 
 @dataclass
-class HelperLogs:
+class AgentLogs:
     message: str
     severity: str

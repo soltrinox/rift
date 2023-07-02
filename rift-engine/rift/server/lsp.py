@@ -11,7 +11,7 @@ from rift.llm.abstract import (
     AbstractChatCompletionProvider,
 )
 from rift.llm.create import ModelConfig
-from rift.server.helper import *
+from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.llm.openai_types import Message
 
@@ -26,15 +26,15 @@ class RunChatParams:
     textDocument: lsp.TextDocumentIdentifier
 
 
-ChatHelperLogs = HelperLogs
+ChatAgentLogs = AgentLogs
 
 
 @dataclass
-class HelperProgress:
+class AgentProgress:
     id: int
     textDocument: lsp.TextDocumentIdentifier
     status: Literal["running", "done", "error"]
-    log: Optional[HelperLogs] = field(default=None)
+    log: Optional[AgentLogs] = field(default=None)
     ranges: Optional[RangeSet] = field(default=None)
     cursor: Optional[lsp.Position] = field(default=None)
 
@@ -70,7 +70,7 @@ class LspLogHandler(logging.Handler):
         t.add_done_callback(self.tasks.discard)
 
 
-class ChatHelper:
+class ChatAgent:
     count: ClassVar[int] = 0
     id: int
     cfg: RunChatParams
@@ -87,7 +87,7 @@ class ChatHelper:
         return self.cfg.textDocument.uri
 
     def __str__(self):
-        return f"<ChatHelper {self.id}>"
+        return f"<ChatAgent {self.id}>"
 
     def __init__(
         self,
@@ -95,9 +95,9 @@ class ChatHelper:
         model: AbstractChatCompletionProvider,
         server: "LspServer",
     ):
-        ChatHelper.count += 1
+        ChatAgent.count += 1
         self.model = model
-        self.id = Helper.count
+        self.id = Agent.count
         self.cfg = cfg
         self.server = server
         self.running = False
@@ -126,10 +126,10 @@ class ChatHelper:
     async def send_progress(
         self,
         response: str = "",
-        logs: Optional[ChatHelperLogs] = None,
+        logs: Optional[ChatAgentLogs] = None,
         done: bool = False,
     ):
-        await self.server.send_chat_helper_progress(
+        await self.server.send_chat_agent_progress(
             self.id,
             response=response,
             log=logs,
@@ -168,27 +168,27 @@ class ChatHelper:
 
 
 @dataclass
-class ChatHelperProgress:
+class ChatAgentProgress:
     id: int
     response: str = ""
-    log: Optional[HelperLogs] = field(default=None)
+    log: Optional[AgentLogs] = field(default=None)
     done: bool = False
 
 
 @dataclass
-class RunHelperResult:
+class RunAgentResult:
     id: int
 
 
 @dataclass
-class RunHelperSyncResult:
+class RunAgentSyncResult:
     id: int
     text: str
 
 
 class LspServer(BaseLspServer):
-    active_helpers: dict[int, Helper]
-    active_chat_helpers: dict[int, asyncio.Task]
+    active_agents: dict[int, Agent]
+    active_chat_agents: dict[int, asyncio.Task]
     model_config: ModelConfig
     completions_model: Optional[AbstractCodeCompletionProvider] = None
     chat_model: Optional[AbstractChatCompletionProvider] = None
@@ -200,8 +200,8 @@ class LspServer(BaseLspServer):
             openClose=True,
             change=lsp.TextDocumentSyncKind.incremental,
         )
-        self.active_helpers = {}
-        self.active_chat_helpers = {}
+        self.active_agents = {}
+        self.active_chat_agents = {}
         self._loading_task = None
         self._chat_loading_task = None
         self.logger = logging.getLogger(f"rift")
@@ -247,7 +247,7 @@ class LspServer(BaseLspServer):
             return
         self.model_config = config
         logger.info(f"{self} recieved model config {config}")
-        for k, h in self.active_helpers.items():
+        for k, h in self.active_agents.items():
             h.cancel("config changed")
         self.completions_model = config.create_completions()
         self.chat_model = config.create_chat()
@@ -265,16 +265,16 @@ class LspServer(BaseLspServer):
         finally:
             self._loading_task = None
 
-    async def send_helper_progress(
+    async def send_agent_progress(
         self,
         id: int,
         textDocument: lsp.TextDocumentIdentifier,
-        log: Optional[HelperLogs] = None,
+        log: Optional[AgentLogs] = None,
         cursor: Optional[lsp.Position] = None,
         ranges: Optional[RangeSet] = None,
         status: Literal["running", "done", "error"] = "running",
     ):
-        progress = HelperProgress(
+        progress = AgentProgress(
             id=id,
             textDocument=textDocument,
             log=log,
@@ -284,18 +284,18 @@ class LspServer(BaseLspServer):
         )
         await self.notify("morph/progress", progress)
 
-    async def send_chat_helper_progress(
+    async def send_chat_agent_progress(
         self,
         id: int,
         response: str,
-        log: Optional[ChatHelperLogs] = None,
+        log: Optional[ChatAgentLogs] = None,
         done: bool = False,
         # textDocument: lsp.TextDocumentIdentifier,
-        # log: Optional[HelperLogs] = None,
+        # log: Optional[AgentLogs] = None,
         # cursor: Optional[lsp.Position] = None,
         # status: Literal["running", "done", "error"] = "running",
     ):
-        progress = ChatHelperProgress(
+        progress = ChatAgentProgress(
             # id=id, textDocument=textDocument, log=log, cursor=cursor, status=status
             id=id,
             response=response,
@@ -316,53 +316,53 @@ class LspServer(BaseLspServer):
         assert self.chat_model is not None
         return self.chat_model
 
-    @rpc_method("morph/run_helper")
-    async def on_run_helper(self, params: RunHelperParams):
+    @rpc_method("morph/run_agent")
+    async def on_run_agent(self, params: RunAgentParams):
         model = await self.ensure_completions_model()
         try:
-            helper = Helper(params, model=model, server=self)
+            agent = Agent(params, model=model, server=self)
         except LookupError:
             # [hack] wait a bit for textDocumentChanged notification to come in
             logger.debug(
                 "request too early: waiting for textDocumentChanged notification"
             )
             await asyncio.sleep(3)
-            helper = Helper(params, model=model, server=self)
-        logger.debug(f"starting helper {helper.id}")
-        # helper holds a reference to worker task
-        helper.start()
-        self.active_helpers[helper.id] = helper
-        return RunHelperResult(id=helper.id)
+            agent = Agent(params, model=model, server=self)
+        logger.debug(f"starting agent {agent.id}")
+        # agent holds a reference to worker task
+        agent.start()
+        self.active_agents[agent.id] = agent
+        return RunAgentResult(id=agent.id)
 
     @rpc_method("morph/run_chat")
     async def on_run_chat(self, params: RunChatParams):
         chat = await self.ensure_chat_model()
-        chat_helper = ChatHelper(params, model=chat, server=self)
-        logger.debug(f"starting chat helper {chat_helper.id}")
-        task = asyncio.create_task(chat_helper.run())
-        self.active_chat_helpers[chat_helper.id] = task
+        chat_agent = ChatAgent(params, model=chat, server=self)
+        logger.debug(f"starting chat agent {chat_agent.id}")
+        task = asyncio.create_task(chat_agent.run())
+        self.active_chat_agents[chat_agent.id] = task
 
     @rpc_method("morph/cancel")
-    async def on_cancel(self, params: HelperIdParams):
-        helper = self.active_helpers.get(params.id)
-        if helper is not None:
-            helper.cancel()
+    async def on_cancel(self, params: AgentIdParams):
+        agent = self.active_agents.get(params.id)
+        if agent is not None:
+            agent.cancel()
 
     @rpc_method("morph/accept")
-    async def on_accept(self, params: HelperIdParams):
-        helper = self.active_helpers.get(params.id)
-        if helper is not None:
-            await helper.accept()
-            self.active_helpers.pop(params.id, None)
+    async def on_accept(self, params: AgentIdParams):
+        agent = self.active_agents.get(params.id)
+        if agent is not None:
+            await agent.accept()
+            self.active_agents.pop(params.id, None)
 
     @rpc_method("morph/reject")
-    async def on_reject(self, params: HelperIdParams):
-        helper = self.active_helpers.get(params.id)
-        if helper is not None:
-            await helper.reject()
-            self.active_helpers.pop(params.id, None)
+    async def on_reject(self, params: AgentIdParams):
+        agent = self.active_agents.get(params.id)
+        if agent is not None:
+            await agent.reject()
+            self.active_agents.pop(params.id, None)
         else:
-            logger.error(f"no helper with id {params.id}")
+            logger.error(f"no agent with id {params.id}")
 
     @rpc_method("hello_world")
     def on_hello(self, params):

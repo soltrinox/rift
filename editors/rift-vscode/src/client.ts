@@ -16,7 +16,7 @@ import {
 } from 'vscode-languageclient/node'
 import * as net from 'net'
 import { join } from 'path';
-import { ChatHelperProgress } from './types';
+import { ChatAgentProgress } from './types';
 import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
 
@@ -61,7 +61,7 @@ function createServerOptions(context: vscode.ExtensionContext, port = DEFAULT_PO
     }
 }
 
-interface RunHelperParams {
+interface RunAgentParams {
     task: string
     position: vscode.Position
     textDocument: TextDocumentIdentifier
@@ -79,18 +79,18 @@ interface RunChatParams {
 }
 
 
-interface RunHelperResult {
+interface RunAgentResult {
     id: number
 }
 
-interface RunHelperSyncResult {
+interface RunAgentSyncResult {
     id: number
     text: string
 }
 
-type HelperStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
+type AgentStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
 
-interface RunHelperProgress {
+interface RunAgentProgress {
     id: number
     textDocument: TextDocumentIdentifier
     log?: {
@@ -98,25 +98,25 @@ interface RunHelperProgress {
         message: string;
     }
     cursor?: vscode.Position
-    /** This is the set of ranges that the helper has added so far. */
+    /** This is the set of ranges that the agent has added so far. */
     ranges?: vscode.Range[]
-    status: HelperStatus
+    status: AgentStatus
 }
 
-/** Represents a helper */
-class Helper {
-    status: HelperStatus;
+/** Represents a agent */
+class Agent {
+    status: AgentStatus;
     green: vscode.TextEditorDecorationType;
     ranges: vscode.Range[] = []
-    onStatusChangeEmitter: vscode.EventEmitter<HelperStatus>
-    onStatusChange: vscode.Event<HelperStatus>
+    onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
+    onStatusChange: vscode.Event<AgentStatus>
     constructor(public readonly id: number, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
         this.status = 'running'
         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
-        this.onStatusChangeEmitter = new vscode.EventEmitter<HelperStatus>()
+        this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
         this.onStatusChange = this.onStatusChangeEmitter.event
     }
-    handleProgress(params: RunHelperProgress) {
+    handleProgress(params: RunAgentProgress) {
         if (params.status) {
             if (this.status !== params.status) {
                 this.status = params.status
@@ -141,11 +141,11 @@ class Helper {
     }
 }
 
-export class HelperLens extends vscode.CodeLens {
+export class AgentLens extends vscode.CodeLens {
     id: number
-    constructor(range: vscode.Range, helper: Helper, command?: vscode.Command) {
+    constructor(range: vscode.Range, agent: Agent, command?: vscode.Command) {
         super(range, command)
-        this.id = helper.id
+        this.id = agent.id
     }
 }
 
@@ -156,14 +156,14 @@ interface ModelConfig {
     openai_api_key?: string
 }
 
-export class MorphLanguageClient implements vscode.CodeLensProvider<HelperLens> {
+export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     client: LanguageClient
     red: vscode.TextEditorDecorationType
     green: vscode.TextEditorDecorationType
     context: vscode.ExtensionContext
     changeLensEmitter: vscode.EventEmitter<void>
     onDidChangeCodeLenses: vscode.Event<void>
-    helpers = new Map<number, Helper>()
+    agents = new Map<number, Agent>()
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context
@@ -180,34 +180,34 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<HelperLens> 
 
     }
 
-    public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): HelperLens[] {
+    public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentLens[] {
         // this returns all of the lenses for the document.
-        const items: HelperLens[] = []
-        for (const helper of this.helpers.values()) {
-            if (helper.textDocument.uri === document.uri.toString()) {
-                const line = helper.startPosition.line
+        const items: AgentLens[] = []
+        for (const agent of this.agents.values()) {
+            if (agent.textDocument.uri === document.uri.toString()) {
+                const line = agent.startPosition.line
                 const linetext = document.lineAt(line)
-                if (helper.status === 'running') {
-                    const running = new HelperLens(linetext.range, helper, {
+                if (agent.status === 'running') {
+                    const running = new AgentLens(linetext.range, agent, {
                         title: 'running',
                         command: 'rift.cancel',
-                        tooltip: 'click to stop this helper',
-                        arguments: [helper.id],
+                        tooltip: 'click to stop this agent',
+                        arguments: [agent.id],
                     })
                     items.push(running)
                 }
-                else if (helper.status === 'done' || helper.status === 'error') {
-                    const accept = new HelperLens(linetext.range, helper, {
+                else if (agent.status === 'done' || agent.status === 'error') {
+                    const accept = new AgentLens(linetext.range, agent, {
                         title: 'Accept ✅ ',
                         command: 'rift.accept',
                         tooltip: 'Accept the edits below',
-                        arguments: [helper.id],
+                        arguments: [agent.id],
                     })
-                    const reject = new HelperLens(linetext.range, helper, {
+                    const reject = new AgentLens(linetext.range, agent, {
                         title: ' Reject ❌',
                         command: 'rift.reject',
                         tooltip: 'Reject the edits below and restore the original text',
-                        arguments: [helper.id]
+                        arguments: [agent.id]
                     })
                     items.push(accept, reject)
                 }
@@ -216,7 +216,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<HelperLens> 
         return items
     }
 
-    public resolveCodeLens(codeLens: HelperLens, token: vscode.CancellationToken) {
+    public resolveCodeLens(codeLens: AgentLens, token: vscode.CancellationToken) {
         // you use this to resolve the commands for the code lens if
         // it would be too slow to compute the commands for the entire document.
         return null
@@ -271,15 +271,15 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<HelperLens> 
     }
 
 
-    async morph_notify(params: RunHelperProgress) {
+    async morph_notify(params: RunAgentProgress) {
         if (!this.is_running()) {
             throw new Error('client not running, please wait...') // [todo] better ux here.
         }
-        const helper = this.helpers.get(params.id)
-        if (!helper) {
-            throw new Error('helper not found')
+        const agent = this.agents.get(params.id)
+        if (!agent) {
+            throw new Error('agent not found')
         }
-        helper.handleProgress(params)
+        agent.handleProgress(params)
     }
 
     async notify_focus(tdpp: TextDocumentPositionParams | { symbol: string }) {
@@ -293,34 +293,34 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<HelperLens> 
         return result
     }
 
-    async run_helper(params: RunHelperParams) {
+    async run_agent(params: RunAgentParams) {
         if (!this.client) {
             throw new Error(`waiting for a connection to rift-engine, please make sure the rift-engine is running on port ${DEFAULT_PORT}`) // [todo] better ux here.
         }
-        const result: RunHelperResult = await this.client.sendRequest('morph/run_helper', params)
-        const helper = new Helper(result.id, params.position, params.textDocument)
-        helper.onStatusChange(e => this.changeLensEmitter.fire())
-        this.helpers.set(result.id, helper)
+        const result: RunAgentResult = await this.client.sendRequest('morph/run_agent', params)
+        const agent = new Agent(result.id, params.position, params.textDocument)
+        agent.onStatusChange(e => this.changeLensEmitter.fire())
+        this.agents.set(result.id, agent)
         // note this returns fast and then the updates are sent via notifications
         this.changeLensEmitter.fire()
-        return `starting helper ${result.id}...`
+        return `starting agent ${result.id}...`
     }
 
-    async run_helper_sync(params: RunHelperParams) {
-        console.log("run_helper_sync")
-        const result: RunHelperSyncResult = await this.client.sendRequest('morph/run_helper_sync', params)
-        const helper = new Helper(result.id, params.position, params.textDocument)
-        // helper.onStatusChange(e => this.changeLensEmitter.fire())
-        this.helpers.set(result.id, helper)
+    async run_agent_sync(params: RunAgentParams) {
+        console.log("run_agent_sync")
+        const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
+        const agent = new Agent(result.id, params.position, params.textDocument)
+        // agent.onStatusChange(e => this.changeLensEmitter.fire())
+        this.agents.set(result.id, agent)
         // this.changeLensEmitter.fire()
         return result.text
     }
 
-    morphNotifyChatCallback: (progress: ChatHelperProgress) => any = async function (progress) {
+    morphNotifyChatCallback: (progress: ChatAgentProgress) => any = async function (progress) {
         throw new Error('no callback set')
     }
 
-    async run_chat(params: RunChatParams, callback: (progress: ChatHelperProgress) => any) {
+    async run_chat(params: RunChatParams, callback: (progress: ChatAgentProgress) => any) {
         console.log('run chat')
         this.morphNotifyChatCallback = callback
         this.client.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
@@ -336,8 +336,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<HelperLens> 
     }
 
     async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {
-        const params: RunHelperParams = { task: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
-        const snippet = new vscode.SnippetString(await this.run_helper_sync(params));
+        const params: RunAgentParams = { task: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
+        const snippet = new vscode.SnippetString(await this.run_agent_sync(params));
         // return new vscode.InlineCompletionList([{insertText: snippet}]);
         return snippet;
     }
