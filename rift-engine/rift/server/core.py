@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def splash():
-    splash = """
+    _splash = """
 
 
    ██████╗ ██╗███████╗████████╗
@@ -42,7 +42,7 @@ def splash():
             time.sleep(0.0012)
             # print('\r', end='')
 
-    stream_string(splash)
+    stream_string(_splash)
 
 
 # ref: https://stackoverflow.com/questions/64303607/python-asyncio-how-to-read-stdin-and-write-to-stdout
