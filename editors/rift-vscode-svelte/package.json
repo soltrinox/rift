@@ -17,20 +17,34 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "Rift",
-          "title": "Chat",
+          "id": "hello-world-sidebar-view",
+          "title": "hello world",
           "icon": "media/icon.svg"
         }
       ]
     },
     "views": {
-      "Rift": [
+      "hello-world-sidebar-view": [
+        {
+          "type": "webview",
+          "id": "hello-world-sidebar",
+          "name": "hello-world-sidebar",
+          "icon": "media/icon.svg",
+          "contextualTitle": "helloWorld"
+        },
         {
           "type": "webview",
           "id": "chat-sidebar",
           "name": "chat-sidebar",
           "icon": "media/icon.svg",
           "contextualTitle": "another"
+        },
+        {
+          "type": "webview",
+          "id": "agents-sidebar",
+          "name": "agents-sidebar",
+          "icon": "media/icon.svg",
+          "contextualTitle": "agents"
         },
         {
           "type": "webview",
