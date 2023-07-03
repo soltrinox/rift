@@ -28,9 +28,9 @@ class AgentState(ABC):
 class Agent:
     state: AgentState
     tasks: Dict[str, AgentTask]
-    active_task_id: Optional[str] = None
-    id: int = 0
     server: BaseLspServer
+    active_task_id: Optional[str] = None
+    id: int = 0    
 
     @property
     def task(self):
