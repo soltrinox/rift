@@ -1,19 +1,29 @@
 <!-- Navbar.svelte -->
 <script>
-    import { onMount } from 'svelte';
-    let activeItem = 'Home';
+  import { onMount } from 'svelte';
+  import CopySvg from './icons/CopySvg.svelte'
+  import UserInput from './chat/UserInput.svelte';
+  import Response from './chat/Response.svelte'
+  const vscode = tsvscode
   
-    function handleClick(item) {
-      activeItem = item;
-    }
-  </script>
-  
-  <style>
+  const DEFAULT_STATE = {
+    history: [],
+  };
+  let state = vscode.getState();
+  if (!state) {
+    vscode.setState(DEFAULT_STATE);
+  }
 
-  </style>
-  
-  <div class="flex flex-row">
-    <div><button class="bg-red-500" on:click={() => handleClick('Home')} class:active={activeItem === 'Home'}>Home</button></div>
-    <div><button class="navbar-item" on:click={() => handleClick('About')} class:active={activeItem === 'About'}>About</button></div>
-    <div><button class="navbar-item" on:click={() => handleClick('Contact')} class:active={activeItem === 'Contact'}>Contact</button></div>
-  </div>
+</script>
+
+<div class="flex flex-col">
+  {#each vscode.getState().history as item}
+    {#if item.role == "user"}
+       <UserInput value={item.content} />
+    {:else}
+        <Response value={item.content} />
+    {/if}
+  {/each}
+  <UserInput />
+  <Response />
+</div>
