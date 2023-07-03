@@ -1,23 +1,19 @@
-<script lang="ts">
-    import { onMount } from "svelte";
-
-    let message = ""
-
-    onMount(async () => {
-        message = tsvscode.getState();
-    });
-
-    let count = 0;
-
-    function handleClick() {
-        count += 1;
+<!-- Navbar.svelte -->
+<script>
+    import { onMount } from 'svelte';
+    let activeItem = 'Home';
+  
+    function handleClick(item) {
+      activeItem = item;
     }
-</script>
+  </script>
+  
+  <style>
 
-<div>
-    <h1>Another</h1>
-    <button on:click={handleClick}>
-        clicks: {count}
-    </button>
-    <p>{message}</p>
-</div>
+  </style>
+  
+  <div class="flex flex-row">
+    <div><button class="bg-red-500" on:click={() => handleClick('Home')} class:active={activeItem === 'Home'}>Home</button></div>
+    <div><button class="navbar-item" on:click={() => handleClick('About')} class:active={activeItem === 'About'}>About</button></div>
+    <div><button class="navbar-item" on:click={() => handleClick('Contact')} class:active={activeItem === 'Contact'}>Contact</button></div>
+  </div>

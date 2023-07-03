@@ -43,6 +43,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         const stylesMainUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, "media", "vscode.css")
         );
+        const tailwindUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'tailwind.min.js'));
 
         // Use a nonce to only allow specific scripts to be run
         const nonce = getNonce();
@@ -59,6 +60,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
                         <link href="${stylesResetUri}" rel="stylesheet">
                         <link href="${stylesMainUri}" rel="stylesheet">
+                    <script src="${tailwindUri}" nonce="${nonce}"></script>
                     <link href="${cssUri}" rel="stylesheet">
                     <script nonce="${nonce}">
                         const tsvscode = acquireVsCodeApi();
