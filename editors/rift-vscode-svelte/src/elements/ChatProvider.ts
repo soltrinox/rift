@@ -28,6 +28,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
+        console.log('_getHtmlForWebview called')
         const scriptUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Chat.js")
         );

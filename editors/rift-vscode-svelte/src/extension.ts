@@ -65,10 +65,10 @@ export function activate(context: vscode.ExtensionContext) {
     const logsProvider = new LogsProvider(context.extensionUri);
 
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("chat-sidebar", chatProvider)
+        vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
     );
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("logs-sidebar", logsProvider)
+        vscode.window.registerWebviewViewProvider("RiftLogs", logsProvider)
     );
 
 }

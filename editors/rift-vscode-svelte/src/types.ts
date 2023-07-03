@@ -1,4 +1,4 @@
-export type ChatHelperProgress = {
+export type ChatAgentProgress = {
     id: number,
     response: string
     log?: {

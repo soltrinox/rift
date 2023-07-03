@@ -10,16 +10,55 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:vstodo-sidebar"
+    "onView"
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "keybindings": {
+      "command": "rift.run_agent",
+      "key": "ctrl+m",
+      "when": "editorTextFocus"
+    },
+    "configuration": {
+      "title": "Rift",
+      "properties": {
+        "rift.openaiKey": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "OpenAI API key"
+        },
+        "rift.completionsModel": {
+          "type": "string",
+          "default": "openai:gpt-3.5-turbo",
+          "enum": [
+            "gpt4all:ggml-replit-code-v1-3b",
+            "openai:gpt-3.5-turbo",
+            "openai:gpt-4"
+          ],
+          "markdownDescription": "model to use for completions. (remember to set the OpenAI API key if using an openai:* model). You can also set your own (use the JSON settings editor), the format is `{type}:{name} [@ {path}]` where `type` is one of `gpt4all`, `openai`, or `hf` (for huggingface models), `name` is the name of the model, and `path` is an optional path to the downloaded model weights."
+        },
+        "rift.chatModel": {
+          "type": "string",
+          "default": "openai:gpt-3.5-turbo",
+          "enum": [
+            "gpt4all:ggml-mpt-7b-chat",
+            "gpt4all:ggml-gpt4all-j-v1.3-groovy",
+            "openai:gpt-3.5-turbo",
+            "openai:gpt-4"
+          ],
+          "markdownDescription": "model to use for completions. (remember to set the OpenAI API key if using an openai:* model). You can also set your own (use the JSON settings editor), the format is `{type}:{name} [@ {path}]` where `type` is one of `gpt4all`, `openai`, or `hf` (for huggingface models), `name` is the name of the model, and `path` is an optional path to the downloaded model weights."
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
           "id": "Rift",
           "title": "Chat",
-          "icon": "media/icon.svg"
+          "icon": "resources/icon.svg"
         }
       ]
     },
@@ -27,24 +66,26 @@
       "Rift": [
         {
           "type": "webview",
-          "id": "chat-sidebar",
-          "name": "chat-sidebar",
-          "icon": "media/icon.svg",
-          "contextualTitle": "another"
+          "id": "RiftChat",
+          "name": "Chat"
         },
         {
           "type": "webview",
-          "id": "logs-sidebar",
-          "name": "logs-sidebar",
-          "icon": "media/icon.svg",
-          "contextualTitle": "logs"
+          "id": "RiftLogs",
+          "name": "Logs"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "RiftChat",
+        "contents": "Chat with a local code model."
+      }
+    ],
     "commands": [
       {
-        "command": "rift-vscode-svelte.helloWorld",
-        "title": "Hello World"
+        "command": "rift.run_agent",
+        "title": "Rift: Code Completion"
       }
     ]
   },

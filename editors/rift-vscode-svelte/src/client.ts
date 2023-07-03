@@ -157,9 +157,9 @@ interface ModelConfig {
 }
 
 export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
-    client: LanguageClient
-    red: vscode.TextEditorDecorationType
-    green: vscode.TextEditorDecorationType
+    client: LanguageClient | null
+    // red: vscode.TextEditorDecorationType
+    // green: vscode.TextEditorDecorationType
     context: vscode.ExtensionContext
     changeLensEmitter: vscode.EventEmitter<void>
     onDidChangeCodeLenses: vscode.Event<void>
@@ -167,16 +167,19 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context
-        this.create_client()
+        this.client = null
+        this.create_client().then(() => {
+            this.context.subscriptions.push(
+                vscode.commands.registerCommand('rift.cancel', (id: number) => this.client?.sendNotification('morph/cancel', { id })),
+                vscode.commands.registerCommand('rift.accept', (id: number) => this.client?.sendNotification('morph/accept', { id })),
+                vscode.commands.registerCommand('rift.reject', (id: number) => this.client?.sendNotification('morph/reject', { id })),
+                vscode.workspace.onDidChangeConfiguration(this.on_config_change.bind(this)),
+            )
+        })
         this.changeLensEmitter = new vscode.EventEmitter<void>()
         this.onDidChangeCodeLenses = this.changeLensEmitter.event
         // [todo] rename rift and morph/ to release name
-        this.context.subscriptions.push(
-            vscode.commands.registerCommand('rift.cancel', (id: number) => this.client.sendNotification('morph/cancel', { id })),
-            vscode.commands.registerCommand('rift.accept', (id: number) => this.client.sendNotification('morph/accept', { id })),
-            vscode.commands.registerCommand('rift.reject', (id: number) => this.client.sendNotification('morph/reject', { id })),
-            vscode.workspace.onDidChangeConfiguration(this.on_config_change.bind(this)),
-        )
+
 
     }
 
@@ -255,7 +258,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
             console.log(`client state changed: ${e.oldState} ▸ ${e.newState}`)
             if (e.newState === State.Stopped) {
                 console.log('morph server stopped, restarting...')
-                await this.client.dispose()
+                await this.client?.dispose()
                 console.log('morph server disposed')
                 await this.create_client()
             }
@@ -267,7 +270,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
 
     async on_config_change(args) {
-        const x = await this.client.sendRequest('workspace/didChangeConfiguration', {})
+        const x = await this.client?.sendRequest('workspace/didChangeConfiguration', {})
     }
 
 
@@ -285,11 +288,11 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     async notify_focus(tdpp: TextDocumentPositionParams | { symbol: string }) {
         // [todo] unused
         console.log(tdpp)
-        await this.client.sendNotification('morph/focus', tdpp)
+        await this.client?.sendNotification('morph/focus', tdpp)
     }
 
     async hello_world() {
-        const result = await this.client.sendRequest('hello_world')
+        const result = await this.client?.sendRequest('hello_world')
         return result
     }
 
@@ -308,6 +311,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     async run_agent_sync(params: RunAgentParams) {
         console.log("run_agent_sync")
+        if(!this.client) throw new Error()
         const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
         const agent = new Agent(result.id, params.position, params.textDocument)
         // agent.onStatusChange(e => this.changeLensEmitter.fire())
@@ -323,16 +327,16 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     async run_chat(params: RunChatParams, callback: (progress: ChatAgentProgress) => any) {
         console.log('run chat')
         this.morphNotifyChatCallback = callback
-        this.client.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
+        this.client?.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
 
-        const result = await this.client.sendRequest('morph/run_chat', params)
+        const result = await this.client?.sendRequest('morph/run_chat', params)
         // note this returns fast and then the updates are sent via notifications
         return 'starting...'
     }
 
 
     dispose() {
-        this.client.dispose()
+        this.client?.dispose()
     }
 
     async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {
