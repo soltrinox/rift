@@ -97,7 +97,7 @@ class ChatAgent:
     ):
         ChatAgent.count += 1
         self.model = model
-        self.id = Agent.count
+        self.id = CodeCompletionAgent.count
         self.cfg = cfg
         self.server = server
         self.running = False
@@ -184,7 +184,7 @@ class RunAgentSyncResult:
 
 
 class LspServer(BaseLspServer):
-    active_agents: dict[int, Agent]
+    active_agents: dict[int, CodeCompletionAgent]
     active_chat_agents: dict[int, asyncio.Task]
     model_config: ModelConfig
     completions_model: Optional[AbstractCodeCompletionProvider] = None
@@ -311,12 +311,12 @@ class LspServer(BaseLspServer):
     async def on_run_agent(self, params: RunAgentParams):
         model = await self.ensure_completions_model()
         try:
-            agent = Agent(params, model=model, server=self)
+            agent = CodeCompletionAgent(params, model=model, server=self)
         except LookupError:
             # [hack] wait a bit for textDocumentChanged notification to come in
             logger.debug("request too early: waiting for textDocumentChanged notification")
             await asyncio.sleep(3)
-            agent = Agent(params, model=model, server=self)
+            agent = CodeCompletionAgent(params, model=model, server=self)
         logger.debug(f"starting agent {agent.id}")
         # agent holds a reference to worker task
         agent.start()

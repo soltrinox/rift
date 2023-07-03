@@ -33,7 +33,7 @@ class AgentIdParams:
     id: int
 
 
-class Agent:
+class CodeCompletionAgent:
     count: ClassVar[int] = 0
     id: int
     cfg: RunAgentParams
@@ -55,8 +55,8 @@ class Agent:
         return self.cfg.textDocument.uri
 
     def __init__(self, cfg: RunAgentParams, model: AbstractCodeCompletionProvider, server: Any):
-        Agent.count += 1
-        self.id = Agent.count
+        CodeCompletionAgent.count += 1
+        self.id = CodeCompletionAgent.count
         self.cfg = cfg
         self.model = model
         self.server = server
@@ -217,9 +217,9 @@ class Agent:
         [todo]
         When a change happens:
         1. if the change is before our 'working area', then we stop the completion request and run again.
-        4. if the change is in our 'working area', then the user is correcting something that
-        2. if the change is after our 'working area', then just keep going.
-        3. if _we_ caused the chagne, then just keep going.
+        2. if the change is in our 'working area', then the user is correcting something that
+        3. if the change is after our 'working area', then just keep going.
+        4. if _we_ caused the chagne, then just keep going.
         """
         assert changes.textDocument.uri == self.uri
         self.document = before
