@@ -156,6 +156,8 @@ interface ModelConfig {
     openai_api_key?: string
 }
 
+type AgentType = "chat" | "code-completion"
+
 export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     client: LanguageClient
     red: vscode.TextEditorDecorationType
@@ -306,15 +308,15 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         return `starting agent ${result.id}...`
     }
 
-    async run_agent_sync(params: RunAgentParams) {
-        console.log("run_agent_sync")
-        const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
-        const agent = new Agent(result.id, params.position, params.textDocument)
-        // agent.onStatusChange(e => this.changeLensEmitter.fire())
-        this.agents.set(result.id, agent)
-        // this.changeLensEmitter.fire()
-        return result.text
-    }
+    // async run_agent_sync(params: RunAgentParams) {
+    //     console.log("run_agent_sync")
+    //     const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
+    //     const agent = new Agent(result.id, params.position, params.textDocument)
+    //     // agent.onStatusChange(e => this.changeLensEmitter.fire())
+    //     this.agents.set(result.id, agent)
+    //     // this.changeLensEmitter.fire()
+    //     return result.text
+    // }
 
     morphNotifyChatCallback: (progress: ChatAgentProgress) => any = async function (progress) {
         throw new Error('no callback set')
@@ -329,6 +331,42 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         // note this returns fast and then the updates are sent via notifications
         return 'starting...'
     }
+
+    // create a SpawnAgentResult that contains a server-computed agentId
+
+    
+    async run(
+        params: any,
+        request_input_callback: (request_input_request: any) => any,
+        request_chat_callback: (request_chat_request: any) => any,
+        send_progress_callback: (send_progress_request: any) => any,
+        send_result_callback: (send_result_request: any) => any,
+    ) {
+        const result = await this.client.sendRequest('morph/run', params);
+        const agentId = result.id;
+        const agentType = params.agentType;
+        console.log(`running ${agentType}`)
+        this.client.onNotification(`morph/${agentType}_${agentId}_request_input`, request_input_callback.bind(this))
+        this.client.onNotification(`morph/${agentType}_${agentId}_request_chat`, request_chat_callback.bind(this))
+        // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
+        this.client.onNotification(`morph/${agentType}_${agentId}_send_progress`, send_progress_callback.bind(this))
+        this.client.onNotification(`morph/${agentType}_${agentId}_send_result`, send_result_callback.bind(this))
+    }
+
+    // run should spawn an agent
+    // run should specify:
+    // - agent type 
+    // - callbacks for request_input, request_chat, send_progress, and send_result
+
+    // async run_chat(params: RunChatParams, callback: (progress: ChatAgentProgress) => any) {
+    //     console.log('run chat')
+    //     this.morphNotifyChatCallback = callback
+    //     this.client.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
+
+    //     const result = await this.client.sendRequest('morph/run_chat', params)
+    //     // note this returns fast and then the updates are sent via notifications
+    //     return 'starting...'
+    // }    
 
 
     dispose() {

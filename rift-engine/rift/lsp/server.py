@@ -25,7 +25,8 @@ from rift.util.ofdict import ofdict
 
 logger = logging.getLogger("LSP")
 
-
+# create an extra generic endpoint that receives messages with a `notifyId` field
+# notifyId wakes up a Python future to tell it that something is ready
 class LspServer(ExtraRpc):
     capabilities: ServerCapabilities
     position_encoding = "utf-16"
