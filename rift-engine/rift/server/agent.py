@@ -46,6 +46,7 @@ class CodeCompletionAgent:
     """ All of the ranges that we have inserted. """
     task: Optional[asyncio.Task]
     """ Worker task. (running self.worker()) """
+    subtasks: set[asyncio.Task]
     document: lsp.TextDocumentItem
     """ The position of the cursor (where text will be inserted next).
     This position is changed if other edits occur above the cursor. """

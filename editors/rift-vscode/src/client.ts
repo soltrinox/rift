@@ -44,7 +44,7 @@ function tcpServerOptions(context: ExtensionContext, port = DEFAULT_PORT): Serve
 /** Creates the server options for spinning up our own server.*/
 function createServerOptions(context: vscode.ExtensionContext, port = DEFAULT_PORT): ServerOptions {
     let cwd = vscode.workspace.workspaceFolders![0].uri.path
-    // [todo]: we will supply different bundles for the 3 main platforms; windows, linux, mac.
+    // [todo]: we will supply different bundles for the 3 main platforms; windows, linux, osx.
     // there needs to be a decision point here where we decide which platform we are on and
     // then choose the appropriate bundle.
     let command = join(context.extensionPath, 'resources', 'lspai')
@@ -103,7 +103,7 @@ interface RunAgentProgress {
     status: AgentStatus
 }
 
-/** Represents a agent */
+/** Represents an agent */
 class Agent {
     status: AgentStatus;
     green: vscode.TextEditorDecorationType;
@@ -170,7 +170,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         this.create_client()
         this.changeLensEmitter = new vscode.EventEmitter<void>()
         this.onDidChangeCodeLenses = this.changeLensEmitter.event
-        // [todo] rename rift and morph/ to release name
         this.context.subscriptions.push(
             vscode.commands.registerCommand('rift.cancel', (id: number) => this.client.sendNotification('morph/cancel', { id })),
             vscode.commands.registerCommand('rift.accept', (id: number) => this.client.sendNotification('morph/accept', { id })),
@@ -180,6 +179,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     }
 
+    // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentLens[] {
         // this returns all of the lenses for the document.
         const items: AgentLens[] = []
