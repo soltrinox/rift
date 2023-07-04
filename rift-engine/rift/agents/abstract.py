@@ -95,7 +95,7 @@ class Agent:
                 task.cancel()
 
     async def request_input(
-        self, req: RequestInputResponse
+        self, req: RequestInputRequest
     ) -> asyncio.Future[RequestInputResponse]:
         ...
 
