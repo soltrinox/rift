@@ -1,6 +1,7 @@
 <script lang="ts">
   import { loading, state } from '../stores'
   export let value: string = ''
+  export let enabled: boolean = false
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement
@@ -25,11 +26,12 @@
 
       vscode.postMessage({
         type: 'chatMessage',
-        messages: $state.history, // don't want to include what we just pushed :()
+        messages: $state.history, 
         message: textarea.value,
       })
       console.log('updating state...')
       state.update((state) => ({ ...state, history: [...state.history, { role: 'user', content: textarea.value }] }))
+      textarea.value = ""
     }
     // logic to handle keydown event
   }
@@ -42,6 +44,7 @@
     placeholder="Ask questions and get answers about the current code window."
     on:input={resize}
     on:keydown={handleKeyDown}
+    disabled={!enabled}
     {value}
   />
 </div>

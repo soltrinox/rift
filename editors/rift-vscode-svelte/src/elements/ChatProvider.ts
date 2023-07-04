@@ -38,7 +38,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     const editor = vscode.window.activeTextEditor;
                     if (!editor) {
                         console.error('No active text editor found');
-                        return
+                        return;
                     }
                     // get the uri and position of the current cursor
                     const doc = editor.document;
