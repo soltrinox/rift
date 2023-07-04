@@ -27,14 +27,12 @@
     let scrollHeight = 0;
     let fixedToBottom = true;
 
-    const observer = new MutationObserver(mutations => {
-        if (scrollHeight < document.documentElement.scrollHeight && fixedToBottom) {
-            window.scrollTo(0, document.documentElement.scrollHeight);
-        }
-        scrollHeight = document.documentElement.scrollHeight;
-    });
+    import { tick } from 'svelte';
 
-    const observerConfig = {attributes: true, childList: true, subtree: true};
+    async function scrollToBottom() {
+        await tick(); // wait for the DOM to be updated
+        window.scrollTo(0, document.documentElement.scrollHeight);
+    }
 
     function handleScroll() {
         fixedToBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 3;
@@ -42,7 +40,7 @@
 
     window.addEventListener('scroll', handleScroll);
 
-    const incomingMessage = (event) => {
+    const incomingMessage = async (event) => {
         console.log(event);
         progress = event.data.data as ChatAgentProgress;
         progressResponse = progress.response;
@@ -52,7 +50,7 @@
             state.update((state) => ({
                 ...state, history: [...state.history, {role: "assistant", content: progressResponse}]
             }));
-            observer.observe(document.documentElement, observerConfig);
+            await scrollToBottom();
         }
     }
 
