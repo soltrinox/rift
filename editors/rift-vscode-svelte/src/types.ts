@@ -9,5 +9,6 @@ export type ChatAgentProgress = {
 }
 
 export type SvelteStore = {
-    history: {role: "user"|"assistant", content: string}[]
+    history: { role: "user" | "assistant", content: string }[]
+    logs: { role: "user" | "assistant", content: string }[]
 }
