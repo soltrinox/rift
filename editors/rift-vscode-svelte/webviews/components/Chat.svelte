@@ -14,15 +14,21 @@
 
 </script>
 
-<div class="flex flex-col">
-  <!-- svelte-ignore missing-declaration -->
-  {#each vscode.getState().history as item}
-    {#if item.role == "user"}
-       <UserInput value={item.content} />
-    {:else}
-        <Response value={item.content} />
-    {/if}
-  {/each}
-  <UserInput />
-  <Response isNew={true} />
+<div>
+  <div class="flex flex-col">
+    <!-- svelte-ignore missing-declaration -->
+    {#each vscode.getState().history as item}
+      {#if item.role == "user"}
+        <UserInput value={item.content} />
+      {:else}
+          <Response value={item.content} />
+      {/if}
+    {/each}
+    <UserInput />
+    <Response isNew={true} />
+
+  </div>
+  <div>
+    <!-- LOGS  -->
+  </div>
 </div>

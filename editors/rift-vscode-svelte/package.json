@@ -68,11 +68,6 @@
           "type": "webview",
           "id": "RiftChat",
           "name": "Chat"
-        },
-        {
-          "type": "webview",
-          "id": "RiftLogs",
-          "name": "Logs"
         }
       ]
     },
