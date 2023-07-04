@@ -4,7 +4,7 @@
   import CopySvg from './icons/CopySvg.svelte'
   import UserInput from './chat/UserInput.svelte';
   import Response from './chat/Response.svelte'
-  import Logs from './Logs.svelte'
+  import Logs from './logs/Logs.svelte'
   import {loading, state} from './stores'
   import type { ChatAgentProgress } from '../../src/types'
   
