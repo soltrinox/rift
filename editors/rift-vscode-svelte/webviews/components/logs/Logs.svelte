@@ -6,45 +6,8 @@
 </script>
 
 <div>
-    <h1>Logs</h1>
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
-    <Log message="log.message" />
+    <h1>Rift Logs</h1>
+    <Log color="green" message="test log" />
+    <Log color="yellow" message="test log" />
+    <Log color="red" message="test log" />
 </div>

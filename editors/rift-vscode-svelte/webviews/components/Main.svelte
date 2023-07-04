@@ -14,7 +14,7 @@
 </script>
 
 <div>
-  <div class="flex flex-col">
+  <div style="height: 70vh;">
     <!-- svelte-ignore missing-declaration -->
     {#each vscode.getState().history as item}
       {#if item.role == "user"}
@@ -26,7 +26,7 @@
     <UserInput />
     <Response isNew={true} />
   </div>
-  <div>
+  <div style="height: 30vh;">
     <!-- LOGS HERE -->
     <Logs />
   </div>
