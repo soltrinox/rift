@@ -25,7 +25,7 @@
 
           vscode.postMessage({
             type: 'message',
-              messages: , // don't want to include what we just pushed :()
+              messages: $state.history , // don't want to include what we just pushed :()
             message: this.value
           })
 
