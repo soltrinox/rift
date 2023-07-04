@@ -21,16 +21,21 @@ class ChatAgent(Agent):
     agent_type: str = "chat"
 
     @classmethod
-    def create(cls, messages, server, task: Optional[AgentTask] = None):
+    def create(cls, messages, server):
         ChatAgent.count += 1
         obj = ChatAgent(state=ChatAgentState(messages=messages), tasks=dict(), server=server, id=ChatAgent.count)
-        if task is not None:
-            obj.active_task_id = obj.add_task(task)
+        obj.active_task_id = obj.add_task(AgentTask("running", "Get user response", [], None))
+        obj.wait_user_response_task = obj.tasks[active_task_id]
+        obj.generate_response_task = obj.tasks[obj.add_task(AgentTask("done", "Generate response", [], None))]
         return obj
 
     async def run(self, params: AgentRunParams) -> AgentRunResult:
         async def worker():
             while True:
+                self.wait_user_response_task.status = "running"
+                self.generate_response_task.status = "done"
+                obj.active_task_id = self.wait_user_response_task.id
+                self.send_progress(ChatProgress(tasks=self.tasks))
                 user_response = await self.request_chat(self.state.messages)
                 response = ""
                 from asyncio import Lock
@@ -38,7 +43,10 @@ class ChatAgent(Agent):
                 response_lock = Lock()
                 assert self.running
                 async with response_lock:
-                    await self.send_progress(response)
+                    self.wait_user_response_task.status = "done"
+                    self.generate_response_task.status = "running"
+                    obj.active_task_id = self.generate_response_task.id
+                    await self.send_progress(ChatProgress(response=response))
                 doc_text = self.document.text
                 pos = self.cursor
                 offset = None if pos is None else self.document.position_to_offset(pos)
@@ -48,12 +56,12 @@ class ChatAgent(Agent):
                 async for delta in stream.text:
                     response += delta
                     async with response_lock:
-                        await self.send_progress(response)
+                        await self.send_progress(ChatProgress(response=response))
                 logger.info(f"{self} finished streaming response.")
 
                 self.running = False
                 async with response_lock:
-                    await self.send_progress(response, done=True)
+                    await self.send_progress(response=response, done_streaming=True)
                     self.state.messages.append(ChatMessage.assistant(response))
 
 
