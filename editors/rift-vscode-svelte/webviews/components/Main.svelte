@@ -50,7 +50,9 @@
         <Response value={item.content} />
       {/if}
     {/each}
-    <Response value={progressResponse} />
+    {#if !isDone}
+      <Response value={progressResponse} />
+    {/if}
     <UserInput value={""} enabled={true} />
   </div>
   <div style="height: 30vh;">

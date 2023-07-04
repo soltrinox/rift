@@ -32,6 +32,7 @@
       console.log('updating state...')
       state.update((state) => ({ ...state, history: [...state.history, { role: 'user', content: textarea.value }] }))
       textarea.value = ""
+      textarea.focus()
     }
     // logic to handle keydown event
   }
