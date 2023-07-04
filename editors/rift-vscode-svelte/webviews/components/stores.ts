@@ -1,9 +1,9 @@
-import {writable} from 'svelte/store'
-import type {SvelteStore} from '../../src/types'
+import { writable } from 'svelte/store'
+import type { SvelteStore } from '../../src/types'
 
-const DEFAULT_STATE:SvelteStore = {
+const DEFAULT_STATE: SvelteStore = {
   history: [],
-  logs: []
+  logs: [],
 };
 
 
