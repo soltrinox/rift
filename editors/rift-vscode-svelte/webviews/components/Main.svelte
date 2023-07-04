@@ -1,6 +1,6 @@
 <!-- Navbar.svelte -->
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, tick} from "svelte";
   import CopySvg from "./icons/CopySvg.svelte";
   import UserInput from "./chat/UserInput.svelte";
   import Response from "./chat/Response.svelte";
@@ -44,16 +44,17 @@
   let chatWindow: HTMLDivElement
   let fixedToBottom: boolean;
   let height: number
-  onMount(() => {
-  chatWindow.scrollTo(0, chatWindow.scrollHeight)
-  height = chatWindow.scrollHeight
-    fixedToBottom = chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 3
+  onMount(async () => {
+    await tick();
+    chatWindow.scrollTo(0, chatWindow.scrollHeight);
+    height = chatWindow.scrollHeight;
+    fixedToBottom = chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 3;
     chatWindow.addEventListener('scroll', function() {
-      if(!chatWindow.scrollTop || !chatWindow.scrollHeight) throw new Error()
-      console.log('scroll')
-      fixedToBottom = Boolean(chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 20)
+      if(!chatWindow.scrollTop || !chatWindow.scrollHeight) throw new Error();
+      console.log('scroll');
+      fixedToBottom = Boolean(chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 20);
     });
-  })
+  });
 
   
 </script>
