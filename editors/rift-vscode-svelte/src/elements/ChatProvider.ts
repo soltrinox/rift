@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { MorphLanguageClient } from "../client";
 import { getNonce } from "../getNonce";
-
+import { ChatAgentProgress } from "../types";
 
 export class ChatProvider implements vscode.WebviewViewProvider {
     _view?: vscode.WebviewView;
@@ -52,7 +52,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                         this._view.webview.postMessage({ type: 'progress', data: progress });
                     })
                     break;
-                default: 
+                default:
                     console.log('no case match')
             }
 

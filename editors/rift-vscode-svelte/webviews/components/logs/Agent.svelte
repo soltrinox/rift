@@ -5,8 +5,10 @@
     import ArrowRightSvg from "../icons/ArrowRightSvg.svelte";
     import ArrowDownSvg from "../icons/ArrowDownSvg.svelte";
     import Log from "./Log.svelte";
-    export let color = "green";
+    // export let color = "green";
     export let title = "log this";
+    export let done = false;
+    export let color = "yellow";
     let expanded = false;
 </script>
 
@@ -21,9 +23,9 @@
                 <ArrowDownSvg />
             </div>
         {/if}
-        {#if color == "green"}
+        {#if done || color == "green"}
             <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
-        {:else if color == "yellow"}
+        {:else if !done || color == "yellow"}
             <div class="mx-2 mt-0.5"><LogYellow /></div>
         {:else}
             <div class="mx-2 mt-0.5"><LogRed /></div>
