@@ -4,6 +4,7 @@ from typing import ClassVar, Dict
 from rift.lsp import LspServer as BaseLspServer, rpc_method
 from rift.agents.abstract import Agent, AgentTask, AgentProgress, RequestChatRequest
 from rift.llm.openai_types import Message as ChatMessage
+from rift.llm.abstract import AbstractChatCompletionProvider
 
 
 @dataclass
@@ -22,6 +23,7 @@ class ChatAgentState(Agent):
 @dataclass
 class ChatAgent(Agent):
     agent_id: str
+    model: AbstractChatCompletionProvider
     count: ClassVar[int] = 0
     agent_type: str = "chat"
 
@@ -88,18 +90,18 @@ class ChatAgent(Agent):
 
     async def request_input(self) -> RequestInputResponse:
         response_fut = await self.server.request(
-            f"morph/{self.agent_type}_{self.agent_id}_request_input", request_input_request
+            f"morph/{self.agent_type}_{self.id}_request_input", request_input_request
         )
         return await response_fut
 
     async def request_chat(self, request_chat_request: RequestChatRequest) -> RequestChatResponse:
         response_fut = await self.server.request(
-            f"morph/{self.agent_type}_{self.agent_id}_request_chat", request_chat_request
+            f"morph/{self.agent_type}_{self.id}_request_chat", request_chat_request
         )
         return await response_fut
 
     async def send_progress(self, progress: AgentProgress) -> None:
-        await self.notify("morph/{self.agent_type}_{self.agent_id}_send_progress", progress)
+        await self.notify("morph/{self.agent_type}_{self.id}_send_progress", progress)
 
     async def send_result(self):
         ...  # unreachable
