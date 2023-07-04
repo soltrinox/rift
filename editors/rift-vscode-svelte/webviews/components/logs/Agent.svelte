@@ -11,7 +11,7 @@
 </script>
 
 <div>
-    <a class="flex" on:click={() => (expanded = !expanded)}>
+    <a class="flex select-none" on:click={() => (expanded = !expanded)}>
         {#if expanded == false}
             <div class="mx-1 mt-1.5">
                 <ArrowRightSvg />

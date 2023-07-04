@@ -6,7 +6,7 @@
     export let message = "log this";
 </script>
 
-<div class="flex">
+<a class="flex select-none">
     <div class="ml-6 border-l-4" />
     {#if color == "green"}
         <div class="ml-4 mr-2 mt-0.5"><LogGreenSvg /></div>
@@ -16,4 +16,4 @@
         <div class="ml-4 mr-2 mt-0.5"><LogRed /></div>
     {/if}
     {message}
-</div>
+</a>
