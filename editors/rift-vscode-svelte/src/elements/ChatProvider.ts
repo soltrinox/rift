@@ -46,7 +46,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     const textDocument = { uri: doc.uri.toString(), version: 0 }
                     if (!data.message || !data.messages) throw new Error()
                     this.hslc.run_chat({ message: data.message, messages: data.messages, position, textDocument }, (progress) => {
-                        console.log('progress recieved')
+                        // console.log('progress recieved')
                         if (!this._view) throw new Error('no view')
                         if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
                         this._view.webview.postMessage({ type: 'progress', data: progress });

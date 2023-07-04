@@ -1,6 +1,6 @@
 <!-- Navbar.svelte -->
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import CopySvg from "./icons/CopySvg.svelte";
   import UserInput from "./chat/UserInput.svelte";
   import Response from "./chat/Response.svelte";
@@ -24,17 +24,35 @@
   if (vscodeState && vscodeState.history.length) state.set(vscodeState);
 
   const incomingMessage = (event) => {
-    console.log(event);
+    // console.log(event);
     progress = event.data.data as ChatAgentProgress;
     progressResponse = progress.response;
-    console.log(progressResponse);
+    // console.log(progressResponse);
     isDone = progress.done;
+    // for sticky window
+    if(chatWindow.scrollHeight > height && fixedToBottom) {
+        chatWindow.scrollTo(0, chatWindow.scrollHeight)
+    }
+    height = chatWindow.scrollHeight
+    // for sticky window^
     if (isDone) {
     state.update((state) => ({
       ...state, history: [...state.history, { role: "assistant", content: progressResponse }]
     }));
     }
   };
+  let chatWindow: HTMLDivElement
+  let fixedToBottom: boolean;
+  let height: number
+  onMount(() => {
+  height = chatWindow.scrollHeight
+    fixedToBottom = chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 3
+    chatWindow.addEventListener('scroll', function() {
+      if(!chatWindow.scrollTop || !chatWindow.scrollHeight) throw new Error()
+      console.log('scroll')
+      fixedToBottom = Boolean(chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 20)
+    });
+  })
 
   
 </script>
@@ -42,7 +60,7 @@
 <svelte:window on:message={incomingMessage} />
 
 <div>
-  <div style="height: 70vh;" class="flex flex-col overflow-y-auto">
+  <div bind:this={chatWindow} style="height: 70vh;" class="flex flex-col overflow-y-auto">
     {#each $state.history as item}
       {#if item.role == "user"}
         <UserInput value={item.content}/>
