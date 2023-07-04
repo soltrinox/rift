@@ -5,24 +5,30 @@ from typing import ClassVar, Dict, Literal
 from rift.lsp import LspServer as BaseLspServer, rpc_method
 from rift.llm.openai_types import Message as ChatMessage
 
+
 @dataclass
 class RequestInputRequest:
     msg: str
+
 
 @dataclass
 class RequestInputResponse:
     response: str
 
+
 @dataclass
 class RequestChatRequest:
     messages: List[ChatMessage]
 
+
 @dataclass
 class RequestChatResponse:
-    message: ChatMessage # TODO make this richer
+    message: ChatMessage  # TODO make this richer
 
-AgentTaskId = str    
-    
+
+AgentTaskId = str
+
+
 @dataclass
 class AgentTask:
     status: Literal["running", "done", "error"] = "running"
@@ -34,12 +40,14 @@ class AgentTask:
     def __post_init__(self):
         self.id = str(uuid.uuidv4())[:8]
 
-@dataclass
-class AgentRunParams(ABC):    
-    ...
 
 @dataclass
-class AgentProgress(ABC):    
+class AgentRunParams(ABC):
+    ...
+
+
+@dataclass
+class AgentProgress(ABC):
     tasks: Optional[Dict[AgentTaskId, AgentTask]] = None
 
 
@@ -86,10 +94,14 @@ class Agent:
             if task is not None:
                 task.cancel()
 
-    async def request_input(self, req: RequestInputResponse) -> asyncio.Future[RequestInputResponse]:
+    async def request_input(
+        self, req: RequestInputResponse
+    ) -> asyncio.Future[RequestInputResponse]:
         ...
 
-    async def request_chat(self) -> ...: # don't have a way to send a message back, unless if the request_chat_callback attaches another callback
+    async def request_chat(
+        self,
+    ) -> ...:  # don't have a way to send a message back, unless if the request_chat_callback attaches another callback
         ...
 
     async def send_progress(self) -> ...:

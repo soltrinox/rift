@@ -25,6 +25,7 @@ from rift.util.ofdict import ofdict
 
 logger = logging.getLogger("LSP")
 
+
 class LspServer(ExtraRpc):
     capabilities: ServerCapabilities
     position_encoding = "utf-16"
