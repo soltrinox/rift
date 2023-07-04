@@ -7,3 +7,7 @@ export type ChatAgentProgress = {
     }
     done: boolean
 }
+
+export type SvelteStore = {
+    history: {role: "user"|"assistant", content: string}[]
+}

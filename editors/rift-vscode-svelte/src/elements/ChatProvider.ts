@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { MorphLanguageClient } from "../client";
 import { getNonce } from "../getNonce";
 
 
@@ -6,20 +7,55 @@ export class ChatProvider implements vscode.WebviewViewProvider {
     _view?: vscode.WebviewView;
     _doc?: vscode.TextDocument;
 
-    constructor(private readonly _extensionUri: vscode.Uri) { }
+    // In the constructor, we store the URI of the extension
+    constructor(private readonly _extensionUri: vscode.Uri, public hslc: MorphLanguageClient) {
+    }
 
-    public resolveWebviewView(webviewView: vscode.WebviewView) {
+
+    public resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [this._extensionUri],
+            localResourceRoots: [
+                this._extensionUri
+            ]
         };
-
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
         webviewView.webview.onDidReceiveMessage(async (data) => {
             switch (data.type) {
                 // TODO
+                case "copyText":
+                    console.log('recieved copy in webview')
+                    vscode.env.clipboard.writeText(data.content)
+                    vscode.window.showInformationMessage('Text copied to clipboard!')
+                    break;
+                case 'chatMessage':
+                    const editor = vscode.window.activeTextEditor;
+                    if (!editor) {
+                        console.error('No active text editor found');
+                        return
+                    }
+                    // get the uri and position of the current cursor
+                    const doc = editor.document;
+                    const position = editor.selection.active;
+                    const textDocument = { uri: doc.uri.toString(), version: 0 }
+                    if (!data.message || !data.messages) throw new Error()
+                    this.hslc.run_chat({ message: data.message, messages: data.messages, position, textDocument }, (progress) => {
+                        console.log('progress recieved')
+                        if (!this._view) throw new Error('no view')
+                        if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
+                        this._view.webview.postMessage({ type: 'progress', data: progress });
+                    })
+                    break;
+                default: 
+                    console.log('no case match')
             }
+
         });
     }
 

@@ -1,22 +1,38 @@
 <!-- Navbar.svelte -->
-<script lang="ts">
-  import { onMount } from "svelte";
-  import CopySvg from "./icons/CopySvg.svelte";
-  import UserInput from "./chat/UserInput.svelte";
-  import Response from "./chat/Response.svelte";
-  import Logs from "./logs/Logs.svelte";
-  import { loading, state } from "./stores";
-  state.subscribe((state) => {
-    vscode.setState(state);
-  });
-  const vscodeState = vscode.getState();
-  if (vscodeState) state.set(vscodeState);
+<script lang='ts'>
+  import { onMount } from 'svelte';
+  import CopySvg from './icons/CopySvg.svelte'
+  import UserInput from './chat/UserInput.svelte';
+  import Response from './chat/Response.svelte'
+  import Logs from './Logs.svelte'
+  import {loading, state} from './stores'
+  import type { ChatAgentProgress } from '../../src/types'
+  
+  state.subscribe(state => {
+    if(!state.history.length) return // don't want initial rendering to fuck this up
+    vscode.setState(state)
+  })
+  
+  const vscodeState = vscode.getState()
+  console.log('attempting to access vscode state:')
+  console.log(vscodeState)
+  if(vscodeState && vscodeState.history.length) state.set(vscodeState)
+  
+    window.addEventListener("message", (event) => {
+    if (event.data.type === 'progress') {
+      //do stuff
+      // l l
+      let progress = event.data.data as ChatAgentProgress
+      console.log(progress.log)
+    }
+      
+    });
+
 </script>
 
 <div>
-  <div style="height: 70vh;">
-    <!-- svelte-ignore missing-declaration -->
-    {#each vscode.getState().history as item}
+  <div style="height: 70vh;" class="flex flex-col">
+    {#each $state.history as item}
       {#if item.role == "user"}
         <UserInput value={item.content} />
       {:else}
