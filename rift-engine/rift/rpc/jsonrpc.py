@@ -447,7 +447,7 @@ class RpcServer:
         req = Request(method=method, params=params)
         await self._send(req)
 
-    async def request(self, method: str, params: Optional[Any]) -> Any:
+    async def request(self, method: str, params: Optional[Any]) -> asyncio.Future[Any]:
         """Send a request to the peer and wait for a response.
 
         Args:
@@ -481,7 +481,7 @@ class RpcServer:
             raise RuntimeError(f"non-unique request id {id} found")
         self.my_requests[id] = fut
         await self._send(req)
-        result = await fut
+        # result = await fut
         return result
 
     async def _send_init(self, init_param):

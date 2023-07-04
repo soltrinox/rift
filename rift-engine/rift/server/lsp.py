@@ -1,7 +1,7 @@
 import asyncio
 from dataclasses import dataclass, field
 import logging
-from typing import ClassVar, Optional, List
+from typing import ClassVar, Optional, List, Any
 from typing import Literal
 from rift.lsp import LspServer as BaseLspServer, rpc_method
 from rift.rpc import RpcServerStatus
@@ -306,6 +306,19 @@ class LspServer(BaseLspServer):
             await self.get_config()
         assert self.chat_model is not None
         return self.chat_model
+
+    @rpc_method("morph/run")
+    async def on_run(self, params: Any):
+        agent_type = params.agent_type
+        if agent_type == "chat":
+            agent = ChatAgent(params, model=model, server=self)
+        elif agent_type == "code_completion":
+            agent = CodeCompletionAgent(params, model=model, server=self)
+        else:
+            raise Exception(f"unsupported agent type={agent_type}")
+        agent.start()
+        self.active_agents[agent.id] = agent
+        return RunAgentResult(id=agent.id)
 
     @rpc_method("morph/run_agent")
     async def on_run_agent(self, params: RunAgentParams):

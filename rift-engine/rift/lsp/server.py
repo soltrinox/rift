@@ -25,21 +25,21 @@ from rift.util.ofdict import ofdict
 
 logger = logging.getLogger("LSP")
 
-# create an extra generic endpoint that receives messages with a `notifyId` field
-# notifyId wakes up a Python future to tell it that something is ready
 class LspServer(ExtraRpc):
     capabilities: ServerCapabilities
     position_encoding = "utf-16"
     # [todo] consider using io.StringIO for the documents because they are mutating.
     documents: dict[lsp.DocumentUri, lsp.TextDocumentItem]
     change_callbacks: defaultdict[lsp.DocumentUri, set[Callable]]
+    fts: dict[str, asyncio.Future]
     """ set of open documents, the server will keep these synced with the client
      editor automatically. """
 
     def __init__(self, transport):
         self.change_callbacks = defaultdict(set)
         self.capabilities = ServerCapabilities()
-        self.documents = {}
+        self.documents = dict()
+        self.fts = dict()
         super().__init__(transport, init_mode=InitializationMode.ExpectInit)
 
     @rpc_method("initialize")

@@ -308,15 +308,15 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         return `starting agent ${result.id}...`
     }
 
-    // async run_agent_sync(params: RunAgentParams) {
-    //     console.log("run_agent_sync")
-    //     const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
-    //     const agent = new Agent(result.id, params.position, params.textDocument)
-    //     // agent.onStatusChange(e => this.changeLensEmitter.fire())
-    //     this.agents.set(result.id, agent)
-    //     // this.changeLensEmitter.fire()
-    //     return result.text
-    // }
+    async run_agent_sync(params: RunAgentParams) {
+        console.log("run_agent_sync")
+        const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
+        const agent = new Agent(result.id, params.position, params.textDocument)
+        // agent.onStatusChange(e => this.changeLensEmitter.fire())
+        this.agents.set(result.id, agent)
+        // this.changeLensEmitter.fire()
+        return result.text
+    }
 
     morphNotifyChatCallback: (progress: ChatAgentProgress) => any = async function (progress) {
         throw new Error('no callback set')
@@ -343,7 +343,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         send_result_callback: (send_result_request: any) => any,
     ) {
         const result = await this.client.sendRequest('morph/run', params);
-        const agentId = result.id;
+        const agentId = result.id; // TODO(jesse): does this create a race condition?
         const agentType = params.agentType;
         console.log(`running ${agentType}`)
         this.client.onNotification(`morph/${agentType}_${agentId}_request_input`, request_input_callback.bind(this))
