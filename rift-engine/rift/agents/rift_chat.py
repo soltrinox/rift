@@ -36,6 +36,7 @@ class ChatAgent(Agent):
                 self.generate_response_task.status = "done"
                 obj.active_task_id = self.wait_user_response_task.id
                 self.send_progress(ChatProgress(tasks=self.tasks))
+                
                 user_response = await self.request_chat(self.state.messages)
                 response = ""
                 from asyncio import Lock
@@ -46,7 +47,7 @@ class ChatAgent(Agent):
                     self.wait_user_response_task.status = "done"
                     self.generate_response_task.status = "running"
                     obj.active_task_id = self.generate_response_task.id
-                    await self.send_progress(ChatProgress(response=response))
+                    await self.send_progress(ChatProgress(response=response, tasks=self.tasks))
                 doc_text = self.document.text
                 pos = self.cursor
                 offset = None if pos is None else self.document.position_to_offset(pos)
