@@ -1,13 +1,15 @@
 <script lang="ts">
     import { loading, state } from "../stores";
     import Log from "./Log.svelte";
-
-    function handleClick() {}
+    import Agent from "./Agent.svelte";
 </script>
 
 <div>
-    <h1>Rift Logs</h1>
-    <Log color="green" message="test log" />
-    <Log color="yellow" message="test log" />
-    <Log color="red" message="test log" />
+    <div class="ml-3">
+        <h1>Rift Logs</h1>
+        <Agent color="yellow" title="gpt-engineer" />
+        <Agent color="green" title="rift-code-improve" />
+        <Agent color="red" title="smol-dev" />
+        <Agent color="green" title="rift-chat" />
+    </div>
 </div>
