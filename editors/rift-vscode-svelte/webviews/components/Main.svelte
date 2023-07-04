@@ -45,6 +45,7 @@
   let fixedToBottom: boolean;
   let height: number
   onMount(() => {
+  chatWindow.scrollTo(0, chatWindow.scrollHeight)
   height = chatWindow.scrollHeight
     fixedToBottom = chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 3
     chatWindow.addEventListener('scroll', function() {
