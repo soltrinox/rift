@@ -1,22 +1,21 @@
 <!-- Navbar.svelte -->
-<script>
+<script lang='ts'>
   import { onMount } from 'svelte';
   import CopySvg from './icons/CopySvg.svelte'
   import UserInput from './chat/UserInput.svelte';
   import Response from './chat/Response.svelte'
-  const vscode = tsvscode
+  import {loading, state} from './stores'
+  state.subscribe(state => {
+    vscode.setState(state)
+  })
+  const vscodeState = vscode.getState()
+  if(vscodeState) state.set(vscodeState)
   
-  const DEFAULT_STATE = {
-    history: [],
-  };
-  let state = vscode.getState();
-  if (!state) {
-    vscode.setState(DEFAULT_STATE);
-  }
 
 </script>
 
 <div class="flex flex-col">
+  <!-- svelte-ignore missing-declaration -->
   {#each vscode.getState().history as item}
     {#if item.role == "user"}
        <UserInput value={item.content} />
@@ -25,5 +24,5 @@
     {/if}
   {/each}
   <UserInput />
-  <Response />
+  <Response isNew={true} />
 </div>

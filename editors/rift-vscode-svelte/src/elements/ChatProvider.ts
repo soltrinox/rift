@@ -64,7 +64,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     <script src="${tailwindUri}" nonce="${nonce}"></script>
                     <link href="${cssUri}" rel="stylesheet">
                     <script nonce="${nonce}">
-                        const tsvscode = acquireVsCodeApi();
+                        const vscode = acquireVsCodeApi();
                     </script>
                 </head>
                 <body class="p-0">
