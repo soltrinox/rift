@@ -7,7 +7,7 @@
   import Logs from "./logs/Logs.svelte";
   import { loading, state } from "./stores";
   import type { ChatAgentProgress } from "../../src/types";
-
+  import Header from './Header.svelte'
   state.subscribe((state) => {
     // state.history.splice(0);
 
@@ -62,7 +62,9 @@
 <svelte:window on:message={incomingMessage} />
 
 <div>
-  <div bind:this={chatWindow} style="height: 70vh;" class="flex flex-col overflow-y-auto">
+  <Header />
+  <div>
+  <div bind:this={chatWindow} class="flex flex-col overflow-y-auto max-h-[70vh]">
     {#each $state.history as item}
       {#if item.role == "user"}
         <UserInput value={item.content}/>
@@ -75,8 +77,9 @@
     {/if}
     <UserInput value={""} enabled={true} />
   </div>
-  <div style="height: 30vh;">
+  <div>
     <!-- LOGS HERE -->
     <Logs chatDone={isDone} />
   </div>
+</div>
 </div>
