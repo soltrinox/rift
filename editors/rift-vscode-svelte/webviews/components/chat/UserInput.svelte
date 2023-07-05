@@ -47,7 +47,7 @@
 </script>
 
 <div
-  class="w-full text-md p-2 min-h-8 bg-[var(--vscode-input-background)] flex flex-row"
+  class="w-full text-md p-2 min-h-8 bg-[var(--vscode-input-background)] flex flex-row items-center"
 >
   <textarea
     bind:this={textarea}
@@ -59,8 +59,8 @@
     {value}
   />
   {#if enabled}
-    <div class="justify-self-end flex-shrink-0">
-      <button on:click={sendMessage} class="flex items-center flex-shrink">
+    <div class="justify-self-end flex">
+      <button on:click={sendMessage} class="flex items-center flex">
         <SendSvg />
       </button>
     </div>
