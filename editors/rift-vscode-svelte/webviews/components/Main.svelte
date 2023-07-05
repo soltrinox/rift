@@ -2,7 +2,7 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from "svelte";
   import CopySvg from "./icons/CopySvg.svelte";
-  import EllipsisSvg from "./icons/EllipsisSvg.svelte";
+  import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
   import UserInput from "./chat/UserInput.svelte";
   import Response from "./chat/Response.svelte";
   import Logs from "./logs/Logs.svelte";
