@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { loading, state } from '../stores'
+  import SendSvg from '../icons/SendSvg.svelte';
+import { loading, state } from '../stores'
   export let value: string = ''
   export let enabled: boolean = false
 
@@ -11,6 +12,21 @@
 
   let textarea: HTMLTextAreaElement
 
+  function sendMessage() {
+    textarea.blur()
+    loading.set(true)
+
+    vscode.postMessage({
+      type: 'chatMessage',
+      messages: $state.history, 
+      message: textarea.value,
+    })
+    console.log('updating state...')
+    state.update((state) => ({ ...state, history: [...state.history, { role: 'user', content: textarea.value }] }))
+    textarea.value = ""
+    textarea.focus()
+  }
+
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       // 13 is the Enter key code
@@ -21,18 +37,7 @@
         textarea.style.height = textarea.scrollHeight + 'px'
         return
       }
-      textarea.blur()
-      loading.set(true)
-
-      vscode.postMessage({
-        type: 'chatMessage',
-        messages: $state.history, 
-        message: textarea.value,
-      })
-      console.log('updating state...')
-      state.update((state) => ({ ...state, history: [...state.history, { role: 'user', content: textarea.value }] }))
-      textarea.value = ""
-      textarea.focus()
+      sendMessage()
     }
     // logic to handle keydown event
   }
@@ -48,4 +53,11 @@
     disabled={!enabled}
     {value}
   />
+  {#if enabled}
+  <div class='justify-self-end flex-shrink-0'>
+  <button on:click={sendMessage} class="flex items-center flex-shrink">
+    <SendSvg />
+  </button>
+  </div> 
+  {/if}
 </div>
