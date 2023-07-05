@@ -24,7 +24,7 @@
   console.log(vscodeState);
   if (vscodeState && vscodeState.history.length) state.set(vscodeState);
 
-  const incomingMessage = (event) => {
+  const incomingMessage = (event: any) => {
     // console.log(event);
     progress = event.data.data as ChatAgentProgress;
     progressResponse = progress.response;
@@ -44,24 +44,29 @@
           { role: "assistant", content: progressResponse },
         ],
       }));
+      loading.set(false)
     }
   };
   let chatWindow: HTMLDivElement;
+  $: {
+    chatWindow?.scrollTo(0, chatWindow.scrollHeight);
+  }
   let fixedToBottom: boolean;
   let height: number;
   onMount(async () => {
     await tick();
     chatWindow.scrollTo(0, chatWindow.scrollHeight);
-    height = chatWindow.scrollHeight;
-    fixedToBottom =
-      chatWindow.clientHeight + chatWindow.scrollTop >=
-      chatWindow.scrollHeight - 3;
+
+    // height = chatWindow.scrollHeight;
+    // fixedToBottom =
+    //   chatWindow.clientHeight + chatWindow.scrollTop >=
+    //   chatWindow.scrollHeight - 3;
     chatWindow.addEventListener("scroll", function () {
       if (!chatWindow.scrollTop || !chatWindow.scrollHeight) throw new Error();
       console.log("scroll");
       fixedToBottom = Boolean(
         chatWindow.clientHeight + chatWindow.scrollTop >=
-          chatWindow.scrollHeight - 20
+          chatWindow.scrollHeight - 30
       );
     });
   });

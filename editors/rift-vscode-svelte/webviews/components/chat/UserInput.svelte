@@ -60,7 +60,7 @@
   />
   {#if enabled}
     <div class="justify-self-end flex">
-      <button on:click={sendMessage} class="flex items-center flex">
+      <button on:click={sendMessage} class="items-center flex">
         <SendSvg />
       </button>
     </div>

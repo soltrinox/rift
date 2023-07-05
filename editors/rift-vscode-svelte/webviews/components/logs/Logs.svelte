@@ -2,7 +2,7 @@
     import { loading, state } from "../stores";
     import Log from "./Log.svelte";
     import Agent from "./Agent.svelte";
-    export let chatDone = false;
+    export let chatDone:boolean = false;
 </script>
 
 <div>
