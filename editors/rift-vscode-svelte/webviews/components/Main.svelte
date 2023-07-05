@@ -88,7 +88,7 @@
       {/if}
       <UserInput value={""} enabled={true} />
     </div>
-    <divclass="max-h-[30vh]">
+    <div class="max-h-[30vh]">
       <section
         id="divider"
         class="border-t-2 pt-1 pb-2 hero container max-w-screen-lg mx-auto flex justify-center"
@@ -96,6 +96,6 @@
         <EllipsisSvg />
       </section>
       <Logs chatDone={isDone} />
-    </divclass="max-h-[30vh]">
+    </div>
   </div>
 </div>
