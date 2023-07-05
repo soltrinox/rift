@@ -52,7 +52,7 @@
   <textarea
     bind:this={textarea}
     class="w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none"
-    placeholder="Ask questions and get answers about the current code window."
+    placeholder="Type to chat or hit / for commands"
     on:input={resize}
     on:keydown={handleKeyDown}
     disabled={!enabled}
