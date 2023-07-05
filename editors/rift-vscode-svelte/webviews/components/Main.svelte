@@ -2,6 +2,7 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from "svelte";
   import CopySvg from "./icons/CopySvg.svelte";
+  import EllipsisSvg from "./icons/EllipsisSvg.svelte";
   import UserInput from "./chat/UserInput.svelte";
   import Response from "./chat/Response.svelte";
   import Logs from "./logs/Logs.svelte";
@@ -87,8 +88,13 @@
       {/if}
       <UserInput value={""} enabled={true} />
     </div>
-    <div>
-      <!-- LOGS HERE -->
+    <divclass="max-h-[30vh]">
+      <section
+      id="divider"
+        class="border-t-2 pt-1 pb-2 hero container max-w-screen-lg mx-auto flex justify-center"
+      >
+        <EllipsisSvg />
+      </section>
       <Logs chatDone={isDone} />
     </div>
   </div>
