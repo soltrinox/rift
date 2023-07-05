@@ -68,7 +68,7 @@ interface RunAgentParams {
 }
 
 
-interface RunChatParams {
+export interface RunChatParams {
     message: string
     messages: { // does not include latest message
         role: string,

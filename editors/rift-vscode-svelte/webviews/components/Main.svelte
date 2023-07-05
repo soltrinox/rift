@@ -49,6 +49,7 @@
   };
   let chatWindow: HTMLDivElement;
   $: {
+    console.log('change')
     chatWindow?.scrollTo(0, chatWindow.scrollHeight);
   }
   let fixedToBottom: boolean;

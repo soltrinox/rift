@@ -40,6 +40,7 @@
         textarea.style.height = textarea.scrollHeight + "px";
         return;
       }
+      if (!textarea.value) return
       sendMessage();
     }
     // logic to handle keydown event
