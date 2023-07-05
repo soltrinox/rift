@@ -10,5 +10,7 @@
         <h1>Rift Logs</h1>
 
         <Agent done={chatDone} title="rift-chat" />
+        <Agent done={chatDone} title="rift-chat" />
+        <Agent done={false} title="rift-chat" />
     </div>
 </div>
