@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { MorphLanguageClient } from "../client";
+import { MorphLanguageClient, RunChatParams } from "../client";
 import { getNonce } from "../getNonce";
 import { ChatAgentProgress } from "../types";
 
@@ -36,16 +36,18 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
+                    let runChatParams: RunChatParams = { message: data.message, messages: data.messages }
                     if (!editor) {
-                        console.error('No active text editor found');
-                        return;
+                        console.warn('No active text editor found');
+                    } else {
+                        // get the uri and position of the current cursor
+                        const doc = editor.document;
+                        const position = editor.selection.active;
+                        const textDocument = { uri: doc.uri.toString(), version: 0 }
+                        runChatParams = { message: data.message, messages: data.messages, position, textDocument }
                     }
-                    // get the uri and position of the current cursor
-                    const doc = editor.document;
-                    const position = editor.selection.active;
-                    const textDocument = { uri: doc.uri.toString(), version: 0 }
                     if (!data.message || !data.messages) throw new Error()
-                    this.hslc.run_chat({ message: data.message, messages: data.messages, position, textDocument }, (progress) => {
+                    this.hslc.run_chat(runChatParams, (progress) => {
                         // console.log('progress recieved')
                         if (!this._view) throw new Error('no view')
                         if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
