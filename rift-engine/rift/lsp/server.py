@@ -32,13 +32,14 @@ class LspServer(ExtraRpc):
     # [todo] consider using io.StringIO for the documents because they are mutating.
     documents: dict[lsp.DocumentUri, lsp.TextDocumentItem]
     change_callbacks: defaultdict[lsp.DocumentUri, set[Callable]]
-    """ set of open documents, the server will keep these synced with the client
-     editor automatically. """
+    fts: dict[str, asyncio.Future]
+    """ set of open documents, the server will keep these synced with the client editor automatically. """
 
     def __init__(self, transport):
         self.change_callbacks = defaultdict(set)
         self.capabilities = ServerCapabilities()
-        self.documents = {}
+        self.documents = dict()
+        self.fts = dict()
         super().__init__(transport, init_mode=InitializationMode.ExpectInit)
 
     @rpc_method("initialize")
