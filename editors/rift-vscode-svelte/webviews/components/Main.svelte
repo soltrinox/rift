@@ -96,6 +96,6 @@
         <EllipsisSvg />
       </section>
       <Logs chatDone={isDone} />
-    </divclass="max-h-[30vh]">
+    </div>
   </div>
 </div>
