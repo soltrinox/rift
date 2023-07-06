@@ -9,6 +9,7 @@
   import { loading, state } from "./stores";
   import type { ChatAgentProgress } from "../../src/types";
   import Header from "./Header.svelte";
+  import chalk from 'chalk'
   state.subscribe((state) => {
     // state.history.splice(0);
 
@@ -17,6 +18,7 @@
   });
 
   let progress: ChatAgentProgress;
+  let observer: MutationObserver;
   let progressResponse = "";
   let isDone = false;
   const vscodeState = vscode.getState();
@@ -31,9 +33,9 @@
     // console.log(progressResponse);
     isDone = progress.done;
     // for sticky window
-    if (chatWindow.scrollHeight > height && fixedToBottom) {
-      chatWindow.scrollTo(0, chatWindow.scrollHeight);
-    }
+    // if (chatWindow.scrollHeight > height && fixedToBottom) {
+    //   chatWindow.scrollTo(0, chatWindow.scrollHeight);
+    // }
     height = chatWindow.scrollHeight;
     // for sticky window^
     if (isDone) {
@@ -54,23 +56,41 @@
   }
   let fixedToBottom: boolean;
   let height: number;
+  function scrollToBottomIfNearBottom() {
+    console.log('scrolling?:')
+    // fixedToBottom = Boolean(
+    //     chatWindow.clientHeight + chatWindow.scrollTop >=
+    //       chatWindow.scrollHeight - 30
+    //   );
+    if(fixedToBottom) console.log('scrolling')
+    else console.log('not scrolling')
+    if(fixedToBottom) chatWindow.scrollTo(0, chatWindow.scrollHeight);
+}
   onMount(async () => {
+    console.log('awaiting tick')
     await tick();
     chatWindow.scrollTo(0, chatWindow.scrollHeight);
 
+
+
+    observer = new MutationObserver(scrollToBottomIfNearBottom);
+    observer.observe(chatWindow, { childList: true, subtree: true });
+
+    fixedToBottom = Boolean(chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 15)
     // height = chatWindow.scrollHeight;
-    // fixedToBottom =
-    //   chatWindow.clientHeight + chatWindow.scrollTop >=
-    //   chatWindow.scrollHeight - 3;
     chatWindow.addEventListener("scroll", function () {
-      if (!chatWindow.scrollTop || !chatWindow.scrollHeight) throw new Error();
-      console.log("scroll");
-      fixedToBottom = Boolean(
-        chatWindow.clientHeight + chatWindow.scrollTop >=
-          chatWindow.scrollHeight - 30
-      );
+      if (!chatWindow.scrollTop || !chatWindow.scrollHeight) {
+        console.log(chatWindow)
+        console.log(chatWindow.scrollTop)
+        console.log(chatWindow.scrollHeight)
+        throw new Error();}
+      console.log(chalk.blue("scroll")); 
+      fixedToBottom = Boolean(chatWindow.clientHeight + chatWindow.scrollTop >= chatWindow.scrollHeight - 15)
     });
   });
+  onDestroy(() => {
+    observer.disconnect();
+});
 </script>
 
 <svelte:window on:message={incomingMessage} />
