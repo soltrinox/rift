@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional, ClassVar
+from typing import Dict, Optional, ClassVar, Any
 import asyncio
 import smol_dev
 from rift.lsp import LspServer as BaseLspServer
@@ -32,7 +32,8 @@ class ChatProgress(
 class SmolAgentState(AgentState):
     messages: List[ChatMessage]
     model: AbstractChatCompletionProvider
-    smol_dev: smol_dev.SmolDeveloper = smol_dev  # lets you access smol_dev methods
+    # smol_dev: smol_dev.SmolDeveloper = smol_dev  # lets you access smol_dev methods
+    smol_dev: Any
 
 @dataclass
 class SmolAgent(Agent):
@@ -120,15 +121,15 @@ class SmolAgent(Agent):
             logger.error(f"{self} failed to run: {e}")
             return AgentRunResult(success=False, error=str(e))
 
-    async def request_input(self) -> RequestInputResponse:
+    async def request_input(self) -> Any:
         response_fut = await self.server.request(
             f"morph/{self.agent_type}_{self.id}_request_input", request_input_request
         )
         return await response_fut
 
     async def request_chat(
-        self, request_chat_request: RequestChatRequest
-    ) -> RequestChatResponse:
+        self, request_chat_request: Any
+    ) -> Any:
         response_fut = await self.server.request(
             f"morph/{self.agent_type}_{self.id}_request_chat", request_chat_request
         )

@@ -68,8 +68,8 @@ interface RunCodeHelperParams {
 }
 
 interface RunAgentParams {
-    agentType: string
-    agentParams: any
+    agent_type: string
+    agent_params: any
 }
 
 interface RunAgentResult {
@@ -167,6 +167,7 @@ interface ModelConfig {
 }
 
 type AgentType = "chat" | "code-completion"
+export type AgentIdentifier = string
 
 export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     client: LanguageClient
@@ -175,7 +176,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     context: vscode.ExtensionContext
     changeLensEmitter: vscode.EventEmitter<void>
     onDidChangeCodeLenses: vscode.Event<void>
-    agents = new Map<number, Agent>()
+    agents = new Map<AgentIdentifier, Agent>()
+    agentStates = new Map<AgentIdentifier, any>()
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context
@@ -312,7 +314,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         const result: RunAgentResult = await this.client.sendRequest('morph/run_agent', params)
         const agent = new Agent(result.id, params.position, params.textDocument)
         agent.onStatusChange(e => this.changeLensEmitter.fire())
-        this.agents.set(result.id, agent)
+        this.agents.set(result.id.toString(), agent)
         // note this returns fast and then the updates are sent via notifications
         this.changeLensEmitter.fire()
         return `starting agent ${result.id}...`
@@ -347,7 +349,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     // note(jesse): for CodeCompletionAgent, we'll want to:
     // feed in params = {
-    //   agentType: "code_completion"
+    //   agent_type: "code_completion"
     //   agentParams: RunCodeHelperParams
     // }
     // with no-ops for all callbacks except for `send_progress`
@@ -361,14 +363,16 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     ) {
         const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
         const agentId = result.id; // TODO(jesse): does this create a race condition? // TODO: better identifiers than ints returned by server
-        const agentType = params.agentType;
-        console.log(`running ${agentType}`)
-        this.client.onNotification(`morph/${agentType}_${agentId}_request_input`, request_input_callback.bind(this))
-        this.client.onNotification(`morph/${agentType}_${agentId}_request_chat`, request_chat_callback.bind(this))
+        const agent_type = params.agent_type;
+        console.log(`running ${agent_type}`)
+        const agentIdentifier = `${agent_type}_${agentId}`
+        this.agentStates.set(agentIdentifier, {status: "running", ranges: [], emitter: new vscode.EventEmitter<AgentStatus>})
+        this.client.onNotification(`morph/${agent_type}_${agentId}_request_input`, request_input_callback.bind(this))
+        this.client.onNotification(`morph/${agent_type}_${agentId}_request_chat`, request_chat_callback.bind(this))
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
-        this.client.onNotification(`morph/${agentType}_${agentId}_send_progress`, send_progress_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agentId}_send_progress`, send_progress_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks
-        this.client.onNotification(`morph/${agentType}_${agentId}_send_result`, send_result_callback.bind(this)) // this should be custom
+        this.client.onNotification(`morph/${agent_type}_${agentId}_send_result`, send_result_callback.bind(this)) // this should be custom
     }
 
     // run should spawn an agent

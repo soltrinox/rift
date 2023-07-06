@@ -38,20 +38,20 @@ export function activate(context: vscode.ExtensionContext) {
             return
         }
         //
-        let CODE_COMPLETION_STATUS: string = "running";
-        let CODE_COMPLETION_RANGES: vscode.Range[] = [];
-        let STATUS_CHANGE_EMITTER = new vscode.EventEmitter<AgentStatus>;
+        // let CODE_COMPLETION_STATUS: string = "running";
+        // let CODE_COMPLETION_RANGES: vscode.Range[] = [];
+        // let STATUS_CHANGE_EMITTER = new vscode.EventEmitter<AgentStatus>;
         const code_completion_send_progress_callback = async (params: RunAgentProgress) => {
             const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
 
         if (params.status) {
-            if (CODE_COMPLETION_STATUS !== params.status) {
-                CODE_COMPLETION_STATUS = params.status
-                STATUS_CHANGE_EMITTER.fire(params.status)
+            if (hslc.agentStates[`code_completion_{params.id}`].status !== params.status) {
+                hslc.agentStates[`code_completion_{params.id}`].status = params.status
+                hslc.agentStates[`code_completion_{params.id}`].emitter.fire(params.status)
             }
         }
         if (params.ranges) {
-            this.ranges = params.ranges
+            hslc.agentStates[`code_completion_{params.id}`].ranges = params.ranges
         }
         const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == params.textDocument.uri)
         for (const editor of editors) {
@@ -67,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         }
         
-        const r = await hslc.run({agentType: "code_completion", agentParams: {position, textDocument, task} }, async () => {}, async () => {}, code_completion_send_progress_callback, async () => {})
+        const r = await hslc.run({agent_type: "code_completion", agent_params: {position, textDocument, task} }, async () => {}, async () => {}, code_completion_send_progress_callback, async () => {})
     });
 
     context.subscriptions.push(disposable);
