@@ -16,6 +16,7 @@ from .types import (
     ApplyWorkspaceEditResponse,
 )
 import rift.lsp.types as lsp
+from agents.registry import AgentRegistry
 from collections import defaultdict
 from ..rpc import InitializationMode, rpc_method
 from ..rpc.extrarpc import ExtraRpc
@@ -33,12 +34,14 @@ class LspServer(ExtraRpc):
     documents: dict[lsp.DocumentUri, lsp.TextDocumentItem]
     change_callbacks: defaultdict[lsp.DocumentUri, set[Callable]]
     fts: dict[str, asyncio.Future]
+    registry: AgentRegistry
     """ set of open documents, the server will keep these synced with the client editor automatically. """
 
     def __init__(self, transport):
         self.change_callbacks = defaultdict(set)
         self.capabilities = ServerCapabilities()
         self.documents = dict()
+        self.registry = AgentRegistry
         self.fts = dict()
         super().__init__(transport, init_mode=InitializationMode.ExpectInit)
 
@@ -138,6 +141,11 @@ class LspServer(ExtraRpc):
     @rpc_method("textDocument/didClose")
     def on_did_close(self, params: lsp.DidCloseTextDocumentParams):
         pass
+
+    @rpc_method("listAgents")
+    def on_list_agents(self):
+        return self.registry.list_agents()
+
 
     @rpc_method("$/setTrace")
     def on_set_trace(self, params: lsp.SetTraceParams):
