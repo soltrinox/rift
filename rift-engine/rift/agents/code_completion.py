@@ -18,6 +18,7 @@ class CodeCompletionRunResult(AgentRunResult):
 
 @dataclass
 class CodeCompletionProgress(AgentProgress):
+    id: Optional[int] = None
     response: Optional[str] = None
     thoughts: Optional[str] = None
 
@@ -133,6 +134,8 @@ class CodeCompletionAgent(Agent):
                     await self.send_progress(CodeCompletionProgress(tasks=self.tasks, response=None, status=self.status))
                 all_text = "".join(all_deltas)
                 logger.info(f"{self} finished streaming {len(all_text)} characters")
+                self.status = "done"
+                await self.send_progress(CodeCompletionProgress(tasks=self.tasks, response=None, thoughts=thoughts, status=self.status))                
                 if stream.thoughts is not None:
                     thoughts = await stream.thoughts.read()
                     await self.send_progress(CodeCompletionProgress(tasks=self.tasks, thoughts=thoughts, status=self.status))
@@ -233,6 +236,7 @@ class CodeCompletionAgent(Agent):
         )
 
     async def send_progress(self, progress):
+        progress.id = self.id
         await self.server.notify(f"morph/{self.agent_type}_{self.id}_send_progress", progress)
 
     async def send_result(self, result):

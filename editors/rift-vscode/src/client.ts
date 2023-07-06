@@ -151,11 +151,11 @@ class Agent {
     }
 }
 
-export class AgentLens extends vscode.CodeLens {
+export class AgentStateLens extends vscode.CodeLens {
     id: number
-    constructor(range: vscode.Range, agent: Agent, command?: vscode.Command) {
+    constructor(range: vscode.Range, agentState: any, command?: vscode.Command) {
         super(range, command)
-        this.id = agent.id
+        this.id = agentState.agent_id
     }
 }
 
@@ -169,7 +169,7 @@ interface ModelConfig {
 type AgentType = "chat" | "code-completion"
 export type AgentIdentifier = string
 
-export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
+export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLens> {
     client: LanguageClient
     red: vscode.TextEditorDecorationType
     green: vscode.TextEditorDecorationType
@@ -194,43 +194,80 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     }
 
     // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
-    public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentLens[] {
+    public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentStateLens[] {
         // this returns all of the lenses for the document.
-        const items: AgentLens[] = []
-        for (const agent of this.agents.values()) {
-            if (agent.textDocument.uri === document.uri.toString()) {
-                const line = agent.startPosition.line
+        const items: AgentStateLens[] = []
+        for (const agentState of this.agentStates.values()) {
+            if (agentState.agent_type == "code_completion" && agentState.params.textDocument.uri.toString() == document.uri.toString()) {
+                const line = agentState.params.position.line
                 const linetext = document.lineAt(line)
-                if (agent.status === 'running') {
-                    const running = new AgentLens(linetext.range, agent, {
+                if (agentState.status === 'running') {
+                    const running = new AgentStateLens(linetext.range, agentState, {
                         title: 'running',
                         command: 'rift.cancel',
                         tooltip: 'click to stop this agent',
-                        arguments: [agent.id],
+                        arguments: [agentState.agent_id],
                     })
                     items.push(running)
                 }
-                else if (agent.status === 'done' || agent.status === 'error') {
-                    const accept = new AgentLens(linetext.range, agent, {
+                else if (agentState.status === 'done' || agentState.status === 'error') {
+                    const accept = new AgentStateLens(linetext.range, agentState, {
                         title: 'Accept ✅ ',
                         command: 'rift.accept',
                         tooltip: 'Accept the edits below',
-                        arguments: [agent.id],
+                        arguments: [agentState.agent_id],
                     })
-                    const reject = new AgentLens(linetext.range, agent, {
+                    const reject = new AgentStateLens(linetext.range, agentState, {
                         title: ' Reject ❌',
                         command: 'rift.reject',
                         tooltip: 'Reject the edits below and restore the original text',
-                        arguments: [agent.id]
+                        arguments: [agentState.agent_id]
                     })
                     items.push(accept, reject)
                 }
             }
         }
         return items
-    }
+    }    
 
-    public resolveCodeLens(codeLens: AgentLens, token: vscode.CancellationToken) {
+    // // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
+    // public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentLens[] {
+    //     // this returns all of the lenses for the document.
+    //     const items: AgentLens[] = []
+    //     for (const agent of this.agents.values()) {
+    //         if (agent.textDocument.uri === document.uri.toString()) {
+    //             const line = agent.startPosition.line
+    //             const linetext = document.lineAt(line)
+    //             if (agent.status === 'running') {
+    //                 const running = new AgentLens(linetext.range, agent, {
+    //                     title: 'running',
+    //                     command: 'rift.cancel',
+    //                     tooltip: 'click to stop this agent',
+    //                     arguments: [agent.id],
+    //                 })
+    //                 items.push(running)
+    //             }
+    //             else if (agent.status === 'done' || agent.status === 'error') {
+    //                 const accept = new AgentLens(linetext.range, agent, {
+    //                     title: 'Accept ✅ ',
+    //                     command: 'rift.accept',
+    //                     tooltip: 'Accept the edits below',
+    //                     arguments: [agent.id],
+    //                 })
+    //                 const reject = new AgentLens(linetext.range, agent, {
+    //                     title: ' Reject ❌',
+    //                     command: 'rift.reject',
+    //                     tooltip: 'Reject the edits below and restore the original text',
+    //                     arguments: [agent.id]
+    //                 })
+    //                 items.push(accept, reject)
+    //             }
+    //         }
+    //     }
+    //     return items
+    // }
+
+    public resolveCodeLens(codeLens: AgentStateLens, token: vscode.CancellationToken) {
         // you use this to resolve the commands for the code lens if
         // it would be too slow to compute the commands for the entire document.
         return null
@@ -362,17 +399,18 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         send_result_callback: (send_result_request: any) => any,
     ) {
         const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
-        const agentId = result.id; // TODO(jesse): does this create a race condition? // TODO: better identifiers than ints returned by server
+        const agent_id = result.id; // TODO(jesse): does this create a race condition? // TODO: better identifiers than ints returned by server
         const agent_type = params.agent_type;
         console.log(`running ${agent_type}`)
-        const agentIdentifier = `${agent_type}_${agentId}`
-        this.agentStates.set(agentIdentifier, {status: "running", ranges: [], emitter: new vscode.EventEmitter<AgentStatus>})
-        this.client.onNotification(`morph/${agent_type}_${agentId}_request_input`, request_input_callback.bind(this))
-        this.client.onNotification(`morph/${agent_type}_${agentId}_request_chat`, request_chat_callback.bind(this))
+        const agentIdentifier = `${agent_type}_${agent_id}`
+        console.log(`agentIdentifier: ${agentIdentifier}`)
+        this.agentStates.set(agentIdentifier, {agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params})
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_request_input`, request_input_callback.bind(this))
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_request_chat`, request_chat_callback.bind(this))
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
-        this.client.onNotification(`morph/${agent_type}_${agentId}_send_progress`, send_progress_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, send_progress_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks
-        this.client.onNotification(`morph/${agent_type}_${agentId}_send_result`, send_result_callback.bind(this)) // this should be custom
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, send_result_callback.bind(this)) // this should be custom
     }
 
     // run should spawn an agent
