@@ -9,3 +9,5 @@ tailwind.config.js
 dist/
 .env
 *.spec
+
+change top level git ignore
