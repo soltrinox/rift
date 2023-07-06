@@ -3,6 +3,7 @@
   import ResetSvg from './icons/ResetSvg.svelte'
   import { state, DEFAULT_STATE } from './stores'
   function resetState() {
+    console.log('reseting state')
     state.set(DEFAULT_STATE)
     vscode.setState(DEFAULT_STATE)
   }

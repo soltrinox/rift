@@ -12,6 +12,6 @@ export const DEFAULT_STATE: SvelteStore = {
   // logs: [],
 };
 
-// vscode.getState() ?? DEF_state
+
 export const state = writable<SvelteStore>(DEFAULT_STATE)
 export const loading = writable(false)

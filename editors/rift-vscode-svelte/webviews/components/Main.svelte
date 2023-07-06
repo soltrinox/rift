@@ -8,21 +8,23 @@
   import UserInput from "./chat/UserInput.svelte";
   import Response from "./chat/Response.svelte";
   import Logs from "./logs/Logs.svelte";
-  import { loading, state } from "./stores";
+  import { DEFAULT_STATE, loading, state } from "./stores";
   import type { ChatAgentProgress } from "../../src/types";
   import Header from "./Header.svelte";
   import chalk from "chalk";
   import Chat from "./chat/Chat.svelte";
+  
   state.subscribe((state) => {
-    // if (!state.history.length) return; // don't want initial rendering to fuck this up
-    vscode.setState(state);
+    
+    console.log('saving state')
+    if(JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {vscode.setState(state)}
   });
 
   let isDone = false;
-  // const vscodeState = vscode.getState();
-  // console.log("attempting to access vscode state:");
-  // console.log(vscodeState);
-  // if (vscodeState && vscodeState.history.length) state.set(vscodeState);
+  const vscodeState = vscode.getState();
+  console.log("attempting to access vscode state:");
+  console.log(vscodeState);
+  if (vscodeState) state.set(vscodeState);
   let progressResponse: string;
   const incomingMessage = (event: any) => {
     // console.log(event);
