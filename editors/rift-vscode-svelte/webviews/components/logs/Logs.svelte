@@ -2,15 +2,13 @@
     import { loading, state } from "../stores";
     import Log from "./Log.svelte";
     import Agent from "./Agent.svelte";
-    export let chatDone = false;
 </script>
 
 <div>
     <div class="ml-3">
-        <h1>Rift Logs</h1>
-
-        <Agent done={chatDone} title="rift-chat" />
-        <Agent done={chatDone} title="rift-chat" />
-        <Agent done={false} title="rift-chat" />
+        <h1>RIFT LOGS (WIP help welcome!)</h1>
+        {#each $state.agents as agent}
+            <Agent id={agent.id} name="temp agent name" />
+        {/each}
     </div>
 </div>

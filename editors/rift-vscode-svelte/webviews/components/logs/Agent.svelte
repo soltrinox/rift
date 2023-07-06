@@ -6,13 +6,15 @@
     import ArrowDownSvg from "../icons/ArrowDownSvg.svelte";
     import ChatSvg from "../icons/ChatSvg.svelte";
     import EllipsisSvg from "../icons/EllipsisSvg.svelte";
-    import Log from "./Log.svelte";
     import EllipsisDarkSvg from "../icons/EllipsisDarkSvg.svelte";
-    // export let color = "green";
-    export let title = "log this";
-    export let done = false;
-    export let color = "yellow";
+    import Log from "./Log.svelte";
+    import { loading, state } from "../stores";
+
     let expanded = false;
+    export const id: number = 0;
+    export const name: string = "rift-chat";
+
+    let done: boolean = false;
 
     let isDropdownOpen = false; // default state (dropdown close)
 
@@ -20,12 +22,14 @@
         isDropdownOpen = !isDropdownOpen; // togle state on click
     };
 
-    const handleDropdownFocusLoss = ({ relatedTarget, currentTarget }) => {
+    const handleDropdownFocusLoss = ({
+        relatedTarget,
+        currentTarget,
+    }: FocusEvent) => {
         // use "focusout" event to ensure that we can close the dropdown when clicking outside or when we leave the dropdown with the "Tab" button
-        if (
-            relatedTarget instanceof HTMLElement &&
-            currentTarget.contains(relatedTarget)
-        )
+        const ct = currentTarget as HTMLElement;
+
+        if (relatedTarget instanceof HTMLElement && ct.contains(relatedTarget))
             return; // check if the new focus target doesn't present in the dropdown tree (exclude ul\li padding area because relatedTarget, in this case, will be null)
         isDropdownOpen = false;
     };
@@ -43,14 +47,14 @@
                     <ArrowDownSvg />
                 </div>
             {/if}
-            {#if done || color == "green"}
+            {#if done}
                 <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
-            {:else if !done || color == "yellow"}
-                <div class="mx-2 mt-0.5"><LogYellow /></div>
             {:else}
-                <div class="mx-2 mt-0.5"><LogRed /></div>
+                <div class="mx-2 mt-0.5"><LogYellow /></div>
+                <!-- {:else}
+                <div class="mx-2 mt-0.5"><LogRed /></div> -->
             {/if}
-            {title}
+            {name}
         </a>
 
         <div class="relative inline-flex w-fit mr-2 mt-1 ml-auto flex">
@@ -90,9 +94,11 @@
         </div>
     </div>
     <div hidden={!expanded}>
-        <Log />
-        <Log />
-        <Log />
+        {#each $state.logs as log}
+            {#if log.id == id}
+                <Log progress={log} />
+            {/if}
+        {/each}
     </div>
 </div>
 
