@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
+  export let size:number = 24
   export let color = "var(--vscode-panelTitle-inactiveForeground)"; // matching the color scheme of the previous SVG
 </script>
 
-<svg xmlns="http://www.w3.org/2000/svg" class="mr-2" width="24" height="24" viewBox="0 0 20 20">
+<svg xmlns="http://www.w3.org/2000/svg" class="mr-2" width="{size}" height="{size}" viewBox="0 0 20 20">
   <title>profile_round [#1342]</title>
   <desc>Created with Sketch.</desc>
   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
