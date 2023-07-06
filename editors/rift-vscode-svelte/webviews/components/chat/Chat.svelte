@@ -20,13 +20,6 @@
   let fixedToBottom: boolean;
   let height: number;
   function scrollToBottomIfNearBottom() {
-    console.log("scrolling?:");
-    // fixedToBottom = Boolean(
-    //     chatWindow.clientHeight + chatWindow.scrollTop >=
-    //       chatWindow.scrollHeight - 30
-    //   );
-    if (fixedToBottom) console.log("scrolling");
-    else console.log("not scrolling");
     if (fixedToBottom) chatWindow.scrollTo(0, chatWindow.scrollHeight);
   }
   onMount(async () => {
@@ -49,7 +42,6 @@
         console.log(chatWindow.scrollHeight);
         throw new Error();
       }
-      console.log(chalk.blue("scroll"));
       fixedToBottom = Boolean(
         chatWindow.clientHeight + chatWindow.scrollTop >=
           chatWindow.scrollHeight - 15

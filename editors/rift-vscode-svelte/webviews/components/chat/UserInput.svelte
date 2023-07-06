@@ -15,7 +15,6 @@
 
   function sendMessage() {
     textarea.blur();
-    console.log('loading set to true')
     loading.set(true);
 
     vscode.postMessage({

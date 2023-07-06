@@ -18,7 +18,6 @@
   })
 
   function textToFormattedHTML(text: string) {
-    const time = Date.now()
     function fixCodeBlocks(response: string) {
       // Use a regular expression to find all occurrences of the substring in the string
       const REGEX_CODEBLOCK = new RegExp('```', 'g')
@@ -34,7 +33,6 @@
       }
     }
     text = converter.makeHtml(fixCodeBlocks(text))
-    console.log(`${Date.now() - time}ms latency`)
     return text
   }
 
