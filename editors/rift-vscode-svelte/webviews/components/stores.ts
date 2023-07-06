@@ -3,8 +3,8 @@ import type { SvelteStore } from '../../src/types'
 
 export const DEFAULT_STATE: SvelteStore = {
   history: [],
-  agents: [],
   logs: [],
+  agents: [],
 };
 
 

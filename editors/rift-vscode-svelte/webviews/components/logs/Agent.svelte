@@ -12,7 +12,7 @@
 
     let expanded = false;
     export const id: number = 0;
-    export const name: string = "rift-chat";
+    export let name: string = "rift-chat";
 
     let done: boolean = false;
 
