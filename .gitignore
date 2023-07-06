@@ -13,3 +13,5 @@
 ../*.spec
 
 *__pycache__/
+**/*.aider.*
+**/venv/

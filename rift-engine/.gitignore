@@ -8,3 +8,5 @@ dist/
 .p39/
 
 *.spec
+
+change top level git ignore
