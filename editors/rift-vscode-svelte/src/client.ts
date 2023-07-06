@@ -68,14 +68,14 @@ interface RunAgentParams {
 }
 
 
-interface RunChatParams {
+export interface RunChatParams {
     message: string
     messages: { // does not include latest message
         role: string,
         content: string
     }[],
-    position: vscode.Position,
-    textDocument: TextDocumentIdentifier,
+    position?: vscode.Position,
+    textDocument?: TextDocumentIdentifier,
 }
 
 

@@ -9,14 +9,24 @@
     import EllipsisDarkSvg from "../icons/EllipsisDarkSvg.svelte";
     import Log from "./Log.svelte";
     import { loading, state } from "../stores";
+    import { custom_event } from "svelte/internal";
 
     let expanded = false;
-    export const id: number = 0;
+    export let id: string = "";
     export let name: string = "rift-chat";
 
-    let done: boolean = false;
+    let doneAgent = false;
 
     let isDropdownOpen = false; // default state (dropdown close)
+
+    function handleMessage(event: CustomEvent<{ done: string }>) {
+        if (
+            id ==
+            event.detail.done.substring(0, event.detail.done.indexOf("-done"))
+        ) {
+            doneAgent = true;
+        }
+    }
 
     const handleDropdownClick = () => {
         isDropdownOpen = !isDropdownOpen; // togle state on click
@@ -47,7 +57,7 @@
                     <ArrowDownSvg />
                 </div>
             {/if}
-            {#if done}
+            {#if doneAgent}
                 <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
             {:else}
                 <div class="mx-2 mt-0.5"><LogYellow /></div>
@@ -57,7 +67,7 @@
             {name}
         </a>
 
-        <div class="relative inline-flex w-fit mr-2 mt-1 ml-auto flex">
+        <div class="relative inline-flex w-fit mr-2 mt-1.2 ml-auto flex">
             <div
                 class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
             />
@@ -67,11 +77,11 @@
         <div class="dropdown inline-flex left-auto flex">
             <div class="flex items-center">
                 <div class="dropdown" on:focusout={handleDropdownFocusLoss}>
-                    <button class="btn pt-4" on:click={handleDropdownClick}>
+                    <button class="btn pt-3" on:click={handleDropdownClick}>
                         {#if isDropdownOpen}
-                            <div class="px-2 pt-0.5"><EllipsisDarkSvg /></div>
+                            <div class="px-2"><EllipsisDarkSvg /></div>
                         {:else}
-                            <div class="px-2 pt-0.5"><EllipsisSvg /></div>
+                            <div class="px-2"><EllipsisSvg /></div>
                         {/if}
                     </button>
 
@@ -94,10 +104,8 @@
         </div>
     </div>
     <div hidden={!expanded}>
-        {#each $state.logs as log}
-            {#if log.id == id}
-                <Log progress={log} />
-            {/if}
+        {#each $state.agents[id].logs as log}
+            <Log {log} {id} on:message={handleMessage} />
         {/each}
     </div>
 </div>

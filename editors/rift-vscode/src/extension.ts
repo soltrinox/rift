@@ -116,8 +116,6 @@ export class ChatView implements vscode.WebviewViewProvider {
                 if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
                 this._view.webview.postMessage({ type: 'progress', data: progress });
             })
-
-
         });
     }
 

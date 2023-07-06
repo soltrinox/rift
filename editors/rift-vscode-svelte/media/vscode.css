@@ -1,4 +1,4 @@
-:root {
+/* :root {
     --container-paddding: 20px;
     --input-padding-vertical: 6px;
     --input-padding-horizontal: 4px;
@@ -25,7 +25,7 @@ form>* {
     margin-block-start: var(--input-margin-vertical);
     margin-block-end: var(--input-margin-vertical);
 } */
-
+/*
 *:focus {
     outline-color: var(--vscode-focusBorder) !important;
 }
@@ -88,4 +88,4 @@ textarea {
 input::placeholder,
 textarea::placeholder {
     color: var(--vscode-input-placeholderForeground);
-}
+} */

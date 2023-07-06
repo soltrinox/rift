@@ -6,9 +6,9 @@
 
 <div>
     <div class="ml-3">
-        <h1>RIFT LOGS (WIP help welcome!)</h1>
-        {#each $state.agents as agent}
-            <Agent id={agent.id} name="temp agent name" />
+        <h1 class="font-bold">RIFT LOGS</h1>
+        {#each Object.entries($state.agents) as [key, value]}
+            <Agent id={key} name="rift-chat" />
         {/each}
     </div>
 </div>

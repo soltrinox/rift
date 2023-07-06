@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { MorphLanguageClient } from "../client";
+import { MorphLanguageClient, RunChatParams } from "../client";
 import { getNonce } from "../getNonce";
 import { ChatAgentProgress } from "../types";
 
@@ -36,16 +36,18 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
+                    let runChatParams: RunChatParams = { message: data.message, messages: data.messages }
                     if (!editor) {
-                        console.error('No active text editor found');
-                        return;
+                        console.warn('No active text editor found');
+                    } else {
+                        // get the uri and position of the current cursor
+                        const doc = editor.document;
+                        const position = editor.selection.active;
+                        const textDocument = { uri: doc.uri.toString(), version: 0 }
+                        runChatParams = { message: data.message, messages: data.messages, position, textDocument }
                     }
-                    // get the uri and position of the current cursor
-                    const doc = editor.document;
-                    const position = editor.selection.active;
-                    const textDocument = { uri: doc.uri.toString(), version: 0 }
                     if (!data.message || !data.messages) throw new Error()
-                    this.hslc.run_chat({ message: data.message, messages: data.messages, position, textDocument }, (progress) => {
+                    this.hslc.run_chat(runChatParams, (progress) => {
                         // console.log('progress recieved')
                         if (!this._view) throw new Error('no view')
                         if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
@@ -78,6 +80,10 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         );
 
         const tailwindUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'tailwind.min.js'));
+        
+        const showdownUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'showdown.min.js'));
+
+        const microlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'microlight.min.js'));
 
         // Use a nonce to only allow specific scripts to be run
         const nonce = getNonce();
@@ -95,6 +101,8 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                         <link href="${stylesResetUri}" rel="stylesheet">
                         
                     <script src="${tailwindUri}" nonce="${nonce}"></script>
+                    <script src="${showdownUri}" nonce="${nonce}"></script>
+                    <script src="${microlightUri}" nonce="${nonce}"></script>
                     <link href="${cssUri}" rel="stylesheet">
                     <script nonce="${nonce}">
                         const vscode = acquireVsCodeApi();
