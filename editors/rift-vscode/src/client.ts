@@ -61,10 +61,20 @@ function createServerOptions(context: vscode.ExtensionContext, port = DEFAULT_PO
     }
 }
 
-interface RunAgentParams {
+interface RunCodeHelperParams {
     task: string
     position: vscode.Position
     textDocument: TextDocumentIdentifier
+}
+
+interface RunAgentParams {
+    agentType: string
+    agentParams: any
+}
+
+interface RunAgentResult {
+    id: number
+    agentId: string | null
 }
 
 
@@ -88,9 +98,9 @@ interface RunAgentSyncResult {
     text: string
 }
 
-type AgentStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
+export type AgentStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
 
-interface RunAgentProgress {
+export interface RunAgentProgress {
     id: number
     textDocument: TextDocumentIdentifier
     log?: {
@@ -295,7 +305,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         return result
     }
 
-    async run_agent(params: RunAgentParams) {
+    async run_agent(params: RunCodeHelperParams) {
         if (!this.client) {
             throw new Error(`waiting for a connection to rift-engine, please make sure the rift-engine is running on port ${DEFAULT_PORT}`) // [todo] better ux here.
         }
@@ -308,7 +318,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         return `starting agent ${result.id}...`
     }
 
-    async run_agent_sync(params: RunAgentParams) {
+    async run_agent_sync(params: RunCodeHelperParams) {
         console.log("run_agent_sync")
         const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
         const agent = new Agent(result.id, params.position, params.textDocument)
@@ -334,16 +344,23 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     // create a SpawnAgentResult that contains a server-computed agentId
 
-    
+
+    // note(jesse): for CodeCompletionAgent, we'll want to:
+    // feed in params = {
+    //   agentType: "code_completion"
+    //   agentParams: RunCodeHelperParams
+    // }
+    // with no-ops for all callbacks except for `send_progress`
+
     async run(
-        params: any,
+        params: RunAgentParams,
         request_input_callback: (request_input_request: any) => any,
         request_chat_callback: (request_chat_request: any) => any,
         send_progress_callback: (send_progress_request: any) => any,
         send_result_callback: (send_result_request: any) => any,
     ) {
-        const result: any = await this.client.sendRequest('morph/run', params);
-        const agentId = result.id; // TODO(jesse): does this create a race condition?
+        const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
+        const agentId = result.id; // TODO(jesse): does this create a race condition? // TODO: better identifiers than ints returned by server
         const agentType = params.agentType;
         console.log(`running ${agentType}`)
         this.client.onNotification(`morph/${agentType}_${agentId}_request_input`, request_input_callback.bind(this))
@@ -356,7 +373,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     // run should spawn an agent
     // run should specify:
-    // - agent type 
+    // - agent type
     // - callbacks for request_input, request_chat, send_progress, and send_result
 
     // async run_chat(params: RunChatParams, callback: (progress: ChatAgentProgress) => any) {
@@ -367,7 +384,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     //     const result = await this.client.sendRequest('morph/run_chat', params)
     //     // note this returns fast and then the updates are sent via notifications
     //     return 'starting...'
-    // }    
+    // }
 
 
     dispose() {
@@ -375,7 +392,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     }
 
     async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {
-        const params: RunAgentParams = { task: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
+        const params: RunCodeHelperParams = { task: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
         const snippet = new vscode.SnippetString(await this.run_agent_sync(params));
         // return new vscode.InlineCompletionList([{insertText: snippet}]);
         return snippet;
