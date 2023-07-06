@@ -16,15 +16,24 @@
     export let name: string = "rift-chat";
 
     let doneAgent = false;
+    let hasNotification = false;
 
     let isDropdownOpen = false; // default state (dropdown close)
 
-    function handleMessage(event: CustomEvent<{ done: string }>) {
-        if (
-            id ==
-            event.detail.done.substring(0, event.detail.done.indexOf("-done"))
-        ) {
-            doneAgent = true;
+    function handleMessage(
+        event: CustomEvent<{
+            id: string;
+            hasNotification: boolean;
+            done: boolean;
+        }>
+    ) {
+        if (id == event.detail.id) {
+            if (event.detail.done) {
+                doneAgent = true;
+            }
+            if (event.detail.hasNotification) {
+                hasNotification = true;
+            }
         }
     }
 
@@ -42,6 +51,16 @@
         if (relatedTarget instanceof HTMLElement && ct.contains(relatedTarget))
             return; // check if the new focus target doesn't present in the dropdown tree (exclude ul\li padding area because relatedTarget, in this case, will be null)
         isDropdownOpen = false;
+    };
+
+    const handleChatIconClick = (e: MouseEvent) => {
+        const omnibar = document.getElementById(
+            "omnibar"
+        ) as HTMLTextAreaElement;
+        omnibar?.focus();
+        omnibar?.value = "/rift-chat ";
+        hasNotification = false;
+        $state.agents[id].logs.splice(0);
     };
 </script>
 
@@ -67,12 +86,17 @@
             {name}
         </a>
 
-        <div class="relative inline-flex w-fit mr-2 mt-1.2 ml-auto flex">
-            <div
-                class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
-            />
+        <button
+            class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex"
+            on:click={handleChatIconClick}
+        >
+            {#if hasNotification}
+                <div
+                    class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
+                />
+            {/if}
             <ChatSvg />
-        </div>
+        </button>
 
         <div class="dropdown inline-flex left-auto flex">
             <div class="flex items-center">

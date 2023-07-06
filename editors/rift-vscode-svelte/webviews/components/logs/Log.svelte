@@ -12,13 +12,15 @@
     onMount(async () => {
         if (log.severity == "done") {
             dispatch("message", {
-                done: `${id}-done`,
+                id: id,
+                hasNotification: true,
+                done: true,
             });
         }
     });
 </script>
 
-<a class="flex select-none">
+<div class="flex select-none">
     <div class="ml-6 border-l-4" />
     {#if log.severity == "done"}
         <div class="ml-4 mr-2 mt-0.5"><LogGreenSvg /></div>
@@ -29,4 +31,4 @@
     {/if} -->
     {/if}
     {log?.message.substring(0, 40)}
-</a>
+</div>

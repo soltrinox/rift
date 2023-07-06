@@ -1,6 +1,6 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
-  import UserSvg from "../icons/UserSvg.svelte"
+  import UserSvg from "../icons/UserSvg.svelte";
   import { loading, state } from "../stores";
   export let value: string = "";
   export let enabled: boolean = false;
@@ -29,11 +29,12 @@
         ...state.agents,
         [state.currentlySelectedAgentId]: {
           ...state.agents[state.currentlySelectedAgentId],
-          chatHistory: [ 
-            ...state.agents[state.currentlySelectedAgentId].chatHistory, {role: "user", content: textarea.value}
-          ]
-        }
-      }
+          chatHistory: [
+            ...state.agents[state.currentlySelectedAgentId].chatHistory,
+            { role: "user", content: textarea.value },
+          ],
+        },
+      },
     }));
     textarea.value = "";
     textarea.focus();
@@ -49,19 +50,16 @@
         textarea.style.height = textarea.scrollHeight + "px";
         return;
       }
-      if (!textarea.value) return
+      if (!textarea.value) return;
       sendMessage();
     }
     // logic to handle keydown event
   }
 </script>
 
-
-<div
-class="flex items-center pt-2 pl-2 bg-[var(--vscode-input-background)]"
->
-<UserSvg size={12} />
-<p class="text-sm">YOU</p>
+<div class="flex items-center pt-2 pl-2 bg-[var(--vscode-input-background)]">
+  <UserSvg size={12} />
+  <p class="text-sm">YOU</p>
 </div>
 <div
   class="w-full text-md p-2 min-h-8 bg-[var(--vscode-input-background)] flex flex-row items-center"
