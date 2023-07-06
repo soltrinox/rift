@@ -70,6 +70,11 @@
   }
 </script>
 
+
+<div class={`flex items-center pt-2 pl-2 ${value === '' && !loading ? 'hidden' : ''}`}>
+  <RiftSvg size={12} />
+  <p class="text-sm">RIFT</p>
+</div>
 <div class={`w-full text-md p-2 focus:outline-none min-h-8 flex flex-row ${value === '' && !loading ? 'hidden' : ''}`}>
   {#if hasSvg}
     <RiftSvg />

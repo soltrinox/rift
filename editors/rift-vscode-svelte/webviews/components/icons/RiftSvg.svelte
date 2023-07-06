@@ -1,6 +1,5 @@
 <script lang="ts">
   export let size:number = 24
-  export let height = 24
   export let color = 'var(--vscode-panelTitle-inactiveForeground)';
 </script>
 
