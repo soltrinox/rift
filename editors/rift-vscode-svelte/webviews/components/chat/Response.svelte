@@ -41,40 +41,24 @@
   let something: string
   $: {
     const getHTML = (responseBlock: HTMLDivElement) => {
-      let time = Date.now()
       responseBlock.innerHTML = textToFormattedHTML(value)
-      console.log(`${Date.now() - time}ms latency line 46`)
-      time = Date.now()
       responseBlock.querySelectorAll('code').forEach((node) => node.classList.add('code'))
-      console.log(`${Date.now() - time}ms latency line 49`)
-      time = Date.now()
       responseBlock.querySelectorAll('pre').forEach((preblock) => {
         preblock.classList.add('p-2', 'my-2', 'block', 'overflow-x-scroll')
         preblock.querySelectorAll('#copy').forEach((copy) => copy.parentElement?.removeChild(copy))
-        console.log(`${Date.now() - time}ms latency line 54`)
-        time = Date.now()
         const copyContent = value
         const copyButton = document.createElement('button')
         copyButton.id = 'copy'
         copyButton.className = 'flex text-sm py-1 mb-1 text-[var(--vscode-panelTitle-inactiveForeground)]'
         copyButton.appendChild(copySvg())
-        console.log(`${Date.now() - time}ms latency line 61`)
-        time = Date.now()
         const copyCodeWords = document.createElement('p')
         copyCodeWords.innerText = ' copy'
         copyButton.appendChild(copyCodeWords)
-        console.log(`${Date.now() - time}ms latency line 66`)
-        time = Date.now()
         copyButton.addEventListener('click', () => {
           // navigator.clipboard.writeText(copyContent)
           vscode.postMessage({ type: 'copyText', content: copyContent })
         })
-        console.log(`${Date.now() - time}ms latency line 72`)
-        time = Date.now()
         preblock.insertBefore(copyButton, preblock.firstChild)
-        console.log(`${Date.now() - time}ms latency line 76`)
-        time = Date.now()
-        console.log(`${Date.now() - time}ms latency microlight`)
       })
       return responseBlock.innerHTML
     }
