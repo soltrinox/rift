@@ -23,7 +23,6 @@ from rift.agents.smol import SmolAgent, SmolAgentParams
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class AgentProgress:
     id: int

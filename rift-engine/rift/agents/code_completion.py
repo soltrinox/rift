@@ -8,6 +8,7 @@ from rift.agents.abstract import (
     AgentRunParams,
     AgentRunResult,
     Agent,
+    make_agent,
     AgentProgress,
     AgentRunResult,
 )
@@ -50,6 +51,7 @@ class CodeCompletionAgentState(AgentState):
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
+@make_agent
 @dataclass
 class CodeCompletionAgent(Agent):
     id: int
@@ -57,7 +59,8 @@ class CodeCompletionAgent(Agent):
     tasks: Dict[str, AgentTask]
     server: BaseLspServer
     count: int = 0
-    agent_type: str = "code_completion"
+    agent_type = "code_completion"
+    agent_description = "completes code"
 
     @classmethod
     def create(cls, params: CodeCompletionAgentParams, model, server):
