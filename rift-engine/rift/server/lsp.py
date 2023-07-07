@@ -11,6 +11,7 @@ from rift.llm.abstract import (
     AbstractChatCompletionProvider,
 )
 from rift.llm.create import ModelConfig
+
 # from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.llm.openai_types import Message
@@ -21,6 +22,7 @@ from rift.agents.code_completion import CodeCompletionAgent
 from rift.agents.smol import SmolAgent, SmolAgentParams
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class AgentProgress:
@@ -61,6 +63,7 @@ class LspLogHandler(logging.Handler):
         )
         self.tasks.add(t)
         t.add_done_callback(self.tasks.discard)
+
 
 @dataclass
 class ChatAgentProgress:
@@ -200,7 +203,9 @@ class LspServer(BaseLspServer):
             assert self.completions_model is not None
             return self.completions_model
         except:
-            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
             return config.create_completions()
 
     async def ensure_chat_model(self):
@@ -210,7 +215,9 @@ class LspServer(BaseLspServer):
             assert self.chat_model is not None
             return self.chat_model
         except:
-            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
             return config.create_chat()
 
     @rpc_method("morph/run")
