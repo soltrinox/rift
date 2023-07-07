@@ -5,7 +5,7 @@
   import Dropdown from "./dropdown/Dropdown.svelte";
   let dropdownOpen = false;
   let isFocused = true;
-  let currentSlashCommand = ""
+  let currentSlashCommand = "";
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement;
@@ -44,10 +44,9 @@
   function handleValueChange(e: Event) {
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
-      dropdownOpen = true
-      currentSlashCommand = textarea.value
-    }
-    else dropdownOpen = false
+      dropdownOpen = true;
+      currentSlashCommand = textarea.value;
+    } else dropdownOpen = false;
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -75,6 +74,7 @@
     }`}
   >
     <textarea
+      id="omnibar"
       bind:this={textarea}
       class="w-full outline-none focus:outline-none bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
       placeholder="Type to chat or hit / for commands"

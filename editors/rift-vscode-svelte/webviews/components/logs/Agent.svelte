@@ -7,6 +7,7 @@
     import ChatSvg from "../icons/ChatSvg.svelte";
     import EllipsisSvg from "../icons/EllipsisSvg.svelte";
     import EllipsisDarkSvg from "../icons/EllipsisDarkSvg.svelte";
+    import OmniBar from "../chat/OmniBar.svelte";
     import Log from "./Log.svelte";
     import { loading, state } from "../stores";
     import { custom_event } from "svelte/internal";
@@ -59,7 +60,7 @@
             "omnibar"
         ) as HTMLTextAreaElement;
         omnibar?.focus();
-        omnibar.value = "/rift-chat ";
+        omnibar.value = "/rift-chat";
         hasNotification = false;
         $state.agents[id].logs.splice(0);
     };
@@ -67,7 +68,7 @@
 
 <div>
     <div class="flex" on:click={() => (expanded = !expanded)}>
-        <a class="flex select-none" >
+        <a class="flex select-none">
             {#if expanded == false}
                 <div class="mx-1 mt-1.5">
                     <ArrowRightSvg />
@@ -84,7 +85,7 @@
                 <!-- {:else}
                 <div class="mx-2 mt-0.5"><LogRed /></div> -->
             {/if}
-            <span title="{description}">{name}</span>
+            <span title={description}>{name}</span>
         </a>
 
         <button
