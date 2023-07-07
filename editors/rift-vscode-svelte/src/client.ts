@@ -68,14 +68,14 @@ interface RunAgentParams {
 }
 
 
-interface RunChatParams {
+export interface RunChatParams {
     message: string
     messages: { // does not include latest message
         role: string,
         content: string
     }[],
-    position: vscode.Position,
-    textDocument: TextDocumentIdentifier,
+    position?: vscode.Position,
+    textDocument?: TextDocumentIdentifier,
 }
 
 
@@ -326,10 +326,11 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     async run_chat(params: RunChatParams, callback: (progress: ChatAgentProgress) => any) {
         console.log('run chat')
+        if(!this.client) throw new Error()
         this.morphNotifyChatCallback = callback
-        this.client?.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
+        this.client.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
 
-        const result = await this.client?.sendRequest('morph/run_chat', params)
+        const result = await this.client.sendRequest('morph/run_chat', params)
         // note this returns fast and then the updates are sent via notifications
         return 'starting...'
     }

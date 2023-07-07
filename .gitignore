@@ -11,5 +11,7 @@
 ../dist/
 ../.env
 ../*.spec
-env
+
 *__pycache__/
+**/*.aider.*
+**/venv/

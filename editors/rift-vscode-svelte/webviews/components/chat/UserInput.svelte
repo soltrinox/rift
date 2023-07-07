@@ -1,19 +1,85 @@
-<script>
+<script lang="ts">
+  import SendSvg from "../icons/SendSvg.svelte";
+  import UserSvg from "../icons/UserSvg.svelte";
+  import { loading, state } from "../stores";
+  export let value: string = "";
 
-  export let dataId = null;
-  export let value = '';
-  let textarea;
+  function resize(event: Event) {
+    let targetElement = event.target as HTMLElement;
+    targetElement.style.height = "auto";
+    targetElement.style.height = `${targetElement.scrollHeight}px`;
+  }
 
-  const resize = () => {
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-  };
+  let textarea: HTMLTextAreaElement;
 
-  const handleKeyDown = (e) => {
+  function sendMessage() {
+    textarea.blur();
+    loading.set(true);
+
+    vscode.postMessage({
+      type: "chatMessage",
+      messages: $state.agents[$state.currentlySelectedAgentId].chatHistory,
+      message: textarea.value,
+    });
+    console.log("updating state...");
+    state.update((state) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [state.currentlySelectedAgentId]: {
+          ...state.agents[state.currentlySelectedAgentId],
+          chatHistory: [
+            ...state.agents[state.currentlySelectedAgentId].chatHistory,
+            { role: "user", content: textarea.value },
+          ],
+        },
+      },
+    }));
+    textarea.value = "";
+    textarea.focus();
+  }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      // 13 is the Enter key code
+      e.preventDefault(); // Prevent default Enter key action
+      if (e.shiftKey) {
+        textarea.value = textarea.value + "\n";
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
+        return;
+      }
+      if (!textarea.value) return;
+      sendMessage();
+    }
     // logic to handle keydown event
-  };
+  }
 </script>
+<style>
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 
-<div class='w-full text-md p-2 min-h-8 bg-[var(--vscode-input-background)] flex flex-row'>
-  <textarea bind:this={textarea} data-id={dataId} class='w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none' placeholder='Ask questions and get answers about the current code window.' on:input={resize} value={value} />
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+</style>
+
+<div class="flex items-center pt-2 pl-2 bg-[var(--vscode-input-background)]">
+  <UserSvg size={12} />
+  <p class="text-sm">YOU</p>
+</div>
+<div
+  class="w-full text-md p-2 min-h-8 bg-[var(--vscode-input-background)] flex flex-row items-center"
+>
+  <textarea
+    bind:this={textarea}
+    class="w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
+    placeholder="Type to chat or hit / for commands"
+    on:input={resize}
+    on:keydown={handleKeyDown}
+    disabled={true}
+    {value}
+  />
 </div>

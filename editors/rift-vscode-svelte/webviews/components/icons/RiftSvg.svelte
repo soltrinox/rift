@@ -1,13 +1,14 @@
-<script>
+<script lang="ts">
+  export let size:number = 24
   export let color = 'var(--vscode-panelTitle-inactiveForeground)';
 </script>
 
 <svg 
-  width="24" 
-  height="24" 
+  width={size}
+  height={size}
   viewBox="0 0 24 24" 
   fill="none" 
-  class="mr-2 min-w-[24px]"
+  class="mr-2 min-w-[{size}px]"
 >
   <path 
     fill-rule="evenodd" 

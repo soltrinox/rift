@@ -1,4 +1,4 @@
-import App from "../components/Chat.svelte";
+import App from "../components/Main.svelte";
 
 const app = new App({
     target: document.body,
