@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class RunAgentParams:
     agent_type: str
     agent_params: Any
-    
+
 
 @dataclass
 class AgentIdParams:
@@ -48,7 +48,9 @@ class CodeCompletionAgent:
     def uri(self):
         return self.cfg.textDocument.uri
 
-    def __init__(self, cfg: CodeCompletionAgentParams, model: AbstractCodeCompletionProvider, server: Any):
+    def __init__(
+        self, cfg: CodeCompletionAgentParams, model: AbstractCodeCompletionProvider, server: Any
+    ):
         CodeCompletionAgent.count += 1
         self.id = CodeCompletionAgent.count
         self.cfg = cfg

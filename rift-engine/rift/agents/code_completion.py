@@ -2,7 +2,15 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional, Any
 from asyncio import Future
 from rift.lsp import LspServer as BaseLspServer
-from rift.agents.abstract import AgentState, AgentTask, AgentRunParams, AgentRunResult, Agent, AgentProgress, AgentRunResult
+from rift.agents.abstract import (
+    AgentState,
+    AgentTask,
+    AgentRunParams,
+    AgentRunResult,
+    Agent,
+    AgentProgress,
+    AgentRunResult,
+)
 from rift.llm.abstract import AbstractCodeCompletionProvider
 from rift.lsp.document import TextDocumentItem
 import rift.lsp.types as lsp
@@ -12,18 +20,22 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class CodeCompletionRunResult(AgentRunResult):
     ...
 
+
 @dataclass
 class CodeCompletionProgress(AgentProgress):
+    id: Optional[int] = None
     response: Optional[str] = None
     thoughts: Optional[str] = None
 
+
 @dataclass
 class CodeCompletionAgentParams:
-    task: str
+    instructionPrompt: str
     textDocument: lsp.TextDocumentIdentifier
     position: lsp.Position
 
@@ -35,7 +47,7 @@ class CodeCompletionAgentState(AgentState):
     cursor: lsp.Position
     params: CodeCompletionAgentParams
     ranges: RangeSet = field(default_factory=RangeSet)
-    change_futures: Dict[str, Future] = field(default_factory=dict)    
+    change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
 @dataclass
@@ -92,7 +104,7 @@ class CodeCompletionAgent(Agent):
                 offset = self.state.document.position_to_offset(pos)
                 doc_text = self.state.document.text
                 stream: InsertCodeResult = await model.insert_code(
-                    doc_text, offset, goal=self.state.params.task
+                    doc_text, offset, goal=self.state.params.instructionPrompt
                 )
                 logger.debug("starting streaming code")
                 all_deltas = []
@@ -126,20 +138,36 @@ class CodeCompletionAgent(Agent):
                         finally:
                             del self.state.change_futures[delta]
                             pass
-                    with lsp.setdoc(self.state.document):                        
+                    with lsp.setdoc(self.state.document):
                         added_range = lsp.Range.of_pos(self.state.cursor, len(delta))
                         self.state.cursor += len(delta)
                         self.state.ranges.add(added_range)
-                    await self.send_progress(CodeCompletionProgress(tasks=self.tasks, response=None, status=self.status))
+                    await self.send_progress(
+                        CodeCompletionProgress(tasks=self.tasks, response=None, status=self.status)
+                    )
                 all_text = "".join(all_deltas)
                 logger.info(f"{self} finished streaming {len(all_text)} characters")
+                self.status = "done"
+                await self.send_progress(
+                    CodeCompletionProgress(
+                        tasks=self.tasks, response=None, thoughts=None, status=self.status
+                    )
+                )
                 if stream.thoughts is not None:
                     thoughts = await stream.thoughts.read()
-                    await self.send_progress(CodeCompletionProgress(tasks=self.tasks, thoughts=thoughts, status=self.status))
+                    await self.send_progress(
+                        CodeCompletionProgress(
+                            tasks=self.tasks, thoughts=thoughts, status=self.status
+                        )
+                    )
                     return CodeCompletionRunResult()
                 else:
                     thoughts = "done!"
-                await self.send_progress(CodeCompletionProgress(tasks=self.tasks, response=None, thoughts=thoughts, status=self.status))
+                await self.send_progress(
+                    CodeCompletionProgress(
+                        tasks=self.tasks, response=None, thoughts=thoughts, status=self.status
+                    )
+                )
                 return CodeCompletionResult()
 
             except asyncio.CancelledError as e:
@@ -155,7 +183,9 @@ class CodeCompletionAgent(Agent):
             finally:
                 # self.task = None
                 self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
-                await self.send_progress(CodeCompletionProgress(status=self.status, tasks=self.tasks, response=None))
+                await self.send_progress(
+                    CodeCompletionProgress(status=self.status, tasks=self.tasks, response=None)
+                )
 
         t = asyncio.Task(worker())
         self._task = t
@@ -233,7 +263,46 @@ class CodeCompletionAgent(Agent):
         )
 
     async def send_progress(self, progress):
+        progress.id = self.id
         await self.server.notify(f"morph/{self.agent_type}_{self.id}_send_progress", progress)
 
     async def send_result(self, result):
         ...  # unreachable
+
+    async def accept(self):
+        logger.info(f"{self} user accepted result")
+        if self.status not in ["error", "done"]:
+            logger.error(f"cannot accept status {self.status}")
+            return
+        self.status = "done"
+        await self.send_progress(
+            # TODO(jesse): this is a hack
+            CodeCompletionProgress(tasks=self.tasks, response=None, status="edited")
+        )
+
+    async def reject(self):
+        # [todo] in this case we need to revert all of the changes that we made.
+        logger.info(f"{self} user rejected result")
+        self.status = "done"
+        with lsp.setdoc(self.state.document):
+            if self.state.ranges.is_empty:
+                logger.error("no ranges to reject")
+            else:
+                edit = lsp.TextEdit(self.state.ranges.cover(), "")
+                params = lsp.ApplyWorkspaceEditParams(
+                    edit=lsp.WorkspaceEdit(
+                        documentChanges=[
+                            lsp.TextDocumentEdit(
+                                textDocument=self.state.document.id,
+                                edits=[edit],
+                            )
+                        ]
+                    )
+                )
+                x = await self.server.apply_workspace_edit(params)
+                if not x.applied:
+                    logger.error("failed to apply rejection edit")
+            await self.send_progress(
+                # TODO(jesse): this is a hack
+                CodeCompletionProgress(tasks=self.tasks, response=None, status="edited")
+            )

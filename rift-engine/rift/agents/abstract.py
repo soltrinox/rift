@@ -43,7 +43,7 @@ AgentTaskId = str
 @dataclass
 class AgentTask:
     description: str
-    status: Literal["running", "done", "error"] = "running"    
+    status: Literal["running", "done", "error"] = "running"
     subtasks: List[AgentTaskId] = field(default_factory=list)
     parent: Optional[AgentTaskId] = None
     id: Optional[str] = None
