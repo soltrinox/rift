@@ -8,21 +8,26 @@
   import UserInput from "./chat/UserInput.svelte";
   import Response from "./chat/Response.svelte";
   import Logs from "./logs/Logs.svelte";
-  import { loading, state } from "./stores";
+  import { DEFAULT_STATE, loading, state } from "./stores";
   import type { ChatAgentProgress } from "../../src/types";
   import Header from "./Header.svelte";
   import chalk from "chalk";
   import Chat from "./chat/Chat.svelte";
+  import OmniBar from "./chat/OmniBar.svelte"
+  
   state.subscribe((state) => {
-    // if (!state.history.length) return; // don't want initial rendering to fuck this up
-    vscode.setState(state);
+    
+    console.log('saving state')
+    // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
+    vscode.setState(DEFAULT_STATE)
+    if(JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {vscode.setState(state)}
   });
 
   let isDone = false;
-  // const vscodeState = vscode.getState();
-  // console.log("attempting to access vscode state:");
-  // console.log(vscodeState);
-  // if (vscodeState && vscodeState.history.length) state.set(vscodeState);
+  const vscodeState = vscode.getState();
+  console.log("attempting to access vscode state:");
+  console.log(vscodeState);
+  if (vscodeState) state.set(vscodeState);
   let progressResponse: string;
   const incomingMessage = (event: any) => {
     // console.log(event);
@@ -76,11 +81,12 @@
   <Header />
   <div>
     <Chat {progressResponse} />
+    <OmniBar />
     <div class="max-h-[30vh]">
       <section
         id="divider"
-        class="border-t-2 pt-1 pb-2 hero container max-w-screen-lg mx-auto flex justify-center"
-      >
+        class="pt-1 pb-2 hero container max-w-screen-lg mx-auto flex justify-center"
+      > 
         <EllipsisSvg />
       </section>
       <Logs />

@@ -57,7 +57,7 @@
       "activitybar": [
         {
           "id": "Rift",
-          "title": "Chat",
+          "title": "Rift Dashboard",
           "icon": "resources/icon.svg"
         }
       ]
@@ -67,7 +67,7 @@
         {
           "type": "webview",
           "id": "RiftChat",
-          "name": "Chat"
+          "name": "Rift Dashboard"
         }
       ]
     },
@@ -103,11 +103,11 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
+    "@types/sass": "^1.45.0",
     "@types/vscode": "^1.54.0",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
-    "chalk": "^5.3.0",
     "concurrently": "^8.2.0",
     "eslint": "^8.41.0",
     "glob": "^8.1.0",
@@ -124,8 +124,11 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.2.2",
     "delay": "^6.0.0",
     "tcp-port-used": "^1.0.2",
-    "vscode-languageclient": "^8.1.0"
+    "vscode-jsonrpc": "^8.1.0",
+    "vscode-languageclient": "^8.1.0",
+    "vscode-languageserver-protocol": "^3.17.3"
   }
 }

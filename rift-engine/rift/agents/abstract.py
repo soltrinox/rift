@@ -1,9 +1,20 @@
+import uuid
 import asyncio
+from typing import List, Optional
 from dataclasses import dataclass, field
 from abc import ABC
 from typing import ClassVar, Dict, Literal
 from rift.lsp import LspServer as BaseLspServer, rpc_method
 from rift.llm.openai_types import Message as ChatMessage
+from enum import Enum
+
+
+class Status(Enum):
+    running = "running"
+    done = "done"
+    error = "error"
+    accepted = "accepted"
+    rejected = "rejected"
 
 
 @dataclass
@@ -31,14 +42,14 @@ AgentTaskId = str
 
 @dataclass
 class AgentTask:
-    status: Literal["running", "done", "error"] = "running"
     description: str
+    status: Literal["running", "done", "error"] = "running"    
     subtasks: List[AgentTaskId] = field(default_factory=list)
     parent: Optional[AgentTaskId] = None
     id: Optional[str] = None
 
     def __post_init__(self):
-        self.id = str(uuid.uuidv4())[:8]
+        self.id = str(uuid.uuid4())[:8]
 
 
 @dataclass
@@ -48,6 +59,7 @@ class AgentRunParams(ABC):
 
 @dataclass
 class AgentProgress(ABC):
+    status: Literal["running", "done", "error"]
     tasks: Optional[Dict[AgentTaskId, AgentTask]] = None
 
 
@@ -63,11 +75,11 @@ class AgentState(ABC):
 
 @dataclass
 class Agent:
+    status: Literal["running", "done", "error"]
     state: AgentState
     tasks: Dict[str, AgentTask]
     server: BaseLspServer
     id: int
-    active_task_id: Optional[str] = None
 
     @property
     def task(self):

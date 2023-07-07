@@ -3,7 +3,6 @@
   import UserSvg from "../icons/UserSvg.svelte";
   import { loading, state } from "../stores";
   export let value: string = "";
-  export let enabled: boolean = false;
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement;
@@ -56,6 +55,16 @@
     // logic to handle keydown event
   }
 </script>
+<style>
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+</style>
 
 <div class="flex items-center pt-2 pl-2 bg-[var(--vscode-input-background)]">
   <UserSvg size={12} />
@@ -66,18 +75,11 @@
 >
   <textarea
     bind:this={textarea}
-    class="w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none"
+    class="w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
     placeholder="Type to chat or hit / for commands"
     on:input={resize}
     on:keydown={handleKeyDown}
-    disabled={!enabled}
+    disabled={true}
     {value}
   />
-  {#if enabled}
-    <div class="justify-self-end flex">
-      <button on:click={sendMessage} class="items-center flex">
-        <SendSvg />
-      </button>
-    </div>
-  {/if}
 </div>

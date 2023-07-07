@@ -16,8 +16,18 @@ type ChatMessage = { role: "user" | "assistant", content: string }
 type Agent = {
     chatHistory: ChatMessage[]
     logs: Log[]
+    description: string
 }
 
+class AgentTask {
+    constructor(
+        public id: string,
+        public description: string,
+        public status: "running" | "done" | "error",
+        public showBadge: boolean,
+        public subtasks: AgentTask[],
+    ) { }
+}
 
 export type SvelteStore = {
     currentlySelectedAgentId: string,
