@@ -39,7 +39,7 @@
 <div
   class="absolute left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
-  {#each agentIds.filter(id => id.includes(inputValue)) as id, index}
+  {#each agentIds.filter(id => id.includes(inputValue.substring(1))) as id, index}
     <DropdownCard {id} focused={Boolean(index == activeId)} />
   {/each}
 </div>
