@@ -14,6 +14,7 @@
     let expanded = false;
     export let id: string = "";
     export let name: string = "rift-chat";
+    export let description: string = "beyond the veil";
 
     let doneAgent = false;
     let hasNotification = false;
@@ -83,7 +84,7 @@
                 <!-- {:else}
                 <div class="mx-2 mt-0.5"><LogRed /></div> -->
             {/if}
-            {name}
+            <span title="This is the agent's name">{name}</span>
         </a>
 
         <button
