@@ -5,8 +5,9 @@ export const DEFAULT_STATE: SvelteStore = {
   currentlySelectedAgentId: 'rift-chat',
   agents: {
     "rift-chat": {
-      chatHistory: [],
-      logs: []
+      chatHistory: [{role: "assistant", content: "How can I help?"}],
+      logs: [],
+      description: 'ask me anything ab life bro'
     }
   }
   // logs: [],

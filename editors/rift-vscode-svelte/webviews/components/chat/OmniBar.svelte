@@ -3,7 +3,6 @@
   import UserSvg from '../icons/UserSvg.svelte'
   import { loading, state } from '../stores'
   import Dropdown from './dropdown/Dropdown.svelte'
-  export let value: string = ''
   let dropdownOpen = false
   let isFocused = true
 
@@ -54,7 +53,7 @@
         textarea.style.height = textarea.scrollHeight + 'px'
         return
       }
-      if (!textarea.value) return
+      if (!textarea.value || dropdownOpen) return
       sendMessage()
     }
   }
@@ -74,7 +73,7 @@
 <div class='p-2 border-t border-b border-[var(--vscode-input-background)] relative'>
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${
-      isFocused ? 'border-blue-500' : 'border-transparent'
+      isFocused ? 'border-[var(--vscode-focusBorder)]' : 'border-transparent'
     }`}
   >
     <textarea
@@ -86,7 +85,6 @@
       on:focus={() => {isFocused = true}}
       on:blur={() => (isFocused = false)}
       rows={1}
-      {value}
     />
     <div class="justify-self-end flex">
       <button on:click={sendMessage} class="items-center flex">
@@ -95,6 +93,6 @@
     </div>
   </div>
   {#if dropdownOpen}
-    <Dropdown />
+    <Dropdown inputValue={textarea.value} />
   {/if}
 </div>

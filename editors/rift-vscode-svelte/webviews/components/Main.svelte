@@ -18,6 +18,8 @@
   state.subscribe((state) => {
     
     console.log('saving state')
+    // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
+    vscode.setState(DEFAULT_STATE)
     if(JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {vscode.setState(state)}
   });
 

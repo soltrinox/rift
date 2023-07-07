@@ -57,7 +57,7 @@
       "activitybar": [
         {
           "id": "Rift",
-          "title": "Chat",
+          "title": "Rift Dashboard",
           "icon": "resources/icon.svg"
         }
       ]
@@ -67,7 +67,7 @@
         {
           "type": "webview",
           "id": "RiftChat",
-          "name": "Chat"
+          "name": "Rift Dashboard"
         }
       ]
     },
@@ -124,6 +124,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.2.2",
     "delay": "^6.0.0",
     "tcp-port-used": "^1.0.2",
     "vscode-jsonrpc": "^8.1.0",
