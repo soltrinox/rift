@@ -10,7 +10,6 @@
   ];
   export let agentIds = MOCK_AGENT_IDS;
   export let inputValue = "";
-  console.log("i am dropdown hurr r");
 
   let activeId = 0;
 

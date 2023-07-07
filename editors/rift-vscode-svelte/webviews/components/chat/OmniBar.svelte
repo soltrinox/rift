@@ -1,79 +1,77 @@
 <script lang="ts">
-  import SendSvg from '../icons/SendSvg.svelte'
-  import UserSvg from '../icons/UserSvg.svelte'
-  import { loading, state } from '../stores'
-  import Dropdown from './dropdown/Dropdown.svelte'
-  let dropdownOpen = false
-  let isFocused = true
+  import SendSvg from "../icons/SendSvg.svelte";
+  import UserSvg from "../icons/UserSvg.svelte";
+  import { loading, state } from "../stores";
+  import Dropdown from "./dropdown/Dropdown.svelte";
+  let dropdownOpen = false;
+  let isFocused = true;
+  let currentSlashCommand = ""
 
   function resize(event: Event) {
-    let targetElement = event.target as HTMLElement
-    targetElement.style.height = 'auto'
-    targetElement.style.height = `${targetElement.scrollHeight}px`
+    let targetElement = event.target as HTMLElement;
+    targetElement.style.height = "auto";
+    targetElement.style.height = `${targetElement.scrollHeight}px`;
   }
 
-  let textarea: HTMLTextAreaElement
+  let textarea: HTMLTextAreaElement;
 
   function sendMessage() {
-    textarea.blur()
-    loading.set(true)
+    textarea.blur();
+    loading.set(true);
 
     vscode.postMessage({
-      type: 'chatMessage',
+      type: "chatMessage",
       messages: $state.agents[$state.currentlySelectedAgentId].chatHistory,
       message: textarea.value,
-    })
-    console.log('updating state...')
+    });
+    console.log("updating state...");
     state.update((state) => ({
       ...state,
       agents: {
         ...state.agents,
         [state.currentlySelectedAgentId]: {
           ...state.agents[state.currentlySelectedAgentId],
-          chatHistory: [...state.agents[state.currentlySelectedAgentId].chatHistory, { role: 'user', content: textarea.value }],
+          chatHistory: [
+            ...state.agents[state.currentlySelectedAgentId].chatHistory,
+            { role: "user", content: textarea.value },
+          ],
         },
       },
-    }))
-    textarea.value = ''
-    textarea.focus()
+    }));
+    textarea.value = "";
+    textarea.focus();
   }
   function handleValueChange(e: Event) {
-    resize(e)
-    if (textarea.value.trim().startsWith('/')) dropdownOpen = true
+    resize(e);
+    if (textarea.value.trim().startsWith("/")) {
+      dropdownOpen = true
+      currentSlashCommand = textarea.value
+    }
     else dropdownOpen = false
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       // 13 is the Enter key code
-      e.preventDefault() // Prevent default Enter key action
+      e.preventDefault(); // Prevent default Enter key action
       if (e.shiftKey) {
-        textarea.value = textarea.value + '\n'
-        textarea.style.height = 'auto'
-        textarea.style.height = textarea.scrollHeight + 'px'
-        return
+        textarea.value = textarea.value + "\n";
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
+        return;
       }
-      if (!textarea.value || dropdownOpen) return
-      sendMessage()
+      if (!textarea.value || dropdownOpen) return;
+      sendMessage();
     }
   }
 </script>
 
-<style>
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-</style>
-
-<div class='p-2 border-t border-b border-[var(--vscode-input-background)] relative'>
+<div
+  class="p-2 border-t border-b border-[var(--vscode-input-background)] relative"
+>
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${
-      isFocused ? 'border-[var(--vscode-focusBorder)]' : 'border-transparent'
+      isFocused ? "border-[var(--vscode-focusBorder)]" : "border-transparent"
     }`}
   >
     <textarea
@@ -82,7 +80,9 @@
       placeholder="Type to chat or hit / for commands"
       on:input={handleValueChange}
       on:keydown={handleKeyDown}
-      on:focus={() => {isFocused = true}}
+      on:focus={() => {
+        isFocused = true;
+      }}
       on:blur={() => (isFocused = false)}
       rows={1}
     />
@@ -93,6 +93,17 @@
     </div>
   </div>
   {#if dropdownOpen}
-    <Dropdown inputValue={textarea.value} />
+    <Dropdown inputValue={currentSlashCommand} />
   {/if}
 </div>
+
+<style>
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+</style>
