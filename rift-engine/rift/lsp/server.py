@@ -20,7 +20,7 @@ from collections import defaultdict
 from ..rpc import InitializationMode, rpc_method
 from ..rpc.extrarpc import ExtraRpc
 from rift.util.ofdict import ofdict
-
+from rift.agents.abstract import registry
 """ Implementation of an LSP server """
 
 logger = logging.getLogger("LSP")
@@ -141,7 +141,7 @@ class LspServer(ExtraRpc):
 
     @rpc_method("listAgents")
     def on_list_agents(self):
-        return self.registry.list_agents()
+        return registry.list_agents()
 
 
     @rpc_method("$/setTrace")
