@@ -18,7 +18,7 @@ from rift.util.ofdict import ofdict
 from rift.server.chat_agent import RunChatParams, ChatAgentLogs, ChatAgent
 from rift.server.agent import *
 from rift.agents.code_completion import CodeCompletionAgent
-from rift.agents.smol import SmolAgent, SmolAgentParams
+# from rift.agents.smol import SmolAgent, SmolAgentParams
 
 logger = logging.getLogger(__name__)
 

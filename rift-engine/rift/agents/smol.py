@@ -169,7 +169,7 @@ class SmolAgent(Agent):
 
 
     async def request_chat(self, request_chat_request):
-        return await self.server.request
+        return await self.server.request(
             f"morph/{self.agent_type}_{self.id}_request_chat", request_chat_request
         )
 

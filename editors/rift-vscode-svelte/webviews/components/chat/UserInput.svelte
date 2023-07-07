@@ -55,16 +55,6 @@
     // logic to handle keydown event
   }
 </script>
-<style>
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-</style>
 
 <div class="flex items-center pt-2 pl-2 bg-[var(--vscode-input-background)]">
   <UserSvg size={12} />
@@ -83,3 +73,14 @@
     {value}
   />
 </div>
+
+<style>
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+</style>

@@ -48,7 +48,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     }
                     if (!data.message || !data.messages) throw new Error()
                     this.hslc.run_chat(runChatParams, (progress) => {
-                        // console.log('progress recieved')
+                        console.log(progress)
                         if (!this._view) throw new Error('no view')
                         if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
                         this._view.webview.postMessage({ type: 'progress', data: progress });
@@ -79,7 +79,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         );
 
         const tailwindUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'tailwind.min.js'));
-        
+
         const showdownUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'showdown.min.js'));
 
         const microlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'microlight.min.js'));

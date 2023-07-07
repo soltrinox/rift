@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from abc import ABC
-from typing import ClassVar, Dict
+from typing import ClassVar, Optional, List, Dict
 from rift.lsp import LspServer as BaseLspServer, rpc_method
-from rift.agents.abstract import Agent, AgentTask, AgentProgress, RequestChatRequest
+from rift.agents.abstract import Agent, AgentTask, AgentProgress, AgentRunParams, RequestChatRequest, RequestChatResponse, RequestInputResponse, AgentRunResult
 from rift.llm.openai_types import Message as ChatMessage
 from rift.llm.abstract import AbstractChatCompletionProvider
 
