@@ -18,6 +18,15 @@ type Agent = {
     logs: Log[]
 }
 
+class AgentTask {
+    constructor(
+        public id: string,
+        public description: string,
+        public status: "running" | "done" | "error",
+        public showBadge: boolean,
+        public subtasks: AgentTask[],
+    ) { }
+}
 
 export type SvelteStore = {
     currentlySelectedAgentId: string,
