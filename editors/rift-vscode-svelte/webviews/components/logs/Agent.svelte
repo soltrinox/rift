@@ -60,7 +60,6 @@
             "omnibar"
         ) as HTMLTextAreaElement;
         omnibar?.focus();
-        omnibar.value = "/rift-chat";
         hasNotification = false;
         $state.agents[id].logs.splice(0);
     };
