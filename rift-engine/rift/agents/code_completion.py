@@ -135,7 +135,7 @@ class CodeCompletionAgent(Agent):
                 all_text = "".join(all_deltas)
                 logger.info(f"{self} finished streaming {len(all_text)} characters")
                 self.status = "done"
-                await self.send_progress(CodeCompletionProgress(tasks=self.tasks, response=None, thoughts=thoughts, status=self.status))                
+                await self.send_progress(CodeCompletionProgress(tasks=self.tasks, response=None, thoughts=None, status=self.status))                
                 if stream.thoughts is not None:
                     thoughts = await stream.thoughts.read()
                     await self.send_progress(CodeCompletionProgress(tasks=self.tasks, thoughts=thoughts, status=self.status))
@@ -241,3 +241,41 @@ class CodeCompletionAgent(Agent):
 
     async def send_result(self, result):
         ...  # unreachable
+
+    async def accept(self):
+        logger.info(f"{self} user accepted result")
+        if self.status not in ["error", "done"]:
+            logger.error(f"cannot accept status {self.status}")
+            return
+        self.status = "done"
+        await self.send_progress(
+            # TODO(jesse): this is a hack
+            CodeCompletionProgress(tasks=self.tasks, response=None, status="edited")
+        )
+
+    async def reject(self):
+        # [todo] in this case we need to revert all of the changes that we made.
+        logger.info(f"{self} user rejected result")
+        self.status = "done"
+        with lsp.setdoc(self.state.document):
+            if self.state.ranges.is_empty:
+                logger.error("no ranges to reject")
+            else:
+                edit = lsp.TextEdit(self.state.ranges.cover(), "")
+                params = lsp.ApplyWorkspaceEditParams(
+                    edit=lsp.WorkspaceEdit(
+                        documentChanges=[
+                            lsp.TextDocumentEdit(
+                                textDocument=self.state.document.id,
+                                edits=[edit],
+                            )
+                        ]
+                    )
+                )
+                x = await self.server.apply_workspace_edit(params)
+                if not x.applied:
+                    logger.error("failed to apply rejection edit")
+            await self.send_progress(
+                # TODO(jesse): this is a hack                
+                CodeCompletionProgress(tasks=self.tasks, response=None, status="edited")
+            )
