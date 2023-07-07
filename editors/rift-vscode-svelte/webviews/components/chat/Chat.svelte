@@ -7,6 +7,7 @@
   import UserInput from "./UserInput.svelte";
   import RiftSvg from "../icons/RiftSvg.svelte";
   import Response from "./Response.svelte";
+  import OmniBar from "./OmniBar.svelte"
 
   let observer: MutationObserver;
   export let progressResponse = "";
@@ -64,5 +65,4 @@
   {#if !isDone}
     <Response value={progressResponse} />
   {/if}
-  <UserInput value={""} enabled={true} />
 </div>

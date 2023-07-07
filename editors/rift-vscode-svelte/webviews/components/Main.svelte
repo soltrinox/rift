@@ -13,6 +13,7 @@
   import Header from "./Header.svelte";
   import chalk from "chalk";
   import Chat from "./chat/Chat.svelte";
+  import OmniBar from "./chat/OmniBar.svelte"
   
   state.subscribe((state) => {
     
@@ -78,11 +79,12 @@
   <Header />
   <div>
     <Chat {progressResponse} />
+    <OmniBar />
     <div class="max-h-[30vh]">
       <section
         id="divider"
-        class="border-t-2 pt-1 pb-2 hero container max-w-screen-lg mx-auto flex justify-center"
-      >
+        class="pt-1 pb-2 hero container max-w-screen-lg mx-auto flex justify-center"
+      > 
         <EllipsisSvg />
       </section>
       <Logs />
