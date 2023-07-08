@@ -100,7 +100,6 @@ class Agent:
     agent_id: Optional[str] = None
     tasks: List[AgentTask] = field(default_factory=list)
     task: Optional[AgentTask] = None
-    _fut: Optional[asyncio.Future] = None
 
     def __str__(self):
         return f"<{self.agent_type}> {self.agent_id}"

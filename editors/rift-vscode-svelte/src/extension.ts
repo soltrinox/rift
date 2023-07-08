@@ -95,18 +95,18 @@ export function activate(context: vscode.ExtensionContext) {
 
     let hslc = new MorphLanguageClient(context)
     context.subscriptions.push(hslc)
-    const provider = async (document, position, context, token) => {
-        return [
-            { insertText: await hslc.provideInlineCompletionItems(document, position, context, token) }
-        ]
-    };
+    // const provider = async (document, position, context, token) => {
+    //     return [
+    //         { insertText: await hslc.provideInlineCompletionItems(document, position, context, token) }
+    //     ]
+    // };
 
-    context.subscriptions.push(
-        vscode.languages.registerInlineCompletionItemProvider(
-            { pattern: "*" },
-            { provideInlineCompletionItems: provider }
-        )
-    );
+    // context.subscriptions.push(
+    //     vscode.languages.registerInlineCompletionItemProvider(
+    //         { pattern: "*" },
+    //         { provideInlineCompletionItems: provider }
+    //     )
+    // );
 
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider('*', hslc)

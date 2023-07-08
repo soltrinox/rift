@@ -78,7 +78,7 @@ interface RunAgentResult {
 }
 
 
-interface RunChatParams {
+export interface RunChatParams {
     message: string
     messages: { // does not include latest message
         role: string,
@@ -100,18 +100,18 @@ interface RunAgentSyncResult {
 
 export type AgentStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
 
-// export interface RunAgentProgress {
-//     id: number
-//     textDocument: TextDocumentIdentifier
-//     log?: {
-//         severity: string;
-//         message: string;
-//     }
-//     cursor?: vscode.Position
-//     /** This is the set of ranges that the agent has added so far. */
-//     ranges?: vscode.Range[]
-//     status: AgentStatus
-// }
+export interface RunAgentProgress {
+    id: number
+    textDocument: TextDocumentIdentifier
+    log?: {
+        severity: string;
+        message: string;
+    }
+    cursor?: vscode.Position
+    /** This is the set of ranges that the agent has added so far. */
+    ranges?: vscode.Range[]
+    status: AgentStatus
+}
 
 export interface Task {
     description: string, status: string,
@@ -411,7 +411,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         params: RunAgentParams,
         request_input_callback: (request_input_request: any) => any,
         request_chat_callback: (request_chat_request: any) => any,
-        send_update_callback: (send_update_request: any) => any,
         send_progress_callback: (send_progress_request: any) => any,
         send_result_callback: (send_result_request: any) => any,
     ) {
@@ -424,7 +423,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         this.agentStates.set(agentIdentifier, {agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params})
         this.client.onNotification(`morph/${agent_type}_${agent_id}_request_input`, request_input_callback.bind(this))
         this.client.onNotification(`morph/${agent_type}_${agent_id}_request_chat`, request_chat_callback.bind(this))
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, send_update_callback.bind(this))        
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, send_progress_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks

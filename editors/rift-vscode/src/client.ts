@@ -100,18 +100,18 @@ interface RunAgentSyncResult {
 
 export type AgentStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
 
-// export interface RunAgentProgress {
-//     id: number
-//     textDocument: TextDocumentIdentifier
-//     log?: {
-//         severity: string;
-//         message: string;
-//     }
-//     cursor?: vscode.Position
-//     /** This is the set of ranges that the agent has added so far. */
-//     ranges?: vscode.Range[]
-//     status: AgentStatus
-// }
+export interface RunAgentProgress {
+    id: number
+    textDocument: TextDocumentIdentifier
+    log?: {
+        severity: string;
+        message: string;
+    }
+    cursor?: vscode.Position
+    /** This is the set of ranges that the agent has added so far. */
+    ranges?: vscode.Range[]
+    status: AgentStatus
+}
 
 export interface Task {
     description: string, status: string,
