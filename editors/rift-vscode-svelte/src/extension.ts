@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerCodeLensProvider('*', mlc)
     )
     const chatProvider = new ChatProvider(context.extensionUri, mlc);
-    const logProvider = new LogProvider(context.extensionUri, hslc);
+    const logProvider = new LogProvider(context.extensionUri, mlc);
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
@@ -120,22 +120,17 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider('*', hslc)
+        vscode.languages.registerCodeLensProvider('*', mlc)
     )
     context.subscriptions.push(disposable)
     context.subscriptions.push(mlc)
+
+
     // const provider = async (document, position, context, token) => {
     //     return [
     //         { insertText: await mlc.provideInlineCompletionItems(document, position, context, token) }
     //     ]
     // };
-
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
-    );
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("RiftLogs", logProvider)
-    );
 }
 
 

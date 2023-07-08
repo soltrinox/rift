@@ -28,8 +28,8 @@ export class LogProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.onDidReceiveMessage(async (data) => {
             if (!this._view) throw new Error('no view')
+            console.log(data)
             switch (data.type) {
-
                 // TODO
                 case "copyText":
                     console.log('recieved copy in webview')
