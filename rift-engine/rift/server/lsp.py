@@ -1,3 +1,4 @@
+import uuid
 import asyncio
 from dataclasses import dataclass, field
 import logging
@@ -21,7 +22,8 @@ from rift.util.ofdict import ofdict
 from rift.server.chat_agent import RunChatParams, ChatAgentLogs, ChatAgent
 from rift.server.agent import *
 from rift.agents.code_completion import CodeCompletionAgent
-# from rift.agents.smol import SmolAgent, SmolAgentParams
+from rift.agents.smol import SmolAgent, SmolAgentParams
+from rift.agents.abstract import RunAgentParams
 
 logger = logging.getLogger(__name__)
 @dataclass
@@ -75,7 +77,7 @@ class ChatAgentProgress:
 
 @dataclass
 class RunAgentResult:
-    id: int
+    id: str
 
 
 @dataclass
@@ -157,6 +159,9 @@ class LspServer(BaseLspServer):
         finally:
             self._loading_task = None
 
+    async def send_update(self, msg: str):
+        self.notify("morph/send_update", {"msg": msg})
+
     async def send_agent_progress(
         self,
         id: int,
@@ -223,24 +228,27 @@ class LspServer(BaseLspServer):
     @rpc_method("morph/run")
     async def on_run(self, params: RunAgentParams):
         agent_type = params.agent_type
+        # lol
+        agent_params = params.agent_params
+        agent_params.update({"agent_id": params.agent_id or str(uuid.uuid4())[:8]})
         if agent_type == "chat":
             # prepare params for ChatAgent construction
             model = await self.ensure_chat_model()
-            agent_params = ofdict(RunChatParams, params.agent_params)
+            agent_params = ofdict(RunChatParams, agent_params)
             agent = ChatAgent(agent_params, model=model, server=self)
         elif agent_type == "code_completion":
             model = await self.ensure_completions_model()
-            agent_params = ofdict(CodeCompletionAgentParams, params.agent_params)
+            agent_params = ofdict(CodeCompletionAgentParams, agent_params)
             agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
         elif agent_type == "smol_dev":
             model = await self.ensure_chat_model()
-            agent_params = ofdict(SmolAgentParams, params.agent_params)
+            agent_params = ofdict(SmolAgentParams, agent_params)
             agent = SmolAgent.create(params=agent_params, model=model, server=self)
         else:
             raise Exception(f"unsupported agent type={agent_type}")
-        t = asyncio.Task(agent.run())
-        self.active_agents[agent.id] = agent
-        return RunAgentResult(id=agent.id)
+        t = asyncio.Task(agent.main())
+        self.active_agents[agent.agent_id] = agent
+        return RunAgentResult(id=agent.agent_id)
 
     @rpc_method("morph/run_agent")
     async def on_run_agent(self, params: CodeCompletionAgentParams):
@@ -252,11 +260,11 @@ class LspServer(BaseLspServer):
             logger.debug("request too early: waiting for textDocumentChanged notification")
             await asyncio.sleep(3)
             agent = CodeCompletionAgent(params, model=model, server=self)
-        logger.debug(f"starting agent {agent.id}")
+        logger.debug(f"starting agent {agent.agent_id}")
         # agent holds a reference to worker task
         agent.run()
-        self.active_agents[agent.id] = agent
-        return RunAgentResult(id=agent.id)
+        self.active_agents[agent.agent_id] = agent
+        return RunAgentResult(id=agent.agent_id)
 
     @rpc_method("morph/run_chat")
     async def on_run_chat(self, params: RunChatParams):

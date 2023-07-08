@@ -80,13 +80,13 @@ if __name__ == "__main__":
         print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
         
         from rift.agents.smol import SmolAgentParams
-        from rift.server.lsp import RunAgentParams
+        from rift.server.lsp import AgentRunParams
 
         class RunParams(BaseModel):
             agent_type: str = "chat"
 
         params = todict(
-            RunAgentParams(agent_type="smol_dev", agent_params=SmolAgentParams(instructionPrompt="write hello world in Python", position=lsp.Position(0,0), textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0)))
+            AgentRunParams(agent_type="smol_dev", agent_params=SmolAgentParams(instructionPrompt="write hello world in Python", position=lsp.Position(0,0), textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0)))
         )
         print("RUN RESULT: ", await client.run(params=params))
         print("initialized")
