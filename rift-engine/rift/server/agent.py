@@ -2,28 +2,22 @@ import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
-from typing import Any, ClassVar, Optional, List
+from typing import Any, ClassVar, Optional, List, Union
 from typing import Literal
 from rift.lsp.document import setdoc
 import rift.lsp.types as lsp
 import importlib.util
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.server.selection import RangeSet
-from rift.agents.abstract import Status
+from rift.agents.abstract import Status, RunAgentParams
 from rift.agents.code_completion import CodeCompletionAgentParams
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class RunAgentParams:
-    agent_type: str
-    agent_params: Any
-
-
-@dataclass
 class AgentIdParams:
-    id: int
+    id: Union[int, str]
 
 
 class CodeCompletionAgent:

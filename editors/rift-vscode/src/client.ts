@@ -62,7 +62,7 @@ function createServerOptions(context: vscode.ExtensionContext, port = DEFAULT_PO
 }
 
 interface RunCodeHelperParams {
-    task: string
+    instructionPrompt: string
     position: vscode.Position
     textDocument: TextDocumentIdentifier
 }
@@ -100,17 +100,33 @@ interface RunAgentSyncResult {
 
 export type AgentStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
 
-export interface RunAgentProgress {
-    id: number
-    textDocument: TextDocumentIdentifier
-    log?: {
-        severity: string;
-        message: string;
-    }
-    cursor?: vscode.Position
-    /** This is the set of ranges that the agent has added so far. */
-    ranges?: vscode.Range[]
-    status: AgentStatus
+// export interface RunAgentProgress {
+//     id: number
+//     textDocument: TextDocumentIdentifier
+//     log?: {
+//         severity: string;
+//         message: string;
+//     }
+//     cursor?: vscode.Position
+//     /** This is the set of ranges that the agent has added so far. */
+//     ranges?: vscode.Range[]
+//     status: AgentStatus
+// }
+
+export interface Task {
+    description: string, status: string,
+}
+
+export interface Tasks {
+    task: Task
+    subtasks: Task[]
+}
+
+export interface AgentProgress {
+    agent_type: string,
+    agent_id: string,
+    tasks: Tasks,
+    payload: any,
 }
 
 /** Represents an agent */
@@ -434,7 +450,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     }
 
     async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {
-        const params: RunCodeHelperParams = { task: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
+        const params: RunCodeHelperParams = { instructionPrompt: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
         const snippet = new vscode.SnippetString(await this.run_agent_sync(params));
         // return new vscode.InlineCompletionList([{insertText: snippet}]);
         return snippet;
