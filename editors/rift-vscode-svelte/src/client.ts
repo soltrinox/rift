@@ -199,7 +199,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         this.red = { key: "TEMP_VALUE", dispose: () => { } }
         this.green = { key: "TEMP_VALUE", dispose: () => { } }
         this.context = context
-        this.client = null
         this.create_client().then(() => {
             this.context.subscriptions.push(
                 vscode.commands.registerCommand('extension.getAgents', async () => {
