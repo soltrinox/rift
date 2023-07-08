@@ -31,8 +31,9 @@
   let progressResponse: string;
   const incomingMessage = (event: any) => {
         // Listen for the response
+    console.log(event.data);
 
-    switch(event.data.type) {
+    switch(event.data.command) {
       case "progress":
         const progress = event.data.data as ChatAgentProgress;
         const agentId = "rift-chat"; //FIXME brent HARDCODED change later
