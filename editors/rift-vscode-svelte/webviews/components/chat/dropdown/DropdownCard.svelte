@@ -1,7 +1,6 @@
 <script lang="ts">
   import { state } from "../../stores";
   import RiftSvg from "../../icons/RiftSvg.svelte";
-  import { v4 as uuidv4 } from 'uuid';
 
   export let id: string;
   export let focused: boolean = false;
@@ -11,7 +10,6 @@
       ? $state.agents[id].description
       : "code while you sleep";
 
-  let newSelectedAgentId = uuidv4();
 </script>
 
 <div

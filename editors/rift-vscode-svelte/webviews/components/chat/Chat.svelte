@@ -55,7 +55,7 @@
 </script>
 
 <div bind:this={chatWindow} class="flex flex-col overflow-y-auto max-h-[70vh]">
-  {#each $state.agents[$state.currentlySelectedAgentId].chatHistory as item}
+  {#each $state.agents[$state.selectedAgentId].chatHistory as item}
     {#if item.role == "user"}
       <UserInput value={item.content} />
     {:else}

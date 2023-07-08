@@ -1,5 +1,6 @@
 <script lang="ts">
   import { state } from "../../stores";
+  import { v4 as uuidv4 } from "uuid";
   import Agent from "../../logs/Agent.svelte";
   // import { Log, ChatMessage } from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
@@ -19,17 +20,17 @@
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
       e.preventDefault();
-      const newSelectedAgentId =  agentIds[activeId];
+      const newSelectedAgentId:string = uuidv4(); //TODO check for conflicts with existing uuids
+      // const newSelectedAgentId =  agentIds[activeId];
       state.update((state) => ({
         ...state,
         selectedAgentId: newSelectedAgentId,
         agents: {
           ...state.agents,
-          [newSelectedAgentId]: {
-            chatHistory: [] as ChatMessage[],
-            logs: [] as Log[],
-            description: "new agent description!!!",
-          },
+          [newSelectedAgentId]: new Agent ({ 
+            id: newSelectedAgentId, 
+            type: agentIds[activeId].name,
+          }),
         },
       }));
     }
