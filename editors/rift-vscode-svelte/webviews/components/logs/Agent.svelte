@@ -14,6 +14,7 @@
     let expanded = false;
     export let id: string = "";
     export let name: string = "rift-chat";
+    export let description: string = "beyond the veil";
 
     let doneAgent = false;
     let hasNotification = false;
@@ -58,15 +59,15 @@
             "omnibar"
         ) as HTMLTextAreaElement;
         omnibar?.focus();
-        omnibar?.value = "/rift-chat ";
+        omnibar.value = "/rift-chat ";
         hasNotification = false;
         $state.agents[id].logs.splice(0);
     };
 </script>
 
 <div>
-    <div class="flex">
-        <a class="flex select-none" on:click={() => (expanded = !expanded)}>
+    <div class="flex" on:click={() => (expanded = !expanded)}>
+        <a class="flex select-none" >
             {#if expanded == false}
                 <div class="mx-1 mt-1.5">
                     <ArrowRightSvg />
@@ -83,7 +84,7 @@
                 <!-- {:else}
                 <div class="mx-2 mt-0.5"><LogRed /></div> -->
             {/if}
-            {name}
+            <span title="{description}">{name}</span>
         </a>
 
         <button

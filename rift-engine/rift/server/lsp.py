@@ -5,6 +5,8 @@ from typing import ClassVar, Optional, List, Any
 from typing import Literal
 from rift.lsp import LspServer as BaseLspServer, rpc_method
 from rift.rpc import RpcServerStatus
+from rift.agents.abstract import registry
+
 import rift.lsp.types as lsp
 from rift.llm.abstract import (
     AbstractCodeCompletionProvider,
@@ -22,8 +24,6 @@ from rift.agents.code_completion import CodeCompletionAgent
 from rift.agents.smol import SmolAgent, SmolAgentParams
 
 logger = logging.getLogger(__name__)
-
-
 @dataclass
 class AgentProgress:
     id: int
@@ -272,6 +272,10 @@ class LspServer(BaseLspServer):
         if agent is not None:
             agent.cancel()
 
+    @rpc_method("morph/listAgents")
+    def on_list_agents(self):
+        return registry.list_agents()
+    
     @rpc_method("morph/accept")
     async def on_accept(self, params: AgentIdParams):
         agent = self.active_agents.get(params.id)

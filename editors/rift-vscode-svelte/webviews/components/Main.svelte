@@ -1,23 +1,18 @@
 <!-- Navbar.svelte -->
 <script lang="ts">
-  import { onMount, onDestroy, tick } from "svelte";
-  import CopySvg from "./icons/CopySvg.svelte";
   import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
-  import UserSvg from "./icons/UserSvg.svelte";
-  import RiftSvg from "./icons/RiftSvg.svelte";
-  import UserInput from "./chat/UserInput.svelte";
-  import Response from "./chat/Response.svelte";
   import Logs from "./logs/Logs.svelte";
   import { DEFAULT_STATE, loading, state } from "./stores";
   import type { ChatAgentProgress } from "../../src/types";
   import Header from "./Header.svelte";
-  import chalk from "chalk";
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte"
   
   state.subscribe((state) => {
     
     console.log('saving state')
+    // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
+    vscode.setState(DEFAULT_STATE)
     if(JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {vscode.setState(state)}
   });
 

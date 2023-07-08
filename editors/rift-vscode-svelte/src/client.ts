@@ -170,12 +170,19 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         this.client = null
         this.create_client().then(() => {
             this.context.subscriptions.push(
+                vscode.commands.registerCommand('extension.getAgents', async () => {
+                    if (client) {
+                      return await client.get_agents();
+                    }
+                  }),
                 vscode.commands.registerCommand('rift.cancel', (id: number) => this.client?.sendNotification('morph/cancel', { id })),
                 vscode.commands.registerCommand('rift.accept', (id: number) => this.client?.sendNotification('morph/accept', { id })),
                 vscode.commands.registerCommand('rift.reject', (id: number) => this.client?.sendNotification('morph/reject', { id })),
                 vscode.workspace.onDidChangeConfiguration(this.on_config_change.bind(this)),
             )
         })
+
+        
         this.changeLensEmitter = new vscode.EventEmitter<void>()
         this.onDidChangeCodeLenses = this.changeLensEmitter.event
         // [todo] rename rift and morph/ to release name
@@ -227,6 +234,14 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
 
     is_running() {
         return this.client && this.client.state == State.Running
+    }
+
+    async get_agents() {
+        console.log('get agents');
+        if(!this.client) throw new Error()
+        const result = await this.client.sendRequest('get_agents')
+        console.log(result);
+        return result;
     }
 
     async create_client() {
@@ -334,6 +349,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         // note this returns fast and then the updates are sent via notifications
         return 'starting...'
     }
+
+    
 
 
     dispose() {

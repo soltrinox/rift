@@ -16,6 +16,7 @@ type ChatMessage = { role: "user" | "assistant", content: string }
 type Agent = {
     chatHistory: ChatMessage[]
     logs: Log[]
+    description: string
 }
 
 class AgentTask {
