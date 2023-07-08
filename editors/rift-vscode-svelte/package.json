@@ -68,6 +68,11 @@
           "type": "webview",
           "id": "RiftChat",
           "name": "Rift Dashboard"
+        },
+        {
+          "type": "webview",
+          "id": "RiftLogs",
+          "name": "Rift Agents"
         }
       ]
     },
@@ -75,6 +80,10 @@
       {
         "view": "RiftChat",
         "contents": "Chat with a local code model."
+      },
+      {
+        "view": "RiftLogs",
+        "contents": "Agent logging."
       }
     ],
     "commands": [

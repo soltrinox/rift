@@ -5,6 +5,8 @@ import { MorphLanguageClient } from './client';
 import { join } from 'path';
 import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { ChatProvider } from './elements/ChatProvider';
+import { LogProvider } from './elements/LogProvider';
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -62,9 +64,13 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerCodeLensProvider('*', hslc)
     )
     const chatProvider = new ChatProvider(context.extensionUri, hslc);
+    const logProvider = new LogProvider(context.extensionUri, hslc);
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
+    );
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider("RiftLogs", logProvider)
     );
 }
 

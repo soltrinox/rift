@@ -6,27 +6,28 @@
   import type { ChatAgentProgress } from "../../src/types";
   import Header from "./Header.svelte";
   import Chat from "./chat/Chat.svelte";
-  import OmniBar from "./chat/OmniBar.svelte"
-  
+  import OmniBar from "./chat/OmniBar.svelte";
+
   // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
-  console.log("RESETTING VSCODE STATE")
-  console.log(DEFAULT_STATE)
-  vscode.setState(DEFAULT_STATE)
-  console.log(vscode.getState())
+  console.log("RESETTING VSCODE STATE");
+  console.log(DEFAULT_STATE);
+  vscode.setState(DEFAULT_STATE);
+  console.log(vscode.getState());
 
   state.subscribe((state) => {
-    
-    console.log('saving state')
-    if(JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {vscode.setState(state)}
+    console.log("saving state");
+    if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
+      vscode.setState(state);
+    }
   });
-  let agentOptions:{type: string, description?: string, svg?: string}[] = [
+  let agentOptions: { type: string; description?: string; svg?: string }[] = [
     //TODO get from server
-    { type: 'rift-chat', description: 'ask me anything ab life bro' },
-    { type: 'aider', description: 'congrats ur now a 10x engineer' },
-    { type: 'gpt-engineer', description: 'an engineer but gpt' },
-    { type: 'auto-code-review', description: 'code review but meaner' },
-    { type: 'repl-auto-debug', description: 'let me debug for u' },
-  ]
+    { type: "rift-chat", description: "ask me anything ab life bro" },
+    { type: "aider", description: "congrats ur now a 10x engineer" },
+    { type: "gpt-engineer", description: "an engineer but gpt" },
+    { type: "auto-code-review", description: "code review but meaner" },
+    { type: "repl-auto-debug", description: "let me debug for u" },
+  ];
   let isDone = false;
   const vscodeState = vscode.getState();
   console.log("attempting to access vscode state:");
@@ -34,16 +35,16 @@
   if (vscodeState) state.set(vscodeState);
   let progressResponse: string;
   const incomingMessage = (event: any) => {
-        // Listen for the response
+    // Listen for the response
 
-    switch(event.data.type) {
+    switch (event.data.type) {
       case "progress":
         const progress = event.data.data as ChatAgentProgress;
         const agentId = "deadb33f"; //FIXME brent HARDCODED change later
         progressResponse = progress.response;
         // console.log(progressResponse);
         isDone = progress.done;
-    
+
         // const randomLogSeverity = ["done", "progress"];
         // let random = Math.floor(Math.random() * randomLogSeverity.length);
         // // const randomLogMessage = [
@@ -53,7 +54,7 @@
         //   "something else",
         // ];
         // let random2 = Math.floor(Math.random() * randomLogMessage.length);
-    
+
         // for sticky window^
         if (isDone) {
           state.update((state) => ({
@@ -66,9 +67,7 @@
                   ...state.agents[agentId].chatHistory,
                   { role: "assistant", content: progressResponse },
                 ],
-                taskRoot: [
-                  ...state.agents[agentId].taskRoot,
-                ],
+                taskRoot: [...state.agents[agentId].taskRoot],
               },
             },
           }));
@@ -77,31 +76,24 @@
         }
         break;
       case "agents":
-        console.log('new agents just dropped')
-        console.log(event.data.data)
-        agentOptions = event.data.data
+        console.log("new agents just dropped");
+        console.log(event.data.data);
+        agentOptions = event.data.data;
         break;
-      default: 
-        throw new Error('no case matched')
+      default:
+        throw new Error("no case matched");
     }
   };
 </script>
 
 <svelte:window on:message={incomingMessage} />
 
-<div>
+<div class="h-screen">
   <Header />
-  <div>
+  <div style="height: calc(100% - 80px);" class="overflow-y-auto">
     <Chat {progressResponse} />
+  </div>
+  <div style="bottom: 0; position: absolute">
     <OmniBar />
-    <div class="max-h-[30vh]">
-      <section
-        id="divider"
-        class="pt-1 pb-2 hero container max-w-screen-lg mx-auto flex justify-center"
-      > 
-        <EllipsisSvg />
-      </section>
-      <Logs />
-    </div>
   </div>
 </div>

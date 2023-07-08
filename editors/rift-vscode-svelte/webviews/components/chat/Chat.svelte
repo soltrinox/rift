@@ -53,7 +53,7 @@
   });
 </script>
 
-<div bind:this={chatWindow} class="flex flex-col overflow-y-auto max-h-[70vh]">
+<div bind:this={chatWindow} class="flex items-start flex-col overflow-y-auto">
   {#each $state.agents[$state.selectedAgentId].chatHistory as item}
     {#if item.role == "user"}
       <UserInput value={item.content} />
