@@ -239,7 +239,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
     async get_agents() {
         console.log('get agents');
         if(!this.client) throw new Error()
-        const result = await this.client.sendRequest('get_agents')
+        const result = await this.client.sendRequest('morph/listAgents', {})
         console.log(result);
         return result;
     }
