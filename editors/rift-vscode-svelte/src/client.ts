@@ -308,12 +308,12 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             catch (e) {
                 console.error(e)
             }
-        }
-        console.log(`server detected on port ${port}`)
+        } 
+       console.log(`server detected on port ${port}`)
         serverOptions = tcpServerOptions(this.context, port)
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{ language: '*' }]
-        }
+       }
         this.client = new LanguageClient(
             'morph-server', 'Morph Server',
             serverOptions, clientOptions,
@@ -328,7 +328,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             }
         })
         await this.client.start()
-        this.client.onNotification('morph/progress', this.morph_notify.bind(this))
         console.log('rift-engine started')
     }
 
@@ -338,16 +337,16 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     }
 
 
-    async morph_notify(params: RunAgentProgress) {
-        if (!this.is_running()) {
-            throw new Error('client not running, please wait...') // [todo] better ux here.
-        }
-        const agent = this.agents.get(params.id)
-        if (!agent) {
-            throw new Error('agent not found')
-        }
-        agent.handleProgress(params)
-    }
+    // async morph_notify(params: RunAgentProgress) {
+    //     if (!this.is_running()) {
+    //         throw new Error('client not running, please wait...') // [todo] better ux here.
+    //     }
+    //     const agent = this.agents.get(params.id)
+    //     if (!agent) {
+    //         throw new Error('agent not found')
+    //     }
+    //     agent.handleProgress(params)
+    // }
 
     async notify_focus(tdpp: TextDocumentPositionParams | { symbol: string }) {
         // [todo] unused
@@ -373,15 +372,15 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         return `starting agent ${result.id}...`
     }
 
-    async run_agent_sync(params: RunCodeHelperParams) {
-        console.log("run_agent_sync")
-        const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
-        const agent = new Agent(result.id, params.position, params.textDocument)
-        // agent.onStatusChange(e => this.changeLensEmitter.fire())
-        this.agents.set(result.id, agent)
-        // this.changeLensEmitter.fire()
-        return result.text
-    }
+    // async run_agent_sync(params: RunCodeHelperParams) {
+    //     console.log("run_agent_sync")
+    //     const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
+    //     const agent = new Agent(result.id, params.position, params.textDocument)
+    //     // agent.onStatusChange(e => this.changeLensEmitter.fire())
+    //     this.agents.set(result.id, agent)
+    //     // this.changeLensEmitter.fire()
+    //     return result.text
+    // }
 
     morphNotifyChatCallback: (progress: ChatAgentProgress) => any = async function (progress) {
         throw new Error('no callback set')
@@ -411,6 +410,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         params: RunAgentParams,
         request_input_callback: (request_input_request: any) => any,
         request_chat_callback: (request_chat_request: any) => any,
+        send_update_callback: (send_update_request: any) => any,
         send_progress_callback: (send_progress_request: any) => any,
         send_result_callback: (send_result_request: any) => any,
     ) {
@@ -421,9 +421,10 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         const agentIdentifier = `${agent_type}_${agent_id}`
         console.log(`agentIdentifier: ${agentIdentifier}`)
         this.agentStates.set(agentIdentifier, {agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params})
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_request_input`, request_input_callback.bind(this))
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_request_chat`, request_chat_callback.bind(this))
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, request_input_callback.bind(this))
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, request_chat_callback.bind(this))
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, send_update_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, send_progress_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, send_result_callback.bind(this)) // this should be custom
@@ -449,10 +450,10 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         this.client.dispose()
     }
 
-    async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {
-        const params: RunCodeHelperParams = { instructionPrompt: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
-        const snippet = new vscode.SnippetString(await this.run_agent_sync(params));
-        // return new vscode.InlineCompletionList([{insertText: snippet}]);
-        return snippet;
-    }
+    // async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {
+    //     const params: RunCodeHelperParams = { instructionPrompt: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
+    //     const snippet = new vscode.SnippetString(await this.run_agent_sync(params));
+    //     // return new vscode.InlineCompletionList([{insertText: snippet}]);
+    //     return snippet;
+    // }
 }

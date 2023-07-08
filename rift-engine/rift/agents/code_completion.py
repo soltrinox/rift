@@ -12,6 +12,7 @@ from rift.agents.abstract import (
     AgentProgress,
     AgentRunResult,
     RunAgentParams,
+    RequestInputRequest
 )
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp.document import TextDocumentItem
@@ -40,9 +41,9 @@ class CodeCompletionProgress(AgentProgress):
 
 @dataclass
 class CodeCompletionAgentParams(AgentRunParams):
-    instructionPrompt: str
     textDocument: lsp.TextDocumentIdentifier
     position: Optional[lsp.Position]
+    instructionPrompt: Optional[str] = None
 
 
 @dataclass
@@ -78,9 +79,13 @@ class CodeCompletionAgent(Agent):
 
     async def run(self) -> AgentRunResult: # main entry point
 
+        instructionPrompt = self.state.params.instructionPrompt or (await self.request_input(RequestInputRequest(msg="Describe what you want me to do", place_holder="Please implement the rest of this function"))).response
+
+        print("INSTRUCTION PROMPT: ", instructionPrompt)
+
         self.server.register_change_callback(self.on_change, self.state.document.uri)
         stream: InsertCodeResult = await self.state.model.insert_code(
-            self.state.document.text, self.state.document.position_to_offset(self.state.cursor), goal=self.state.params.instructionPrompt
+            self.state.document.text, self.state.document.position_to_offset(self.state.cursor), goal=instructionPrompt
         )
 
         async def generate_plan():
@@ -135,7 +140,7 @@ class CodeCompletionAgent(Agent):
 
             except asyncio.CancelledError as e:
                 logger.info(f"{self} cancelled: {e}")
-                self.cancel()
+                await self.cancel()
                 return CodeCompletionRunResult()
 
             except Exception as e:
@@ -318,7 +323,7 @@ class CodeCompletionAgent(Agent):
                 with lsp.setdoc(self.state.document):
                     self.state.ranges.apply_edit(c)
                 if c.range is None:
-                    self.cancel("the whole document got replaced")
+                    await self.cancel("the whole document got replaced")
                 else:
                     if c.range.end <= self.state.cursor:
                         # some text was changed before our cursor
@@ -333,27 +338,9 @@ class CodeCompletionAgent(Agent):
                             # self.cancel("someone is editing on the same line as us")
                             pass  # temporarily disable
                     elif self.state.cursor in c.range:
-                        self.cancel("someone is editing the same text as us")
+                        await self.cancel("someone is editing the same text as us")
 
         self.state.document = after
-
-
-    async def request_input(self, request_input_request):
-        return await self.server.request(
-            f"morph/{self.agent_type}_{self.id}_request_input", request_input_request
-        )
-
-
-    async def request_chat(self, request_chat_request):
-        return await self.server.request(
-            f"morph/{self.agent_type}_{self.id}_request_chat", request_chat_request
-        )
-
-
-    # async def send_progress(self, progress: Optional[Any] = None):
-    #     progress.id = self.id
-    #     await self.server.notify(f"morph/{self.agent_type}_{self.id}_send_progress", progress)
-
 
     async def send_result(self, result):
         ...  # unreachable

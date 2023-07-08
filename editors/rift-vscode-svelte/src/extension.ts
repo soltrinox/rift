@@ -8,12 +8,12 @@ import { ChatProvider } from './elements/ChatProvider';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-    let hslc = new MorphLanguageClient(context)
+    let mlc = new MorphLanguageClient(context)
 
     context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider('*', hslc)
+        vscode.languages.registerCodeLensProvider('*', mlc)
     )
-    const chatProvider = new ChatProvider(context.extensionUri, hslc);
+    const chatProvider = new ChatProvider(context.extensionUri, mlc);
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
@@ -39,37 +39,49 @@ export function activate(context: vscode.ExtensionContext) {
         const doc = editor.document;
         const textDocument = { uri: doc.uri.toString(), version: 0 }
         const position = editor.selection.active;
-        let instructionPrompt = await vscode.window.showInputBox({
-            ignoreFocusOut: true,
-            placeHolder: 'Write the function body',
-            prompt: 'Enter a description of what you want the agent to do...',
-        });
-        if (instructionPrompt === undefined) {
-            console.log('run_agent task was cancelled')
-            return
+        // let instructionPrompt = await vscode.window.showInputBox({
+        //     ignoreFocusOut: true,
+        //     placeHolder: 'Write the function body',
+        //     prompt: 'Enter a description of what you want the agent to do...',
+        // });
+        // if (instructionPrompt === undefined) {
+        //     console.log('run_agent task was cancelled')
+        //     return
+        // }
+
+        const default_request_input_callback = async (params: any) => {
+            console.log(`REQUEST INPUT CALLBACK TRIGGERED WITH PARAMS: ${params}`)
+            let response = await vscode.window.showInputBox({
+                ignoreFocusOut: true,
+                placeHolder: params.place_holder,
+                prompt: params.msg,
+            });
+            return {id: params.id, response: response}
         }
-        //
-        // let CODE_COMPLETION_STATUS: string = "running";
-        // let CODE_COMPLETION_RANGES: vscode.Range[] = [];
-        // let STATUS_CHANGE_EMITTER = new vscode.EventEmitter<AgentStatus>;
-        const code_completion_send_progress_callback = async (params: AgentProgress) => {
+
+        const default_send_update_callback = async (params: any) => {
+            console.log(`SEND UPDATE CALLBACK TRIGGERED WITH PARAMS: ${params}`)
+            vscode.window.showInformationMessage(params.msg)
+        }
+
+        const code_completion_send_progress_callback = async (params: any) => {
             const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
             const key: string = `code_completion_${params.agent_id}`
             if (params.tasks) {
                 chatProvider.postMessage("tasks", {agent_id: params.agent_id, ...params.tasks})
                 if (params.tasks.task.status) {
-                    if (hslc.agentStates.get(key).status !== params.tasks.task.status) {
-                        hslc.agentStates.get(key).status = params.tasks.task.status
-                        hslc.agentStates.get(key).emitter.fire(params.tasks.task.status)
+                    if (mlc.agentStates.get(key).status !== params.tasks.task.status) {
+                        mlc.agentStates.get(key).status = params.tasks.task.status
+                        mlc.agentStates.get(key).emitter.fire(params.tasks.task.status)
                     }
                 }
             }
             if (params.payload) {
                 if (params.payload.ranges) {
-                    hslc.agentStates.get(key).ranges = params.payload.ranges
+                    mlc.agentStates.get(key).ranges = params.payload.ranges
                 }
             }
-            const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == hslc.agentStates.get(key).params.textDocument.uri.toString())
+            const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == mlc.agentStates.get(key).params.textDocument.uri.toString())
             for (const editor of editors) {
                 // [todo] check editor is visible
                 const version = editor.document.version
@@ -87,28 +99,25 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
-        const send_update_callback = async (params: any) => {
-            vscode.window.showInformationMessage(params.msg)
-        }
-
-        const r = await hslc.run(
+        const r = await mlc.run(
             {
                 agent_type: "code_completion",
-                agent_params: { position, textDocument, instructionPrompt }
+                agent_params: { position, textDocument }
             },
-            async () => {},
-            send_update_callback,
-            code_completion_send_progress_callback,
-            async () => {}
+            default_request_input_callback, // handle incoming requests
+            async () => {}, // code_completion agents don't request chat
+            default_send_update_callback, // handle incoming text notifications
+            code_completion_send_progress_callback, // handle task progress updates / streaming results
+            async () => {} // code_completion agents use custom logic for accept/reject of final diffs
         )
     }
     );
 
     context.subscriptions.push(disposable)
-    context.subscriptions.push(hslc)
+    context.subscriptions.push(mlc)
     // const provider = async (document, position, context, token) => {
     //     return [
-    //         { insertText: await hslc.provideInlineCompletionItems(document, position, context, token) }
+    //         { insertText: await mlc.provideInlineCompletionItems(document, position, context, token) }
     //     ]
     // };
 

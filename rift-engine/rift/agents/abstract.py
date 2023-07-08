@@ -22,6 +22,8 @@ class Status(Enum):
 @dataclass
 class RequestInputRequest:
     msg: str
+    place_holder: str = ""
+    
 
 
 @dataclass
@@ -129,27 +131,27 @@ class Agent:
         self.tasks.append(task)
         return task
 
-    def cancel(self, msg: Optional[str] = None):
+    async def cancel(self, msg: Optional[str] = None):
         logger.info(f"{self.agent_type} {self.agent_id} cancel run {msg or ''}")
         self.task.cancel()
         for task in self.tasks:
             if task is not None:
                 task.cancel()
 
-        self.send_progress()
+        await self.send_progress()
 
     async def request_input(self, req: RequestInputRequest) -> asyncio.Future[RequestInputResponse]:
-        ...
-
+        try:
+            return await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
+        except Exception as e:
+            logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
+            await self.cancel()
 
     async def send_update(self, msg: str):
-        await self.server.send_update(msg)
+        await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_update", {"msg": f"[{self.agent_type}] {msg}"})
 
-
-    async def request_chat(
-        self,
-    ) -> ...:
-        ...
+    async def request_chat(self, req: RequestChatRequest) -> asyncio.Future[RequestChatResponse]:
+        return await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_chat", req)
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
         if payload_only:
