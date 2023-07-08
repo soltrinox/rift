@@ -34,6 +34,15 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     vscode.env.clipboard.writeText(data.content)
                     vscode.window.showInformationMessage('Text copied to clipboard!')
                     break;
+                case "getAgents":
+                    const agents = await this.hslc.get_agents();
+                    
+                    webviewView.webview.postMessage({
+                            command: 'agents',
+                            data: agents
+                    });
+                    break;
+                    
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
                     let runChatParams: RunChatParams = { message: data.message, messages: data.messages }
