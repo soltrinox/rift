@@ -186,7 +186,7 @@ type AgentType = "chat" | "code-completion"
 export type AgentIdentifier = string
 
 export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLens> {
-    client: LanguageClient | null
+    client: LanguageClient
     red: vscode.TextEditorDecorationType
     green: vscode.TextEditorDecorationType
     context: vscode.ExtensionContext

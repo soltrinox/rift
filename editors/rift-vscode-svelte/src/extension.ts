@@ -56,17 +56,15 @@ export function activate(context: vscode.ExtensionContext) {
         // }
 
         const default_request_input_callback = async (params: any) => {
-            console.log(`REQUEST INPUT CALLBACK TRIGGERED WITH PARAMS: ${params}`)
             let response = await vscode.window.showInputBox({
                 ignoreFocusOut: true,
                 placeHolder: params.place_holder,
                 prompt: params.msg,
             });
-            return { id: params.id, response: response }
+            return {response: response}
         }
 
         const default_send_update_callback = async (params: any) => {
-            console.log(`SEND UPDATE CALLBACK TRIGGERED WITH PARAMS: ${params}`)
             vscode.window.showInformationMessage(params.msg)
         }
 

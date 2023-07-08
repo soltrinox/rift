@@ -80,10 +80,7 @@ class CodeCompletionAgent(Agent):
         return obj
 
     async def run(self) -> AgentRunResult: # main entry point
-
-        instructionPrompt = self.state.params.instructionPrompt or (await self.request_input(RequestInputRequest(msg="Describe what you want me to do", place_holder="Please implement the rest of this function"))).response
-
-        print("INSTRUCTION PROMPT: ", instructionPrompt)
+        instructionPrompt = self.state.params.instructionPrompt or (await self.request_input(RequestInputRequest(msg="Describe what you want me to do", place_holder="Please implement the rest of this function")))
 
         self.server.register_change_callback(self.on_change, self.state.document.uri)
         stream: InsertCodeResult = await self.state.model.insert_code(

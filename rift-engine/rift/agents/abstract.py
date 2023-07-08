@@ -177,12 +177,14 @@ class Agent:
 
         await self.send_progress()
 
-    async def request_input(self, req: RequestInputRequest) -> asyncio.Future[RequestInputResponse]:
+    async def request_input(self, req: RequestInputRequest) -> str:
         try:
-            return await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
+            response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
+            return response["response"]
         except Exception as e:
             logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
             await self.cancel()
+            raise asyncio.CancelledError
 
     async def send_update(self, msg: str):
         await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_update", {"msg": f"[{self.agent_type}] {msg}"})
