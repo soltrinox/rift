@@ -1,5 +1,4 @@
 <script lang="ts">
-  import chalk from "chalk";
   import { onDestroy, onMount, tick } from "svelte";
   import type { ChatAgentProgress } from "../../../src/types";
   import { loading, state } from "../stores";
@@ -7,7 +6,7 @@
   import UserInput from "./UserInput.svelte";
   import RiftSvg from "../icons/RiftSvg.svelte";
   import Response from "./Response.svelte";
-  import OmniBar from "./OmniBar.svelte"
+  import OmniBar from "./OmniBar.svelte";
 
   let observer: MutationObserver;
   export let progressResponse = "";

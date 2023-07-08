@@ -67,8 +67,14 @@
 </script>
 
 <div>
-    <div class="flex" on:click={() => (expanded = !expanded)}>
-        <a class="flex select-none">
+    <div
+        class="flex"
+        on:click={() => (expanded = !expanded)}
+        on:keydown={() => (expanded = !expanded)}
+    >
+        <div
+            class="flex select-none hover:text-[var(--vscode-list-hoverBackground)]"
+        >
             {#if expanded == false}
                 <div class="mx-1 mt-1.5">
                     <ArrowRightSvg />
@@ -86,7 +92,7 @@
                 <div class="mx-2 mt-0.5"><LogRed /></div> -->
             {/if}
             <span title={description}>{name}</span>
-        </a>
+        </div>
 
         <button
             class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex"
