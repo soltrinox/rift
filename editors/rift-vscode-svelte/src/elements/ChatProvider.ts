@@ -56,7 +56,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
-                    let runChatParams: RunChatParams = { message: data.message, messages: data.messages }
+                    let runChatParams: any = { message: data.message, messages: data.messages }
                     if (!editor) {
                         console.warn('No active text editor found');
                     } else {
