@@ -18,7 +18,7 @@
 
     vscode.postMessage({
       type: "chatMessage",
-      messages: $state.agents[$state.currentlySelectedAgentId].chatHistory,
+      messages: $state.agents[$state.selectedAgentId].chatHistory,
       message: textarea.value,
     });
     console.log("updating state...");
@@ -26,10 +26,10 @@
       ...state,
       agents: {
         ...state.agents,
-        [state.currentlySelectedAgentId]: {
-          ...state.agents[state.currentlySelectedAgentId],
+        [state.selectedAgentId]: {
+          ...state.agents[state.selectedAgentId],
           chatHistory: [
-            ...state.agents[state.currentlySelectedAgentId].chatHistory,
+            ...state.agents[state.selectedAgentId].chatHistory,
             { role: "user", content: textarea.value },
           ],
         },

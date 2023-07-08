@@ -25,7 +25,8 @@ class ChatAgent(Agent):
     agent_id: str
     model: AbstractChatCompletionProvider
     count: ClassVar[int] = 0
-    agent_type: str = "chat"
+    agent_type = "chat"
+    agent_description = "rift chat!"
 
     @classmethod
     def create(cls, messages, server):

@@ -8,7 +8,6 @@ from rift.lsp import LspServer as BaseLspServer, rpc_method
 from rift.llm.openai_types import Message as ChatMessage
 from enum import Enum
 
-
 class Status(Enum):
     running = "running"
     done = "done"
@@ -72,6 +71,34 @@ class AgentRunResult(ABC):
 class AgentState(ABC):
     ...
 
+@dataclass
+class AgentRegistry:
+    def __init__(self):
+        self.registry: Dict[str, Agent] = {}
+
+    def register_agent(self, agent):
+        if agent.agent_type in self.registry:
+            raise ValueError(f"Agent with ID {agent.agent_type} is already registered.")
+        self.registry[agent.agent_type] = agent
+
+    def get_agent(self, id: int):
+        return self.registry.get(id)
+
+    def list_agents(self):
+        return list(self.registry.values())
+
+    def delete_agent(self, id: int):
+        if id in self.registry:
+            del self.registry[id]
+        else:
+            raise ValueError(f"No agent found with ID {id}.")
+
+
+registry = AgentRegistry()
+
+
+def make_agent(thing):
+    registry.register_agent(thing)
 
 @dataclass
 class Agent:
@@ -79,6 +106,8 @@ class Agent:
     state: AgentState
     tasks: Dict[str, AgentTask]
     server: BaseLspServer
+    agent_type: str
+    agent_description: str
     id: int
 
     @property
@@ -88,6 +117,10 @@ class Agent:
         else:
             return self.tasks.get(self.active_task_id)
 
+
+    def get_display(self):
+        return self.agent_type, self.agent_description
+    
     def __str__(self):
         return f"<{type(self).__name__}> {self.id}"
 
@@ -119,3 +152,5 @@ class Agent:
 
     async def send_result(self) -> ...:
         ...
+
+

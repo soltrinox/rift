@@ -1,22 +1,23 @@
 export type ChatAgentProgress = {
     id: number,
     response: string
-    log?: Log
     done: boolean
 };
 
-
-export type Log = {
-    message: string,
-    severity: string
+export class ChatMessage {
+    constructor(
+        public role: "user" | "assistant",
+        public content: string
+    ) { }
 }
 
-type ChatMessage = { role: "user" | "assistant", content: string }
-
-type Agent = {
-    chatHistory: ChatMessage[]
-    logs: Log[]
-    description: string
+export class Agent {
+    constructor(
+        public id: string,
+        public type: string, // aider, gpt-engineer, etc
+        public chatHistory: ChatMessage[] = [],
+        public taskRoot: AgentTask[] = [],
+    ) { }
 }
 
 class AgentTask {
@@ -30,7 +31,7 @@ class AgentTask {
 }
 
 export type SvelteStore = {
-    currentlySelectedAgentId: string,
+    selectedAgentId: string,
     agents: {
         [id: string]: Agent
     }

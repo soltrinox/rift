@@ -27,13 +27,24 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
         webviewView.webview.onDidReceiveMessage(async (data) => {
+            if (!this._view) throw new Error('no view')
             switch (data.type) {
+
                 // TODO
                 case "copyText":
                     console.log('recieved copy in webview')
                     vscode.env.clipboard.writeText(data.content)
                     vscode.window.showInformationMessage('Text copied to clipboard!')
                     break;
+                case "getAgents":
+                    const agents = await this.hslc.get_agents();
+                    console.log("AGENTS!")
+                    this._view.webview.postMessage({
+                            type: 'agents',
+                            data: agents
+                    });
+                    break;
+                    
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
                     let runChatParams: RunChatParams = { message: data.message, messages: data.messages }

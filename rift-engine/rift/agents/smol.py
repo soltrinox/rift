@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 from typing import Dict, Optional, ClassVar, Any
 import asyncio
 import smol_dev
@@ -12,6 +12,7 @@ from rift.agents.abstract import (
     AgentState,
     AgentProgress,
     AgentRunParams,
+    make_agent,
     AgentRunResult,
     RequestInputResponse,
     RequestChatResponse,
@@ -51,9 +52,12 @@ class SmolAgentState(AgentState):
     ranges: RangeSet = field(default_factory=RangeSet)
     smol_dev: smol_dev = smol_dev  # lets you access smol_dev methods
 
+
+@make_agent
 @dataclass
 class SmolAgent(Agent):
-    agent_type: str = "smol_dev"
+    agent_type = "smol_dev"
+    agent_description = "An AI agent that generates code based on a prompt."
     state: SmolAgentState
     tasks: Dict[str, AgentTask]
     server: BaseLspServer
@@ -118,7 +122,7 @@ class SmolAgent(Agent):
         task = self.tasks[task_id]
 
         try:
-            prompt = ''.join([message.content for message in self.state.messages])
+            prompt = "".join([message.content for message in self.state.messages])
             # planning
             plan_task = self.add_task(AgentTask("running", "Planning...", [], None))
             plan = self.state.smol_dev.plan(prompt)
