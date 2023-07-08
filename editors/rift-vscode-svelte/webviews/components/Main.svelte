@@ -31,7 +31,7 @@
   const vscodeState = vscode.getState();
   console.log("attempting to access vscode state:");
   console.log(vscodeState);
-  // if (vscodeState) state.set(vscodeState);
+  if (vscodeState) state.set(vscodeState);
   let progressResponse: string;
   const incomingMessage = (event: any) => {
         // Listen for the response
