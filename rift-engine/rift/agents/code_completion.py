@@ -9,11 +9,11 @@ from rift.agents.abstract import (
     AgentRunParams,
     AgentRunResult,
     Agent,
-    make_agent,
     AgentProgress,
     AgentRunResult,
     RunAgentParams,
-    RequestInputRequest
+    RequestInputRequest,
+    agent
 )
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp.document import TextDocumentItem
@@ -57,7 +57,7 @@ class CodeCompletionAgentState(AgentState):
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
-@make_agent
+@agent
 @dataclass
 class CodeCompletionAgent(Agent):
     state: CodeCompletionAgentState
@@ -194,7 +194,7 @@ class CodeCompletionAgent(Agent):
         await code_task.run()
 
         await self.send_progress()
-
+    
         return CodeCompletionRunResult()
 
 

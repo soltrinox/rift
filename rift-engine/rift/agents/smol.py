@@ -12,7 +12,6 @@ from rift.agents.abstract import (
     AgentState,
     AgentProgress,
     AgentRunParams,
-    make_agent,
     AgentRunResult,
     RequestInputResponse,
     RequestChatResponse,

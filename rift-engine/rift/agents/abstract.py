@@ -1,5 +1,6 @@
 import uuid
 import asyncio
+import functools
 from typing import List, Optional, Any
 from dataclasses import dataclass, field
 from abc import ABC
@@ -110,8 +111,12 @@ class AgentRegistry:
 registry = AgentRegistry()
 
 
-def make_agent(thing):
-    registry.register_agent(thing)
+def agent(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        registry.register_agent(func)
+        return func(*args, **kwargs)
+    return wrapper
 
 @dataclass
 class Agent:
@@ -133,7 +138,7 @@ class Agent:
 
 
     def get_display(self):
-        return self.agent_type, self.agent_description
+        return self.agent_type, self.description
     
     def __str__(self):
         return f"<{self.agent_type}> {self.agent_id}"
