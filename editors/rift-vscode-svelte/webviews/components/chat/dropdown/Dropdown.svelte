@@ -1,6 +1,7 @@
 <script lang="ts">
   import { state } from "../../stores";
   import DropdownCard from "./DropdownCard.svelte";
+
   const MOCK_AGENT_IDS = [
     "rift-chat",
     "aider",

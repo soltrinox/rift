@@ -229,6 +229,14 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         return this.client && this.client.state == State.Running
     }
 
+    async get_agents() {
+        console.log('get agents');
+        if(!this.client) throw new Error()
+        const result = await this.client.sendRequest('get_agents')
+        console.log(result);
+        return result;
+    }
+
     async create_client() {
         if (this.client && this.client.state != State.Stopped) {
             console.log(`client already exists and is in state ${this.client.state}`)
@@ -334,6 +342,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
         // note this returns fast and then the updates are sent via notifications
         return 'starting...'
     }
+
+    
 
 
     dispose() {
