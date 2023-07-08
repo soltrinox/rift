@@ -1,14 +1,17 @@
 <script lang="ts">
   import { state } from "../../stores";
+  import Agent from "../../logs/Agent.svelte";
+  // import { Log, ChatMessage } from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
-  const MOCK_AGENT_IDS = [
-    "rift-chat",
-    "aider",
-    "gpt-engineer",
-    "auto-code-review",
-    "repl-auto-debug",
+  const MOCK_AGENT_REGISTRY = [
+    //TODO get from server
+    { name: "rift-chat", description: "ask me anything ab life bro" },
+    { name: "aider", description: "congrats ur now a 10x engineer" },
+    { name: "gpt-engineer", description: "an engineer but gpt" },
+    { name: "auto-code-review",  description: "code review but meaner" },
+    { name: "repl-auto-debug",  description: "let me debug for u" }
   ];
-  export let agentIds = MOCK_AGENT_IDS;
+  export let agentIds = MOCK_AGENT_REGISTRY;
   export let inputValue = "";
 
   let activeId = 0;
@@ -16,10 +19,18 @@
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
       e.preventDefault();
-      const newCurrentlySelectedAgentId = agentIds[activeId];
+      const newSelectedAgentId =  agentIds[activeId];
       state.update((state) => ({
         ...state,
-        currentlySelectedAgentId: newCurrentlySelectedAgentId,
+        selectedAgentId: newSelectedAgentId,
+        agents: {
+          ...state.agents,
+          [newSelectedAgentId]: {
+            chatHistory: [] as ChatMessage[],
+            logs: [] as Log[],
+            description: "new agent description!!!",
+          },
+        },
       }));
     }
     if (e.key == "ArrowDown") {
@@ -38,7 +49,7 @@
 <div
   class="absolute left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
-  {#each agentIds.filter(id => id.includes(inputValue.substring(1))) as id, index}
+  {#each agentIds.filter( (id) => id.includes(inputValue.substring(1)) ) as id, index}
     <DropdownCard {id} focused={Boolean(index == activeId)} />
   {/each}
 </div>
