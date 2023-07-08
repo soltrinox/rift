@@ -23,7 +23,7 @@ from rift.server.chat_agent import RunChatParams, ChatAgentLogs, ChatAgent
 from rift.server.agent import *
 from rift.agents.code_completion import CodeCompletionAgent
 from rift.agents.smol import SmolAgent, SmolAgentParams
-from rift.agents.abstract import RunAgentParams
+from rift.agents.abstract import RunAgentParams, Agent
 
 logger = logging.getLogger(__name__)
 @dataclass
@@ -276,9 +276,9 @@ class LspServer(BaseLspServer):
 
     @rpc_method("morph/cancel")
     async def on_cancel(self, params: AgentIdParams):
-        agent = self.active_agents.get(params.id)
+        agent: Agent = self.active_agents.get(params.id)
         if agent is not None:
-            agent.cancel()
+            await agent.cancel()
 
     @rpc_method("morph/listAgents")
     def on_list_agents(self, params: Any):
