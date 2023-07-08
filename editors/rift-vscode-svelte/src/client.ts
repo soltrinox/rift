@@ -172,7 +172,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentLens> {
             this.context.subscriptions.push(
                 vscode.commands.registerCommand('extension.getAgents', async () => {
                     if (client) {
-                      return await client.get_agents();
+                      return await this.get_agents();
                     }
                   }),
                 vscode.commands.registerCommand('rift.cancel', (id: number) => this.client?.sendNotification('morph/cancel', { id })),

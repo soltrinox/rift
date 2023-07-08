@@ -77,7 +77,9 @@
         }
         break;
       case "agents":
-        agentOptions:{type: string, description?: string, svg?: string}[] = event.data.data
+        console.log('new agents just dropped')
+        console.log(event.data.data)
+        agentOptions = event.data.data
         break;
       default: 
         throw new Error('no case matched')
