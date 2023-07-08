@@ -274,7 +274,8 @@ class LspServer(BaseLspServer):
 
     @rpc_method("morph/listAgents")
     def on_list_agents(self):
-        return registry.list_agents()
+        return list(map(lambda x: logger.info("\t"+x.get_display(x)[0]+" | "+x.get_display(x)[1]), registry.list_agents()))
+
     
     @rpc_method("morph/accept")
     async def on_accept(self, params: AgentIdParams):
