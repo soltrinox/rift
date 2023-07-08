@@ -4,6 +4,7 @@
   import { Agent, ChatMessage } from '../../../../src/types'
   // import { Log, ChatMessage } from "../../../../src/types";
   import DropdownCard from './DropdownCard.svelte'
+  import { onMount } from 'svelte'
   const MOCK_AGENT_REGISTRY = [
     //TODO get from server
     { name: 'rift-chat', description: 'ask me anything ab life bro' },
@@ -14,6 +15,11 @@
   ]
   export let agentIds = MOCK_AGENT_REGISTRY
   export let inputValue = ''
+  onMount(() => {
+    // Request agents when the component mounts
+    vscode.postMessage({ type: 'getAgents' });
+  });
+
 
   let activeId = 0
 

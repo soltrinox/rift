@@ -2,7 +2,7 @@ import { writable } from 'svelte/store'
 import type { SvelteStore } from '../../src/types'
 
 export const DEFAULT_STATE: SvelteStore = {
-  selectedAgentId: 'rift-chat',
+  selectedAgentId: 'deadb33f',
   agents: {
     "deadb33f": {
       id: "deadb33f",

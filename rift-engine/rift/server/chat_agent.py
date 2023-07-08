@@ -18,6 +18,7 @@ from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class RunChatParams:
     message: str
@@ -25,7 +26,9 @@ class RunChatParams:
     position: Optional[lsp.Position]
     textDocument: Optional[lsp.TextDocumentIdentifier]
 
-ChatAgentLogs = AgentLogs        
+
+ChatAgentLogs = AgentLogs
+
 
 class ChatAgent:
     count: ClassVar[int] = 0

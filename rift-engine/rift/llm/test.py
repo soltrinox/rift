@@ -10,24 +10,25 @@ from rift.util.ofdict import todict
 import rift.lsp.types as lsp
 
 if __name__ == "__main__":
+
     class MockLspClient(RpcServer):
-        @rpc_request('morph/run')
+        @rpc_request("morph/run")
         async def run(self, params: Any) -> Any:
             ...
 
-        @rpc_request('initialize')
+        @rpc_request("initialize")
         async def initialize(self, params: InitializeParams) -> Any:
             ...
 
-        @rpc_method('morph/chat_progress')
+        @rpc_method("morph/chat_progress")
         async def chat_progress(self, params: Any):
             print("PROGRESS: ", params)
 
-        @rpc_method('window/logMessage')
+        @rpc_method("window/logMessage")
         async def logmessage(self, params: Any):
             ...
 
-        @rpc_method('morph/code_completion_1_send_progress')
+        @rpc_method("morph/code_completion_1_send_progress")
         async def chat_progress(self, params: Any):
             print("PROGRESS: ", params)            
             
@@ -40,11 +41,11 @@ if __name__ == "__main__":
         async def smol_agent_progress(self, params: Any):
             print("SMOL PROGRESS: ", params)            
 
-        @rpc_method('window/logMessage')
+        @rpc_method("window/logMessage")
         async def logmessage(self, params: Any):
             ...
 
-        @rpc_method('workspace/applyEdit')
+        @rpc_method("workspace/applyEdit")
         async def applyEdit(self, params: Any) -> lsp.ApplyWorkspaceEditResponse:
             print("**********************")
             print("**********************")
@@ -54,10 +55,10 @@ if __name__ == "__main__":
             print("EDIT: ", params)
             return {"applied": True}
 
-        @rpc_request('textDocument/didOpen')
+        @rpc_request("textDocument/didOpen")
         async def on_did_open(self, params: lsp.DidOpenTextDocumentParams):
             ...
-            
+
     async def main():
         reader, writer = await asyncio.open_connection("127.0.0.1", 7797)
         transport = AsyncStreamTransport(reader, writer)
@@ -68,13 +69,22 @@ if __name__ == "__main__":
         from rift.server.chat_agent import RunChatParams
 
         # register a file
-        on_did_open_params = lsp.DidOpenTextDocumentParams(textDocument=lsp.TextDocumentItem(text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw", uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", languageId="python", version=0))
+        on_did_open_params = lsp.DidOpenTextDocumentParams(
+            textDocument=lsp.TextDocumentItem(
+                text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw",
+                uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py",
+                languageId="python",
+                version=0,
+            )
+        )
         print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
         
         from rift.agents.smol import SmolAgentParams
         from rift.server.lsp import RunAgentParams
+
         class RunParams(BaseModel):
             agent_type: str = "chat"
+
         params = todict(
             RunAgentParams(agent_type="smol_dev", agent_params=SmolAgentParams(instructionPrompt="write hello world in Python", position=lsp.Position(0,0), textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0)))
         )
