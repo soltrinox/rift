@@ -25,7 +25,7 @@
   const incomingMessage = (event: any) => {
     // console.log(event);
     const progress = event.data.data as ChatAgentProgress;
-    const agentId = "rift-chat"; //FIXME brent HARDCODED change later
+    const agentId = Object.values(DEFAULT_STATE.agents).find(agent => agent.type == 'rift-chat')?.id || 'deadb33f'; //FIXME brent HARDCODED change later
     progressResponse = progress.response;
     // console.log(progressResponse);
     isDone = progress.done;
@@ -53,7 +53,7 @@
               { role: "assistant", content: progressResponse },
             ],
             logs: [
-              ...state.agents[agentId].logs,
+              ...state.agents[agentId].taskRoot,
               {
                 message: randomLogMessage[random],
                 severity: randomLogSeverity[random],

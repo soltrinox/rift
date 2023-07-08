@@ -15,6 +15,12 @@ export const DEFAULT_STATE: SvelteStore = {
       type: "aider",
       chatHistory: [{ role: "assistant", content: "How can I aid?" }],
       taskRoot: [],
+    },
+    "abcdef": {
+      id: "abcdef",
+      type: "aider",
+      chatHistory: [{ role: "assistant", content: "How can I aid?" }],
+      taskRoot: [],
     }
   }
 };

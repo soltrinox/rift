@@ -56,14 +56,14 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        const omnibar = document.getElementById(
-            "omnibar"
-        ) as HTMLTextAreaElement;
-        omnibar?.focus();
-        omnibar.value = "/rift-chat";
-        hasNotification = false;
-        $state.agents[id].logs.splice(0);
-    };
+    //     const omnibar = document.getElementById(
+    //         "omnibar"
+    //     ) as HTMLTextAreaElement;
+    //     omnibar?.focus();
+    //     omnibar.value = "/rift-chat";
+    //     hasNotification = false;
+    //     $state.agents[id].logs.splice(0);
+     };
 </script>
 
 <div>
@@ -130,7 +130,7 @@
         </div>
     </div>
     <div hidden={!expanded}>
-        {#each $state.agents[id].logs as log}
+        {#each $state.agents[id].taskRoot as log}
             <Log {log} {id} on:message={handleMessage} />
         {/each}
     </div>
