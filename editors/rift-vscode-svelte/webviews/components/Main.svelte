@@ -15,7 +15,14 @@
     vscode.setState(DEFAULT_STATE)
     if(JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {vscode.setState(state)}
   });
-
+  let agentOptions:{type: string, description?: string, svg?: string}[] = [
+    //TODO get from server
+    { type: 'rift-chat', description: 'ask me anything ab life bro' },
+    { type: 'aider', description: 'congrats ur now a 10x engineer' },
+    { type: 'gpt-engineer', description: 'an engineer but gpt' },
+    { type: 'auto-code-review', description: 'code review but meaner' },
+    { type: 'repl-auto-debug', description: 'let me debug for u' },
+  ]
   let isDone = false;
   const vscodeState = vscode.getState();
   console.log("attempting to access vscode state:");
@@ -70,7 +77,7 @@
         }
         break;
       case "agents":
-        const agentIds:string[] = event.data.data
+        agentOptions:{type: string, description?: string, svg?: string}[] = event.data.data
         break;
       default: 
         throw new Error('no case matched')
