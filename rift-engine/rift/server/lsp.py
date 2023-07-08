@@ -276,8 +276,9 @@ class LspServer(BaseLspServer):
     def on_list_agents(self, params: Any):
         logging.info(self)
         logging.info(params)
-        return list(map(lambda x: {"type":x.get_display(x)[0],"description":x.get_display(x)[1]}), registry.list_agents())
-
+        toReturn= list(map(lambda x: {"type":x.get_display(x)[0],"description":x.get_display(x)[1]}, registry.list_agents()))
+        logging.info(toReturn)
+        return toReturn
     
     @rpc_method("morph/accept")
     async def on_accept(self, params: AgentIdParams):

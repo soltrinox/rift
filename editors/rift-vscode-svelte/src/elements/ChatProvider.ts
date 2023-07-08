@@ -38,8 +38,9 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     break;
                 case "getAgents":
                     const agents = await this.hslc.get_agents();
+                    console.log("AGENTS!")
                     this._view.webview.postMessage({
-                            command: 'agents',
+                            type: 'agents',
                             data: agents
                     });
                     break;
