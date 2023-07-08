@@ -273,7 +273,9 @@ class LspServer(BaseLspServer):
             agent.cancel()
 
     @rpc_method("morph/listAgents")
-    def on_list_agents(self):
+    def on_list_agents(self, params: Any):
+        logging.info(self)
+        logging.info(params)
         return list(map(lambda x: {"type":x.get_display(x)[0],"description":x.get_display(x)[1]}), registry.list_agents())
 
     
