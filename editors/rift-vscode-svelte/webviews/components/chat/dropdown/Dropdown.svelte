@@ -12,18 +12,18 @@
   export let agentIds = MOCK_AGENT_IDS;
   onMount(() => {
     // Request agents when the component mounts
-    vscode.postMessage({ command: 'getAgents' });
+    vscode.postMessage({ type: 'getAgents' });
 
     // Listen for the response
-    window.addEventListener('message', event => {
-      const message = event.data;
-      switch (message.command) {
-        case 'agents':
-          // Update the agents list when we receive the response
-          agentIds = message.data;
-          break;
-      }
-    });
+    // window.addEventListener('message', event => {
+    //   const message = event.data;
+    //   switch (message.command) {
+    //     case 'agents':
+    //       // Update the agents list when we receive the response
+    //       agentIds = message.data;
+    //       break;
+    //   }
+    // });
   });
 
   

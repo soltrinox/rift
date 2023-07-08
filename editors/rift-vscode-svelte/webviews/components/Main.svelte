@@ -23,47 +23,57 @@
   if (vscodeState) state.set(vscodeState);
   let progressResponse: string;
   const incomingMessage = (event: any) => {
-    // console.log(event);
-    const progress = event.data.data as ChatAgentProgress;
-    const agentId = "rift-chat"; //FIXME brent HARDCODED change later
-    progressResponse = progress.response;
-    // console.log(progressResponse);
-    isDone = progress.done;
+        // Listen for the response
 
-    const randomLogSeverity = ["done", "progress"];
-    let random = Math.floor(Math.random() * randomLogSeverity.length);
-    const randomLogMessage = [
-      "Things are going great",
-      "making progress",
-      "uh oh",
-      "something else",
-    ];
-    let random2 = Math.floor(Math.random() * randomLogMessage.length);
-
-    // for sticky window^
-    if (isDone) {
-      state.update((state) => ({
-        ...state,
-        agents: {
-          ...state.agents,
-          [agentId]: {
-            ...state.agents[agentId],
-            chatHistory: [
-              ...state.agents[agentId].chatHistory,
-              { role: "assistant", content: progressResponse },
-            ],
-            logs: [
-              ...state.agents[agentId].logs,
-              {
-                message: randomLogMessage[random],
-                severity: randomLogSeverity[random],
+    switch(event.data.type) {
+      case "progress":
+        const progress = event.data.data as ChatAgentProgress;
+        const agentId = "rift-chat"; //FIXME brent HARDCODED change later
+        progressResponse = progress.response;
+        // console.log(progressResponse);
+        isDone = progress.done;
+    
+        const randomLogSeverity = ["done", "progress"];
+        let random = Math.floor(Math.random() * randomLogSeverity.length);
+        const randomLogMessage = [
+          "Things are going great",
+          "making progress",
+          "uh oh",
+          "something else",
+        ];
+        let random2 = Math.floor(Math.random() * randomLogMessage.length);
+    
+        // for sticky window^
+        if (isDone) {
+          state.update((state) => ({
+            ...state,
+            agents: {
+              ...state.agents,
+              [agentId]: {
+                ...state.agents[agentId],
+                chatHistory: [
+                  ...state.agents[agentId].chatHistory,
+                  { role: "assistant", content: progressResponse },
+                ],
+                logs: [
+                  ...state.agents[agentId].logs,
+                  {
+                    message: randomLogMessage[random],
+                    severity: randomLogSeverity[random],
+                  },
+                ],
               },
-            ],
-          },
-        },
-      }));
-      loading.set(false);
-      progressResponse = "";
+            },
+          }));
+          loading.set(false);
+          progressResponse = "";
+        }
+        break;
+      case "agents":
+        const agentIds:string[] = event.data.data
+        break;
+      default: 
+        throw new Error('no case matched')
     }
   };
 </script>

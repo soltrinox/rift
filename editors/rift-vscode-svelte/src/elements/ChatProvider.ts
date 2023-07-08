@@ -27,7 +27,9 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
         webviewView.webview.onDidReceiveMessage(async (data) => {
+            if (!this._view) throw new Error('no view')
             switch (data.type) {
+
                 // TODO
                 case "copyText":
                     console.log('recieved copy in webview')
@@ -36,8 +38,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     break;
                 case "getAgents":
                     const agents = await this.hslc.get_agents();
-                    
-                    webviewView.webview.postMessage({
+                    this._view.webview.postMessage({
                             command: 'agents',
                             data: agents
                     });
