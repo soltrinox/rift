@@ -91,6 +91,7 @@ class CodeCapabilitiesServer:
             async with server:
                 addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
                 logger.info(f"listening with LSP protool on {addrs}")
+                print(list(map(lambda x: {"type":x.get_display(x)[0],"description":x.get_display(x)[1]}, registry.list_agents())))
                 logger.info(f"Avaliable Agents:")
                 list(map(lambda x: logger.info("\t"+x.get_display(x)[0]+" | "+x.get_display(x)[1]), registry.list_agents()))
                 await server.serve_forever()
