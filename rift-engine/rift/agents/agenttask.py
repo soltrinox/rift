@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 import asyncio
 from asyncio import Future
+from dataclasses import dataclass
 from typing import Optional
 
 """
@@ -10,6 +10,7 @@ each Task wraps a coroutine which represents some part of the Agent's execution
 the status of that coroutine is precisely the status of that task
 the agent is done when all its subtasks are done, etc
 """
+
 
 @dataclass
 class AgentTask:
@@ -25,7 +26,7 @@ class AgentTask:
             return await self.task
         except asyncio.CancelledError:
             self._cancelled = True
-        
+
         except Exception as e:
             self._error = e
 
@@ -43,7 +44,7 @@ class AgentTask:
     @property
     def error(self) -> bool:
         return self._error is not None
-    
+
     @property
     def status(self):
         if self.error:
@@ -56,4 +57,3 @@ class AgentTask:
             return "running"
         else:
             return "scheduled"
-    

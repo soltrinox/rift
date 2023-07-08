@@ -4,12 +4,12 @@ This file is adapted from  https://github.com/EdAyers/sss
 """
 import bisect
 import contextlib
+import functools
+import re
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from enum import Enum
-import functools
 from pathlib import Path
-import re
 from typing import Iterable, Optional, Union
 from urllib.parse import urlparse
 
@@ -17,8 +17,10 @@ try:
     from typing import TypeAlias, TypeVar
 except:
     from typing_extensions import TypeAlias, TypeVar
-from rift.util.misc import set_ctx
+
 import logging
+
+from rift.util.misc import set_ctx
 
 logger = logging.getLogger(__name__)
 

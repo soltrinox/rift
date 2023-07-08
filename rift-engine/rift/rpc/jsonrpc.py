@@ -2,29 +2,21 @@
 Author: E.W.Ayers <contact@edayers.com>
 This file is adapted from  https://github.com/EdAyers/sss
 """
-from asyncio import Future, Task
 import asyncio
-from functools import singledispatch, partial
-from dataclasses import MISSING, asdict, dataclass, field, is_dataclass
-from enum import Enum
+import inspect
+import json
 import logging
 import sys
-from typing import (
-    Any,
-    Optional,
-    Union,
-)
-import inspect
 import warnings
+from asyncio import Future, Task
+from dataclasses import MISSING, asdict, dataclass, field, is_dataclass
+from enum import Enum
+from functools import partial, singledispatch
+from typing import Any, Optional, Union
 
 from rift.util.ofdict import MyJsonEncoder, ofdict, todict, todict_dataclass
-import json
-from .transport import (
-    Transport,
-    TransportClosedError,
-    TransportClosedOK,
-    TransportError,
-)
+
+from .transport import Transport, TransportClosedError, TransportClosedOK, TransportError
 
 logger = logging.getLogger(__name__)
 

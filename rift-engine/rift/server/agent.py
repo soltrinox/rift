@@ -1,16 +1,16 @@
 import asyncio
+import importlib.util
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
-from typing import Any, ClassVar, Optional, List, Union
-from typing import Literal
-from rift.lsp.document import setdoc
+from typing import Any, ClassVar, List, Literal, Optional, Union
+
 import rift.lsp.types as lsp
-import importlib.util
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
-from rift.server.selection import RangeSet
-from rift.agents.abstract import Status, RunAgentParams
+from rift.agents.abstract import RunAgentParams, Status
 from rift.agents.code_completion import CodeCompletionAgentParams
+from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
+from rift.lsp.document import setdoc
+from rift.server.selection import RangeSet
 
 logger = logging.getLogger(__name__)
 

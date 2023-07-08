@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, List
-from rift.util.TextStream import TextStream
+from typing import List, Optional
+
 from rift.llm.openai_types import Message
+from rift.util.TextStream import TextStream
 
 
 @dataclass

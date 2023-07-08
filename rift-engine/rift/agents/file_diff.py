@@ -1,16 +1,19 @@
+import os
 from dataclasses import dataclass
+from typing import List, Tuple
+
 from diff_match_patch import diff_match_patch
+
 from rift.lsp import (
     CreateFile,
-    TextEdit,
     Range,
     TextDocumentEdit,
     TextDocumentIdentifier,
+    TextEdit,
     WorkspaceEdit,
 )
 from rift.lsp.types import ChangeAnnotation
-import os
-from typing import List, Tuple
+
 
 @dataclass
 class FileChange:
@@ -18,6 +21,7 @@ class FileChange:
     old_content: str
     new_content: str
     is_new_file: bool = False
+
 
 def get_file_change(path: str, new_content: str) -> FileChange:
     uri = TextDocumentIdentifier(uri="file://" + path, version=None)
@@ -28,9 +32,8 @@ def get_file_change(path: str, new_content: str) -> FileChange:
     else:
         return FileChange(uri=uri, old_content="", new_content=new_content, is_new_file=True)
 
-def edits_from_file_change(
-    file_change: FileChange
-) -> WorkspaceEdit:
+
+def edits_from_file_change(file_change: FileChange) -> WorkspaceEdit:
     dmp = diff_match_patch()
     diff = dmp.diff_main(file_change.old_content, file_change.new_content)
 
@@ -68,13 +71,13 @@ def edits_from_file_change(
     documentChanges.append(TextDocumentEdit(textDocument=file_change.uri, edits=edits))
     return WorkspaceEdit(documentChanges=documentChanges)
 
-def edits_from_file_changes(
-        file_changes: List[FileChange]  
-) -> WorkspaceEdit:
+
+def edits_from_file_changes(file_changes: List[FileChange]) -> WorkspaceEdit:
     documentChanges = []
     for file_change in file_changes:
         documentChanges.append(edits_from_file_change(file_change=file_change).documentChanges)
     return WorkspaceEdit(documentChanges=documentChanges)
+
 
 if __name__ == "__main__":
     file1 = "tests/diff/file1.txt"

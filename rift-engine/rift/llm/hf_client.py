@@ -1,19 +1,19 @@
 import asyncio
-from pydantic import BaseSettings, BaseModel
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
-
-from rift.util.TextStream import TextStream
-from .openai_types import (
-    Message,
-)
-from typing import Any, Optional
-import time
 import datetime
 import json
-import re
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import logging
+import re
+import time
+from typing import Any, Optional
+
+import torch
+from pydantic import BaseModel, BaseSettings
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
+from rift.util.TextStream import TextStream
+
+from .openai_types import Message
 
 logger = logging.getLogger(__name__)
 

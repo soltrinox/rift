@@ -1,27 +1,26 @@
-import uuid
-from dataclasses import dataclass, field
-from typing import Dict, Optional, Any
-from asyncio import Future
-from rift.lsp import LspServer as BaseLspServer
-from rift.agents.abstract import (
-    AgentState,
-    # AgentTask,
-    AgentRunParams,
-    AgentRunResult,
-    Agent,
-    AgentProgress,
-    AgentRunResult,
-    RunAgentParams,
-    RequestInputRequest,
-    agent
-)
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
-from rift.lsp.document import TextDocumentItem
-import rift.lsp.types as lsp
-from rift.server.selection import RangeSet
 import asyncio
 import logging
+import uuid
+from asyncio import Future
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Dict, Optional
+
+import rift.lsp.types as lsp
+from rift.agents.abstract import (
+    Agent,
+    AgentProgress,  # AgentTask,
+    AgentRunParams,
+    AgentRunResult,
+    AgentState,
+    RequestInputRequest,
+    RunAgentParams,
+    agent,
+)
 from rift.agents.agenttask import AgentTask
+from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
+from rift.lsp import LspServer as BaseLspServer
+from rift.lsp.document import TextDocumentItem
+from rift.server.selection import RangeSet
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +56,14 @@ class CodeCompletionAgentState(AgentState):
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
-@agent
+@agent(
+    agent_description="Generate code following an instruction to be inserted directly at your current cursor location.",
+    display_name="Rift Code Completion",
+)
 @dataclass
 class CodeCompletionAgent(Agent):
     state: CodeCompletionAgentState
-    agent_type: str = "code_completion"
+    agent_type: ClassVar[str] = "code_completion"
 
     @classmethod
     def create(cls, params: CodeCompletionAgentParams, model, server):
@@ -71,7 +73,7 @@ class CodeCompletionAgent(Agent):
             cursor=params.position,
             ranges=RangeSet(),
             params=params,
-            )
+        )
         obj = cls(
             state=state,
             agent_id=params.agent_id,
@@ -79,12 +81,21 @@ class CodeCompletionAgent(Agent):
         )
         return obj
 
-    async def run(self) -> AgentRunResult: # main entry point
-        instructionPrompt = self.state.params.instructionPrompt or (await self.request_input(RequestInputRequest(msg="Describe what you want me to do", place_holder="Please implement the rest of this function")))
+    async def run(self) -> AgentRunResult:  # main entry point
+        instructionPrompt = self.state.params.instructionPrompt or (
+            await self.request_input(
+                RequestInputRequest(
+                    msg="Describe what you want me to do",
+                    place_holder="Please implement the rest of this function",
+                )
+            )
+        )
 
         self.server.register_change_callback(self.on_change, self.state.document.uri)
         stream: InsertCodeResult = await self.state.model.insert_code(
-            self.state.document.text, self.state.document.position_to_offset(self.state.cursor), goal=instructionPrompt
+            self.state.document.text,
+            self.state.document.position_to_offset(self.state.cursor),
+            goal=instructionPrompt,
         )
 
         async def generate_plan():
@@ -150,51 +161,53 @@ class CodeCompletionAgent(Agent):
             finally:
                 self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
                 await self.send_progress(
-                    CodeCompletionProgress(response=None, textDocument=self.state.document,
-                                           cursor=self.state.cursor, ranges=self.state.ranges)
+                    CodeCompletionProgress(
+                        response=None,
+                        textDocument=self.state.document,
+                        cursor=self.state.cursor,
+                        ranges=self.state.ranges,
+                    )
                 )
 
         await self.send_progress(
-            CodeCompletionProgress(response=None, textDocument=self.state.document,
-                                   cursor=self.state.cursor, ranges=self.state.ranges)
+            CodeCompletionProgress(
+                response=None,
+                textDocument=self.state.document,
+                cursor=self.state.cursor,
+                ranges=self.state.ranges,
+            )
         )
 
         plan_task = self.add_task(
-            AgentTask(
-                "Plan out code edit",
-                asyncio.create_task(
-                    generate_plan()
-                )
-            )
+            AgentTask("Plan out code edit", asyncio.create_task(generate_plan()))
         )
 
         await self.send_progress(
-            CodeCompletionProgress(response=None, textDocument=self.state.document,
-                                   cursor=self.state.cursor, ranges=self.state.ranges)
-        )
-
-        code_task = self.add_task(
-            AgentTask(
-                "Generate code",
-                asyncio.create_task(
-                    generate_code()
-                )
+            CodeCompletionProgress(
+                response=None,
+                textDocument=self.state.document,
+                cursor=self.state.cursor,
+                ranges=self.state.ranges,
             )
         )
 
+        code_task = self.add_task(AgentTask("Generate code", asyncio.create_task(generate_code())))
+
         await self.send_progress(
-            CodeCompletionProgress(response=None, textDocument=self.state.document,
-                                   cursor=self.state.cursor, ranges=self.state.ranges)
+            CodeCompletionProgress(
+                response=None,
+                textDocument=self.state.document,
+                cursor=self.state.cursor,
+                ranges=self.state.ranges,
+            )
         )
 
         await plan_task.run()
         await code_task.run()
 
         await self.send_progress()
-    
+
         return CodeCompletionRunResult()
-
-
 
     # async def run(self) -> AgentRunResult:
     #     async def worker():
@@ -344,7 +357,6 @@ class CodeCompletionAgent(Agent):
     async def send_result(self, result):
         ...  # unreachable
 
-
     async def accept(self):
         logger.info(f"{self} user accepted result")
         if self.task.status not in ["error", "done"]:
@@ -353,9 +365,13 @@ class CodeCompletionAgent(Agent):
         # self.status = "done"
         await self.send_progress(
             # TODO(jesse): this is a hack
-            CodeCompletionProgress(response=None, textDocument=self.state.document, cursor=self.state.cursor, ranges=self.state.ranges)
+            CodeCompletionProgress(
+                response=None,
+                textDocument=self.state.document,
+                cursor=self.state.cursor,
+                ranges=self.state.ranges,
+            )
         )
-
 
     async def reject(self):
         # [todo] in this case we need to revert all of the changes that we made.
@@ -381,5 +397,10 @@ class CodeCompletionAgent(Agent):
                     logger.error("failed to apply rejection edit")
             await self.send_progress(
                 # TODO(jesse): this is a hack
-                CodeCompletionProgress(response=None, textDocument=self.state.document, cursor=self.state.cursor, ranges=self.state.ranges)
+                CodeCompletionProgress(
+                    response=None,
+                    textDocument=self.state.document,
+                    cursor=self.state.cursor,
+                    ranges=self.state.ranges,
+                )
             )

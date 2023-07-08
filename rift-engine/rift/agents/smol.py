@@ -1,27 +1,28 @@
-from dataclasses import dataclass, field
-from typing import Dict, Optional, ClassVar, Any
 import asyncio
-import smol_dev
-from rift.lsp import LspServer as BaseLspServer
-from rift.server.selection import RangeSet
+from dataclasses import dataclass, field
+from logging import getLogger
+from typing import Any, ClassVar, Dict, List, Optional
 
-from rift.llm.openai_types import Message as ChatMessage
+import smol_dev
+
+import rift.lsp.types as lsp
 from rift.agents.abstract import (
     Agent,
-    AgentTask,
-    AgentState,
     AgentProgress,
     AgentRunParams,
     AgentRunResult,
-    RequestInputResponse,
+    AgentState,
+    AgentTask,
+    RequestChatRequest,
     RequestChatResponse,
-    RequestChatRequest
+    RequestInputResponse,
 )
-import rift.lsp.types as lsp
-from logging import getLogger
 from rift.llm.abstract import AbstractChatCompletionProvider
-from .file_diff import FileChange, get_file_change, edits_from_file_changes 
-from typing import List
+from rift.llm.openai_types import Message as ChatMessage
+from rift.lsp import LspServer as BaseLspServer
+from rift.server.selection import RangeSet
+
+from .file_diff import FileChange, edits_from_file_changes, get_file_change
 
 logger = getLogger(__name__)
 
@@ -29,17 +30,20 @@ logger = getLogger(__name__)
 @dataclass
 class SmolAgentRunResult(AgentRunResult):
     ...
-    
+
+
 @dataclass
 class SmolAgentProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
+
 
 @dataclass
 class SmolAgentParams:
     instructionPrompt: str
     textDocument: lsp.TextDocumentIdentifier
     position: lsp.Position
+
 
 @dataclass
 class SmolAgentState(AgentState):
@@ -51,9 +55,11 @@ class SmolAgentState(AgentState):
     ranges: RangeSet = field(default_factory=RangeSet)
     smol_dev: smol_dev = smol_dev  # lets you access smol_dev methods
 
+
 @dataclass
 class SmolAgent(Agent):
     ...
+
 
 # @dataclass
 # class SmolAgent(Agent):
@@ -73,8 +79,8 @@ class SmolAgent(Agent):
 #                 model=model,
 #                 messages=[
 #                     ChatMessage.system("""
-#         You are an AI agent that generates code based on a prompt. 
-#         When you are given the prompt, ask 3 more questions about the most important implementation details that the user might want to modify or correct. 
+#         You are an AI agent that generates code based on a prompt.
+#         When you are given the prompt, ask 3 more questions about the most important implementation details that the user might want to modify or correct.
 #         Then, generate code based on the prompt and the answers to the questions. """)
 #                 ],
 #                 params=params,
@@ -84,11 +90,11 @@ class SmolAgent(Agent):
 #             ), tasks=dict(), server=server, id=SmolAgent.count
 #         )
 #         return obj
-    
+
 #     def add_task(self, task: AgentTask):
 #         self.tasks[task.id] = task
 #         return task.id
-    
+
 #     async def run(self) -> AgentRunResult:
 #         prompt_task = AgentTask("Getting Prompt", "running", [], None)
 #         self.add_task(prompt_task)
@@ -101,7 +107,7 @@ class SmolAgent(Agent):
 #         )
 #         async for delta in stream.text:
 #             response += delta
-        
+
 #         # # in future, loop 3 times.. right now commented out because test doesnt support
 #         # for i in range(3):
 #         #     response = ""
@@ -116,7 +122,7 @@ class SmolAgent(Agent):
 #         #         async with response_lock:
 #         #             await self.send_progress(ChatProgress(response=response))
 #         # prompt_task.status = "done"
-        
+
 #         # This is just an example. You should create a run function based on your needs.
 #         task_id = self.add_task(AgentTask("Generate code", "running", [], None))
 #         task = self.tasks[task_id]
@@ -128,15 +134,15 @@ class SmolAgent(Agent):
 #             plan = self.state.smol_dev.plan(prompt)
 #             # temporarily commented out # plan_task.status = "done"
 #             await self.send_progress(SmolAgentProgress(tasks=self.tasks, thoughts=plan))
-            
+
 #             # specify file paths
 #             filepath_task = self.add_task(AgentTask("running", "Determining Filepath...", [], None))
 #             file_paths = self.state.smol_dev.specify_filePaths(prompt, plan)
 #             # filepath_task.status = "done"
 #             await self.send_progress(SmolAgentProgress(tasks=self.tasks, thoughts=file_paths))
-            
+
 #             self.add_task(AgentTask("Reticulating splines...", "done", [], None))
-            
+
 #             # generate code
 #             generated_code : List[FileChange] = []
 #             import os
@@ -146,7 +152,7 @@ class SmolAgent(Agent):
 #                 absolute_file_path = os.getcwd() + '/' + file_path
 #                 uri = 'file://' + absolute_file_path
 #                 file_change = get_file_change(path=absolute_file_path, new_content=code)
-                
+
 #                 generated_code.append(file_change)
 #                 await self.send_progress(SmolAgentProgress(tasks=self.tasks, thoughts=code))
 #                 # temporarily commented out # codegen_task.status = "done"

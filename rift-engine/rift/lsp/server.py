@@ -2,24 +2,27 @@
 Author: E.W.Ayers <contact@edayers.com>
 This file is adapted from  https://github.com/EdAyers/sss
 """
-from dataclasses import dataclass, replace
-import logging
-from typing import Any, Awaitable, Callable, Optional, Union
 import asyncio
+import logging
+from collections import defaultdict
+from dataclasses import dataclass, replace
+from typing import Any, Awaitable, Callable, Optional, Union
+
+import rift.lsp.types as lsp
 from rift.util.misc import set_ctx
+from rift.util.ofdict import ofdict
+
+from ..rpc import InitializationMode, rpc_method
+from ..rpc.extrarpc import ExtraRpc
 from .types import (
+    ApplyWorkspaceEditParams,
+    ApplyWorkspaceEditResponse,
     InitializeParams,
     InitializeResult,
     PeerInfo,
     ServerCapabilities,
-    ApplyWorkspaceEditParams,
-    ApplyWorkspaceEditResponse,
 )
-import rift.lsp.types as lsp
-from collections import defaultdict
-from ..rpc import InitializationMode, rpc_method
-from ..rpc.extrarpc import ExtraRpc
-from rift.util.ofdict import ofdict
+
 """ Implementation of an LSP server """
 
 logger = logging.getLogger("LSP")
@@ -137,9 +140,6 @@ class LspServer(ExtraRpc):
     @rpc_method("textDocument/didClose")
     def on_did_close(self, params: lsp.DidCloseTextDocumentParams):
         pass
-
-    
-
 
     @rpc_method("$/setTrace")
     def on_set_trace(self, params: lsp.SetTraceParams):

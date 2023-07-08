@@ -1,14 +1,16 @@
-from typing import List
 import asyncio
+import json
+import logging
 from contextvars import ContextVar
 from dataclasses import dataclass
-from functools import cached_property, cache
-import json
+from functools import cache, cached_property
+from threading import Lock
 from typing import (
     Any,
     AsyncGenerator,
     Awaitable,
     Coroutine,
+    List,
     Literal,
     Optional,
     Type,
@@ -16,25 +18,24 @@ from typing import (
     overload,
 )
 from urllib.parse import parse_qs, urlparse
+
 import aiohttp
 from pydantic import BaseModel, BaseSettings, SecretStr
-from rift.llm.abstract import (
-    AbstractCodeCompletionProvider,
-    AbstractChatCompletionProvider,
-    InsertCodeResult,
-    ChatResult,
-)
 
-from rift.util.TextStream import TextStream
+import rift.util.asyncgen as asg
+from rift.llm.abstract import (
+    AbstractChatCompletionProvider,
+    AbstractCodeCompletionProvider,
+    ChatResult,
+    InsertCodeResult,
+)
 from rift.llm.openai_types import (
     ChatCompletionChunk,
     ChatCompletionRequest,
     ChatCompletionResponse,
     Message,
 )
-import rift.util.asyncgen as asg
-import logging
-from threading import Lock
+from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
 
@@ -252,7 +253,9 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         message = f"{status_code} error from {self.base_url}: {message}"
         logging.error(message)
         if status_code == 404 and self.default_model == "gpt-4":
-            logging.info("Please double check you have access to GPT-4 API: https://openai.com/waitlist/gpt-4-api")
+            logging.info(
+                "Please double check you have access to GPT-4 API: https://openai.com/waitlist/gpt-4-api"
+            )
         raise OpenAIError(message=message, status=status_code)
 
     async def get_error_message(self, resp):

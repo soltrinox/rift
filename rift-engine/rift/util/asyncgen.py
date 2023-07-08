@@ -1,17 +1,9 @@
 import asyncio
-from collections import deque
-from contextlib import asynccontextmanager
 import itertools
 import operator
-from typing import (
-    Any,
-    AsyncGenerator,
-    AsyncIterable,
-    Callable,
-    Optional,
-    TypeVar,
-    overload,
-)
+from collections import deque
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator, AsyncIterable, Callable, Optional, TypeVar, overload
 
 A = TypeVar("A")
 B = TypeVar("B")

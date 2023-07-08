@@ -1,16 +1,19 @@
-import uuid
 import asyncio
 import functools
-from typing import List, Optional, Any
-from dataclasses import dataclass, field
-from abc import ABC
-from typing import ClassVar, Dict, Literal
-from rift.lsp import LspServer as BaseLspServer, rpc_method
-from rift.llm.openai_types import Message as ChatMessage
-from enum import Enum
-from rift.agents.agenttask import AgentTask
 import logging
+import uuid
+from abc import ABC
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, ClassVar, Dict, List, Literal, Optional, Type
+
+from rift.agents.agenttask import AgentTask
+from rift.llm.openai_types import Message as ChatMessage
+from rift.lsp import LspServer as BaseLspServer
+from rift.lsp import rpc_method
+
 logger = logging.getLogger(__name__)
+
 
 class Status(Enum):
     running = "running"
@@ -24,7 +27,6 @@ class Status(Enum):
 class RequestInputRequest:
     msg: str
     place_holder: str = ""
-    
 
 
 @dataclass
@@ -61,6 +63,7 @@ AgentTaskId = str
 class AgentRunParams(ABC):
     agent_id: str
 
+
 @dataclass
 class RunAgentParams:
     agent_type: str
@@ -85,38 +88,6 @@ class AgentRunResult(ABC):
 class AgentState(ABC):
     ...
 
-@dataclass
-class AgentRegistry:
-    def __init__(self):
-        self.registry: Dict[str, Agent] = {}
-
-    def register_agent(self, agent):
-        if agent.agent_type in self.registry:
-            raise ValueError(f"Agent with ID {agent.agent_type} is already registered.")
-        self.registry[agent.agent_type] = agent
-
-    def get_agent(self, id: int):
-        return self.registry.get(id)
-
-    def list_agents(self):
-        return list(self.registry.values())
-
-    def delete_agent(self, id: int):
-        if id in self.registry:
-            del self.registry[id]
-        else:
-            raise ValueError(f"No agent found with ID {id}.")
-
-
-registry = AgentRegistry()
-
-
-def agent(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        registry.register_agent(func)
-        return func(*args, **kwargs)
-    return wrapper
 
 @dataclass
 class Agent:
@@ -129,17 +100,17 @@ class Agent:
     `tasks` is a list of `AgentTask`s and is used to report progress
     `server` is a handle to the global language server
     """
-    agent_type: str
+
+    agent_type: ClassVar[str]
     server: Optional[BaseLspServer] = None
     state: Optional[AgentState] = None
     agent_id: Optional[str] = None
     tasks: List[AgentTask] = field(default_factory=list)
     task: Optional[AgentTask] = None
 
-
     def get_display(self):
         return self.agent_type, self.description
-    
+
     def __str__(self):
         return f"<{self.agent_type}> {self.agent_id}"
 
@@ -154,10 +125,7 @@ class Agent:
         """
         Called by the LSP server to handle `morph/run`.
         """
-        self.task = AgentTask(
-            description=self.agent_type,
-            task=asyncio.create_task(self.run())
-        )
+        self.task = AgentTask(description=self.agent_type, task=asyncio.create_task(self.run()))
 
         return await self.task.run()
 
@@ -179,7 +147,9 @@ class Agent:
 
     async def request_input(self, req: RequestInputRequest) -> str:
         try:
-            response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
+            response = await self.server.request(
+                f"morph/{self.agent_type}_{self.agent_id}_request_input", req
+            )
             return response["response"]
         except Exception as e:
             logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
@@ -187,10 +157,15 @@ class Agent:
             raise asyncio.CancelledError
 
     async def send_update(self, msg: str):
-        await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_update", {"msg": f"[{self.agent_type}] {msg}"})
+        await self.server.notify(
+            f"morph/{self.agent_type}_{self.agent_id}_send_update",
+            {"msg": f"[{self.agent_type}] {msg}"},
+        )
 
     async def request_chat(self, req: RequestChatRequest) -> asyncio.Future[RequestChatResponse]:
-        return await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_chat", req)
+        return await self.server.request(
+            f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
+        )
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
         if payload_only:
@@ -198,10 +173,11 @@ class Agent:
         else:
             try:
                 tasks = {
-                    "task": {"description": self.task.description, "status": self.task.status}, "subtasks": (
-                    [{"description": x.description, "status": x.status} for x in self.tasks]
-                )
-            }
+                    "task": {"description": self.task.description, "status": self.task.status},
+                    "subtasks": (
+                        [{"description": x.description, "status": x.status} for x in self.tasks]
+                    ),
+                }
             except Exception as e:
                 logger.debug(f"Caught exception: {e}")
                 tasks = None
@@ -219,3 +195,76 @@ class Agent:
         ...
 
 
+@dataclass
+class AgentRegistryItem:
+    """
+    Stored in the registry by the @agent decorator, created upon Rift initialization.
+    """
+
+    agent: Type[Agent]
+    agent_description: str
+
+
+@dataclass
+class AgentRegistryResult:
+    """
+    To be returned as part of a list of available agent workflows to the language server client.
+    """
+
+    agent_type: str
+    agent_description: str
+    display_name: Optional[str] = None
+    agent_icon: Optional[str]  # svg icon information
+
+    def __post_init__(self):
+        if self.display_name is None:
+            self.display_name = self.agent_type
+
+
+@dataclass
+class AgentRegistry:
+    registry: Dict[str, Type[Agent]] = field(default_factory=dict)
+
+    def register_agent(
+        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
+    ) -> None:
+        if agent.agent_type in self.registry:
+            raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
+        self.registry[agent.agent_type] = AgentRegistryItem(
+            agent=agent, agent_description=agent_description
+        )
+
+    def get_agent(self, agent_type: str) -> Type[Agent]:
+        result = self.registry.get(agent_type)
+        if result is not None:
+            return result.agent
+        else:
+            raise ValueError(f"Agent not found: {agent_type}")
+        return result.agent
+
+    def get_agent_icon(self, item: AgentRegistryItem) -> ...:
+        return None  # TODO
+
+    def list_agents(self) -> List[AgentRegistryResult]:
+        return [
+            AgentRegistryResult(
+                agent_type=item.agent.agent_type,
+                agent_description=item.agent_description,
+                agent_icon=self.get_agent_icon(item),
+            )
+            for item in self.registry.values()
+        ]
+
+
+AGENT_REGISTRY = AgentRegistry()
+
+
+def agent(agent_description: str, display_name: Optional[str] = None):
+    def decorator(cls: Type[Agent]) -> Type[Agent]:
+        # @functools.wraps(cls)  # Ensure the original class information is preserved
+        # class DecoratedAgent(cls):
+        #     pass
+        AGENT_REGISTRY.register_agent(cls, agent_description, display_name)
+        return cls
+
+    return decorator

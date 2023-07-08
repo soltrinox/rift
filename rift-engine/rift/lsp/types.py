@@ -2,12 +2,15 @@
 Author: E.W.Ayers <contact@edayers.com>
 This file is adapted from  https://github.com/EdAyers/sss
 """
+import urllib.parse
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
-from typing import Any, Generic, Literal, Optional, Union
+from typing import Any, Generic, Literal
+from typing import Optional
 from typing import Optional as opt
-import urllib.parse
+from typing import Union
+
 from .document import *
 
 try:

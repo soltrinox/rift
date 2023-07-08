@@ -1,13 +1,14 @@
 import asyncio
-import sys
 import logging
-from typing import Literal, Union, Optional
-from rift.server.lsp import LspServer
-from rift.agents.abstract import registry
-from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
-from rift.__about__ import __version__
 import sys
 import time
+from typing import Literal, Optional, Union
+
+from rift.__about__ import __version__
+from rift.agents.abstract import AGENT_REGISTRY
+from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
+from rift.server.lsp import LspServer
+
 try:
     from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
 except ImportError as e:
@@ -91,8 +92,6 @@ class CodeCapabilitiesServer:
             async with server:
                 addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
                 logger.info(f"listening with LSP protool on {addrs}")
-                logger.info(f"Avaliable Agents:")
-                list(map(lambda x: logger.info("\t"+x.get_display(x)[0]+" | "+x.get_display(x)[1]), registry.list_agents()))
                 await server.serve_forever()
 
     async def run_lsp_stdio(self):
@@ -131,8 +130,8 @@ def main(
     if version:
         print(__version__)
         return
-    from rich.logging import RichHandler
     from rich.console import Console
+    from rich.logging import RichHandler
 
     FORMAT = "%(message)s"
     console = Console(stderr=True)

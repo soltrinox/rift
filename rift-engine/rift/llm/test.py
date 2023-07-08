@@ -1,13 +1,14 @@
-from rift.server.core import CodeCapabilitiesServer
 import asyncio
-from rift.rpc.jsonrpc import RpcServer, rpc_request, rpc_method
-from rift.rpc.io_transport import AsyncStreamTransport
-from typing import Any
-from rift.server.core import splash
 import logging
-from rift.lsp.types import InitializeParams
-from rift.util.ofdict import todict
+from typing import Any, List
+
 import rift.lsp.types as lsp
+from rift.agents.abstract import AgentRegistryResult
+from rift.lsp.types import InitializeParams
+from rift.rpc.io_transport import AsyncStreamTransport
+from rift.rpc.jsonrpc import RpcServer, rpc_method, rpc_request
+from rift.server.core import CodeCapabilitiesServer, splash
+from rift.util.ofdict import todict
 
 if __name__ == "__main__":
 
@@ -24,22 +25,26 @@ if __name__ == "__main__":
         async def chat_progress(self, params: Any):
             print("PROGRESS: ", params)
 
+        @rpc_request("morph/listAgents")
+        async def listAgents(self, params: Any) -> list[AgentRegistryResult]:
+            ...
+
         @rpc_method("window/logMessage")
         async def logmessage(self, params: Any):
             ...
 
         @rpc_method("morph/code_completion_1_send_progress")
         async def chat_progress(self, params: Any):
-            print("PROGRESS: ", params)            
-            
-        @rpc_method('morph/smol_dev_1_request_chat')
+            print("PROGRESS: ", params)
+
+        @rpc_method("morph/smol_dev_1_request_chat")
         async def smol_agent_chat(self, params: Any):
             print("SMOL CHAT: ", params)
             return {"message": "print hello world in a python file"}
-        
-        @rpc_method('morph/smol_dev_1_send_progress')
+
+        @rpc_method("morph/smol_dev_1_send_progress")
         async def smol_agent_progress(self, params: Any):
-            print("SMOL PROGRESS: ", params)            
+            print("SMOL PROGRESS: ", params)
 
         @rpc_method("window/logMessage")
         async def logmessage(self, params: Any):
@@ -65,31 +70,35 @@ if __name__ == "__main__":
         client = MockLspClient(transport=transport)
         t = asyncio.create_task(client.listen_forever())
         print("CAPABILITIES: ", await client.initialize(params=InitializeParams()))
-        from pydantic import BaseModel
-        from rift.server.chat_agent import RunChatParams
 
-        # register a file
-        on_did_open_params = lsp.DidOpenTextDocumentParams(
-            textDocument=lsp.TextDocumentItem(
-                text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw",
-                uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py",
-                languageId="python",
-                version=0,
-            )
-        )
-        print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
-        
-        from rift.agents.smol import SmolAgentParams
-        from rift.server.lsp import AgentRunParams
+        print("AGENTS: ", await client.listAgents({}))
 
-        class RunParams(BaseModel):
-            agent_type: str = "chat"
-
-        params = todict(
-            AgentRunParams(agent_type="smol_dev", agent_params=SmolAgentParams(instructionPrompt="write hello world in Python", position=lsp.Position(0,0), textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0)))
-        )
-        print("RUN RESULT: ", await client.run(params=params))
-        print("initialized")
         await t
+        # from pydantic import BaseModel
+        # from rift.server.chat_agent import RunChatParams
+
+        # # register a file
+        # on_did_open_params = lsp.DidOpenTextDocumentParams(
+        #     textDocument=lsp.TextDocumentItem(
+        #         text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw",
+        #         uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py",
+        #         languageId="python",
+        #         version=0,
+        #     )
+        # )
+        # print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
+
+        # from rift.agents.smol import SmolAgentParams
+        # from rift.server.lsp import AgentRunParams
+
+        # class RunParams(BaseModel):
+        #     agent_type: str = "chat"
+
+        # params = todict(
+        #     AgentRunParams(agent_type="smol_dev", agent_params=SmolAgentParams(instructionPrompt="write hello world in Python", position=lsp.Position(0,0), textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0)))
+        # )
+        # print("RUN RESULT: ", await client.run(params=params))
+        # print("initialized")
+        # await t
 
     asyncio.run(main())

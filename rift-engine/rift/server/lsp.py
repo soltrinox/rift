@@ -1,31 +1,29 @@
-import uuid
 import asyncio
-from dataclasses import dataclass, field
 import logging
-from typing import ClassVar, Optional, List, Any
-from typing import Literal
-from rift.lsp import LspServer as BaseLspServer, rpc_method
-from rift.rpc import RpcServerStatus
-from rift.agents.abstract import registry
+import uuid
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, List, Literal, Optional
 
 import rift.lsp.types as lsp
-from rift.llm.abstract import (
-    AbstractCodeCompletionProvider,
-    AbstractChatCompletionProvider,
-)
+from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
+from rift.agents.code_completion import CodeCompletionAgent
+from rift.agents.smol import SmolAgent, SmolAgentParams
+from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
+from rift.llm.openai_types import Message
+from rift.lsp import LspServer as BaseLspServer
+from rift.lsp import rpc_method
+from rift.rpc import RpcServerStatus
+from rift.server.agent import *
+from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 
 # from rift.server.agent import *
 from rift.server.selection import RangeSet
-from rift.llm.openai_types import Message
 from rift.util.ofdict import ofdict
-from rift.server.chat_agent import RunChatParams, ChatAgentLogs, ChatAgent
-from rift.server.agent import *
-from rift.agents.code_completion import CodeCompletionAgent
-from rift.agents.smol import SmolAgent, SmolAgentParams
-from rift.agents.abstract import RunAgentParams, Agent
 
 logger = logging.getLogger(__name__)
+
+
 @dataclass
 class AgentProgress:
     id: int
@@ -281,13 +279,9 @@ class LspServer(BaseLspServer):
             await agent.cancel()
 
     @rpc_method("morph/listAgents")
-    def on_list_agents(self, params: Any):
-        logging.info(self)
-        logging.info(params)
-        toReturn= list(map(lambda x: {"type":x.get_display(x)[0],"description":x.get_display(x)[1]}, registry.list_agents()))
-        logging.info(toReturn)
-        return toReturn
-    
+    def on_list_agents(self, _: Any) -> List[AgentRegistryResult]:
+        return AGENT_REGISTRY.list_agents()
+
     @rpc_method("morph/accept")
     async def on_accept(self, params: AgentIdParams):
         agent = self.active_agents.get(params.id)
