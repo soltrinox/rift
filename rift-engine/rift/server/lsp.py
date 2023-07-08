@@ -160,7 +160,7 @@ class LspServer(BaseLspServer):
             self._loading_task = None
 
     async def send_update(self, msg: str):
-        self.notify("morph/send_update", {"message": msg})
+        self.notify("morph/send_update", {"msg": msg})
 
     async def send_agent_progress(
         self,

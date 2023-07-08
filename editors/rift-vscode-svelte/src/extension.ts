@@ -1,13 +1,23 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { MorphLanguageClient } from './client';
+import { MorphLanguageClient, AgentProgress } from './client';
 // import { join } from 'path';
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { ChatProvider } from './elements/ChatProvider';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    let hslc = new MorphLanguageClient(context)
+
+    context.subscriptions.push(
+        vscode.languages.registerCodeLensProvider('*', hslc)
+    )
+    const chatProvider = new ChatProvider(context.extensionUri, hslc);
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
+    );    
     // const infoview = new Infoview(context)
     // context.subscriptions.push(infoview)
 
@@ -43,11 +53,10 @@ export function activate(context: vscode.ExtensionContext) {
         // let CODE_COMPLETION_RANGES: vscode.Range[] = [];
         // let STATUS_CHANGE_EMITTER = new vscode.EventEmitter<AgentStatus>;
         const code_completion_send_progress_callback = async (params: AgentProgress) => {
-            console.log(`PROGRESS PARAMS: ${params}`)
             const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
             const key: string = `code_completion_${params.agent_id}`
             if (params.tasks) {
-                console.log("TASKS: ", params.tasks)
+                chatProvider.postMessage("tasks", {agent_id: params.agent_id, ...params.tasks})
                 if (params.tasks.task.status) {
                     if (hslc.agentStates.get(key).status !== params.tasks.task.status) {
                         hslc.agentStates.get(key).status = params.tasks.task.status
@@ -78,22 +87,24 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
+        const send_update_callback = async (params: any) => {
+            vscode.window.showInformationMessage(params.msg)
+        }
+
         const r = await hslc.run(
             {
                 agent_type: "code_completion",
                 agent_params: { position, textDocument, instructionPrompt }
             },
             async () => {},
-            async () => {},
+            send_update_callback,
             code_completion_send_progress_callback,
             async () => {}
         )
     }
     );
 
-    context.subscriptions.push(disposable);
-
-    let hslc = new MorphLanguageClient(context)
+    context.subscriptions.push(disposable)
     context.subscriptions.push(hslc)
     // const provider = async (document, position, context, token) => {
     //     return [
@@ -107,15 +118,6 @@ export function activate(context: vscode.ExtensionContext) {
     //         { provideInlineCompletionItems: provider }
     //     )
     // );
-
-    context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider('*', hslc)
-    )
-    const chatProvider = new ChatProvider(context.extensionUri, hslc);
-
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
-    );
 }
 
 

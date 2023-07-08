@@ -11,6 +11,15 @@ export class ChatProvider implements vscode.WebviewViewProvider {
     constructor(private readonly _extensionUri: vscode.Uri, public hslc: MorphLanguageClient) {
     }
 
+    public postMessage(endpoint: string, message: any) {
+        if (!this._view) {throw new Error('no view')}
+        else
+        {
+            this._view.webview.postMessage({ type: endpoint, data: message });
+        }
+        
+    }
+
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView,

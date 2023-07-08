@@ -142,7 +142,7 @@ class Agent:
         ...
 
 
-    async def notify(self, msg: str):
+    async def send_update(self, msg: str):
         await self.server.send_update(msg)
 
 
