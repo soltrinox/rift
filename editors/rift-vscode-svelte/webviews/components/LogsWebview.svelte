@@ -7,9 +7,9 @@
     import Header from "./Header.svelte";
     import Chat from "./chat/Chat.svelte";
     import OmniBar from "./chat/OmniBar.svelte";
-    import { onMount } from "svelte/types/runtime/internal/lifecycle";
+    import { onMount } from "svelte";
 
-    export let agentRegistry: AgentRegistryItem[] = [];
+    let agentRegistry: AgentRegistryItem[] = [];
 
     // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
     console.log("RESETTING VSCODE STATE");

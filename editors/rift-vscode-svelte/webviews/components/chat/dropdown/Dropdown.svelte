@@ -25,7 +25,7 @@
 
   // export let agentIds = agents;
   // export let agentIds = MOCK_AGENT_REGISTRY
-  export let inputValue = "";
+  export const inputValue = "";
 
   let activeId = 0;
 
