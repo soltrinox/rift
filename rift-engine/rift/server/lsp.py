@@ -20,6 +20,7 @@ from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 # from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict
+import rift.agents.rift_chat as agentchat
 
 logger = logging.getLogger(__name__)
 
@@ -231,13 +232,20 @@ class LspServer(BaseLspServer):
         agent_params = params.agent_params
         agent_id = params.agent_id or str(uuid.uuid4())[:8]
         agent_params.update({"agent_id": agent_id})
+        print("AGENT PARAMS: ", agent_params)
+        
 
         async def _run_agent():
+            logger.info("AGENT TYPE: ", agent_type)
             if agent_type == "chat":
                 # prepare params for ChatAgent construction
                 model = await self.ensure_chat_model()
                 agent_params = ofdict(RunChatParams, agent_params)
                 agent = ChatAgent(agent_params, model=model, server=self)
+            elif agent_type == "rift_chat":
+                model = await self.ensure_chat_model()
+                agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+                agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
             elif agent_type == "code_completion":
                 model = await self.ensure_completions_model()
                 agent_params = ofdict(CodeCompletionAgentParams, agent_params)
@@ -248,12 +256,13 @@ class LspServer(BaseLspServer):
                 agent = SmolAgent.create(params=agent_params, model=model, server=self)
             else:
                 raise Exception(f"unsupported agent type={agent_type}")
+            
+            self.active_agents[agent_id] = agent
             # t = asyncio.Task(agent.main())
             t = asyncio.create_task(agent.main())
             return t
 
         asyncio.create_task(_run_agent())
-        self.active_agents[agent_id] = agent
         return RunAgentResult(id=agent_id)
 
     @rpc_method("morph/run_agent")

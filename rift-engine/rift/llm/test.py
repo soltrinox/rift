@@ -73,20 +73,31 @@ if __name__ == "__main__":
 
         print("AGENTS: ", await client.listAgents({}))
 
-        await t
+        # await t
         # from pydantic import BaseModel
         # from rift.server.chat_agent import RunChatParams
 
-        # # register a file
-        # on_did_open_params = lsp.DidOpenTextDocumentParams(
-        #     textDocument=lsp.TextDocumentItem(
-        #         text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw",
-        #         uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py",
-        #         languageId="python",
-        #         version=0,
-        #     )
-        # )
-        # print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
+        # register a file
+        on_did_open_params = lsp.DidOpenTextDocumentParams(
+            textDocument=lsp.TextDocumentItem(
+                text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw",
+                uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py",
+                languageId="python",
+                version=0,
+            )
+        )
+        print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
+
+        import rift.agents.rift_chat as agentchat
+        chat_agent_params = dict(
+            textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0),
+            position=None,
+        )
+        # from rift.server.lsp import AgentRunParams
+
+        params = dict(agent_type="rift_chat", agent_params=chat_agent_params)
+
+        print(await client.run(params=params))
 
         # from rift.agents.smol import SmolAgentParams
         # from rift.server.lsp import AgentRunParams

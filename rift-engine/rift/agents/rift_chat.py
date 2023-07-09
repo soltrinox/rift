@@ -3,7 +3,7 @@ import logging
 import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Dict, Optional
+from typing import Any, ClassVar, Dict, Optional, List
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import (
@@ -16,11 +16,13 @@ from rift.agents.abstract import (
     RunAgentParams,
     agent,
 )
+import rift.llm.openai_types as openai
 from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
+from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult, AbstractChatCompletionProvider
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
+from rift.agents.agenttask import AgentTask
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +43,9 @@ class ChatProgress(
      done_streaming: bool = False
 
 @dataclass
-class ChatAgentState(Agent):
+class ChatAgentState(AgentState):
     model: AbstractChatCompletionProvider
-    messages: List[ChatMessage]
+    messages: list[openai.Message]
     document: lsp.TextDocumentItem
     params: ChatAgentParams
 
@@ -54,7 +56,7 @@ class ChatAgentState(Agent):
 @dataclass
 class ChatAgent(Agent):
     state: ChatAgentState
-    agent_type: ClassVar[str] = "chat"
+    agent_type: ClassVar[str] = "rift_chat"
 
     @classmethod
     def create(cls, params: ChatAgentParams, model, server):
@@ -71,7 +73,7 @@ class ChatAgent(Agent):
         )
         return obj
 
-    async def run(self, params: AgentRunParams) -> AgentRunResult:
+    async def run(self) -> AgentRunResult:
         from asyncio import Lock
         response_lock = Lock()        
         async def get_user_response():
@@ -100,12 +102,16 @@ class ChatAgent(Agent):
             generate_response_task = AgentTask("Generate response", generate_response, args=generate_response_task_args)
             self.set_tasks([get_user_response_task, generate_response_task])
             await self.send_progress()
+            
             get_user_response_task_fut = get_user_response_task.run()
             asyncio.futures._chain_future(get_user_response_task_fut, sentinel_f)
             await get_user_response_task_fut
             await self.send_progress()
             assistant_response = await generate_response_task.run()
+            
             await self.send_progress()
+            
             async with response_lock:
-                self.state.messages.append(ChatMessage.assistant(response))
+                self.state.messages.append(openai.Message.assistant(response))
+                
             await self.send_progress()
