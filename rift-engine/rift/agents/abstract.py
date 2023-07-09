@@ -115,12 +115,21 @@ class Agent:
         """
         Called by the LSP server to handle `morph/run`.
         """
-        self.task = AgentTask(description=self.agent_type, task=asyncio.create_task(self.run()))
-        return await self.task.run()
+        self.task = AgentTask(description=self.agent_type, task=self.run)
+        try:
+            return await self.task.run()
+        except asyncio.CancelledError as e:
+            logger.info(f"{self} cancelled: {e}")
+            await self.cancel()
 
     async def run(self) -> AgentRunResult:
-        """Run the agent"""
+        """
+        Run the agent.
+        """
         ...
+
+    def set_tasks(self, tasks: List[AgentTask]):
+        self.tasks = tasks
 
     def add_task(self, task: AgentTask):
         """

@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import Future
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, Awaitable, Any, Iterable
 
 @dataclass
 class AgentTask:
@@ -10,15 +10,18 @@ class AgentTask:
 
     Attributes:
         description (str): Description of the task
-        task (asyncio.Task): The main coroutine task to be executed
+        task: thunk returning a Task
         started (bool): Indicates whether the main inner task has started execution
         _error (Optional[Exception]): Error encountered during task execution (if any)
         _cancelled (bool): Indicates whether the task has been cancelled
     """
 
     description: str
-    task: asyncio.Task
-    started: bool = False
+    task: Callable[Any, Awaitable[Any]]
+    args: Callable[Any, Awaitable[Iterable[Any]]] = field(default_factory=list)
+    kwargs: Callable[Any, Awaitable[Dict[Any, Any]]] = field(default_factory=dict)
+    _task: Optional[asyncio.Task] = None
+    _running: bool = False
     _error: Optional[Exception] = None
     _cancelled: bool = False
 
@@ -26,33 +29,49 @@ class AgentTask:
         """
         Runs the task coroutine and handles exceptions
         """
-        self.started = True
+        if self._running:
+            raise Exception("Task is already running")
+        
+        self._running = True
         try:
-            return await self.task
+            return await self.task(*(await args()), **(await kwargs()))
         except asyncio.CancelledError:
             self._cancelled = True
         except Exception as e:
             self._error = e
+        finally:
+            self._running = False
 
     def cancel(self):
         """
         Cancels the task
         """
-        return self.task.cancel()
+        if self._task:
+            return self._task.cancel()
+        self._cancelled = True
+
+    @property
+    def running(self) -> bool:
+        return self._running
 
     @property
     def done(self) -> bool:
         """
         Returns whether the task is done
         """
-        return self.task.done()
+        if self._task:
+            return self._task.done()
+        else:
+            return False
 
     @property
     def cancelled(self) -> bool:
         """
         Returns whether the task is cancelled
         """
-        return self._cancelled or self.task.cancelled()
+        return self._cancelled or (
+            self._task.cancelled() if self._task else False
+        )
 
     @property
     def error(self) -> bool:
@@ -75,7 +94,9 @@ class AgentTask:
             return "cancelled"
         elif self.done:
             return "done"
-        elif self.started:
+        elif self._running:
             return "running"
         else:
+            return "scheduled"
+            return "scheduled"
             return "scheduled"

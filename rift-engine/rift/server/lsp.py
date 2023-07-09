@@ -230,7 +230,7 @@ class LspServer(BaseLspServer):
         # lol
         agent_params = params.agent_params
         agent_id = params.agent_id or str(uuid.uuid4())[:8]
-        agent_params.update({"agent_id": agent_id})        
+        agent_params.update({"agent_id": agent_id})
 
         async def _run_agent():
             if agent_type == "chat":

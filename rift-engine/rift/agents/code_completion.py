@@ -185,7 +185,7 @@ class CodeCompletionAgent(Agent):
         )
 
         plan_task = self.add_task(
-            AgentTask("Plan out code edit", asyncio.create_task(generate_plan()))
+            AgentTask("Plan out code edit", generate_plan)
         )
 
         await self.send_progress(
@@ -197,7 +197,7 @@ class CodeCompletionAgent(Agent):
             )
         )
 
-        code_task = self.add_task(AgentTask("Generate code", asyncio.create_task(generate_code())))
+        code_task = self.add_task(AgentTask("Generate code", generate_code))
 
         await self.send_progress(
             CodeCompletionProgress(
