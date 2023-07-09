@@ -72,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
             const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
             const key: string = `code_completion_${params.agent_id}`
             if (params.tasks) {
-                chatProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks })
+                logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks })
                 if (params.tasks.task.status) {
                     if (morph_language_client.agentStates.get(key).status !== params.tasks.task.status) {
                         morph_language_client.agentStates.get(key).status = params.tasks.task.status

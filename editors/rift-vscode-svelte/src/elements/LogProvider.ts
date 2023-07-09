@@ -11,6 +11,19 @@ export class LogProvider implements vscode.WebviewViewProvider {
     constructor(private readonly _extensionUri: vscode.Uri, public hslc: MorphLanguageClient) {
     }
 
+    // Posts a message to the webview view.
+    //  endpoint: The endpoint to send the message to.
+    //  message: The message to send.
+    //  Throws an error if the view is not available.
+    public postMessage(endpoint: string, message: any) {
+        if (!this._view) {
+            throw new Error('No view available');
+        } else {
+            this._view.webview.postMessage({ type: endpoint, data: message });
+        }
+    }
+  
+
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView,

@@ -37,7 +37,9 @@
     const incomingMessage = (event: any) => {
         // Listen for the response
 
-        switch (event.data.type) {
+      switch (event.data.type) {
+      case "tasks":
+        {} // TODO
             case "progress":
                 const progress = event.data.data as ChatAgentProgress;
                 const agentId = "deadb33f"; //FIXME brent HARDCODED change later
