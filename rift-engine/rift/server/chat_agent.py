@@ -10,6 +10,7 @@ from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
+from rift.agents.code_completion import CodeCompletionAgent
 from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict
@@ -58,7 +59,7 @@ class ChatAgent:
     ):
         ChatAgent.count += 1
         self.model = model
-        self.id = CodeCompletionAgent.count
+        self.id = "0" #TODO: Fix this
         self.cfg = cfg
         self.server = server
         self.running = False

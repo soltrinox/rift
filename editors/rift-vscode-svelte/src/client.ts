@@ -242,7 +242,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
                 const linetext = document.lineAt(line)
                 if (agentState.status === 'running') {
                     const running = new AgentStateLens(linetext.range, agentState, {
-                        title: 'running',
+                        title: 'cancel',
                         command: 'rift.cancel',
                         tooltip: 'click to stop this agent',
                         arguments: [agentState.agent_id],
@@ -390,12 +390,12 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         return result
     }
 
-    async run_agent(params: RunCodeHelperParams) {
+    async run_agent(params: RunAgentParams) {
         if (!this.client) {
             throw new Error(`waiting for a connection to rift-engine, please make sure the rift-engine is running on port ${DEFAULT_PORT}`) // [todo] better ux here.
         }
-        const result: RunAgentResult = await this.client.sendRequest('morph/run_agent', params)
-        const agent = new Agent(result.id, params.position, params.textDocument)
+        const result: RunAgentResult = await this.client.sendRequest('morph/run', params)
+        const agent = new Agent(result.id, params.agent_params.position, params.agent_params.textDocument)
         agent.onStatusChange(e => this.changeLensEmitter.fire())
         this.agents.set(result.id.toString(), agent)
         // note this returns fast and then the updates are sent via notifications

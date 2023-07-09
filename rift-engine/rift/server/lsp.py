@@ -3,8 +3,9 @@ import os
 import asyncio
 import logging
 import uuid
+import json
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Literal, Optional, Iterable
+from typing import Any, ClassVar, List, Literal, Optional, Iterable, Dict
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
@@ -16,10 +17,9 @@ from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
-from rift.server.agent import *
 from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 
-# from rift.server.agent import *
+from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict
 import rift.agents.rift_chat as agentchat

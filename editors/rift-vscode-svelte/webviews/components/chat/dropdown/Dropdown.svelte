@@ -36,10 +36,12 @@
       // vscode.postMessage({ type: "" });
     }
     if (e.key == "ArrowDown") {
+      console.log("ArrowDown");
       e.preventDefault();
       if (activeId == availableAgents.length - 1) activeId = 0;
       else activeId++;
     } else if (e.key == "ArrowUp") {
+      console.log("ArrowUp");
       e.preventDefault();
       if (activeId == 0) activeId = availableAgents.length - 1;
       else activeId--;
@@ -54,7 +56,11 @@
   <!-- {#each agentIds.filter( (id) => id.name.includes(inputValue.substring(1)) ) as id, index}
     <DropdownCard id={id.name} focused={Boolean(index == activeId)} />
   {/each} -->
-  {#each availableAgents as agent}
-    <DropdownCard {agent} focused={true} />
+  {#each availableAgents as agent, i}
+    {#if activeId == i}
+      <DropdownCard {agent} focused={true} />
+    {:else}
+      <DropdownCard {agent} focused={false} />
+    {/if}
   {/each}
 </div>
