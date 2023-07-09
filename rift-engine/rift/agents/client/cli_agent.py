@@ -136,7 +136,7 @@ class SmolAgent(CliAgent):
 
     """
 
-    async def run(self):
+    async def run(self) -> AsyncIterable[List[file_diff.FileChange]]:
         params = self.run_params
         await ainput("\n> Press any key to continue.\n")
 
@@ -159,7 +159,6 @@ class SmolAgent(CliAgent):
         plan = smol_dev.plan(prompt, streamHandler=stream_handler)
 
         logger.info("Running with plan:")
-
         self.console.print(plan, emoji=True, markup=True)
 
         await ainput("\n> Press any key to continue.\n")
