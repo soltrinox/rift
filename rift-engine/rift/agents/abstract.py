@@ -277,9 +277,6 @@ AGENT_REGISTRY = AgentRegistry()
 
 def agent(agent_description: str, display_name: Optional[str] = None):
     def decorator(cls: Type[Agent]) -> Type[Agent]:
-        # @functools.wraps(cls)  # Ensure the original class information is preserved
-        # class DecoratedAgent(cls):
-        #     pass
         AGENT_REGISTRY.register_agent(cls, agent_description, display_name)
         return cls
 
