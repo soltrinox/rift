@@ -10,13 +10,13 @@ import { LogProvider } from './elements/LogProvider';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-    let mlc = new MorphLanguageClient(context)
+    let morph_language_client = new MorphLanguageClient(context)
 
     context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider('*', mlc)
+        vscode.languages.registerCodeLensProvider('*', morph_language_client)
     )
-    const chatProvider = new ChatProvider(context.extensionUri, mlc);
-    const logProvider = new LogProvider(context.extensionUri, mlc);
+    const chatProvider = new ChatProvider(context.extensionUri, morph_language_client);
+    const logProvider = new LogProvider(context.extensionUri, morph_language_client);
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
@@ -74,18 +74,18 @@ export function activate(context: vscode.ExtensionContext) {
             if (params.tasks) {
                 chatProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks })
                 if (params.tasks.task.status) {
-                    if (mlc.agentStates.get(key).status !== params.tasks.task.status) {
-                        mlc.agentStates.get(key).status = params.tasks.task.status
-                        mlc.agentStates.get(key).emitter.fire(params.tasks.task.status)
+                    if (morph_language_client.agentStates.get(key).status !== params.tasks.task.status) {
+                        morph_language_client.agentStates.get(key).status = params.tasks.task.status
+                        morph_language_client.agentStates.get(key).emitter.fire(params.tasks.task.status)
                     }
                 }
             }
             if (params.payload) {
                 if (params.payload.ranges) {
-                    mlc.agentStates.get(key).ranges = params.payload.ranges
+                    morph_language_client.agentStates.get(key).ranges = params.payload.ranges
                 }
             }
-            const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == mlc.agentStates.get(key).params.textDocument.uri.toString())
+            const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == morph_language_client.agentStates.get(key).params.textDocument.uri.toString())
             for (const editor of editors) {
                 // [todo] check editor is visible
                 const version = editor.document.version
@@ -103,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
-        const r = await mlc.run(
+        const r = await morph_language_client.run(
             {
                 agent_type: "code_completion",
                 agent_params: { position, textDocument }
@@ -118,10 +118,10 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(
-        vscode.languages.registerCodeLensProvider('*', mlc)
+        vscode.languages.registerCodeLensProvider('*', morph_language_client)
     )
     context.subscriptions.push(disposable)
-    context.subscriptions.push(mlc)
+    context.subscriptions.push(morph_language_client)
 
 
     // const provider = async (document, position, context, token) => {

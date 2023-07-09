@@ -67,7 +67,7 @@ interface RunCodeHelperParams {
     textDocument: TextDocumentIdentifier
 }
 
-interface RunAgentParams {
+export interface RunAgentParams {
     agent_type: string
     agent_params: any
 }
@@ -86,6 +86,13 @@ export interface RunChatParams {
     }[],
     position: vscode.Position,
     textDocument: TextDocumentIdentifier,
+}
+
+export interface AgentRegistryItem {
+    agent_type: string,
+    agent_description: string,
+    display_name: string,
+    agent_icon: string | null,
 }
 
 
@@ -312,7 +319,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     async get_agents() {
         console.log('get agents');
         if (!this.client) throw new Error()
-        const result = await this.client.sendRequest('morph/listAgents', {})
+        const result: AgentRegistryItem[] = await this.client.sendRequest('morph/listAgents', {})
         console.log(result);
         return result;
     }

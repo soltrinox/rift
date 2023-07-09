@@ -1,25 +1,31 @@
 import * as vscode from "vscode";
-import { MorphLanguageClient, RunChatParams } from "../client";
+// import { MorphLanguageClient, RunChatParams } from "../client";
+import * as client from "../client"
 import { getNonce } from "../getNonce";
 import { ChatAgentProgress } from "../types";
 
+// Provides a webview view that allows users to chat and interact with the extension.
 export class ChatProvider implements vscode.WebviewViewProvider {
     _view?: vscode.WebviewView;
     _doc?: vscode.TextDocument;
 
-    // In the constructor, we store the URI of the extension
-    constructor(private readonly _extensionUri: vscode.Uri, public hslc: MorphLanguageClient) {
+    // Creates a new instance of `ChatProvider`.
+    //  _extensionUri: The URI of the extension.
+    //  hslc: The MorphLanguageClient instance for communication with the server.
+    constructor(private readonly _extensionUri: vscode.Uri, public morph_language_client: client.MorphLanguageClient) {
     }
 
+    // Posts a message to the webview view.
+    //  endpoint: The endpoint to send the message to.
+    //  message: The message to send.
+    //  Throws an error if the view is not available.
     public postMessage(endpoint: string, message: any) {
-        if (!this._view) {throw new Error('no view')}
-        else
-        {
+        if (!this._view) {
+            throw new Error('No view available');
+        } else {
             this._view.webview.postMessage({ type: endpoint, data: message });
         }
-        
     }
-
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView,
@@ -35,45 +41,61 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         };
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-        webviewView.webview.onDidReceiveMessage(async (data) => {
+        // Handles messages received from the webview
+        webviewView.webview.onDidReceiveMessage(async (params: any) => {
             if (!this._view) throw new Error('no view')
-            switch (data.type) {
-
-                // TODO
+            switch (params.type) {
+                // Handle 'copyText' message
                 case "copyText":
                     console.log('recieved copy in webview')
-                    vscode.env.clipboard.writeText(data.content)
+                    vscode.env.clipboard.writeText(params.content)
                     vscode.window.showInformationMessage('Text copied to clipboard!')
                     break;
+
+                // Handle 'getAgents' message
                 case "getAgents":
-                    const agents = await this.hslc.get_agents();
-                    console.log("AGENTS!")
+                    const agents: client.AgentRegistryItem[] = await this.morph_language_client.get_agents();
+                    console.log("Getting list of available agents")
                     this._view.webview.postMessage({
                             type: 'agents',
                             data: agents
                     });
                     break;
+
+                // Handle 'getAgents' message
+                case "runAgent":
+                    console.log("TODO");
+                    const runAgentParams: client.RunAgentParams = {agent_type: params.agent_type, agent_params: params.agent_params}
+                    // const agents: client.AgentRegistryItem[] = await this.morph_language_client.get_agents();
+                    // console.log("Getting list of available agents")
+                    // this._view.webview.postMessage({
+                    //         type: 'agents',
+                    //         data: agents
+                    // });
+                    break;                    
                     
+                // Handle 'chatMessage' message
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
-                    let runChatParams: any = { message: data.message, messages: data.messages }
+                    let runChatParams: any = { message: params.message, messages: params.messages }
                     if (!editor) {
                         console.warn('No active text editor found');
                     } else {
-                        // get the uri and position of the current cursor
+                        // Get the uri and position of the current cursor
                         const doc = editor.document;
                         const position = editor.selection.active;
                         const textDocument = { uri: doc.uri.toString(), version: 0 }
-                        runChatParams = { message: data.message, messages: data.messages, position, textDocument }
+                        runChatParams = { message: params.message, messages: params.messages, position, textDocument }
                     }
-                    if (!data.message || !data.messages) throw new Error()
-                    this.hslc.run_chat(runChatParams, (progress) => {
+                    if (!params.message || !params.messages) throw new Error()
+                    this.morph_language_client.run_chat(runChatParams, (progress) => {
                         console.log(progress)
                         if (!this._view) throw new Error('no view')
-                        if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
+                        if (progress.done) console.log('WEBVIEW DONE RECEIVING / POSTING')
                         this._view.webview.postMessage({ type: 'progress', data: progress });
                     })
                     break;
+
                 default:
                     console.log('no case match')
             }

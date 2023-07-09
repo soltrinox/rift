@@ -1,24 +1,27 @@
 <script lang="ts">
   import { state } from '../../stores'
+  import * as client from '../../../../src/client'
   import { v4 as uuidv4 } from 'uuid'
   import { Agent, ChatMessage } from '../../../../src/types'
   // import { Log, ChatMessage } from "../../../../src/types";
   import DropdownCard from './DropdownCard.svelte'
   import { onMount } from 'svelte'
-  const MOCK_AGENT_REGISTRY = [
-    //TODO get from server
-    { name: 'rift-chat', description: 'ask me anything ab life bro' },
-    { name: 'aider', description: 'congrats ur now a 10x engineer' },
-    { name: 'gpt-engineer', description: 'an engineer but gpt' },
-    { name: 'auto-code-review', description: 'code review but meaner' },
-    { name: 'repl-auto-debug', description: 'let me debug for u' },
-  ]
-  export let agentIds = MOCK_AGENT_REGISTRY
-  export let inputValue = ''
+  // const MOCK_AGENT_REGISTRY = [
+  //   //TODO get from server
+  //   { name: 'rift-chat', description: 'ask me anything ab life bro' },
+  //   { name: 'aider', description: 'congrats ur now a 10x engineer' },
+  //   { name: 'gpt-engineer', description: 'an engineer but gpt' },
+  //   { name: 'auto-code-review', description: 'code review but meaner' },
+  //   { name: 'repl-auto-debug', description: 'let me debug for u' },
+  // ]
   onMount(() => {
     // Request agents when the component mounts
-    vscode.postMessage({ type: 'getAgents' });
+    agents: client.AgentRegistryItem[] = vscode.postMessage({ type: 'getAgents' });
+    // TODO
+    export let agentIds = agent;
   });
+  // export let agentIds = MOCK_AGENT_REGISTRY
+  export let inputValue = ''  
 
 
   let activeId = 0
