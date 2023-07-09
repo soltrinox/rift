@@ -47,18 +47,6 @@ class RequestChatResponse:
 AgentTaskId = str
 
 
-# @dataclass
-# class AgentTask:
-#     description: str
-#     status: Literal["running", "done", "error"] = "running"
-#     subtasks: List[AgentTaskId] = field(default_factory=list)
-#     parent: Optional[AgentTaskId] = None
-#     id: Optional[str] = None
-
-#     def __post_init__(self):
-#         self.id = str(uuid.uuid4())[:8]
-
-
 @dataclass
 class AgentRunParams(ABC):
     agent_id: str
@@ -239,11 +227,14 @@ class AgentRegistryResult:
     agent_type: str
     agent_description: str
     display_name: Optional[str] = None
-    agent_icon: Optional[str]  # svg icon information
+    agent_icon: Optional[str] = None  # svg icon information
 
 
 @dataclass
 class AgentRegistry:
+    """
+    Track all agents in one place.
+    """
     registry: Dict[str, Type[Agent]] = field(default_factory=dict)
 
     def __getitem__(self, key):
