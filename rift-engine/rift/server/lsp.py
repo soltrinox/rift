@@ -1,8 +1,10 @@
+import glob
+import os
 import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Literal, Optional
+from typing import Any, ClassVar, List, Literal, Optional, Iterable
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
@@ -20,6 +22,7 @@ from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 # from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict
+import rift.agents.rift_chat as agentchat
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +69,14 @@ class LspLogHandler(logging.Handler):
 
 
 @dataclass
+class LoadFilesResult:
+    documents: dict[lsp.DocumentUri, lsp.TextDocumentItem]
+
+@dataclass
+class LoadFilesParams:
+    patterns: List[str]
+
+@dataclass
 class ChatAgentProgress:
     id: int
     response: str = ""
@@ -109,6 +120,55 @@ class LspServer(BaseLspServer):
     async def on_workspace_did_change_configuration(self, params: lsp.DidChangeConfigurationParams):
         logger.info("workspace/didChangeConfiguration")
         await self.get_config()
+
+    @rpc_method("morph/loadFiles")
+    def load_documents(self, params: LoadFilesParams) -> LoadFilesResult:
+        try:
+            current_dir = os.path.abspath(__file__)
+        except:
+            current_dir = os.getcwd()
+        with open(os.path.join(current_dir, "languages.json"), "r") as f:
+            language_map = json.loads(f)
+
+        def find_matching_language(filepath: str, language_map: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
+            extension = filepath.split('.')[-1]  # Get the file extension
+
+            for details in language_map["languages"]:
+                if extension in details.get('extensions', []):
+                    return details["id"]
+
+            return None
+
+        def preprocess_filepaths(filepaths: List[str]) -> List[str]:
+            processed_filepaths = []
+            for filepath in filepaths:
+                processed_filepaths.append(os.path.expandvars(filepath))
+            return processed_filepaths
+
+        def join_filepaths(filepaths: List[str]) -> List[str]:
+            for filepath in filepaths:
+                yield from glob.glob(filepath, root="/" if filepath.startswith("/") else None)
+
+        for file_path in join_filepaths(preprocess_filepaths(params.patterns)):
+            with open(file_path, "r") as f:
+                text = f.read()
+            doc_item = lsp.TextDocumentItem(
+                text=text,
+                uri="file://" + os.path.join(os.getcwd(), str(file_path)) if not file_path.startswith('/') else str(file_path),
+                languageId=find_matching_language(file_path, language_map) or "*",
+                version=1
+            )
+            result_documents[doc_item.uri] = doc_item
+
+        result = LoadFilesResult(documents=result_documents)
+
+        self.documents.update(result.documents)
+
+        return result
+
+    @rpc_method("morph/applyWorkspaceEdit")
+    async def on_workspace_did_change_configuration(self, params: lsp.ApplyWorkspaceEditParams):
+        return await self.apply_workspace_edit(params)
 
     async def get_config(self):
         """This should be called whenever the user changes the model config settings.
@@ -230,31 +290,71 @@ class LspServer(BaseLspServer):
         # lol
         agent_params = params.agent_params
         agent_id = params.agent_id or str(uuid.uuid4())[:8]
-        agent_params.update({"agent_id": agent_id})        
+        agent_params.update({"agent_id": agent_id})
 
-        async def _run_agent():
-            if agent_type == "chat":
-                # prepare params for ChatAgent construction
-                model = await self.ensure_chat_model()
-                agent_params = ofdict(RunChatParams, agent_params)
-                agent = ChatAgent(agent_params, model=model, server=self)
-            elif agent_type == "code_completion":
-                model = await self.ensure_completions_model()
-                agent_params = ofdict(CodeCompletionAgentParams, agent_params)
-                agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
-            elif agent_type == "smol_dev":
-                model = await self.ensure_chat_model()
-                agent_params = ofdict(SmolAgentParams, agent_params)
-                agent = SmolAgent.create(params=agent_params, model=model, server=self)
-            else:
-                raise Exception(f"unsupported agent type={agent_type}")
-            # t = asyncio.Task(agent.main())
-            t = asyncio.create_task(agent.main())
-            return t
+        # async def _run_agent():
+        # logger = logging.getLogger(__name__)
+        logger.info(f"AGENT TYPE: {agent_type}")
+        if agent_type == "chat":
+            # prepare params for ChatAgent construction
+            model = await self.ensure_chat_model()
+            agent_params = ofdict(RunChatParams, agent_params)
+            agent = ChatAgent(agent_params, model=model, server=self)
+        elif agent_type == "rift_chat":
+            model = await self.ensure_chat_model()
+            agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+            agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "code_completion":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+            agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "smol_dev":
+            model = await self.ensure_chat_model()
+            agent_params = ofdict(SmolAgentParams, agent_params)
+            agent = SmolAgent.create(params=agent_params, model=model, server=self)
+        else:
+            raise Exception(f"unsupported agent type={agent_type}")
 
-        asyncio.create_task(_run_agent())
         self.active_agents[agent_id] = agent
+        # t = asyncio.Task(agent.main())
+        t = asyncio.create_task(agent.main())
         return RunAgentResult(id=agent_id)
+        #     return t
+
+        # asyncio.create_task(_run_agent())
+        # return RunAgentResult(id=agent_id)
+        
+
+        # async def _run_agent():
+        #     logger = logging.getLogger(__name__)
+        #     logger.info("AGENT TYPE: ", agent_type)
+        #     if agent_type == "chat":
+        #         # prepare params for ChatAgent construction
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(RunChatParams, agent_params)
+        #         agent = ChatAgent(agent_params, model=model, server=self)
+        #     elif agent_type == "rift_chat":
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+        #         agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
+        #     elif agent_type == "code_completion":
+        #         model = await self.ensure_completions_model()
+        #         agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+        #         agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        #     elif agent_type == "smol_dev":
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(SmolAgentParams, agent_params)
+        #         agent = SmolAgent.create(params=agent_params, model=model, server=self)
+        #     else:
+        #         raise Exception(f"unsupported agent type={agent_type}")
+            
+        #     self.active_agents[agent_id] = agent
+        #     # t = asyncio.Task(agent.main())
+        #     t = asyncio.create_task(agent.main())
+        #     return t
+
+        # asyncio.create_task(_run_agent())
+        # return RunAgentResult(id=agent_id)
 
     @rpc_method("morph/run_agent")
     async def on_run_agent(self, params: CodeCompletionAgentParams):

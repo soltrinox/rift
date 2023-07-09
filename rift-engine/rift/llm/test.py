@@ -37,6 +37,15 @@ if __name__ == "__main__":
         async def chat_progress(self, params: Any):
             print("PROGRESS: ", params)
 
+        @rpc_method("morph/rift_chat_1_send_progress")
+        async def rift_chat_progress(self, params: Any):
+            print("RIFT CHAT PROGRESS: ", params)
+
+        @rpc_method("morph/rift_chat_1_request_chat")
+        async def rift_chat_request(self, params: Any):
+            print("RIFT CHAT MESSAGES: ", params["messages"])
+            return {"message": input("what do you want to say?\n")}
+
         @rpc_method("morph/smol_dev_1_request_chat")
         async def smol_agent_chat(self, params: Any):
             print("SMOL CHAT: ", params)
@@ -73,20 +82,31 @@ if __name__ == "__main__":
 
         print("AGENTS: ", await client.listAgents({}))
 
-        await t
+        # await t
         # from pydantic import BaseModel
         # from rift.server.chat_agent import RunChatParams
 
-        # # register a file
-        # on_did_open_params = lsp.DidOpenTextDocumentParams(
-        #     textDocument=lsp.TextDocumentItem(
-        #         text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw",
-        #         uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py",
-        #         languageId="python",
-        #         version=0,
-        #     )
-        # )
-        # print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
+        # register a file
+        on_did_open_params = lsp.DidOpenTextDocumentParams(
+            textDocument=lsp.TextDocumentItem(
+                text="yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeehaw",
+                uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py",
+                languageId="python",
+                version=0,
+            )
+        )
+        print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
+
+        import rift.agents.rift_chat as agentchat
+        chat_agent_params = dict(
+            textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0),
+            position=None,
+        )
+        # from rift.server.lsp import AgentRunParams
+
+        params = dict(agent_type="rift_chat", agent_params=chat_agent_params, agent_id="1")
+
+        print(await client.run(params=params))
 
         # from rift.agents.smol import SmolAgentParams
         # from rift.server.lsp import AgentRunParams
@@ -100,5 +120,6 @@ if __name__ == "__main__":
         # print("RUN RESULT: ", await client.run(params=params))
         # print("initialized")
         # await t
+        await t
 
     asyncio.run(main())

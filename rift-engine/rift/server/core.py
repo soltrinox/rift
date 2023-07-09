@@ -54,6 +54,7 @@ ModelType = Literal["openai", "hf", "gpt4all"]
 
 
 class CodeCapabilitiesServer:
+    server: Optional[LspServer] = None
     def __init__(
         self,
         lsp_port: LspPort = 7797,
@@ -66,7 +67,9 @@ class CodeCapabilitiesServer:
 
     async def run_lsp(self, transport):
         server = LspServer(transport)
+        self.server = server
         try:
+            logger.info("[CodeCapabilitiesServer] listening...")
             await server.listen_forever()
         except Exception as e:
             logger.error("caught: " + str(e))
@@ -113,11 +116,11 @@ class CodeCapabilitiesServer:
         logger.debug(f"exiting {type(self).__name__}.run_forever")
 
 
-def main(
+def create_metaserver(
     port: LspPort = 7797,
     version=False,
     debug=False,
-):
+) -> LspServer:
     """
     Main entry point for the rift server
     Args:
@@ -144,8 +147,17 @@ def main(
 
     splash()
 
-    logger.info(f"starting rift server on {port}")
+    logger.info(f"starting Rift server on {port}")
     metaserver = CodeCapabilitiesServer(lsp_port=port)
+    return metaserver
+
+
+def main(
+    port: LspPort = 7797,
+        version=False,
+        debug=False,
+):
+    metaserver = create_metaserver(port, version, debug)
     asyncio.run(metaserver.run_forever(), debug=debug)
 
 

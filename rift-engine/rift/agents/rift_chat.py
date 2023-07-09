@@ -1,112 +1,126 @@
-# # from dataclasses import dataclass
-# from abc import ABC
-# from typing import ClassVar, Optional, List, Dict
-# from rift.lsp import LspServer as BaseLspServer, rpc_method
-# from rift.agents.abstract import Agent, AgentTask, AgentProgress, AgentRunParams, RequestChatRequest, RequestChatResponse, RequestInputResponse, AgentRunResult
-# from rift.llm.openai_types import Message as ChatMessage
-# from rift.llm.abstract import AbstractChatCompletionProvider
+import asyncio
+import logging
+import uuid
+from asyncio import Future
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Dict, Optional, List
 
+import rift.lsp.types as lsp
+from rift.agents.abstract import (
+    Agent,
+    AgentProgress,  # AgentTask,
+    AgentRunParams,
+    AgentRunResult,
+    AgentState,
+    RequestInputRequest,
+    RunAgentParams,
+    agent,
+    RequestChatRequest
+)
+import rift.agents.abstract as agents
+import rift.llm.openai_types as openai
+from rift.agents.agenttask import AgentTask
+from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult, AbstractChatCompletionProvider
+from rift.lsp import LspServer as BaseLspServer
+from rift.lsp.document import TextDocumentItem
+from rift.server.selection import RangeSet
+from rift.agents.agenttask import AgentTask
 
-# # @dataclass
-# # class ChatProgress(
-# #     AgentProgress
-# # ):  # reports what tasks are active and responsible for reporting new tasks
-# #     response: Optional[str] = None
-# #     done_streaming: bool = False
+logger = logging.getLogger(__name__)
 
+@dataclass
+class ChatRunResult(AgentRunResult):
+    ...
 
-# # @dataclass
-# # class ChatAgentState(Agent):
-# #     messages: List[ChatMessage]
+@dataclass
+class ChatAgentParams(AgentRunParams):
+    textDocument: lsp.TextDocumentIdentifier
+    position: Optional[lsp.Position]
 
+@dataclass
+class ChatProgress(
+     AgentProgress
+):  # reports what tasks are active and responsible for reporting new tasks
+     response: Optional[str] = None
+     done_streaming: bool = False
 
-# # @dataclass
-# # class ChatAgent(Agent):
-# #     agent_id: str
-# #     model: AbstractChatCompletionProvider
-# #     count: ClassVar[int] = 0
-# #     agent_type = "chat"
-# #     agent_description = "rift chat!"
+@dataclass
+class ChatAgentState(AgentState):
+    model: AbstractChatCompletionProvider
+    messages: list[openai.Message]
+    document: lsp.TextDocumentItem
+    params: ChatAgentParams
 
-# #     @classmethod
-# #     def create(cls, messages, server):
-# #         ChatAgent.count += 1
-# #         obj = ChatAgent(
-# #             state=ChatAgentState(messages=messages), tasks=dict(), server=server, id=ChatAgent.count
-# #         )
-# #         wait_user_response_task_id = obj.add_task(
-# #             AgentTask("running", "Get user response", [], None)
-# #         )
-# #         obj.wait_user_response_task = obj.tasks[wait_user_response_task_id]
-# #         obj.generate_response_task = obj.tasks[
-# #             obj.add_task(AgentTask("done", "Generate response", [], None))
-# #         ]
-# #         return obj
+@agent(
+    agent_description="Ask questions about your code.",
+    display_name="Rift Chat",
+)
+@dataclass
+class ChatAgent(Agent):
+    state: ChatAgentState
+    agent_type: ClassVar[str] = "rift_chat"
 
-# #     async def run(self, params: AgentRunParams) -> AgentRunResult:
-# #         async def worker():
-# #             while True:
-# #                 self.wait_user_response_task.status = "running"
-# #                 self.generate_response_task.status = "done"
-# #                 self.wait_user_response_task.id
-# #                 self.send_progress(ChatProgress(tasks=self.tasks))
+    @classmethod
+    def create(cls, params: ChatAgentParams, model, server):
+        state = ChatAgentState(
+            model=model,
+            messages=[
+                openai.Message.assistant("Hello! How can I help you today?")
+            ],
+            document=server.documents[params.textDocument.uri],
+            params=params,
+        )
+        obj = cls(
+            state=state,
+            agent_id=params.agent_id,
+            server=server,
+        )
+        return obj
 
-# #                 user_response = await self.request_chat(self.state.messages)
-# #                 response = ""
-# #                 from asyncio import Lock
+    async def run(self) -> AgentRunResult:
+        logger.info(f"[{self.agent_type}] starting ChatAgent.run()")
+        from asyncio import Lock
+        response_lock = Lock()        
+        async def get_user_response() -> str:
+            logger.info("getting user response")
+            return await self.request_chat(RequestChatRequest(messages=self.state.messages))
 
-# #                 response_lock = Lock()
-# #                 assert self.running
-# #                 async with response_lock:
-# #                     self.wait_user_response_task.status = "done"
-# #                     self.generate_response_task.status = "running"
-# #                     self.generate_response_task.id
-# #                     await self.send_progress(ChatProgress(response=response, tasks=self.tasks))
-# #                 doc_text = self.document.text
-# #                 pos = self.cursor
-# #                 offset = None if pos is None else self.document.position_to_offset(pos)
+        async def generate_response(user_response: str):
+            response = ""
+            doc_text = self.state.document.text
 
-# #                 stream = await self.model.run_chat(
-# #                     doc_text, self.state.messages, user_response, offset
-# #                 )
+            stream = await self.state.model.run_chat(
+                doc_text, self.state.messages, user_response, cursor_offset=None
+            )
+            async for delta in stream.text:
+                response += delta
+                async with response_lock:
+                    await self.send_progress(ChatProgress(response=response))
+            await self.send_progress(ChatProgress(response=response, done_streaming=True))
+            logger.info(f"{self} finished streaming response.")
+            return response
 
-# #                 async for delta in stream.text:
-# #                     response += delta
-# #                     async with response_lock:
-# #                         await self.send_progress(ChatProgress(response=response))
-# #                 logger.info(f"{self} finished streaming response.")
-
-# #                 self.running = False
-# #                 async with response_lock:
-# #                     await self.send_progress(response=response, done_streaming=True)
-# #                     self.state.messages.append(ChatMessage.assistant(response))
-
-# #         task = asyncio.create_task(worker())
-# #         self.running = True
-# #         try:
-# #             return await task
-# #         except asyncio.CancelledError as e:
-# #             logger.info(f"{self} run task got cancelled")
-# #             return f"I stopped! {e}"
-# #         finally:
-# #             self.running = False
-
-# #     async def request_input(self) -> RequestInputResponse:
-# #         return await self.server.request(
-# #             f"morph/{self.agent_type}_{self.id}_request_input", request_input_request
-# #         )
-
-# #     async def request_chat(self, request_chat_request: RequestChatRequest) -> RequestChatResponse:
-# #         return await self.server.request(
-# #             f"morph/{self.agent_type}_{self.id}_request_chat", request_chat_request
-# #         )
-
-# #     async def send_progress(self, progress: AgentProgress) -> None:
-# #         await self.notify("morph/{self.agent_type}_{self.id}_send_progress", progress)
-
-# #     async def send_result(self):
-# #         ...  # unreachable
-
-
-# # if __name__ == "__main__":
-# #     ...
+        while True:
+            logger.info("entering loop")
+            get_user_response_task = AgentTask("Get user response", get_user_response)
+            logger.info("created get_user_response_task")            
+            sentinel_f = asyncio.get_running_loop().create_future()
+            async def generate_response_task_args():
+                return [await sentinel_f]
+            logger.info("created future")                        
+            generate_response_task = AgentTask("Generate response", generate_response, args=generate_response_task_args)
+            self.set_tasks([get_user_response_task, generate_response_task])
+            await self.send_progress()
+            user_response_task = asyncio.create_task(get_user_response_task.run())
+            user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
+            logger.info("got user response task future")                                                
+            await user_response_task
+            await self.send_progress()
+            assistant_response = await generate_response_task.run()
+            
+            await self.send_progress()
+            
+            async with response_lock:
+                self.state.messages.append(openai.Message.assistant(content=assistant_response))
+                
+            await self.send_progress()
