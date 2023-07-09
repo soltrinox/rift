@@ -133,10 +133,16 @@ class Agent:
         ...
 
     def add_task(self, task: AgentTask):
+        """
+        Register a subtask.
+        """
         self.tasks.append(task)
         return task
 
     async def cancel(self, msg: Optional[str] = None):
+        """
+        Cancel all tasks and update progress. Assumes that `Agent.main()` has been called and that the main task has been created.
+        """
         logger.info(f"{self.agent_type} {self.agent_id} cancel run {msg or ''}")
         self.task.cancel()
         for task in self.tasks:
@@ -146,6 +152,9 @@ class Agent:
         await self.send_progress()
 
     async def request_input(self, req: RequestInputRequest) -> str:
+        """
+        Prompt the user for more information.
+        """
         try:
             response = await self.server.request(
                 f"morph/{self.agent_type}_{self.agent_id}_request_input", req
@@ -157,6 +166,9 @@ class Agent:
             raise asyncio.CancelledError
 
     async def send_update(self, msg: str):
+        """
+        Creates a notification toast in the Rift extension by default.
+        """
         await self.server.notify(
             f"morph/{self.agent_type}_{self.agent_id}_send_update",
             {"msg": f"[{self.agent_type}] {msg}"},
@@ -168,12 +180,20 @@ class Agent:
         )
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
+        """
+        Each agent is responsible for periodically notifying the client at `morph/{agent_type}_{agent_id}_send_progress` about the status of its outstanding tasks.
+
+        Assumes that `Agent.main()` has been run and the main task has been created.
+        """
         if payload_only:
             tasks = None
         else:
             try:
+                """
+                In the Rift Agents webview view, this corresponds precisely to a single log item corresponding to this agent.
+                """
                 tasks = {
-                    "task": {"description": self.task.description, "status": self.task.status},
+                    "task": {"description": AGENT_REGISTRY[self.task.description].display_name, "status": self.task.status},
                     "subtasks": (
                         [{"description": x.description, "status": x.status} for x in self.tasks]
                     ),
@@ -203,6 +223,11 @@ class AgentRegistryItem:
 
     agent: Type[Agent]
     agent_description: str
+    display_name: Optional[str] = None
+
+    def __post_init__(self):
+        if self.display_name is None:
+            self.display_name = self.agent_type    
 
 
 @dataclass
@@ -216,14 +241,13 @@ class AgentRegistryResult:
     display_name: Optional[str] = None
     agent_icon: Optional[str]  # svg icon information
 
-    def __post_init__(self):
-        if self.display_name is None:
-            self.display_name = self.agent_type
-
 
 @dataclass
 class AgentRegistry:
     registry: Dict[str, Type[Agent]] = field(default_factory=dict)
+
+    def __getitem__(self, key):
+        return self.get_agent(key)
 
     def register_agent(
         self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
@@ -231,7 +255,7 @@ class AgentRegistry:
         if agent.agent_type in self.registry:
             raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
         self.registry[agent.agent_type] = AgentRegistryItem(
-            agent=agent, agent_description=agent_description
+            agent=agent, agent_description=agent_description, display_name=display_name,
         )
 
     def get_agent(self, agent_type: str) -> Type[Agent]:
@@ -251,6 +275,7 @@ class AgentRegistry:
                 agent_type=item.agent.agent_type,
                 agent_description=item.agent_description,
                 agent_icon=self.get_agent_icon(item),
+                display_name=item.display_name
             )
             for item in self.registry.values()
         ]
