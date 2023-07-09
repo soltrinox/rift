@@ -12,10 +12,10 @@ from rift.agents.abstract import AgentRegistryResult
 from rift.lsp.types import InitializeParams
 from rift.rpc.io_transport import AsyncStreamTransport
 from rift.rpc.jsonrpc import RpcServer, rpc_method, rpc_request
-from rift.server.core import CodeCapabilitiesServer, splash
+from rift.server.core import CodeCapabilitiesServer, rift_splash
 from rift.util.ofdict import todict
 import rift.agents.file_diff as file_diff
-from rift.server.core import splash
+from rift.server.core import rift_splash
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.panel import Panel
@@ -103,25 +103,14 @@ async def main(params):
         datefmt="[%X]",
         handlers=[RichHandler(console=console)],
     )
-
-    # reader, writer = await asyncio.open_connection("127.0.0.1", params.port)
-    # transport = AsyncStreamTransport(reader, writer)
-    # client = RiftClient(transport=transport)
     client: core.CodeCapabilitiesServer = core.create_metaserver(port=params.port)
     logger.info(f"started Rift server on port {params.port}")
     t = asyncio.create_task(client.run_forever())
     await asyncio.sleep(2)
     smol_splash()
-    # logger.info("success: ", await client.initialize(params=InitializeParams()))
 
     console.print("\n> Press any key to continue.\n")
     await ainput()
-
-    # edit = lsp.WorkspaceEdit(changes=None, documentChanges=[lsp.CreateFile(kind="create", uri="file:///home/pv/Downloads/yeehaw-dev/generated/manifest.json", options=None, annotationId="rift"), lsp.TextDocumentEdit(textDocument=lsp.TextDocumentIdentifier(uri='file:///home/pv/Downloads/yeehaw-dev/generated/manifest.json', version=0), edits=[lsp.TextEdit(range=lsp.Range.mk(0, 0, 0, 0), newText='{\n  "manifest_version": 3,\n  "name": "Anthropic Extension",\n  "version": "1.0",\n  "permissions": [\n    "tabs",\n    "storage"\n  ],\n  "background": {\n    "service_worker": "background.js"\n  },\n  "content_scripts": [\n    {\n      "matches": ["<all_urls>"],\n      "js": ["content_script.js"]\n    }\n  ],\n  "action": {\n    "default_popup": "popup.html"\n  }\n}', annotationId='rift')])], changeAnnotations={'rift': lsp.ChangeAnnotation(label='rift', needsConfirmation=True, description="YEEHAW")})
-
-    # print(await client.server.apply_workspace_edit(lsp.ApplyWorkspaceEditParams(edit=edit, label="rift")))
-
-    # exit()
 
     with open(params.prompt_file, "r") as f:
         prompt = f.read()
