@@ -117,6 +117,7 @@ class Agent:
         """
         self.task = AgentTask(description=self.agent_type, task=self.run)
         try:
+            logger.info("[main] running main task")
             return await self.task.run()
         except asyncio.CancelledError as e:
             logger.info(f"{self} cancelled: {e}")
@@ -173,11 +174,12 @@ class Agent:
             {"msg": f"[{self.agent_type}] {msg}"},
         )
 
-    async def request_chat(self, req: RequestChatRequest) -> asyncio.Future[RequestChatResponse]:
+    async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        return await self.server.request(
+        response = await self.server.request(
             f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
         )
+        return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
         """
@@ -190,7 +192,7 @@ class Agent:
         else:
             try:
                 tasks = {
-                    "task": {"description": AGENT_REGISTRY[self.task.description].display_name,
+                    "task": {"description": AGENT_REGISTRY.registry[self.agent_type].display_name,
                              "status": self.task.status},
                     "subtasks": ([{"description": x.description, "status": x.status}
                                   for x in self.tasks]),

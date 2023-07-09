@@ -2,6 +2,9 @@ import asyncio
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import Optional, Awaitable, Any, Iterable, Callable, Dict
+import logging
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class AgentTask:
@@ -18,8 +21,8 @@ class AgentTask:
 
     description: str
     task: Callable[Any, Awaitable[Any]]
-    args: Callable[Any, Awaitable[Iterable[Any]]] = field(default_factory=list)
-    kwargs: Callable[Any, Awaitable[Dict[Any, Any]]] = field(default_factory=dict)
+    args: Optional[Callable[Any, Awaitable[Iterable[Any]]]] = None
+    kwargs: Optional[Callable[Any, Awaitable[Dict[Any, Any]]]] = None
     _task: Optional[asyncio.Task] = None
     _running: bool = False
     _error: Optional[Exception] = None
@@ -34,11 +37,14 @@ class AgentTask:
         
         self._running = True
         try:
-            return await self.task(*(await args()), **(await kwargs()))
+            args = [*(await self.args())] if self.args else []
+            kwargs = {**(await self.kwargs())} if self.kwargs else dict()
+            return await self.task(*args, **kwargs)
         except asyncio.CancelledError:
             self._cancelled = True
         except Exception as e:
             self._error = e
+            logger.debug(f"[AgentTask] caught error: {e}")
         finally:
             self._running = False
 

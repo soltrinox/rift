@@ -232,38 +232,70 @@ class LspServer(BaseLspServer):
         agent_params = params.agent_params
         agent_id = params.agent_id or str(uuid.uuid4())[:8]
         agent_params.update({"agent_id": agent_id})
-        print("AGENT PARAMS: ", agent_params)
+
+        # async def _run_agent():
+        # logger = logging.getLogger(__name__)
+        logger.info(f"AGENT TYPE: {agent_type}")
+        if agent_type == "chat":
+            # prepare params for ChatAgent construction
+            model = await self.ensure_chat_model()
+            agent_params = ofdict(RunChatParams, agent_params)
+            agent = ChatAgent(agent_params, model=model, server=self)
+        elif agent_type == "rift_chat":
+            model = await self.ensure_chat_model()
+            agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+            agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "code_completion":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+            agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "smol_dev":
+            model = await self.ensure_chat_model()
+            agent_params = ofdict(SmolAgentParams, agent_params)
+            agent = SmolAgent.create(params=agent_params, model=model, server=self)
+        else:
+            raise Exception(f"unsupported agent type={agent_type}")
+
+        self.active_agents[agent_id] = agent
+        # t = asyncio.Task(agent.main())
+        t = asyncio.create_task(agent.main())
+        return RunAgentResult(id=agent_id)
+        #     return t
+
+        # asyncio.create_task(_run_agent())
+        # return RunAgentResult(id=agent_id)
         
 
-        async def _run_agent():
-            logger.info("AGENT TYPE: ", agent_type)
-            if agent_type == "chat":
-                # prepare params for ChatAgent construction
-                model = await self.ensure_chat_model()
-                agent_params = ofdict(RunChatParams, agent_params)
-                agent = ChatAgent(agent_params, model=model, server=self)
-            elif agent_type == "rift_chat":
-                model = await self.ensure_chat_model()
-                agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
-                agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
-            elif agent_type == "code_completion":
-                model = await self.ensure_completions_model()
-                agent_params = ofdict(CodeCompletionAgentParams, agent_params)
-                agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
-            elif agent_type == "smol_dev":
-                model = await self.ensure_chat_model()
-                agent_params = ofdict(SmolAgentParams, agent_params)
-                agent = SmolAgent.create(params=agent_params, model=model, server=self)
-            else:
-                raise Exception(f"unsupported agent type={agent_type}")
+        # async def _run_agent():
+        #     logger = logging.getLogger(__name__)
+        #     logger.info("AGENT TYPE: ", agent_type)
+        #     if agent_type == "chat":
+        #         # prepare params for ChatAgent construction
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(RunChatParams, agent_params)
+        #         agent = ChatAgent(agent_params, model=model, server=self)
+        #     elif agent_type == "rift_chat":
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+        #         agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
+        #     elif agent_type == "code_completion":
+        #         model = await self.ensure_completions_model()
+        #         agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+        #         agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        #     elif agent_type == "smol_dev":
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(SmolAgentParams, agent_params)
+        #         agent = SmolAgent.create(params=agent_params, model=model, server=self)
+        #     else:
+        #         raise Exception(f"unsupported agent type={agent_type}")
             
-            self.active_agents[agent_id] = agent
-            # t = asyncio.Task(agent.main())
-            t = asyncio.create_task(agent.main())
-            return t
+        #     self.active_agents[agent_id] = agent
+        #     # t = asyncio.Task(agent.main())
+        #     t = asyncio.create_task(agent.main())
+        #     return t
 
-        asyncio.create_task(_run_agent())
-        return RunAgentResult(id=agent_id)
+        # asyncio.create_task(_run_agent())
+        # return RunAgentResult(id=agent_id)
 
     @rpc_method("morph/run_agent")
     async def on_run_agent(self, params: CodeCompletionAgentParams):

@@ -386,10 +386,11 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         cursor_offset: Optional[int] = None,
     ) -> ChatResult:
         chatstream = TextStream()
-
-        non_system_messages = [
-            Message.mk(role=msg.role, content=msg.content) for msg in messages
-        ] + [Message.user(content=message)]
+        non_system_messages = []
+        for msg in messages:
+            logger.debug(str(msg))
+            non_system_messages.append(Message.mk(role=msg.role, content=msg.content))
+        non_system_messages += [Message.user(content=message)]
         non_system_messages_size = messages_size(non_system_messages)
 
         max_system_msg_size = calc_max_system_message_size(non_system_messages_size)

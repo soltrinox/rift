@@ -37,6 +37,15 @@ if __name__ == "__main__":
         async def chat_progress(self, params: Any):
             print("PROGRESS: ", params)
 
+        @rpc_method("morph/rift_chat_1_send_progress")
+        async def rift_chat_progress(self, params: Any):
+            print("RIFT CHAT PROGRESS: ", params)
+
+        @rpc_method("morph/rift_chat_1_request_chat")
+        async def rift_chat_request(self, params: Any):
+            print("RIFT CHAT MESSAGES: ", params["messages"])
+            return {"message": input("what do you want to say?\n")}
+
         @rpc_method("morph/smol_dev_1_request_chat")
         async def smol_agent_chat(self, params: Any):
             print("SMOL CHAT: ", params)
@@ -95,7 +104,7 @@ if __name__ == "__main__":
         )
         # from rift.server.lsp import AgentRunParams
 
-        params = dict(agent_type="rift_chat", agent_params=chat_agent_params)
+        params = dict(agent_type="rift_chat", agent_params=chat_agent_params, agent_id="1")
 
         print(await client.run(params=params))
 
@@ -111,5 +120,6 @@ if __name__ == "__main__":
         # print("RUN RESULT: ", await client.run(params=params))
         # print("initialized")
         # await t
+        await t
 
     asyncio.run(main())
