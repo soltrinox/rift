@@ -69,12 +69,12 @@ class AgentProgress:
 
 @dataclass
 class AgentRunResult(ABC):
-    ...
+    """Abstract base class for AgentRunResult"""
 
 
 @dataclass
 class AgentState(ABC):
-    ...
+    """Abstract base class for AgentState"""
 
 
 @dataclass
@@ -97,9 +97,11 @@ class Agent:
     task: Optional[AgentTask] = None
 
     def get_display(self):
+        """Get agent display information"""
         return self.agent_type, self.description
 
     def __str__(self):
+        """Get string representation of the agent"""
         return f"<{self.agent_type}> {self.agent_id}"
 
     @classmethod
@@ -114,10 +116,10 @@ class Agent:
         Called by the LSP server to handle `morph/run`.
         """
         self.task = AgentTask(description=self.agent_type, task=asyncio.create_task(self.run()))
-
         return await self.task.run()
 
     async def run(self) -> AgentRunResult:
+        """Run the agent"""
         ...
 
     def add_task(self, task: AgentTask):
@@ -163,6 +165,7 @@ class Agent:
         )
 
     async def request_chat(self, req: RequestChatRequest) -> asyncio.Future[RequestChatResponse]:
+        """Send chat request"""
         return await self.server.request(
             f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
         )
@@ -177,14 +180,11 @@ class Agent:
             tasks = None
         else:
             try:
-                """
-                In the Rift Agents webview view, this corresponds precisely to a single log item corresponding to this agent.
-                """
                 tasks = {
-                    "task": {"description": AGENT_REGISTRY[self.task.description].display_name, "status": self.task.status},
-                    "subtasks": (
-                        [{"description": x.description, "status": x.status} for x in self.tasks]
-                    ),
+                    "task": {"description": AGENT_REGISTRY[self.task.description].display_name,
+                             "status": self.task.status},
+                    "subtasks": ([{"description": x.description, "status": x.status}
+                                  for x in self.tasks]),
                 }
             except Exception as e:
                 logger.debug(f"Caught exception: {e}")
@@ -200,6 +200,7 @@ class Agent:
         await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_progress", progress)
 
     async def send_result(self) -> ...:
+        """Send agent result"""
         ...
 
 
@@ -272,12 +273,12 @@ class AgentRegistry:
         ]
 
 
-AGENT_REGISTRY = AgentRegistry()
+AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
 
 
 def agent(agent_description: str, display_name: Optional[str] = None):
     def decorator(cls: Type[Agent]) -> Type[Agent]:
-        AGENT_REGISTRY.register_agent(cls, agent_description, display_name)
+        AGENT_REGISTRY.register_agent(cls, agent_description, display_name)  # Registering the agent
         return cls
 
     return decorator
