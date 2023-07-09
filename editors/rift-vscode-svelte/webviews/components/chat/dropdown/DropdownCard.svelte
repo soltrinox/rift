@@ -1,15 +1,11 @@
 <script lang="ts">
   import { state } from "../../stores";
   import RiftSvg from "../../icons/RiftSvg.svelte";
+  import type { AgentRegistryItem } from "../../../../src/types";
 
-  export let id: string;
   export let focused: boolean = false;
 
-  let description =
-    id in $state.agents
-      ? $state.agents[id].description
-      : "code while you sleep";
-
+  export let agent: AgentRegistryItem;
 </script>
 
 <div
@@ -20,10 +16,17 @@
   }`}
 >
   <div class="flex flex-row">
-    <RiftSvg />
-    /{id}
+    {#if agent.agent_icon}
+      {agent.agent_type}
+    {:else}
+      <RiftSvg />
+    {/if}
+    /{agent.agent_type}
+  </div>
+  <div>
+    {agent.display_name}
   </div>
   <div class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)]">
-    {description}
+    {agent.agent_description}
   </div>
 </div>

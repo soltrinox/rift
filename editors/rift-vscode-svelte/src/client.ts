@@ -20,7 +20,7 @@ import { ChatAgentProgress } from './types';
 import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
 
-let client: LanguageClient
+let client: LanguageClient //LanguageClient
 
 const DEFAULT_PORT = 7797
 
@@ -84,8 +84,8 @@ export interface RunChatParams {
         role: string,
         content: string
     }[],
-    position: vscode.Position,
-    textDocument: TextDocumentIdentifier,
+    // position: vscode.Position,
+    // textDocument: TextDocumentIdentifier,
 }
 
 export interface AgentRegistryItem {
@@ -203,14 +203,14 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     agentStates = new Map<AgentIdentifier, any>()
 
     constructor(context: vscode.ExtensionContext) {
-        this.red = { key: "TEMP_VALUE", dispose: () => { } }
-        this.green = { key: "TEMP_VALUE", dispose: () => { } }
+        // this.red = { key: "TEMP_VALUE", dispose: () => { } }
+        // this.green = { key: "TEMP_VALUE", dispose: () => { } }
         this.context = context
         this.create_client().then(() => {
             this.context.subscriptions.push(
-                vscode.commands.registerCommand('extension.getAgents', async () => {
+                vscode.commands.registerCommand('extension.listAgents', async () => {
                     if (client) {
-                        return await this.get_agents();
+                        return await this.list_agents();
                     }
                 }),
                 vscode.commands.registerCommand('rift.cancel', (id: number) => this.client?.sendNotification('morph/cancel', { id })),
@@ -316,8 +316,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         return this.client && this.client.state == State.Running
     }
 
-    async get_agents() {
-        console.log('get agents');
+    async list_agents() {
+        console.log('get agents client.ts');
         if (!this.client) throw new Error()
         const result: AgentRegistryItem[] = await this.client.sendRequest('morph/listAgents', {})
         console.log(result);

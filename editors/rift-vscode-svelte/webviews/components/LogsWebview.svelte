@@ -3,16 +3,25 @@
     import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
     import Logs from "./logs/Logs.svelte";
     import { DEFAULT_STATE, loading, state } from "./stores";
-    import type { ChatAgentProgress } from "../../src/types";
+    import type { ChatAgentProgress, AgentRegistryItem } from "../../src/types";
     import Header from "./Header.svelte";
     import Chat from "./chat/Chat.svelte";
     import OmniBar from "./chat/OmniBar.svelte";
+    import { onMount } from "svelte/types/runtime/internal/lifecycle";
+
+    export let agentRegistry: AgentRegistryItem[] = [];
 
     // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
     console.log("RESETTING VSCODE STATE");
     console.log(DEFAULT_STATE);
     vscode.setState(DEFAULT_STATE);
     console.log(vscode.getState());
+
+    onMount(() => {
+        //response is saved to state in ChatWebview.svelte
+        //get initial list of agents
+        vscode.postMessage({ type: "listAgents" });
+    });
 
     state.subscribe((state) => {
         console.log("saving state");
@@ -37,12 +46,12 @@
     const incomingMessage = (event: any) => {
         // Listen for the response
 
-      switch (event.data.type) {
-      case "tasks":
-        {} // TODO
+        switch (event.data.type) {
+            case "tasks": {
+            } // TODO
             case "progress":
                 const progress = event.data.data as ChatAgentProgress;
-                const agentId = "deadb33f"; //FIXME brent HARDCODED change later
+                const agentId = "deadb33f2"; //FIXME brent HARDCODED change later
                 progressResponse = progress.response;
                 // console.log(progressResponse);
                 isDone = progress.done;
@@ -79,11 +88,6 @@
                     loading.set(false);
                     progressResponse = "";
                 }
-                break;
-            case "agents":
-                console.log("new agents just dropped");
-                console.log(event.data.data);
-                agentOptions = event.data.data;
                 break;
             default:
                 throw new Error("no case matched");

@@ -1,4 +1,4 @@
-import App from "../components/LogsWebiew.svelte";
+import App from "../components/LogsWebview.svelte";
 
 const app = new App({
     target: document.body,

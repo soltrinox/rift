@@ -11,6 +11,13 @@ export class ChatMessage {
     ) { }
 }
 
+export type AgentRegistryItem = {
+    agent_type: string
+    agent_description: string
+    display_name: string
+    agent_icon: string | null
+}
+
 export class Agent {
     constructor(
         public id: string,
@@ -35,5 +42,6 @@ export type SvelteStore = {
     agents: {
         [id: string]: Agent
     }
+    availableAgents: AgentRegistryItem[]
     //    logs: { role: "user" | "assistant", content: string }[]
 }

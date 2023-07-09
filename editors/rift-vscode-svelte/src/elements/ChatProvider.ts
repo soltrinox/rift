@@ -11,7 +11,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
     // Creates a new instance of `ChatProvider`.
     //  _extensionUri: The URI of the extension.
-    //  hslc: The MorphLanguageClient instance for communication with the server.
+    //  morph_language_client: The MorphLanguageClient instance for communication with the server.
     constructor(private readonly _extensionUri: vscode.Uri, public morph_language_client: client.MorphLanguageClient) {
     }
 
@@ -53,27 +53,28 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     break;
 
                 // Handle 'getAgents' message
-                case "getAgents":
-                    const agents: client.AgentRegistryItem[] = await this.morph_language_client.get_agents();
-                    console.log("Getting list of available agents")
+                case "listAgents":
+                    const agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
+                    console.log("Getting list of available agents");
                     this._view.webview.postMessage({
-                            type: 'agents',
-                            data: agents
+                        type: 'agents',
+                        data: agents
                     });
                     break;
 
                 // Handle 'getAgents' message
                 case "runAgent":
                     console.log("TODO");
-                    const runAgentParams: client.RunAgentParams = {agent_type: params.agent_type, agent_params: params.agent_params}
-                    // const agents: client.AgentRegistryItem[] = await this.morph_language_client.get_agents();
+
+                    // const runAgentParams: client.RunChatParams = { agent_type: params.agent_type, agent_params: params.agent_params };
+                    // const agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
                     // console.log("Getting list of available agents")
                     // this._view.webview.postMessage({
                     //         type: 'agents',
                     //         data: agents
                     // });
-                    break;                    
-                    
+                    break;
+
                 // Handle 'chatMessage' message
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;

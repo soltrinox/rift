@@ -10,6 +10,7 @@
 
   let observer: MutationObserver;
   export let progressResponse = "";
+
   let isDone = false;
 
   let chatWindow: HTMLDivElement;

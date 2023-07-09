@@ -2,10 +2,10 @@ import { writable } from 'svelte/store'
 import type { SvelteStore } from '../../src/types'
 
 export const DEFAULT_STATE: SvelteStore = {
-  selectedAgentId: 'deadb33f',
+  selectedAgentId: 'deadb33f2',
   agents: {
-    "deadb33f": {
-      id: "deadb33f",
+    "deadb33f2": {
+      id: "deadb33f2",
       type: "rift-chat",
       chatHistory: [{ role: "assistant", content: "How can I help?" }],
       taskRoot: [],
@@ -22,7 +22,8 @@ export const DEFAULT_STATE: SvelteStore = {
       chatHistory: [{ role: "assistant", content: "How can I aid?" }],
       taskRoot: [],
     }
-  }
+  },
+  availableAgents: []
 };
 
 

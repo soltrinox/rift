@@ -8,7 +8,7 @@ export class LogProvider implements vscode.WebviewViewProvider {
     _doc?: vscode.TextDocument;
 
     // In the constructor, we store the URI of the extension
-    constructor(private readonly _extensionUri: vscode.Uri, public hslc: MorphLanguageClient) {
+    constructor(private readonly _extensionUri: vscode.Uri, public morph_language_client: MorphLanguageClient) {
     }
 
     // Posts a message to the webview view.
@@ -22,7 +22,7 @@ export class LogProvider implements vscode.WebviewViewProvider {
             this._view.webview.postMessage({ type: endpoint, data: message });
         }
     }
-  
+
 
 
     public resolveWebviewView(
@@ -49,18 +49,10 @@ export class LogProvider implements vscode.WebviewViewProvider {
                     vscode.env.clipboard.writeText(data.content)
                     vscode.window.showInformationMessage('Text copied to clipboard!')
                     break;
-                case "getAgents":
-                    const agents = await this.hslc.get_agents();
-                    console.log("AGENTS!")
-                    this._view.webview.postMessage({
-                        type: 'agents',
-                        data: agents
-                    });
-                    break;
 
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
-                    let runChatParams: RunChatParams = { message: data.message, messages: data.messages }
+                    let runChatParams: any = { message: data.message, messages: data.messages };
                     if (!editor) {
                         console.warn('No active text editor found');
                     } else {
@@ -71,7 +63,7 @@ export class LogProvider implements vscode.WebviewViewProvider {
                         runChatParams = { message: data.message, messages: data.messages, position, textDocument }
                     }
                     if (!data.message || !data.messages) throw new Error()
-                    this.hslc.run_chat(runChatParams, (progress) => {
+                    this.morph_language_client.run_chat(runChatParams, (progress) => {
                         console.log(progress)
                         if (!this._view) throw new Error('no view')
                         if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')

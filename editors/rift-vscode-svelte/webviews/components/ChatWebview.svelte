@@ -3,10 +3,11 @@
   import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
   import Logs from "./logs/Logs.svelte";
   import { DEFAULT_STATE, loading, state } from "./stores";
-  import type { ChatAgentProgress } from "../../src/types";
+  import type { ChatAgentProgress, AgentRegistryItem } from "../../src/types";
   import Header from "./Header.svelte";
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
+  import { onMount } from "svelte";
 
   // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
   console.log("RESETTING VSCODE STATE");
@@ -14,20 +15,19 @@
   vscode.setState(DEFAULT_STATE);
   console.log(vscode.getState());
 
+  onMount(() => {
+    //response is saved to state in ChatWebview.svelte
+    //get initial list of agents
+    vscode.postMessage({ type: "listAgents" });
+  });
+
   state.subscribe((state) => {
     console.log("saving state");
     if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
       vscode.setState(state);
     }
   });
-  let agentOptions: { type: string; description?: string; svg?: string }[] = [
-    //TODO get from server
-    { type: "rift-chat", description: "ask me anything ab life bro" },
-    { type: "aider", description: "congrats ur now a 10x engineer" },
-    { type: "gpt-engineer", description: "an engineer but gpt" },
-    { type: "auto-code-review", description: "code review but meaner" },
-    { type: "repl-auto-debug", description: "let me debug for u" },
-  ];
+  let agentRegistry: AgentRegistryItem[] = [];
   let isDone = false;
   const vscodeState = vscode.getState();
   console.log("attempting to access vscode state:");
@@ -40,7 +40,7 @@
     switch (event.data.type) {
       case "progress":
         const progress = event.data.data as ChatAgentProgress;
-        const agentId = "deadb33f"; //FIXME brent HARDCODED change later
+        const agentId = "deadb33f2"; //FIXME brent HARDCODED change later
         progressResponse = progress.response;
         // console.log(progressResponse);
         isDone = progress.done;
@@ -78,7 +78,13 @@
       case "agents":
         console.log("new agents just dropped");
         console.log(event.data.data);
-        agentOptions = event.data.data;
+        agentRegistry = event.data.data;
+        //TODO store available agents
+        state.update((state) => ({
+          ...state,
+          availableAgents: agentRegistry,
+        }));
+        console.log("availableAgents in state" + JSON.stringify(agentRegistry));
         break;
       default:
         throw new Error("no case matched");
