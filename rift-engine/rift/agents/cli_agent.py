@@ -139,7 +139,7 @@ async def main(agent_cls, params):
         stats: Dict[Any, Any] = field(default_factory=dict)
 
         def __post_init__(self):
-            stats["changed_files"] = set()
+            self.stats["changed_files"] = list()
         
         def elapsed(self):
             return time.time() - start
