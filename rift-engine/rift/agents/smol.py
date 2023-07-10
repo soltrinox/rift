@@ -167,5 +167,5 @@ class SmolAgent(CliAgent):
         yield await asyncio.gather(*fs)
 
 
-# if __name__ == "__main__":
-#     launcher(SmolAgent, SmolAgentClientParams)
+if __name__ == "__main__":
+    launcher(SmolAgent, SmolAgentClientParams)
