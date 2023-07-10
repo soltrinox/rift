@@ -101,7 +101,7 @@ class CodeCapabilitiesServer:
         transport = AsyncStreamTransport(reader, writer)
         await self.run_lsp(transport)
 
-    async def run_forever(self):
+    async def listen_forever(self):
         """Runs the language server.
 
         If lsp_port = 'stdio', then the LSP listens on stdin and stdout.
@@ -112,14 +112,14 @@ class CodeCapabilitiesServer:
             self.run_lsp_stdio() if self.lsp_port == "stdio" else self.run_lsp_tcp()
         )
         await lsp_task
-        logger.debug(f"exiting {type(self).__name__}.run_forever")
+        logger.debug(f"exiting {type(self).__name__}.listen_forever")
 
 
 def create_metaserver(
     port: LspPort = 7797,
     version=False,
     debug=False,
-) -> LspServer:
+) -> CodeCapabilitiesServer:
     """
     Main entry point for the rift server
     Args:
@@ -157,7 +157,7 @@ def main(
         debug=False,
 ):
     metaserver = create_metaserver(port, version, debug)
-    asyncio.run(metaserver.run_forever(), debug=debug)
+    asyncio.run(metaserver.listen_forever(), debug=debug)
 
 
 if __name__ == "__main__":

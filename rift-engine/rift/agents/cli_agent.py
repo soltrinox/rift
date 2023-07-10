@@ -123,7 +123,7 @@ async def main(agent_cls, params):
     )
     client: core.CodeCapabilitiesServer = core.create_metaserver(port=params.port)
     logger.info(f"started Rift server on port {params.port}")
-    t = asyncio.create_task(client.run_forever())
+    t = asyncio.create_task(client.listen_forever())
     await asyncio.sleep(1)
     if agent_cls.splash is not None:
         stream_string(agent_cls.splash)
