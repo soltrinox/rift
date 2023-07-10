@@ -157,7 +157,7 @@ async def main(agent_cls, params):
 
     async for file_changes in agent.run():
         for file_change in file_changes:
-            agent_stats.stats["changed_files"].append(file_change.uri)
+            agent_stats.stats["changed_files"].append(file_change.uri.uri)
         await client.server.apply_workspace_edit(
             lsp.ApplyWorkspaceEditParams(
                 file_diff.edits_from_file_changes(file_changes, user_confirmation=True),
