@@ -7,7 +7,7 @@ from rift.agents.abstract import AgentRegistryResult
 from rift.lsp.types import InitializeParams
 from rift.rpc.io_transport import AsyncStreamTransport
 from rift.rpc.jsonrpc import RpcServer, rpc_method, rpc_request
-from rift.server.core import CodeCapabilitiesServer, splash
+from rift.server.core import CodeCapabilitiesServer, rift_splash
 from rift.util.ofdict import todict
 
 if __name__ == "__main__":

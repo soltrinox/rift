@@ -17,7 +17,7 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 
-def splash():
+def rift_splash():
     _splash = """
 
 
@@ -145,7 +145,7 @@ def create_metaserver(
         handlers=[RichHandler(console=console)],
     )
 
-    splash()
+    rift_splash()
 
     logger.info(f"starting Rift server on {port}")
     metaserver = CodeCapabilitiesServer(lsp_port=port)
