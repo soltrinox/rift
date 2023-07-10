@@ -1,10 +1,42 @@
-from rift.agents.client.cli_agent import CliAgent, launcher
+import asyncio
+import dataclasses
+import inspect
+import json
+import logging
+import os
+import pickle as pkl
+from dataclasses import dataclass, field
+from typing import Any, AsyncIterable, ClassVar, Dict, List, Optional, Type
+
+import rift.agents.file_diff as file_diff
+import rift.lsp.types as lsp
+import rift.server.core as core
+import rift.server.lsp as server
+import smol_dev
+import tqdm.asyncio
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.panel import Panel
+from rift.agents.abstract import AgentRegistryResult
+from rift.lsp.types import InitializeParams
+from rift.rpc.io_transport import AsyncStreamTransport
+from rift.rpc.jsonrpc import RpcServer, rpc_method, rpc_request
+from rift.server.core import CodeCapabilitiesServer, rift_splash
+from rift.util.ofdict import todict
+
+logger = logging.getLogger(__name__)
+import time
+import types
+
+import art
+import fire
+from rift.agents.client.cli_agent import CliAgent, ClientParams, launcher
 from rift.agents.client.util import ainput
 
 
 @dataclass
 class SmolAgentClientParams(ClientParams):
-    prompt_file: str  # path to prompt file
+    prompt_file: Optional[str] = None  # path to prompt file
     debug: bool = False
 
 
@@ -33,8 +65,11 @@ class SmolAgent(CliAgent):
         params = self.run_params
         await ainput("\n> Press any key to continue.\n")
 
-        with open(params.prompt_file, "r") as f:
-            prompt = f.read()
+        if params.prompt_file is None:
+            prompt = await ainput("\n> Prompt file not found. Please input a prompt.\n")
+        else:
+            with open(params.prompt_file, "r") as f:
+                prompt = f.read()
 
         logger.info("Starting smol-dev with prompt:")
         self.console.print(prompt, markup=True, highlight=True)
@@ -115,25 +150,11 @@ class SmolAgent(CliAgent):
                                 updater.messages[position] = f"[✔️] Generated code for {file_path}"
                                 pbar.set_description(f"[✔️] Generated code for {file_path}")
                                 updater.update()
-                            # async with updater.lock:
-                            #     updater.pbars.pop(position)
                             return
-                        # await asyncio.wait_for(waiter, 0.025)
-                    # pbar.set_description(f"[✔️] Generating code for {file_path}")
-
-                    # pbar.set_description(f"[✔️] Generating code for {file_path}")
 
                 t = asyncio.create_task(spinner())
                 code = await code_future
-                # self.console.print(
-                #     f"""```\
-                #     {code}
-                #     ```
-                #     """,
-                #     markup=True,
-                # )
                 absolute_file_path = os.path.join(os.getcwd(), file_path)
-                # logger.info(f"Generating a diff for {absolute_file_path}")
                 file_change = file_diff.get_file_change(path=absolute_file_path, new_content=code)
                 return file_change
 
@@ -146,4 +167,4 @@ class SmolAgent(CliAgent):
 
 
 if __name__ == "__main__":
-    launcher(SmolAgentClientParams)
+    launcher(SmolAgent, SmolAgentClientParams)
