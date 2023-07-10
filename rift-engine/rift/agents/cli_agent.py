@@ -136,7 +136,7 @@ async def main(agent_cls, params):
     @dataclass
     class AgentRunStats:
         _start: float = field(default_factory=time.time)
-        stats: Dict[Any. Any] = field(default_factory=dict)
+        stats: Dict[Any, Any] = field(default_factory=dict)
 
         def __post_init__(self):
             stats["changed_files"] = set()
