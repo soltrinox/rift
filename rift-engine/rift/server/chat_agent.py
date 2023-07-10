@@ -59,7 +59,7 @@ class ChatAgent:
     ):
         ChatAgent.count += 1
         self.model = model
-        self.id = "0" #TODO: Fix this
+        self.id = "0"  # TODO: maybe change this, or keep default rift-chat as always 0
         self.cfg = cfg
         self.server = server
         self.running = False

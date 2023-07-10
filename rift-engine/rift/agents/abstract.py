@@ -109,6 +109,7 @@ class Agent:
         """
         Factory function which is responsible for constructing the agent's state.
         """
+        print("Test create agent")
         ...
 
     async def main(self):
@@ -156,9 +157,7 @@ class Agent:
         Prompt the user for more information.
         """
         try:
-            response = await self.server.request(
-                f"morph/{self.agent_type}_{self.agent_id}_request_input", req
-            )
+            response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
             return response["response"]
         except Exception as e:
             logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
@@ -176,9 +175,7 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        response = await self.server.request(
-            f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
-        )
+        response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_chat", req)
         return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
@@ -192,10 +189,11 @@ class Agent:
         else:
             try:
                 tasks = {
-                    "task": {"description": AGENT_REGISTRY.registry[self.agent_type].display_name,
-                             "status": self.task.status},
-                    "subtasks": ([{"description": x.description, "status": x.status}
-                                  for x in self.tasks]),
+                    "task": {
+                        "description": AGENT_REGISTRY.registry[self.agent_type].display_name,
+                        "status": self.task.status,
+                    },
+                    "subtasks": ([{"description": x.description, "status": x.status} for x in self.tasks]),
                 }
             except Exception as e:
                 logger.debug(f"Caught exception: {e}")
@@ -227,7 +225,7 @@ class AgentRegistryItem:
 
     def __post_init__(self):
         if self.display_name is None:
-            self.display_name = self.agent_type    
+            self.display_name = self.agent_type
 
 
 @dataclass
@@ -247,18 +245,19 @@ class AgentRegistry:
     """
     Track all agents in one place.
     """
+
     registry: Dict[str, Type[Agent]] = field(default_factory=dict)
 
     def __getitem__(self, key):
         return self.get_agent(key)
 
-    def register_agent(
-        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
-    ) -> None:
+    def register_agent(self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None) -> None:
         if agent.agent_type in self.registry:
             raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
         self.registry[agent.agent_type] = AgentRegistryItem(
-            agent=agent, agent_description=agent_description, display_name=display_name,
+            agent=agent,
+            agent_description=agent_description,
+            display_name=display_name,
         )
 
     def get_agent(self, agent_type: str) -> Type[Agent]:
@@ -278,7 +277,7 @@ class AgentRegistry:
                 agent_type=item.agent.agent_type,
                 agent_description=item.agent_description,
                 agent_icon=self.get_agent_icon(item),
-                display_name=item.display_name
+                display_name=item.display_name,
             )
             for item in self.registry.values()
         ]
