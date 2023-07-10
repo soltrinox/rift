@@ -1,12 +1,12 @@
 import asyncio
-import sys
 import logging
-from typing import Literal, Union, Optional
-from rift.server.lsp import LspServer
-from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
-from rift.__about__ import __version__
 import sys
 import time
+from typing import Literal, Optional, Union
+
+from rift.__about__ import __version__
+from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
+from rift.server.lsp import LspServer
 
 try:
     from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
@@ -16,8 +16,8 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 
-def splash():
-    splash = """
+def rift_splash():
+    _splash = """
 
 
    ██████╗ ██╗███████╗████████╗
@@ -42,7 +42,7 @@ def splash():
             time.sleep(0.0012)
             # print('\r', end='')
 
-    stream_string(splash)
+    stream_string(_splash)
 
 
 # ref: https://stackoverflow.com/questions/64303607/python-asyncio-how-to-read-stdin-and-write-to-stdout
@@ -53,6 +53,7 @@ ModelType = Literal["openai", "hf", "gpt4all"]
 
 
 class CodeCapabilitiesServer:
+    server: Optional[LspServer] = None
     def __init__(
         self,
         lsp_port: LspPort = 7797,
@@ -65,8 +66,10 @@ class CodeCapabilitiesServer:
 
     async def run_lsp(self, transport):
         server = LspServer(transport)
+        self.server = server
         try:
-            await server.serve_forever()
+            logger.info("[CodeCapabilitiesServer] listening...")
+            await server.listen_forever()
         except Exception as e:
             logger.error("caught: " + str(e))
             logger.info(
@@ -82,9 +85,7 @@ class CodeCapabilitiesServer:
     async def run_lsp_tcp(self):
         assert isinstance(self.lsp_port, int)
         try:
-            server = await asyncio.start_server(
-                self.on_lsp_connection, "127.0.0.1", self.lsp_port
-            )
+            server = await asyncio.start_server(self.on_lsp_connection, "127.0.0.1", self.lsp_port)
         except OSError as e:
             logger.error(str(e))
             logger.info(f"try connecting to {self.lsp_port}")
@@ -96,9 +97,7 @@ class CodeCapabilitiesServer:
                 await server.serve_forever()
 
     async def run_lsp_stdio(self):
-        reader, writer = await create_pipe_streams(
-            in_pipe=sys.stdin, out_pipe=sys.stdout
-        )
+        reader, writer = await create_pipe_streams(in_pipe=sys.stdin, out_pipe=sys.stdout)
         transport = AsyncStreamTransport(reader, writer)
         await self.run_lsp(transport)
 
@@ -116,11 +115,11 @@ class CodeCapabilitiesServer:
         logger.debug(f"exiting {type(self).__name__}.run_forever")
 
 
-def main(
+def create_metaserver(
     port: LspPort = 7797,
     version=False,
     debug=False,
-):
+) -> LspServer:
     """
     Main entry point for the rift server
     Args:
@@ -133,8 +132,8 @@ def main(
     if version:
         print(__version__)
         return
-    from rich.logging import RichHandler
     from rich.console import Console
+    from rich.logging import RichHandler
 
     FORMAT = "%(message)s"
     console = Console(stderr=True)
@@ -145,10 +144,19 @@ def main(
         handlers=[RichHandler(console=console)],
     )
 
-    splash()
+    rift_splash()
 
-    logger.info(f"starting rift server on {port}")
+    logger.info(f"starting Rift server on {port}")
     metaserver = CodeCapabilitiesServer(lsp_port=port)
+    return metaserver
+
+
+def main(
+    port: LspPort = 7797,
+        version=False,
+        debug=False,
+):
+    metaserver = create_metaserver(port, version, debug)
     asyncio.run(metaserver.run_forever(), debug=debug)
 
 

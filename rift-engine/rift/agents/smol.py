@@ -7,17 +7,17 @@ import os
 import pickle as pkl
 from dataclasses import dataclass, field
 from typing import Any, AsyncIterable, ClassVar, Dict, List, Optional, Type
-
-import rift.agents.file_diff as file_diff
-import rift.lsp.types as lsp
-import rift.server.core as core
-import rift.server.lsp as server
-import smol_dev
 import tqdm.asyncio
+
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.panel import Panel
-from rift.agents.abstract import AgentRegistryResult
+
+
+import rift.util.file_diff as file_diff
+import rift.lsp.types as lsp
+import rift.server.core as core
+import rift.server.lsp as server
 from rift.lsp.types import InitializeParams
 from rift.rpc.io_transport import AsyncStreamTransport
 from rift.rpc.jsonrpc import RpcServer, rpc_method, rpc_request
@@ -30,9 +30,10 @@ import types
 
 import art
 import fire
-from rift.agents.client.cli_agent import CliAgent, ClientParams, launcher
-from rift.agents.client.util import ainput
+from rift.agents.cli_agent import CliAgent, ClientParams, launcher
+from rift.agents.util import ainput
 
+import smol_dev
 
 @dataclass
 class SmolAgentClientParams(ClientParams):
@@ -166,5 +167,5 @@ class SmolAgent(CliAgent):
         yield await asyncio.gather(*fs)
 
 
-if __name__ == "__main__":
-    launcher(SmolAgent, SmolAgentClientParams)
+# if __name__ == "__main__":
+#     launcher(SmolAgent, SmolAgentClientParams)
