@@ -3,11 +3,13 @@ import * as vscode from "vscode";
 import * as client from "../client"
 import { getNonce } from "../getNonce";
 import { ChatAgentProgress } from "../types";
+import { logProvider } from "../extension";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class ChatProvider implements vscode.WebviewViewProvider {
     _view?: vscode.WebviewView;
     _doc?: vscode.TextDocument;
+
 
     // Creates a new instance of `ChatProvider`.
     //  _extensionUri: The URI of the extension.
@@ -32,6 +34,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
     ) {
+        let editor: vscode.TextEditor | undefined;
         this._view = webviewView;
         webviewView.webview.options = {
             enableScripts: true,
@@ -54,7 +57,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
                 // Handle 'getAgents' message
                 case "listAgents":
-                    const agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
+                    let agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
                     console.log("Getting list of available agents");
                     this._view.webview.postMessage({
                         type: 'agents',
@@ -62,22 +65,70 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     });
                     break;
 
-                // Handle 'getAgents' message
+                // Handle 'runAgent' message
                 case "runAgent":
-                    console.log("TODO");
+                    console.log("Getting list of available agents")
+                    let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
 
-                    // const runAgentParams: client.RunChatParams = { agent_type: params.agent_type, agent_params: params.agent_params };
-                    // const agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
-                    // console.log("Getting list of available agents")
-                    // this._view.webview.postMessage({
-                    //         type: 'agents',
-                    //         data: agents
-                    // });
+                    editor = vscode.window.activeTextEditor;
+                    if (!editor) {
+                        console.error("No active text editor found");
+                        return;
+                    }
+                    // get the uri and position of the current cursor
+                    let doc = editor.document;
+                    let textDocument = { uri: doc.uri.toString(), version: 0 };
+                    let position = editor.selection.active;
+
+
+                    const runAgentParams: client.RunAgentParams = { agent_type: params.params.agent_type, agent_params: { position, textDocument } };
+                    await this.morph_language_client.run(runAgentParams,
+                        (input_request) => {
+                            console.log('input_request')
+                            console.log(input_request)
+                            if (!this._view) throw new Error('no view')
+                            // this._view.webview.postMessage({ type: 'input_request', data: input_request });
+                            logProvider._view?.webview.postMessage({ type: 'input_request', data: input_request });
+                        },
+                        (chat_request) => {
+                            console.log('chat_request')
+                            console.log(chat_request)
+                            if (!this._view) throw new Error('no view')
+                            //TODO
+                            // this._view.webview.postMessage({ type: 'chat_request', data: chat_request });
+                            logProvider._view?.webview.postMessage({ type: 'chat_request', data: chat_request });;
+
+                        },
+                        (update) => {
+                            console.log('update')
+                            console.log(update)
+                            if (!this._view) throw new Error('no view')
+                            //TODO
+                            // this._view.webview.postMessage({ type: 'update', data: update });
+                            logProvider._view?.webview.postMessage({ type: 'update', data: update });
+
+                        },
+                        (progress) => {
+                            console.log('progress')
+                            console.log(progress)
+                            if (!this._view) throw new Error('no view')
+                            if (progress.done) console.log('WEBVIEW DONE RECEIVING / POSTING')
+                            // this._view.webview.postMessage({ type: 'progress', data: progress });
+                            logProvider._view?.webview.postMessage({ type: 'progress', data: progress })
+                        },
+                        (result) => {
+                            console.log('result')
+                            console.log(result)
+                            if (!this._view) throw new Error('no view')
+                            // this._view.webview.postMessage({ type: 'result', data: result });
+                            logProvider._view?.webview.postMessage({ type: 'result', data: result })
+                        });
+
                     break;
 
                 // Handle 'chatMessage' message
                 case 'chatMessage':
-                    const editor = vscode.window.activeTextEditor;
+                    editor = vscode.window.activeTextEditor;
                     let runChatParams: any = { message: params.message, messages: params.messages }
                     if (!editor) {
                         console.warn('No active text editor found');
@@ -93,7 +144,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                         console.log(progress)
                         if (!this._view) throw new Error('no view')
                         if (progress.done) console.log('WEBVIEW DONE RECEIVING / POSTING')
-                        this._view.webview.postMessage({ type: 'progress', data: progress });
+                        this._view.webview.postMessage({ type: 'chatProgress', data: progress });
                     })
                     break;
 

@@ -38,9 +38,9 @@
     // Listen for the response
 
     switch (event.data.type) {
-      case "progress":
+      case "chatProgress":
         const progress = event.data.data as ChatAgentProgress;
-        const agentId = "deadb33f2"; //FIXME brent HARDCODED change later
+        const agentId = progress.id; //FIXME brent HARDCODED change later
         progressResponse = progress.response;
         // console.log(progressResponse);
         isDone = progress.done;
@@ -67,7 +67,6 @@
                   ...state.agents[agentId].chatHistory,
                   { role: "assistant", content: progressResponse },
                 ],
-                taskRoot: [...state.agents[agentId].taskRoot],
               },
             },
           }));

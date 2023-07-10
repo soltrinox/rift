@@ -11,16 +11,21 @@
     import Log from "./Log.svelte";
     import { loading, state } from "../stores";
     import { custom_event } from "svelte/internal";
+    import { SvelteStore } from "../../../src/types";
 
     let expanded = false;
     export let id: string = "";
     export let name: string = "rift-chat";
-    export let description: string = "beyond the veil";
 
     let doneAgent = false;
     let hasNotification = false;
 
     let isDropdownOpen = false; // default state (dropdown close)
+
+    let store: SvelteStore;
+    const unsubscribe = state.subscribe((s) => {
+        store = s;
+    });
 
     function handleMessage(
         event: CustomEvent<{
@@ -91,7 +96,7 @@
                 <!-- {:else}
                 <div class="mx-2 mt-0.5"><LogRed /></div> -->
             {/if}
-            <span title={description}>{name}</span>
+            <span>{name}</span>
         </div>
 
         <button
@@ -136,9 +141,11 @@
         </div>
     </div>
     <div hidden={!expanded}>
-        {#each $state.agents[id].taskRoot as log}
-            <Log {log} {id} on:message={handleMessage} />
-        {/each}
+        {#if store.agents[id].tasks.subtasks.length > 0}
+            {#each store.agents[id].tasks.subtasks as subtask}
+                <Log {subtask} on:message={handleMessage} />
+            {/each}
+        {/if}
     </div>
 </div>
 

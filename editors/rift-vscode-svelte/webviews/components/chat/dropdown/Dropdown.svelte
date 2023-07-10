@@ -33,7 +33,18 @@
     if (e.key === "Enter") {
       e.preventDefault();
       // create agent
-      // vscode.postMessage({ type: "" });
+      console.log("agent_type: " + availableAgents[activeId].agent_type);
+
+      console.log("THIS IS THE STATE");
+      console.log($state);
+
+      vscode.postMessage({
+        type: "runAgent",
+        params: {
+          agent_type: availableAgents[activeId].agent_type,
+          agent_params: {},
+        },
+      });
     }
     if (e.key == "ArrowDown") {
       console.log("ArrowDown");

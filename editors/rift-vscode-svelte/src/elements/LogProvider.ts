@@ -49,7 +49,6 @@ export class LogProvider implements vscode.WebviewViewProvider {
                     vscode.env.clipboard.writeText(data.content)
                     vscode.window.showInformationMessage('Text copied to clipboard!')
                     break;
-
                 case 'chatMessage':
                     const editor = vscode.window.activeTextEditor;
                     let runChatParams: any = { message: data.message, messages: data.messages };

@@ -130,8 +130,8 @@ export interface Tasks {
 }
 
 export interface AgentProgress {
-    agent_type: string,
     agent_id: string,
+    agent_type: string,
     tasks: Tasks,
     payload: any,
 }
@@ -203,8 +203,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     agentStates = new Map<AgentIdentifier, any>()
 
     constructor(context: vscode.ExtensionContext) {
-        // this.red = { key: "TEMP_VALUE", dispose: () => { } }
-        // this.green = { key: "TEMP_VALUE", dispose: () => { } }
+        this.red = { key: "TEMP_VALUE", dispose: () => { } }
+        this.green = { key: "TEMP_VALUE", dispose: () => { } }
         this.context = context
         this.create_client().then(() => {
             this.context.subscriptions.push(

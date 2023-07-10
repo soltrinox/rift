@@ -1,5 +1,5 @@
 export type ChatAgentProgress = {
-    id: number,
+    id: string,
     response: string
     done: boolean
 };
@@ -11,6 +11,12 @@ export class ChatMessage {
     ) { }
 }
 
+
+export type ChatMessageType = {
+    role: "user" | "assistant",
+    content: string
+}
+
 export type AgentRegistryItem = {
     agent_type: string
     agent_description: string
@@ -18,22 +24,21 @@ export type AgentRegistryItem = {
     agent_icon: string | null
 }
 
+
+// this is working
+export type AgentProgress = {
+    agent_id: string
+    agent_type: string
+    tasks: { subtasks: [{ description: string, status: string }] | [], task: { description: string, status: string } }
+    payload: any
+};
+
+
 export class Agent {
     constructor(
-        public id: string,
         public type: string, // aider, gpt-engineer, etc
         public chatHistory: ChatMessage[] = [],
-        public taskRoot: AgentTask[] = [],
-    ) { }
-}
-
-class AgentTask {
-    constructor(
-        public id: string,
-        public description: string,
-        public status: "running" | "done" | "error",
-        public showBadge: boolean,
-        public subtasks: AgentTask[],
+        public tasks: { subtasks: [{ description: string, status: string }] | [], task: { description: string, status: string } }
     ) { }
 }
 

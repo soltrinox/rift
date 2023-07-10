@@ -7,6 +7,9 @@ import { MorphLanguageClient, AgentProgress } from './client';
 import { ChatProvider } from './elements/ChatProvider';
 import { LogProvider } from './elements/LogProvider';
 
+export let chatProvider;
+export let logProvider;
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -15,8 +18,9 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.languages.registerCodeLensProvider('*', morph_language_client)
     )
-    const chatProvider = new ChatProvider(context.extensionUri, morph_language_client);
-    const logProvider = new LogProvider(context.extensionUri, morph_language_client);
+
+    chatProvider = new ChatProvider(context.extensionUri, morph_language_client);
+    logProvider = new LogProvider(context.extensionUri, morph_language_client);
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
@@ -61,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
                 placeHolder: params.place_holder,
                 prompt: params.msg,
             });
-            return {response: response}
+            return { response: response }
         }
 
         const default_send_update_callback = async (params: any) => {

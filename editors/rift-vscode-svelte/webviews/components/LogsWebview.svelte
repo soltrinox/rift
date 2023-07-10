@@ -3,7 +3,7 @@
     import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
     import Logs from "./logs/Logs.svelte";
     import { DEFAULT_STATE, loading, state } from "./stores";
-    import type { ChatAgentProgress, AgentRegistryItem } from "../../src/types";
+    import type { AgentProgress, AgentRegistryItem } from "../../src/types";
     import Header from "./Header.svelte";
     import Chat from "./chat/Chat.svelte";
     import OmniBar from "./chat/OmniBar.svelte";
@@ -45,16 +45,20 @@
     let progressResponse: string;
     const incomingMessage = (event: any) => {
         // Listen for the response
-
         switch (event.data.type) {
-            case "tasks": {
-            } // TODO
+            case "tasks":
+                {
+                    // TODO
+                }
+                break;
             case "progress":
-                const progress = event.data.data as ChatAgentProgress;
-                const agentId = "deadb33f2"; //FIXME brent HARDCODED change later
-                progressResponse = progress.response;
+                const progress = event.data.data as AgentProgress;
+                const agentId = progress.agent_id;
+                const status = progress.tasks.task.status;
+                console.log("in logs webview");
+                console.log(progress);
                 // console.log(progressResponse);
-                isDone = progress.done;
+                isDone = status == "done";
 
                 // const randomLogSeverity = ["done", "progress"];
                 // let random = Math.floor(Math.random() * randomLogSeverity.length);
@@ -65,6 +69,23 @@
                 //   "something else",
                 // ];
                 // let random2 = Math.floor(Math.random() * randomLogMessage.length);
+
+                console.log("Before update");
+                console.log($state);
+
+                state.update((state) => ({
+                    ...state,
+                    agents: {
+                        ...state.agents,
+                        [agentId]: {
+                            ...state.agents[agentId],
+                            tasks: progress.tasks,
+                        },
+                    },
+                }));
+
+                console.log("After update");
+                console.log($state);
 
                 // for sticky window^
                 if (isDone) {
@@ -81,7 +102,7 @@
                                         content: progressResponse,
                                     },
                                 ],
-                                taskRoot: [...state.agents[agentId].taskRoot],
+                                tasks: state.agents[agentId].tasks,
                             },
                         },
                     }));
