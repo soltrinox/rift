@@ -101,7 +101,7 @@ class CodeCapabilitiesServer:
         transport = AsyncStreamTransport(reader, writer)
         await self.run_lsp(transport)
 
-    async def listen_forever(self):
+    async def run_forever(self):
         """Runs the language server.
 
         If lsp_port = 'stdio', then the LSP listens on stdin and stdout.
@@ -157,7 +157,7 @@ def main(
         debug=False,
 ):
     metaserver = create_metaserver(port, version, debug)
-    asyncio.run(metaserver.listen_forever(), debug=debug)
+    asyncio.run(metaserver.run_forever(), debug=debug)
 
 
 if __name__ == "__main__":
