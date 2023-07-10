@@ -1,5 +1,6 @@
+import tqdm.asyncio
 import inspect
-from typing import Optional, ClassVar
+from typing import Optional, ClassVar, Dict
 import pickle as pkl
 import os
 import json
@@ -32,160 +33,27 @@ import art
 
 import fire
 import types
-
-def _PrintResult(component_trace, verbose=False, serialize=None):
-  result = component_trace.GetResult()
-  if serialize:
-    if not callable(serialize):
-      raise fire.core.FireError(
-          'The argument `serialize` must be empty or callable:', serialize)
-    result = serialize(result)
-
-  if fire.value_types.HasCustomStr(result):
-    print(str(result))
-    return
-
-  if isinstance(result, (list, set, frozenset, types.GeneratorType)):
-    for i in result:
-      print(fire.core._OneLineResult(i))
-  elif inspect.isgeneratorfunction(result):
-    raise NotImplementedError
-  elif isinstance(result, dict) and value_types.IsSimpleGroup(result):
-    print(fire.core._DictAsString(result, verbose))
-  elif isinstance(result, tuple):
-    print(fire.core._OneLineResult(result))
-  elif dataclasses._is_dataclass_instance(result):
-    print(fire.core._OneLineResult(result))    
-  elif isinstance(result, value_types.VALUE_TYPES):
-    if result is not None:
-      print(result)
-  else:
-    help_text = fire.helptext.HelpText(
-        result, trace=component_trace, verbose=verbose)
-    output = [help_text]
-    Display(output, out=sys.stdout)
-
-fire.core._PrintResult = _PrintResult
+from rift.agents.client.util import stream_string, stream_string_ascii
 
 
 @dataclass
-class SendUpdateParams:
-    msg: str
+class ClientParams:
+    port: int
+    debug: bool = False
 
-
-def stream_string(string):
-    for char in string:
-        print(char, end="", flush=True)
-        time.sleep(0.0015)    
-
-def stream_string_ascii(name: str):
-    _splash = art.text2art(name, font="smslant")
-
-    stream_string(_splash)
-
-
-async def main():
-    reader, writer = await asyncio.open_connection("127.0.0.1", 7797)
-    transport = AsyncStreamTransport(reader, writer)
-    client = RiftClient(transport=transport)
-
-
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-
-
-async def ainput(prompt: str = "") -> str:
-    with ThreadPoolExecutor(1, "AsyncInput") as executor:
-        return await asyncio.get_event_loop().run_in_executor(executor, input, prompt)
 
 @dataclass
 class CliAgent:
     name: str
-    run_params: Any
+    run_params: ClientParams
     splash: Optional[str] = None
-    console: Console = field(default_factory=Console)    
+    console: Console = field(default_factory=Console)
 
     async def run(self, *args, **kwargs) -> AsyncIterable[List[file_diff.FileChange]]:
         """
         Emits batches of `file_diff.FileChange`s.
         """
         ...
-
-@dataclass
-class SmolAgentRunParams:
-    prompt_file: str # path to prompt file
-    debug: bool = False
-
-
-@dataclass
-class SmolAgent(CliAgent):
-    name: ClassVar[str] = "smol"
-    run_params: Type[SmolAgentRunParams] = SmolAgentRunParams
-    splash: Optional[str] = """\
-
-
-   __                                 __
-  / /   but make it...           __   \ \      
- | |             ___ __ _  ___  / /    | |      
- | |            (_-</  ' \\/ _ \\/ /     | |      
- | |           /___/_/_/_/\\___/_/      | |      
- | |                                   | |      
-  \_\                                 /_/       
-
-
-
-    """
-
-    async def run(self) -> AsyncIterable[List[file_diff.FileChange]]:
-        params = self.run_params
-        await ainput("\n> Press any key to continue.\n")
-
-        with open(params.prompt_file, "r") as f:
-            prompt = f.read()
-
-        logger.info("Starting smol-dev with prompt:")
-        self.console.print(prompt, markup=True, highlight=True)
-
-        await ainput("\n> Press any key to continue.\n")
-
-        def stream_handler(chunk):
-            def stream_string(string):
-                for char in string:
-                    print(char, end="", flush=True)
-                    time.sleep(0.0012)
-
-            stream_string(chunk.decode("utf-8"))
-
-        plan = smol_dev.plan(prompt, streamHandler=stream_handler)
-
-        logger.info("Running with plan:")
-        self.console.print(plan, emoji=True, markup=True)
-
-        await ainput("\n> Press any key to continue.\n")
-
-        file_paths = smol_dev.specify_filePaths(prompt, plan)
-
-        logger.info("Got file paths:")
-        self.console.print(json.dumps(file_paths, indent=2), markup=True)
-
-        file_changes = []
-
-        await ainput("\n> Press any key to continue.\n")
-
-        for file_path in file_paths:
-            logger.info(f"Generating code for {file_path}")
-            code = smol_dev.generate_code(prompt, plan, file_path, streamHandler=stream_handler)
-            self.console.print(
-                f"""```\
-                {code}
-                ```
-                """,
-                markup=True,
-            )
-            absolute_file_path = os.path.join(os.getcwd(), file_path)
-            logger.info(f"Generating a diff for {absolute_file_path}")
-            file_change = file_diff.get_file_change(path=absolute_file_path, new_content=code)
-            yield [file_change]
 
 
 async def main(params):
@@ -219,11 +87,6 @@ async def main(params):
     await t
 
 
-@dataclass
-class ClientParams:
-    port: int
-    debug: bool = False
-
 def get_dataclass_function(cls):
     """Returns a function whose signature is set to be a list of arguments
     which are precisely the dataclass's attributes.
@@ -245,7 +108,12 @@ def get_dataclass_function(cls):
                 attributes.append(field)
 
         attributes = [
-            inspect.Parameter(name=field.name, kind=inspect.Parameter.POSITIONAL_ONLY, default=None, annotation=field.type)
+            inspect.Parameter(
+                name=field.name,
+                kind=inspect.Parameter.POSITIONAL_ONLY,
+                default=None,
+                annotation=field.type,
+            )
             for field in attributes
         ]
 
@@ -260,20 +128,9 @@ def get_dataclass_function(cls):
     function.__signature__ = inspect.Signature(parameters=attributes)
     return function
 
-@dataclass
-class SmolClientParams(ClientParams):
-    prompt_file: Optional[str] = None
 
-    def __post_init__(self):
-        assert self.prompt_file is not None
-
-def _main(param_cls):
-    params = fire.Fire(param_cls)
-    asyncio.run(main(params=params), debug=params.debug)
-
-
-if __name__ == "__main__":
+def launcher(param_cls: Type[ClientParam]):
     import fire
-    params = fire.Fire(get_dataclass_function(SmolClientParams))
+
+    params = fire.Fire(get_dataclass_function(param_cls))
     asyncio.run(main(params=params), debug=params.debug)
-    
