@@ -70,6 +70,7 @@ class CliAgent:
         ...
 
 
+
 def get_dataclass_function(cls):
     """Returns a function whose signature is set to be a list of arguments
     which are precisely the dataclass's attributes.
@@ -132,13 +133,39 @@ async def main(agent_cls, params):
 
     agent = agent_cls(run_params=params, console=console)
 
+    @dataclass
+    class AgentRunStats:
+        _start: float = field(default_factory=time.time)
+        stats: Dict[Any. Any] = field(default_factory=dict)
+
+        def __post_init__(self):
+            stats["changed_files"] = set()
+        
+        def elapsed(self):
+            return time.time() - start
+
+        def report_stats(self):
+            console.print(
+                Panel(
+                    json.dumps(
+                        self.stats, indent=2
+                    )
+                )
+            )
+
+    agent_stats = AgentRunStats()
+
     async for file_changes in agent.run():
+        for file_change in file_changes:
+            agent_stats.stats["uris"].append(file_change.uri)
         await client.server.apply_workspace_edit(
             lsp.ApplyWorkspaceEditParams(
                 file_diff.edits_from_file_changes(file_changes, user_confirmation=True),
                 label="rift",
             )
         )
+        
+    agent_stats.report_stats()
 
     await t
 
