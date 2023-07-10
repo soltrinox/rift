@@ -13,11 +13,10 @@
     <div class="ml-6 border-l-4" />
     {#if subtask.status == "done"}
         <div class="ml-4 mr-2 mt-0.5"><LogGreenSvg /></div>
-    {:else}
+    {:else if subtask.status == "running"}
         <div class="ml-4 mr-2 mt-0.5"><LogYellow /></div>
-        <!-- {:else}
+    {:else}
         <div class="ml-4 mr-2 mt-0.5"><LogRed /></div>
-    {/if} -->
     {/if}
     {subtask.description.substring(0, 40)}
 </div>
