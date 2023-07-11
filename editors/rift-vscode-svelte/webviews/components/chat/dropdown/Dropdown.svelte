@@ -1,17 +1,8 @@
 <script lang="ts">
   import {state} from "../../stores";
   import type {AgentRegistryItem} from "../../../../src/types";
-  // import { Log, ChatMessage } from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
   import {onMount} from "svelte";
-  // const MOCK_AGENT_REGISTRY = [
-  //   //TODO get from server
-  //   { name: 'rift-chat', description: 'ask me anything ab life bro' },
-  //   { name: 'aider', description: 'congrats ur now a 10x engineer' },
-  //   { name: 'gpt-engineer', description: 'an engineer but gpt' },
-  //   { name: 'auto-code-review', description: 'code review but meaner' },
-  //   { name: 'repl-auto-debug', description: 'let me debug for u' },
-  // ]
 
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 
