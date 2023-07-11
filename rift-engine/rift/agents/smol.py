@@ -86,7 +86,7 @@ class SmolAgent(CliAgent):
 
             stream_string(chunk.decode("utf-8"))
 
-        plan = smol_dev.plan(prompt, streamHandler=stream_handler, model=params.model)
+        plan = smol_dev.plan(prompt, stream_handler=stream_handler, model=params.model)
 
         logger.info("Running with plan:")
         self.console.print(plan, emoji=True, markup=True)
@@ -121,7 +121,7 @@ class SmolAgent(CliAgent):
         async def generate_code_for_filepath(file_path: str, position: int) -> file_diff.FileChange:
             stream_handler = lambda chunk: pbar.update(n=len(chunk))
             code_future = asyncio.ensure_future(
-                smol_dev.generate_code(prompt, plan, file_path, streamHandler=stream_handler, model=params.model)
+                smol_dev.generate_code(prompt, plan, file_path, stream_handler=stream_handler, model=params.model)
             )
             with tqdm.asyncio.tqdm(position=position, unit=" chars", unit_scale=True) as pbar:
                 async with updater.lock:
