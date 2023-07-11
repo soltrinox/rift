@@ -62,15 +62,14 @@
         class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
   {#each availableAgents.filter((agent) => {
+    let searchString = inputValue.substring(1).toLowerCase();
     return agent.agent_type
             .toLowerCase()
-            .includes(inputValue.substring(1).toLowerCase()) || agent.display_name
+            .includes(searchString) || agent.display_name
             .toLowerCase()
-            .includes(inputValue
-                    .substring(1)
-                    .toLowerCase()) || agent.agent_description
+            .includes(searchString) || agent.agent_description
             .toLowerCase()
-            .includes(inputValue.substring(1).toLowerCase());
+            .includes(searchString);
   }) as agent, index}
     <DropdownCard {agent} focused={index == activeId}/>
   {/each}
