@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { state } from "../../stores";
-  import { v4 as uuidv4 } from "uuid";
-  import { AgentRegistryItem } from "../../../../src/types";
+  import {state} from "../../stores";
+  import type {AgentRegistryItem} from "../../../../src/types";
   // import { Log, ChatMessage } from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
-  import { onMount } from "svelte";
+  import {onMount} from "svelte";
   // const MOCK_AGENT_REGISTRY = [
   //   //TODO get from server
   //   { name: 'rift-chat', description: 'ask me anything ab life bro' },
@@ -25,7 +24,7 @@
 
   // export let agentIds = agents;
   // export let agentIds = MOCK_AGENT_REGISTRY
-  export const inputValue = "";
+  export const inputValue: string = "";
 
   let activeId = 0;
 
@@ -62,7 +61,7 @@
 
 <svelte:window on:keydown={handleKeyDown} />
 <div
-  class="absolute left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
+        class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
   <!-- {#each agentIds.filter( (id) => id.name.includes(inputValue.substring(1)) ) as id, index}
     <DropdownCard id={id.name} focused={Boolean(index == activeId)} />

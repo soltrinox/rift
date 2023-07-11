@@ -1,9 +1,8 @@
 <script lang="ts">
-    import { loading, state } from "../stores";
-    import Log from "./Log.svelte";
+    import {state} from "../stores";
     import Agent from "./Agent.svelte";
-    import type { AgentType, SvelteStore } from "../../../src/types";
-    import { onMount } from "svelte";
+    import type {SvelteStore} from "../../../src/types";
+
     let store: SvelteStore;
     state.subscribe((s) => {
         store = s;
