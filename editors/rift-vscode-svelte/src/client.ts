@@ -19,6 +19,7 @@ import { join } from 'path';
 import { ChatAgentProgress } from './types';
 import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
+import { chatProvider, logProvider } from './extension';
 
 let client: LanguageClient //LanguageClient
 
@@ -76,7 +77,6 @@ interface RunAgentResult {
     id: number
     agentId: string | null
 }
-
 
 export interface RunChatParams {
     message: string
@@ -136,7 +136,64 @@ export interface AgentProgress {
     payload: any,
 }
 
+
 /** Represents an agent */
+// class Agent {
+//     status: AgentStatus;
+//     green: vscode.TextEditorDecorationType;
+//     ranges: vscode.Range[] = []
+//     onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
+//     onStatusChange: vscode.Event<AgentStatus>
+//     constructor(public readonly id: number, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
+//         this.status = 'running'
+//         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
+//         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
+//         this.onStatusChange = this.onStatusChangeEmitter.event
+//     }
+//     handleProgress(params: RunAgentProgress) {
+//         if (params.status) {
+//             if (this.status !== params.status) {
+//                 this.status = params.status
+//                 this.onStatusChangeEmitter.fire(params.status)
+//             }
+//         }
+//         if (params.ranges) {
+//             this.ranges = params.ranges
+//         }
+//         const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == params.textDocument.uri)
+//         for (const editor of editors) {
+//             // [todo] check editor is visible
+//             const version = editor.document.version
+//             if (params.status == 'accepted' || params.status == 'rejected') {
+//                 editor.setDecorations(this.green, [])
+//                 continue
+//             }
+//             if (params.ranges) {
+//                 editor.setDecorations(this.green, params.ranges.map(r => new vscode.Range(r.start.line, r.start.character, r.end.line, r.end.character)))
+//             }
+//         }
+//     }
+// }
+
+export type ChatMessage = {
+    role: "user" | "assistant"
+    content: string
+};
+
+export interface AgentChatRequest {
+    messages: ChatMessage[]
+}
+export interface AgentInputRequest {
+    msg: string
+    place_holder: string | null
+}
+export interface AgentUpdate {
+    msg: string
+}
+export interface AgentResult {
+    //TODO
+}
+
 class Agent {
     status: AgentStatus;
     green: vscode.TextEditorDecorationType;
@@ -149,30 +206,60 @@ class Agent {
         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
         this.onStatusChange = this.onStatusChangeEmitter.event
     }
-    handleProgress(params: RunAgentProgress) {
-        if (params.status) {
-            if (this.status !== params.status) {
-                this.status = params.status
-                this.onStatusChangeEmitter.fire(params.status)
+    async handleInputRequest(params: AgentInputRequest) {
+        console.log("handleInputRequest");
+        chatProvider._view?.webview.postMessage({ type: 'input_request', data: params });
+        logProvider._view?.webview.postMessage({ type: 'input_request', data: params });
+
+        chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
+            if (!chatProvider._view) throw new Error('no view')
+            switch (params.type) {
+                case "inputRequest":
+
             }
-        }
-        if (params.ranges) {
-            this.ranges = params.ranges
-        }
-        const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == params.textDocument.uri)
-        for (const editor of editors) {
-            // [todo] check editor is visible
-            const version = editor.document.version
-            if (params.status == 'accepted' || params.status == 'rejected') {
-                editor.setDecorations(this.green, [])
-                continue
+        });
+        //TODO: halt here til we get a response from webview
+
+    }
+    async handleChatRequest(params: AgentChatRequest) {
+        console.log("handleChatRequest")
+        chatProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
+        logProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
+
+        let messageReceived = false;
+        let chatRequest: AgentChatRequest = { messages: [] };
+
+        //TODO: Need to pause for user input while event handler is receiving nothing
+        chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
+            if (!chatProvider._view) throw new Error('no view')
+            switch (params.type) {
+                case "chatMessage": {
+                    console.log("chatMessage");
+                    chatRequest = { messages: params.params.messages };
+                    break;
+                }
             }
-            if (params.ranges) {
-                editor.setDecorations(this.green, params.ranges.map(r => new vscode.Range(r.start.line, r.start.character, r.end.line, r.end.character)))
-            }
-        }
+        });
+        return chatRequest;
+    }
+    async handleUpdate(params: AgentUpdate) {
+        console.log("handleUpdate")
+        //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
+        logProvider._view?.webview.postMessage({ type: 'update', data: params });
+    }
+    async handleProgress(params: AgentProgress) {
+        console.log("handleProgress")
+        //chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
+        logProvider._view?.webview.postMessage({ type: 'progress', data: params });
+    }
+    async handleResult(params: AgentResult) {
+        console.log("handleResult")
+        //chatProvider._view?.webview.postMessage({ type: 'result', data: params });
+        //logProvider._view?.webview.postMessage({ type: 'result', data: params });
     }
 }
+
+
 
 export class AgentStateLens extends vscode.CodeLens {
     id: number
@@ -431,28 +518,27 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     // }
     // with no-ops for all callbacks except for `send_progress`
 
-    async run(
-        params: RunAgentParams,
-        request_input_callback: (request_input_request: any) => any,
-        request_chat_callback: (request_chat_request: any) => any,
-        send_update_callback: (send_update_request: any) => any,
-        send_progress_callback: (send_progress_request: any) => any,
-        send_result_callback: (send_result_request: any) => any,
-    ) {
+    async run(params: RunAgentParams) {
         const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
-        const agent_id = result.id; // TODO(jesse): does this create a race condition? // TODO: better identifiers than ints returned by server
+        const agent_id = result.id;
         const agent_type = params.agent_type;
+
+        const agent = new Agent(result.id, params.agent_params.position, params.agent_params.textDocument)
+        agent.onStatusChange(e => this.changeLensEmitter.fire())
+        this.agents.set(result.id.toString(), agent)
+        this.changeLensEmitter.fire()
+
         console.log(`running ${agent_type}`)
         const agentIdentifier = `${agent_type}_${agent_id}`
         console.log(`agentIdentifier: ${agentIdentifier}`)
         this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })
-        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, request_input_callback.bind(this))
-        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, request_chat_callback.bind(this))
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, agent.handleInputRequest.bind(this))
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, agent.handleChatRequest.bind(this))
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, send_update_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, send_progress_callback.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, agent.handleUpdate.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, agent.handleProgress.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, send_result_callback.bind(this)) // this should be custom
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, agent.handleResult.bind(this)) // this should be custom
     }
 
     // run should spawn an agent
