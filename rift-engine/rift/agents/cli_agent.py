@@ -143,7 +143,7 @@ async def main(agent_cls, params):
             self.stats["changed_files"] = list()
 
         def elapsed(self):
-            return time.time() - start
+            return time.time() - self._start
 
         def report_stats(self):
             self.stats
