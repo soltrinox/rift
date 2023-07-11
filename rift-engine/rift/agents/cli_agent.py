@@ -32,7 +32,7 @@ import types
 
 import art
 import fire
-from rift.agents.util import stream_string, stream_string_ascii
+from rift.agents.util import stream_string, stream_string_ascii, ainput
 
 
 @dataclass
@@ -125,51 +125,56 @@ async def main(agent_cls, params):
     client: core.CodeCapabilitiesServer = core.create_metaserver(port=params.port)
     logger.info(f"started Rift server on port {params.port}")
     t = asyncio.create_task(client.run_forever())
-    await asyncio.sleep(1)
-    if agent_cls.splash is not None:
-        stream_string(agent_cls.splash)
-    else:
-        stream_string_ascii(agent_cls.name)
 
-    agent = agent_cls(run_params=params, console=console)
+    while True:
+        await asyncio.sleep(1)
+        if agent_cls.splash is not None:
+            stream_string(agent_cls.splash)
+        else:
+            stream_string_ascii(agent_cls.name)
 
-    @dataclass
-    class AgentRunStats:
-        _start: float = field(default_factory=time.time)
-        stats: Dict[Any, Any] = field(default_factory=dict)
+        agent = agent_cls(run_params=params, console=console)
 
-        def __post_init__(self):
-            self.stats["elapsed_time"] = None
-            self.stats["changed_files"] = list()
+        @dataclass
+        class AgentRunStats:
+            _start: float = field(default_factory=time.time)
+            stats: Dict[Any, Any] = field(default_factory=dict)
 
-        def elapsed(self):
-            return time.time() - self._start
+            def __post_init__(self):
+                self.stats["elapsed_time"] = None
+                self.stats["changed_files"] = list()
 
-        def report_stats(self):
-            console.print(
-                Panel(
-                    "[AgentRunStats] report:\n" + json.dumps(
-                        self.stats, indent=2
+            def elapsed(self):
+                return time.time() - self._start
+
+            def report_stats(self):
+                console.print(
+                    Panel(
+                        "[AgentRunStats] report:\n" + json.dumps(
+                            self.stats, indent=2
+                        )
                     )
                 )
+
+        agent_stats = AgentRunStats()
+
+        async for file_changes in agent.run():
+            for file_change in file_changes:
+                agent_stats.stats["changed_files"].append(file_change.uri.uri)
+            await client.server.apply_workspace_edit(
+                lsp.ApplyWorkspaceEditParams(
+                    file_diff.edits_from_file_changes(file_changes, user_confirmation=True),
+                    label="rift",
+                )
             )
+        agent_stats.stats["elapsed_time"] = agent_stats.elapsed()
 
-    agent_stats = AgentRunStats()
+        console.print("\n")
 
-    async for file_changes in agent.run():
-        for file_change in file_changes:
-            agent_stats.stats["changed_files"].append(file_change.uri.uri)
-        await client.server.apply_workspace_edit(
-            lsp.ApplyWorkspaceEditParams(
-                file_diff.edits_from_file_changes(file_changes, user_confirmation=True),
-                label="rift",
-            )
-        )
-    agent_stats.stats["elapsed_time"] = agent_stats.elapsed()
-
-    console.print("\n")
+        agent_stats.report_stats()
         
-    agent_stats.report_stats()
+        await ainput("\n> Press any key to restart.\n")
+        
 
     await t
 
