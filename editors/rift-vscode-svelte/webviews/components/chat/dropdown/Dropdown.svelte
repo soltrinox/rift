@@ -22,9 +22,7 @@
 
   console.log("in dropdown: " + JSON.stringify(availableAgents));
 
-  // export let agentIds = agents;
-  // export let agentIds = MOCK_AGENT_REGISTRY
-  export const inputValue: string = "";
+  export let inputValue: string = "";
 
   let activeId = 0;
 
@@ -59,18 +57,21 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeyDown} />
+<svelte:window on:keydown={handleKeyDown}/>
 <div
         class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
-  <!-- {#each agentIds.filter( (id) => id.name.includes(inputValue.substring(1)) ) as id, index}
-    <DropdownCard id={id.name} focused={Boolean(index == activeId)} />
-  {/each} -->
-  {#each availableAgents as agent, i}
-    {#if activeId == i}
-      <DropdownCard {agent} focused={true} />
-    {:else}
-      <DropdownCard {agent} focused={false} />
-    {/if}
+  {#each availableAgents.filter((agent) => {
+    return agent.agent_type
+            .toLowerCase()
+            .includes(inputValue.substring(1).toLowerCase()) || agent.display_name
+            .toLowerCase()
+            .includes(inputValue
+                    .substring(1)
+                    .toLowerCase()) || agent.agent_description
+            .toLowerCase()
+            .includes(inputValue.substring(1).toLowerCase());
+  }) as agent, index}
+    <DropdownCard {agent} focused={index == activeId}/>
   {/each}
 </div>
