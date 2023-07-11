@@ -30,7 +30,7 @@ import types
 
 import art
 import fire
-from rift.agents.cli_agent import CliAgent, ClientParams, launcher
+from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
 
 import smol_dev
@@ -52,10 +52,10 @@ class SmolAgentClientParams(ClientParams):
 
 
 @dataclass
-class SmolAgent(CliAgent):
+class SmolAgent(Agent):
     """
     This class represents the SmolAgent, which is a CLI agent that generates code based on a given prompt.
-    It inherits from the CliAgent class.
+    It inherits from the Agent class.
 
     Attributes:
     name: ClassVar[str] - The name of the agent. For SmolAgent, it is "smol".

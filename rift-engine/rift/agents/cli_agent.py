@@ -38,7 +38,7 @@ from rift.agents.util import stream_string, stream_string_ascii, ainput
 @dataclass
 class ClientParams:
     """
-    Base class for special parameters for instances of `CliAgent`.
+    Base class for special parameters for instances of `Agent`.
     Subclass to add agent-specific attributes.
 
     Attributes:
@@ -51,14 +51,14 @@ class ClientParams:
 
 
 @dataclass
-class CliAgent:
+class Agent:
     """
     Abstract base class for agents that can be interacted with through a CLI
     and which produce code diffs that can be sent to an LSP server.
 
     To implement your own agent:
     - create another file in this directory
-    - subclass `CliAgent`
+    - subclass `Agent`
     - run it as a Python script with `launcher` as the entrypoint from inside a VSCode terminal (if using the Rift VSCode extension). see `smol.py` for an example.
 
     Attributes:
@@ -190,7 +190,7 @@ async def main(agent_cls, params):
     await t
 
 
-def launcher(agent_cls: Type[CliAgent], param_cls: Type[ClientParams]):
+def launcher(agent_cls: Type[Agent], param_cls: Type[ClientParams]):
     import fire
 
     params = fire.Fire(get_dataclass_function(param_cls))
