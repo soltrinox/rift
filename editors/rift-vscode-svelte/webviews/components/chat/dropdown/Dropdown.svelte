@@ -71,6 +71,6 @@
             .toLowerCase()
             .includes(searchString);
   }) as agent, index}
-    <DropdownCard {agent} focused={index == activeId}/>
+    <DropdownCard {agent} focused={index === activeId}/>
   {/each}
 </div>
