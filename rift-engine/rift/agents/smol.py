@@ -93,7 +93,7 @@ class SmolAgent(CliAgent):
 
         await ainput("\n> Press any key to continue.\n")
 
-        file_paths = smol_dev.specify_filePaths(prompt, plan, model=params.model)
+        file_paths = smol_dev.specify_file_paths(prompt, plan, model=params.model)
 
         logger.info("Got file paths:")
         self.console.print(json.dumps(file_paths, indent=2), markup=True)
