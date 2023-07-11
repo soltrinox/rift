@@ -85,6 +85,10 @@
         }));
         console.log("availableAgents in state" + JSON.stringify(agentRegistry));
         break;
+      // case "chat_request":
+      //   console.log("chat_request");
+      //   console.log(event.data.data);
+      //   break;
       default:
         throw new Error("no case matched" + event.data);
     }

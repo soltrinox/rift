@@ -185,7 +185,7 @@ export interface AgentChatRequest {
 }
 export interface AgentInputRequest {
     msg: string
-    place_holder: string | null
+    place_holder?: string | null
 }
 export interface AgentUpdate {
     msg: string
@@ -211,36 +211,33 @@ class Agent {
         chatProvider._view?.webview.postMessage({ type: 'input_request', data: params });
         logProvider._view?.webview.postMessage({ type: 'input_request', data: params });
 
-        chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
-            if (!chatProvider._view) throw new Error('no view')
-            switch (params.type) {
-                case "inputRequest":
-
+        async function waitForMessage() {
+            return new Promise<AgentInputRequest>((accept, reject) => {
+                chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
+                    try {
+                        if (!chatProvider._view) throw new Error('no view')
+                        switch (params.type) {
+                            case "chatMessage": {
+                                console.log("chatMessage");
+                                inputRequest = { msg: params.params.message };
+                                accept(inputRequest);
+                                break;
+                            }
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
             }
-        });
-        //TODO: halt here til we get a response from webview
-
+            );
+        }
+        let inputRequest: AgentInputRequest = await waitForMessage();
+        return inputRequest;
     }
     async handleChatRequest(params: AgentChatRequest) {
         console.log("handleChatRequest")
         chatProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
         logProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
-
-        let messageReceived = false;
-        let chatRequest: AgentChatRequest = { messages: [] };
-
-        //TODO: Need to pause for user input while event handler is receiving nothing
-        chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
-            if (!chatProvider._view) throw new Error('no view')
-            switch (params.type) {
-                case "chatMessage": {
-                    console.log("chatMessage");
-                    chatRequest = { messages: params.params.messages };
-                    break;
-                }
-            }
-        });
-        return chatRequest;
     }
     async handleUpdate(params: AgentUpdate) {
         console.log("handleUpdate")
