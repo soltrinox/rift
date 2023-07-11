@@ -139,16 +139,18 @@ async def main(agent_cls, params):
         stats: Dict[Any, Any] = field(default_factory=dict)
 
         def __post_init__(self):
+            self.stats["elapsed_time"] = None
             self.stats["changed_files"] = list()
         
         def elapsed(self):
             return time.time() - start
 
         def report_stats(self):
+            stats = self.stats
             console.print(
                 Panel(
-                    json.dumps(
-                        self.stats, indent=2
+                    "[AgentRunStats] report:\n" + json.dumps(
+                        stats, indent=2
                     )
                 )
             )
@@ -164,6 +166,9 @@ async def main(agent_cls, params):
                 label="rift",
             )
         )
+    agent_stats.stats["elapsed_time"] = agent_stats.elapsed
+
+    console.print("\n")
         
     agent_stats.report_stats()
 
