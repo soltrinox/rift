@@ -1,6 +1,6 @@
 # Rift Agents API
 
-This directory contains the implementation of various agents that can be interacted with through a CLI and which produce code diffs that can be sent to the Rift Code Engine.
+This directory contains implementations of various agents that can be interacted with through a CLI and which produce code diffs that can be sent to the Rift Code Engine.
 
 ## Files Overview
 
@@ -36,6 +36,5 @@ python -m rift.agents.my_agent --port 7797 --debug False # other agent-specific 
 
 ## Caveats
 
-- Please note that agents can run third-party code and do not use Rift's model abstractions, and presently not configurable through the Rift extension.
-- Be careful when running agents with untrusted code.
+- Please note that agents can run third-party code, do not use Rift's model abstractions, and are presently not configurable through the Rift extension settings in VSCode. Be careful when running agents with untrusted code.
 - Currently each agent spins up its own Rift instance. Once support for [multiple clients](https://www.github.com/morph-labs/rift/issues/62) is added, multiple agents can interact with a single Rift server.
