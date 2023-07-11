@@ -141,12 +141,12 @@ async def main(agent_cls, params):
         def __post_init__(self):
             self.stats["elapsed_time"] = None
             self.stats["changed_files"] = list()
-        
+
         def elapsed(self):
             return time.time() - start
 
         def report_stats(self):
-            stats = self.stats
+            self.stats
             console.print(
                 Panel(
                     "[AgentRunStats] report:\n" + json.dumps(
@@ -166,7 +166,7 @@ async def main(agent_cls, params):
                 label="rift",
             )
         )
-    agent_stats.stats["elapsed_time"] = agent_stats.elapsed
+    agent_stats.stats["elapsed_time"] = agent_stats.elapsed()
 
     console.print("\n")
         
