@@ -7,11 +7,9 @@
     import ChatSvg from "../icons/ChatSvg.svelte";
     import EllipsisSvg from "../icons/EllipsisSvg.svelte";
     import EllipsisDarkSvg from "../icons/EllipsisDarkSvg.svelte";
-    import OmniBar from "../chat/OmniBar.svelte";
     import Log from "./Log.svelte";
-    import { loading, state } from "../stores";
-    import { custom_event } from "svelte/internal";
-    import { SvelteStore } from "../../../src/types";
+    import {state} from "../stores";
+    import type {SvelteStore} from "../../../src/types";
 
     let expanded = false;
     export let id: string = "";

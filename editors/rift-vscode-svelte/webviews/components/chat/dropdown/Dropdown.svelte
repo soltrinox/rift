@@ -1,18 +1,8 @@
 <script lang="ts">
-  import { state } from "../../stores";
-  import { v4 as uuidv4 } from "uuid";
-  import { AgentRegistryItem } from "../../../../src/types";
-  // import { Log, ChatMessage } from "../../../../src/types";
+  import {state} from "../../stores";
+  import type {AgentRegistryItem} from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
-  import { onMount } from "svelte";
-  // const MOCK_AGENT_REGISTRY = [
-  //   //TODO get from server
-  //   { name: 'rift-chat', description: 'ask me anything ab life bro' },
-  //   { name: 'aider', description: 'congrats ur now a 10x engineer' },
-  //   { name: 'gpt-engineer', description: 'an engineer but gpt' },
-  //   { name: 'auto-code-review', description: 'code review but meaner' },
-  //   { name: 'repl-auto-debug', description: 'let me debug for u' },
-  // ]
+  import {onMount} from "svelte";
 
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 
@@ -23,9 +13,7 @@
 
   console.log("in dropdown: " + JSON.stringify(availableAgents));
 
-  // export let agentIds = agents;
-  // export let agentIds = MOCK_AGENT_REGISTRY
-  export const inputValue = "";
+  export let inputValue: string = "";
 
   let activeId = 0;
 
@@ -60,18 +48,20 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeyDown} />
+<svelte:window on:keydown={handleKeyDown}/>
 <div
-  class="absolute left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
+        class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
-  <!-- {#each agentIds.filter( (id) => id.name.includes(inputValue.substring(1)) ) as id, index}
-    <DropdownCard id={id.name} focused={Boolean(index == activeId)} />
-  {/each} -->
-  {#each availableAgents as agent, i}
-    {#if activeId == i}
-      <DropdownCard {agent} focused={true} />
-    {:else}
-      <DropdownCard {agent} focused={false} />
-    {/if}
+  {#each availableAgents.filter((agent) => {
+    let searchString = inputValue.substring(1).toLowerCase();
+    return agent.agent_type
+            .toLowerCase()
+            .includes(searchString) || agent.display_name
+            .toLowerCase()
+            .includes(searchString) || agent.agent_description
+            .toLowerCase()
+            .includes(searchString);
+  }) as agent, index}
+    <DropdownCard {agent} focused={index === activeId}/>
   {/each}
 </div>
