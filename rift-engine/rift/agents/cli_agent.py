@@ -125,6 +125,7 @@ async def main(agent_cls, params):
     client: core.CodeCapabilitiesServer = core.create_metaserver(port=params.port)
     logger.info(f"started Rift server on port {params.port}")
     t = asyncio.create_task(client.run_forever())
+    await t
 
     while True:
         await asyncio.sleep(1)

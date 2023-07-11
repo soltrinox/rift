@@ -101,6 +101,18 @@ class CodeCapabilitiesServer:
         transport = AsyncStreamTransport(reader, writer)
         await self.run_lsp(transport)
 
+    async def _run_forever_fut(self):
+        """Runs the language server.
+
+        If lsp_port = 'stdio', then the LSP listens on stdin and stdout.
+        There is also a web server at 7787 that the webview can connect to.
+        """
+        lsp_task = asyncio.create_task(
+            self.run_lsp_stdio() if self.lsp_port == "stdio" else self.run_lsp_tcp()
+        )
+        return lsp_task
+
+
     async def run_forever(self):
         """Runs the language server.
 
@@ -108,11 +120,9 @@ class CodeCapabilitiesServer:
         There is also a web server at 7787 that the webview can connect to.
         """
         loop = asyncio.get_event_loop()
-        lsp_task = loop.create_task(
-            self.run_lsp_stdio() if self.lsp_port == "stdio" else self.run_lsp_tcp()
-        )
+        lsp_task = await self._run_forever_fut()
         await lsp_task
-        logger.debug(f"exiting {type(self).__name__}.listen_forever")
+        logger.debug(f"exiting {type(self).__name__}.listen_forever")        
 
 
 def create_metaserver(
