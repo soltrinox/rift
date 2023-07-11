@@ -111,7 +111,7 @@
                 }
                 break;
             default:
-                throw new Error("no case matched");
+                throw new Error("no case matched: " + event.data);
         }
     };
 </script>

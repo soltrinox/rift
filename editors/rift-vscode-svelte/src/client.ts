@@ -223,13 +223,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
 
         this.changeLensEmitter = new vscode.EventEmitter<void>()
         this.onDidChangeCodeLenses = this.changeLensEmitter.event
-        this.context.subscriptions.push(
-            vscode.commands.registerCommand('rift.cancel', (id: number) => this.client.sendNotification('morph/cancel', { id })),
-            vscode.commands.registerCommand('rift.accept', (id: number) => this.client.sendNotification('morph/accept', { id })),
-            vscode.commands.registerCommand('rift.reject', (id: number) => this.client.sendNotification('morph/reject', { id })),
-            vscode.workspace.onDidChangeConfiguration(this.on_config_change.bind(this)),
-        )
-
     }
 
     // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever

@@ -86,7 +86,7 @@
         console.log("availableAgents in state" + JSON.stringify(agentRegistry));
         break;
       default:
-        throw new Error("no case matched");
+        throw new Error("no case matched" + event.data);
     }
   };
 </script>
@@ -98,7 +98,7 @@
   <div style="height: calc(100% - 80px);" class="overflow-y-auto">
     <Chat {progressResponse} />
   </div>
-  <div style="bottom: 0; position: absolute">
+  <div style="bottom: 0px; position: absolute" class="w-full">
     <OmniBar />
   </div>
 </div>

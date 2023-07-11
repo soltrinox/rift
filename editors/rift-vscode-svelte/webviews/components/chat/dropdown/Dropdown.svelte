@@ -1,7 +1,7 @@
 <script lang="ts">
   import { state } from "../../stores";
   import { v4 as uuidv4 } from "uuid";
-  import { Agent, AgentRegistryItem, ChatMessage } from "../../../../src/types";
+  import { AgentRegistryItem } from "../../../../src/types";
   // import { Log, ChatMessage } from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
   import { onMount } from "svelte";
