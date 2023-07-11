@@ -1,6 +1,6 @@
 # Rift Agents API
 
-This directory contains the implementation of various agents that can be interacted with through a CLI and which produce code diffs that can be sent to an LSP server.
+This directory contains the implementation of various agents that can be interacted with through a CLI and which produce code diffs that can be sent to the Rift Code Engine.
 
 ## Files Overview
 
@@ -26,6 +26,16 @@ To add your own agent, you need to create a new file in this directory and subcl
 3. Implement the `run` method. This method should be an async generator that yields batches of file changes.
 4. At the end of your file, call `launcher` with your agent class and parameters dataclass.
 
-## Caveat
+## Running Your Own Agent
+Use the `launcher` method defined in `cli_agent.py`. See `smol.py` for a reference implementation at the bottom of the file. Once configured, just run this from the VSCode terminal:
 
-Please note that agents can run third-party code and do not use Rift's model abstractions. Be careful when running agents with untrusted code.
+```python
+# defined in ./my_agent.py
+python -m rift.agents.my_agent --port 7797 --debug False # other agent-specific flags here...
+```
+
+## Caveats
+
+- Please note that agents can run third-party code and do not use Rift's model abstractions, and presently not configurable through the Rift extension.
+- Be careful when running agents with untrusted code.
+- Currently each agent spins up its own Rift instance. Once support for [multiple clients](https://www.github.com/morph-labs/rift/issues/62) is added, multiple agents can interact with a single Rift server.

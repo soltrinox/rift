@@ -40,6 +40,10 @@ class ClientParams:
     """
     Base class for special parameters for instances of `CliAgent`.
     Subclass to add agent-specific attributes.
+
+    Attributes:
+    port: int - The port number where the server will be running. Default is 7797.
+    debug: bool - A flag to indicate whether the application is in debug mode. Default is False.
     """
 
     port: int = 7797
@@ -56,6 +60,12 @@ class CliAgent:
     - create another file in this directory
     - subclass `CliAgent`
     - run it as a Python script with `launcher` as the entrypoint from inside a VSCode terminal (if using the Rift VSCode extension). see `smol.py` for an example.
+
+    Attributes:
+    name: str - The name of the agent.
+    run_params: ClientParams - The parameters for running the agent.
+    splash: Optional[str] - The splash screen for the agent. Default is None.
+    console: Console - The console for displaying output. Default is a new Console instance.
     """
 
     name: str
@@ -66,6 +76,8 @@ class CliAgent:
     async def run(self, *args, **kwargs) -> AsyncIterable[List[file_diff.FileChange]]:
         """
         Async generator which emits batches of file changes.
+
+        This method should be overridden by subclasses to provide the specific implementation.
         """
         ...
 

@@ -32,6 +32,14 @@ import fire.core
 
 
 def _PrintResult(component_trace, verbose=False, serialize=None):
+    """
+    Prints the result of a Fire command.
+
+    Args:
+        component_trace: The component trace of the Fire command.
+        verbose: Whether to print verbose output. Default is False.
+        serialize: A function to serialize the result. If not None, it must be callable. Default is None.
+    """
     result = component_trace.GetResult()
     if serialize:
         if not callable(serialize):
@@ -68,17 +76,38 @@ fire.core._PrintResult = _PrintResult
 
 
 def stream_string(string):
+    """
+    Prints a string character by character with a delay between each character.
+
+    Args:
+        string: The string to print.
+    """
     for char in string:
         print(char, end="", flush=True)
         time.sleep(0.0015)
 
 
 def stream_string_ascii(name: str):
+    """
+    Prints an ASCII art representation of a string character by character with a delay between each character.
+
+    Args:
+        name: The string to convert to ASCII art and print.
+    """
     _splash = art.text2art(name, font="smslant")
 
     stream_string(_splash)
 
 
 async def ainput(prompt: str = "") -> str:
+    """
+    Asynchronously waits for user input.
+
+    Args:
+        prompt: The prompt to display to the user. Default is an empty string.
+
+    Returns:
+        The user's input as a string.
+    """
     with ThreadPoolExecutor(1, "AsyncInput") as executor:
         return await asyncio.get_event_loop().run_in_executor(executor, input, prompt)
