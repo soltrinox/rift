@@ -146,11 +146,10 @@ async def main(agent_cls, params):
             return time.time() - self._start
 
         def report_stats(self):
-            self.stats
             console.print(
                 Panel(
                     "[AgentRunStats] report:\n" + json.dumps(
-                        stats, indent=2
+                        self.stats, indent=2
                     )
                 )
             )
