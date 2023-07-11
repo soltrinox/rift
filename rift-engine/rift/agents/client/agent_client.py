@@ -1,27 +1,25 @@
-import pickle as pkl
-import os
-import json
-from dataclasses import dataclass
 import asyncio
+import json
 import logging
+import os
+import pickle as pkl
+from dataclasses import dataclass
 from typing import Any, List
-import smol_dev
 
+import rift.agents.file_diff as file_diff
 import rift.lsp.types as lsp
+import rift.server.core as core
+import rift.server.lsp as server
+import smol_dev
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.panel import Panel
 from rift.agents.abstract import AgentRegistryResult
 from rift.lsp.types import InitializeParams
 from rift.rpc.io_transport import AsyncStreamTransport
 from rift.rpc.jsonrpc import RpcServer, rpc_method, rpc_request
 from rift.server.core import CodeCapabilitiesServer, rift_splash
 from rift.util.ofdict import todict
-import rift.agents.file_diff as file_diff
-from rift.server.core import rift_splash
-from rich.console import Console
-from rich.logging import RichHandler
-from rich.panel import Panel
-import logging
-import rift.server.lsp as server
-import rift.server.core as core
 
 logger = logging.getLogger(__name__)
 import time
