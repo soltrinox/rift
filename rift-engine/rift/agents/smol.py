@@ -37,6 +37,15 @@ import smol_dev
 
 @dataclass
 class SmolAgentClientParams(ClientParams):
+    """
+    This class is used to specify the parameters for the SmolAgent.
+    It inherits from the ClientParams class.
+
+    Attributes:
+    prompt_file: Optional[str] - The path to the prompt file. If not provided, the user will be asked to input a prompt.
+    debug: bool - A flag to indicate whether the application is in debug mode. Default is False.
+    model: Literal["gpt-3.5-turbo-0613", "gpt-4-0613"] - The model to be used. Default is "gpt-3.5-turbo-0613".
+    """
     prompt_file: Optional[str] = None  # path to prompt file
     debug: bool = False
     model: Literal["gpt-3.5-turbo-0613", "gpt-4-0613"] = "gpt-3.5-turbo-0613"
@@ -44,6 +53,15 @@ class SmolAgentClientParams(ClientParams):
 
 @dataclass
 class SmolAgent(CliAgent):
+    """
+    This class represents the SmolAgent, which is a CLI agent that generates code based on a given prompt.
+    It inherits from the CliAgent class.
+
+    Attributes:
+    name: ClassVar[str] - The name of the agent. For SmolAgent, it is "smol".
+    run_params: Type[SmolAgentClientParams] - The parameters for running the agent. It uses the SmolAgentClientParams class.
+    splash: Optional[str] - The splash screen for the agent. It is a string of ASCII art.
+    """
     name: ClassVar[str] = "smol"
     run_params: Type[SmolAgentClientParams] = SmolAgentClientParams
     splash: Optional[
