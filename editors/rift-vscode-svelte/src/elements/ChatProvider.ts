@@ -82,71 +82,30 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
 
                     const runAgentParams: client.RunAgentParams = { agent_type: params.params.agent_type, agent_params: { position, textDocument } };
-                    await this.morph_language_client.run(runAgentParams,
-                        (input_request) => {
-                            console.log('input_request')
-                            console.log(input_request)
-                            if (!this._view) throw new Error('no view')
-                            // this._view.webview.postMessage({ type: 'input_request', data: input_request });
-                            logProvider._view?.webview.postMessage({ type: 'input_request', data: input_request });
-                        },
-                        (chat_request) => {
-                            console.log('chat_request')
-                            console.log(chat_request)
-                            if (!this._view) throw new Error('no view')
-                            //TODO
-                            // this._view.webview.postMessage({ type: 'chat_request', data: chat_request });
-                            logProvider._view?.webview.postMessage({ type: 'chat_request', data: chat_request });;
-
-                        },
-                        (update) => {
-                            console.log('update')
-                            console.log(update)
-                            if (!this._view) throw new Error('no view')
-                            //TODO
-                            // this._view.webview.postMessage({ type: 'update', data: update });
-                            logProvider._view?.webview.postMessage({ type: 'update', data: update });
-
-                        },
-                        (progress) => {
-                            console.log('progress')
-                            console.log(progress)
-                            if (!this._view) throw new Error('no view')
-                            if (progress.done) console.log('WEBVIEW DONE RECEIVING / POSTING')
-                            // this._view.webview.postMessage({ type: 'progress', data: progress });
-                            logProvider._view?.webview.postMessage({ type: 'progress', data: progress })
-                        },
-                        (result) => {
-                            console.log('result')
-                            console.log(result)
-                            if (!this._view) throw new Error('no view')
-                            // this._view.webview.postMessage({ type: 'result', data: result });
-                            logProvider._view?.webview.postMessage({ type: 'result', data: result })
-                        });
-
+                    await this.morph_language_client.run(runAgentParams);
                     break;
 
                 // Handle 'chatMessage' message
-                case 'chatMessage':
-                    editor = vscode.window.activeTextEditor;
-                    let runChatParams: any = { message: params.message, messages: params.messages }
-                    if (!editor) {
-                        console.warn('No active text editor found');
-                    } else {
-                        // Get the uri and position of the current cursor
-                        const doc = editor.document;
-                        const position = editor.selection.active;
-                        const textDocument = { uri: doc.uri.toString(), version: 0 }
-                        runChatParams = { message: params.message, messages: params.messages, position, textDocument }
-                    }
-                    if (!params.message || !params.messages) throw new Error()
-                    this.morph_language_client.run_chat(runChatParams, (progress) => {
-                        console.log(progress)
-                        if (!this._view) throw new Error('no view')
-                        if (progress.done) console.log('WEBVIEW DONE RECEIVING / POSTING')
-                        this._view.webview.postMessage({ type: 'chatProgress', data: progress });
-                    })
-                    break;
+                // case 'chatMessage':
+                //     editor = vscode.window.activeTextEditor;
+                //     let runChatParams: any = { message: params.message, messages: params.messages }
+                //     if (!editor) {
+                //         console.warn('No active text editor found');
+                //     } else {
+                //         // Get the uri and position of the current cursor
+                //         const doc = editor.document;
+                //         const position = editor.selection.active;
+                //         const textDocument = { uri: doc.uri.toString(), version: 0 }
+                //         runChatParams = { message: params.message, messages: params.messages, position, textDocument }
+                //     }
+                //     if (!params.message || !params.messages) throw new Error()
+                //     this.morph_language_client.run_chat(runChatParams, (progress) => {
+                //         console.log(progress)
+                //         if (!this._view) throw new Error('no view')
+                //         if (progress.done) console.log('WEBVIEW DONE RECEIVING / POSTING')
+                //         this._view.webview.postMessage({ type: 'chatProgress', data: progress });
+                //     })
+                //     break;
 
                 default:
                     console.log('no case match')

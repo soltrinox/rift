@@ -44,31 +44,35 @@
     if (vscodeState) state.set(vscodeState);
     let progressResponse: string;
     const incomingMessage = (event: any) => {
+        console.log("LogsWebview event.data.type: " + event.data.type);
+        console.log(
+            "LogsWebview event.data.type: \n" + JSON.stringify(event.data)
+        );
         // Listen for the response
         switch (event.data.type) {
-            case "tasks":
-                {
-                    // TODO
-                }
-                break;
-            case "progress":
-                const progress = event.data.data as AgentProgress;
-                const agentId = progress.agent_id;
-                const status = progress.tasks.task.status;
-                console.log("in logs webview");
-                console.log(progress);
-                // console.log(progressResponse);
-                isDone = status == "done";
+            case "input_request": {
+                const input_request = event.data.data as AgentInputRequest;
+                let agentId = input_request.agent_id;
+                let status = input_request.tasks.task.status;
 
-                // const randomLogSeverity = ["done", "progress"];
-                // let random = Math.floor(Math.random() * randomLogSeverity.length);
-                // // const randomLogMessage = [
-                //   "Things are going great",
-                //   "making progress",
-                //   "uh oh",
-                //   "something else",
-                // ];
-                // let random2 = Math.floor(Math.random() * randomLogMessage.length);
+                break;
+            }
+            case "chat_request": {
+                const chat_request = event.data.data as AgentChatRequest;
+                break;
+            }
+            case "update": {
+                const update = event.data.data as AgentUpdate;
+                break;
+            }
+            case "result": {
+                const result = event.data.data as AgentResult;
+                break;
+            }
+            case "progress": {
+                let progress = event.data.data as AgentProgress;
+                let agentId = progress.agent_id;
+                let status = progress.tasks.task.status;
 
                 console.log("Before update");
                 console.log($state);
@@ -88,7 +92,7 @@
                 console.log($state);
 
                 // for sticky window^
-                if (isDone) {
+                if (status == "done") {
                     state.update((state) => ({
                         ...state,
                         agents: {
@@ -110,6 +114,7 @@
                     progressResponse = "";
                 }
                 break;
+            }
             default:
                 throw new Error("no case matched: " + event.data);
         }

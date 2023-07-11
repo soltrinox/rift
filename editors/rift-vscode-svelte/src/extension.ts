@@ -7,8 +7,8 @@ import { MorphLanguageClient, AgentProgress } from './client';
 import { ChatProvider } from './elements/ChatProvider';
 import { LogProvider } from './elements/LogProvider';
 
-export let chatProvider;
-export let logProvider;
+export let chatProvider: ChatProvider;
+export let logProvider: LogProvider;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -112,11 +112,11 @@ export function activate(context: vscode.ExtensionContext) {
                 agent_type: "code_completion",
                 agent_params: { position, textDocument }
             },
-            default_request_input_callback, // handle incoming requests
-            async () => { }, // code_completion agents don't request chat
-            default_send_update_callback, // handle incoming text notifications
-            code_completion_send_progress_callback, // handle task progress updates / streaming results
-            async () => { } // code_completion agents use custom logic for accept/reject of final diffs
+            // default_request_input_callback, // handle incoming requests
+            // async () => { }, // code_completion agents don't request chat
+            // default_send_update_callback, // handle incoming text notifications
+            // code_completion_send_progress_callback, // handle task progress updates / streaming results
+            // async () => { } // code_completion agents use custom logic for accept/reject of final diffs
         )
     }
     );
