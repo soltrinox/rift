@@ -16,11 +16,12 @@ import {
 } from 'vscode-languageclient/node'
 import * as net from 'net'
 import { join } from 'path';
-import { ChatAgentProgress } from './types';
+import { AgentStatus, ChatAgentProgress } from './types';
 import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
 import { chatProvider, logProvider } from './extension';
 import { PubSub } from './lib/PubSub';
+import type {AgentChatRequest, AgentInputRequest, AgentProgress, AgentRegistryItem, AgentResult, AgentUpdate, RunAgentParams, RunAgentResult, RunChatParams} from './types'
 
 let client: LanguageClient //LanguageClient
 
@@ -69,131 +70,6 @@ interface RunCodeHelperParams {
     textDocument: TextDocumentIdentifier
 }
 
-export interface RunAgentParams {
-    agent_type: string
-    agent_params: any
-}
-
-interface RunAgentResult {
-    id: number
-    agentId: string | null
-}
-
-export interface RunChatParams {
-    message: string
-    messages: { // does not include latest message
-        role: string,
-        content: string
-    }[],
-    // position: vscode.Position,
-    // textDocument: TextDocumentIdentifier,
-}
-
-export interface AgentRegistryItem {
-    agent_type: string,
-    agent_description: string,
-    display_name: string,
-    agent_icon: string | null,
-}
-
-
-interface RunAgentResult {
-    id: number
-}
-
-interface RunAgentSyncResult {
-    id: number
-    text: string
-}
-
-export type AgentStatus = 'running' | 'done' | 'error' | 'accepted' | 'rejected'
-
-export interface RunAgentProgress {
-    id: number
-    textDocument: TextDocumentIdentifier
-    log?: {
-        severity: string;
-        message: string;
-    }
-    cursor?: vscode.Position
-    /** This is the set of ranges that the agent has added so far. */
-    ranges?: vscode.Range[]
-    status: AgentStatus
-}
-
-export interface Task {
-    description: string, status: string,
-}
-
-export interface Tasks {
-    task: Task
-    subtasks: Task[]
-}
-
-export interface AgentProgress {
-    agent_id: string,
-    agent_type: string,
-    tasks: Tasks,
-    payload: any,
-}
-
-
-/** Represents an agent */
-// class Agent {
-//     status: AgentStatus;
-//     green: vscode.TextEditorDecorationType;
-//     ranges: vscode.Range[] = []
-//     onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
-//     onStatusChange: vscode.Event<AgentStatus>
-//     constructor(public readonly id: number, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
-//         this.status = 'running'
-//         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
-//         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
-//         this.onStatusChange = this.onStatusChangeEmitter.event
-//     }
-//     handleProgress(params: RunAgentProgress) {
-//         if (params.status) {
-//             if (this.status !== params.status) {
-//                 this.status = params.status
-//                 this.onStatusChangeEmitter.fire(params.status)
-//             }
-//         }
-//         if (params.ranges) {
-//             this.ranges = params.ranges
-//         }
-//         const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == params.textDocument.uri)
-//         for (const editor of editors) {
-//             // [todo] check editor is visible
-//             const version = editor.document.version
-//             if (params.status == 'accepted' || params.status == 'rejected') {
-//                 editor.setDecorations(this.green, [])
-//                 continue
-//             }
-//             if (params.ranges) {
-//                 editor.setDecorations(this.green, params.ranges.map(r => new vscode.Range(r.start.line, r.start.character, r.end.line, r.end.character)))
-//             }
-//         }
-//     }
-// }
-
-export type ChatMessage = {
-    role: "user" | "assistant"
-    content: string
-};
-
-export interface AgentChatRequest {
-    messages: ChatMessage[]
-}
-export interface AgentInputRequest {
-    msg: string
-    place_holder?: string | null
-}
-export interface AgentUpdate {
-    msg: string
-}
-export interface AgentResult {
-    //TODO
-}
 
 class Agent {
     status: AgentStatus;

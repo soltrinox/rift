@@ -3,12 +3,11 @@
   import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
   import Logs from "./logs/Logs.svelte";
   import { DEFAULT_STATE, loading, state } from "./stores";
-  import type { ChatAgentProgress, AgentRegistryItem } from "../../src/types";
+  import type { ChatAgentProgress, AgentRegistryItem, AgentProgress, AgentChatRequest, AgentInputRequest, AgentResult, AgentUpdate } from "../../src/types";
   import Header from "./Header.svelte";
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
-    import type { AgentChatRequest, AgentInputRequest, AgentProgress, AgentResult, AgentUpdate } from "../../src/client";
 
   // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
   console.log("RESETTING VSCODE STATE");
@@ -85,6 +84,21 @@
                 let agentId = progress.agent_id;
                 let status = progress.tasks.task.status;
 
+                // if there's no currently selected agent. set this as the currently selected agent.
+                state.update(prevState => {
+                  return (
+                    {
+                      ...prevState,
+                      agents: {
+                        ...prevState.agents,
+                        [agentId]: {
+                          ...prevState.agents[agentId],
+                          
+                        }
+                      }
+                    }
+                  )
+                })
                 
 
                 // for sticky window^
