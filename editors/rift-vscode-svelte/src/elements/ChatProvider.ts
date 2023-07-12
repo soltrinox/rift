@@ -63,16 +63,13 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                 case "listAgents":
                     let agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
                     console.log("Getting list of available agents");
-                    this._view.webview.postMessage({
-                        type: 'listAgents',
-                        data: agents
-                    });
+                    this.postMessage('listAgents', agents)
                     break;
 
                 // Handle 'runAgent' message
                 case "runAgent":
-                    console.log("Getting list of available agents")
-                    let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
+                    // console.log("Getting list of available agents")
+                    // let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
 
                     editor = vscode.window.activeTextEditor;
                     if (!editor) {
@@ -86,12 +83,13 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
 
                     const runAgentParams: client.RunAgentParams = { agent_type: params.params.agent_type, agent_params: { position, textDocument } };
-                    await this.morph_language_client.run(runAgentParams);
+                    const result = await this.morph_language_client.run(runAgentParams);
+                    this.postMessage('result', result)
                     break;
 
                 case "chatMessage": {
-                    console.log("Sending publish message", params.messages)
-                    PubSub.pub(`${params.agent_type}_${params.agent_id}_chat_request`, params.messages);
+                    console.log("Sending publish message", params.message)
+                    PubSub.pub(`${params.agent_type}_${params.agent_id}_chat_request`, params.message);
                     break;
                 }
 

@@ -74,10 +74,10 @@ export interface RunAgentParams {
     agent_params: any
 }
 
-interface RunAgentResult {
-    id: number
-    agentId: string | null
-}
+// interface RunAgentResult {
+//     id: number
+//     agentId: string | null
+// }
 
 export interface RunChatParams {
     message: string
@@ -98,7 +98,7 @@ export interface AgentRegistryItem {
 
 
 interface RunAgentResult {
-    id: number
+    id: string
 }
 
 interface RunAgentSyncResult {
@@ -183,7 +183,9 @@ export type ChatMessage = {
 
 export interface AgentChatRequest {
     messages: ChatMessage[]
+    id?: string
 }
+
 export interface AgentInputRequest {
     msg: string
     place_holder?: string | null
@@ -191,9 +193,10 @@ export interface AgentInputRequest {
 export interface AgentUpdate {
     msg: string
 }
-export interface AgentResult {
-    //TODO
-}
+export type AgentResult = {
+    id: string,
+    type: string
+} //is just an ID rn
 
 class Agent {
     status: AgentStatus;
@@ -201,7 +204,7 @@ class Agent {
     ranges: vscode.Range[] = []
     onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
     onStatusChange: vscode.Event<AgentStatus>
-    constructor(public readonly id: number, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
+    constructor(public readonly id: string, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
         this.id = id;
         this.status = 'running';
         this.agent_type = agent_type;
@@ -239,17 +242,29 @@ class Agent {
     }
     async handleChatRequest(params: AgentChatRequest) {
         console.log("handleChatRequest");
-        chatProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
+        chatProvider._view?.webview.postMessage({ type: 'chat_request', data: {...params, id: this.id} });
         logProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
 
         let agentType = this.agent_type
         let agentId = this.id
+        // async function getUserInput() {
+        //     PubSub.sub(`${agentType}_${agentId}_chat_request`, (chat) => {
+        //         return new Promise<AgentChatRequest>((resolve, reject) => { });
+        //     })
+        // }
         async function getUserInput() {
-            PubSub.sub(`${agentType}_${agentId}_chat_request`, (chat) => {
-                return new Promise<AgentChatRequest>((resolve, reject) => { });
-            });
+            console.log('getUserInput')
+            return new Promise((res, rej) => {
+                console.log('subscribing to changes')
+                PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
+                    console.log('attempting to resolve promise')
+                res(message)})
+            })
         }
+        console.log("AWAITING USER UNPUT")
         let chatRequest = await getUserInput();
+        console.log('RECEIVED USER INPUT___BLASTOOFFFFF')
+        console.log(chatRequest)
         return chatRequest;
 
     }
@@ -531,6 +546,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
 
     async run(params: RunAgentParams) {
         const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
+        console.log('run agent result')
+        console.log(result)
         const agent_id = result.id;
         const agent_type = params.agent_type;
 
@@ -550,6 +567,9 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, agent.handleProgress.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, agent.handleResult.bind(this)) // this should be custom
+
+
+        return {id: agent_id, type: agent_type}// return agent_id to the webview
     }
 
     // run should spawn an agent

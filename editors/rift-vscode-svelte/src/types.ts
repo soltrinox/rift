@@ -1,3 +1,5 @@
+import { Tasks } from "./client";
+
 export type ChatAgentProgress = {
     id: string,
     response: string
@@ -38,7 +40,7 @@ export class Agent {
     constructor(
         public type: string, // aider, gpt-engineer, etc
         public chatHistory: ChatMessage[] = [],
-        public tasks: { subtasks: [{ description: string, status: string }] | [], task: { description: string, status: string } }
+        public tasks?: Tasks 
     ) { }
 }
 
