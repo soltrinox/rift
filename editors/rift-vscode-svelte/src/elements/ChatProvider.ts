@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import * as client from '../client'
 import { getNonce } from "../getNonce";
 import { logProvider } from "../extension";
-import { PubSub } from "../lib/PubSub";
+import   PubSub   from "../lib/PubSub";
 import { MorphLanguageClient } from "../client";
 
 // Provides a webview view that allows users to chat and interact with the extension.

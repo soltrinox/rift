@@ -20,7 +20,7 @@ import { ChatAgentProgress } from './types';
 import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
 import { chatProvider, logProvider } from './extension';
-import { PubSub } from './lib/PubSub';
+import PubSub from './lib/PubSub';
 
 let client: LanguageClient //LanguageClient
 
@@ -252,6 +252,7 @@ class Agent {
         //         return new Promise<AgentChatRequest>((resolve, reject) => { });
         //     })
         // }
+        return "BLAH BLAH"
         async function getUserInput() {
             console.log('getUserInput')
             return new Promise((res, rej) => {

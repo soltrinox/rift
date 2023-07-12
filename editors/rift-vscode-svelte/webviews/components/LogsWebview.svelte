@@ -52,8 +52,8 @@
                 }));
             case "input_request": {
                 const input_request = event.data.data as AgentInputRequest;
-                let agentId = input_request.agent_id;
-                let status = input_request.tasks.task.status;
+                // let agentId = input_request.agent_id;
+                // let status = input_request.tasks.task.status;
 
                 break;
             }

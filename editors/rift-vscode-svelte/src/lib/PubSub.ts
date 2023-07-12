@@ -1,14 +1,23 @@
-export module PubSub {
-    var registry: { [key: string]: Function | null } = {};
-    export var pub = function (key: string, ...args: any) {
-        if (!registry[key]) return;
+let registry: { [key: string]: Function | null } = {};
 
-        registry[key]?.apply(null, args);
-        registry[key] = null;
-    };
-    export var sub = function (key: string, fn: Function) {
-        if (registry[key]) throw Error("Only one subscription allowed");
-        registry[key] = fn;
-    };
-}
+export const pub = (key: string, ...args: any) => {
+    console.log('pubbing')
+    console.log(key)
+//   if (!registry[key]) return;
+    const fn = registry[key]
+    if(!fn) throw new Error('published to an unawaited key')
+  fn.apply(null, args);
+  registry[key] = null;
 
+};
+
+export const sub = (key: string, fn: (...args: any) => void) => {
+    console.log('subbing')
+    console.log(key)
+  if (registry[key]) throw new Error("Only one subscription allowed");
+  registry[key] = fn;
+};
+
+const PubSub = { pub, sub };
+
+export default PubSub;
