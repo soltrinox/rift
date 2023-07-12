@@ -1,13 +1,14 @@
-<!-- Navbar.svelte -->
 <script lang="ts">
   import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
   import Logs from "./logs/Logs.svelte";
   import { DEFAULT_STATE, loading, state } from "./stores";
-  import type { ChatAgentProgress, AgentRegistryItem, AgentProgress, AgentChatRequest, AgentInputRequest, AgentResult, AgentUpdate } from "../../src/types";
+  import type { ChatAgentProgress, AgentRegistryItem, AgentProgress} from "../../src/types";
   import Header from "./Header.svelte";
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
+    import type { AgentChatRequest, AgentInputRequest, AgentResult, AgentUpdate } from "../../src/client";
+    import { IncomingMessage } from "http";
 
   // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
   console.log("RESETTING VSCODE STATE");
@@ -21,7 +22,7 @@
         params: {
           agent_type: 'rift_chat',
           agent_params: {}, 
-        },
+        }
       });
     //get initial list of agents
     vscode.postMessage({ type: "listAgents" });
@@ -58,14 +59,14 @@
                 }));
 
                 // TODO: focus the selected agent
-            case "chatProgress":
+            case "chatProgress": {
               const progress = event.data.data as ChatAgentProgress;
               const agentId = progress.id; //FIXME brent HARDCODED change later
               progressResponse = progress.response;
               // console.log(progressResponse);
               isDone = progress.done;
                       break;
-                  
+            }
             case "chat_request": 
                 const chat_request = event.data.data as AgentChatRequest;
                 break;
@@ -125,12 +126,14 @@
                 }
             
                 break;
-            
+              }
             default:
                 console.log('no case matched for:', event.data.type, 'in LogWebview')
                 // throw new Error("no case matched: " + event.data);
-        }
+        
     };
+  }
+
 </script>
 
 <svelte:window on:message={incomingMessage} />
