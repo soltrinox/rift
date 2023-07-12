@@ -241,17 +241,16 @@ class Agent {
         console.log("handleChatRequest");
         chatProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
         logProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
-        PubSub.sub(`${this.agent_type}_${this.id}_chat_request`, (chat) => {
-            console.log("subscription message!", chat);
-        });
-        // async function getUserInput() {
 
-        //     return new Promise<AgentChatRequest>((accept, reject) => {
-
-        //     });
-        // }
-        // let chatRequest = await getUserInput();
-        // return chatRequest;
+        let agentType = this.agent_type
+        let agentId = this.id
+        async function getUserInput() {
+            PubSub.sub(`${agentType}_${agentId}_chat_request`, (chat) => {
+                return new Promise<AgentChatRequest>((resolve, reject) => { });
+            });
+        }
+        let chatRequest = await getUserInput();
+        return chatRequest;
 
     }
     async handleUpdate(params: AgentUpdate) {

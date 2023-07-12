@@ -50,6 +50,12 @@
         );
         // Listen for the response
         switch (event.data.type) {
+            case "selectedAgentId":
+                console.log(`selectedAgentId: ${event.data.data}`);
+                state.update((state) => ({
+                    ...state,
+                    selectedAgentId: event.data.data.selectedAgentId,
+                }));
             case "input_request": {
                 const input_request = event.data.data as AgentInputRequest;
                 let agentId = input_request.agent_id;

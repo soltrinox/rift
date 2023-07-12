@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { MorphLanguageClient, RunChatParams } from "../client";
 import { getNonce } from "../getNonce";
 import { ChatAgentProgress } from "../types";
+import { chatProvider } from "../extension";
 
 export class LogProvider implements vscode.WebviewViewProvider {
     _view?: vscode.WebviewView;
@@ -43,7 +44,10 @@ export class LogProvider implements vscode.WebviewViewProvider {
             if (!this._view) throw new Error('no view')
             console.log(data)
             switch (data.type) {
-                // TODO
+                case "selectedAgentId":
+                    console.log(`logprovider selectedAgentId: ${data.selectedAgentId}`);
+                    chatProvider._view?.webview.postMessage({ type: "selectedAgentId", data: data.selectedAgentId });
+                    break;
                 case "copyText":
                     console.log('recieved copy in webview')
                     vscode.env.clipboard.writeText(data.content)

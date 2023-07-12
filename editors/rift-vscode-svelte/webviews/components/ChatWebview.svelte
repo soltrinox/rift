@@ -38,6 +38,13 @@
     // Listen for the response
 
     switch (event.data.type) {
+      case "selectedAgentId":
+        console.log(`chatwebview selectedAgentId: ${event.data.data}`);
+        state.update((state) => ({
+          ...state,
+          selectedAgentId: event.data.data,
+        }));
+      // TODO: focus the selected agent
       case "chatProgress":
         const progress = event.data.data as ChatAgentProgress;
         const agentId = progress.id; //FIXME brent HARDCODED change later

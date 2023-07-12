@@ -63,6 +63,7 @@
             ...state,
             selectedAgentId: id,
         }));
+        vscode.postMessage({ type: "selectedAgentId", selectedAgentId: id });
 
         console.log("This is the state - Logs");
         console.log($state);

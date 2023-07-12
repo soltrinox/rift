@@ -49,7 +49,9 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(async (params: any) => {
             if (!this._view) throw new Error('no view')
             switch (params.type) {
-                // Handle 'copyText' message
+                case "selectedAgentId":
+                    logProvider._view?.webview.postMessage({ type: "selectedAgentId", data: params.selectedAgentId })
+                    break;
                 case "copyText":
                     console.log('recieved copy in webview')
                     vscode.env.clipboard.writeText(params.content)
