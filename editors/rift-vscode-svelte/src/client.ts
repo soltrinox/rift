@@ -247,14 +247,15 @@ class Agent {
 
         let agentType = this.agent_type
         let agentId = this.id
-        // async function getUserInput() {
-        //     PubSub.sub(`${agentType}_${agentId}_chat_request`, (chat) => {
-        //         return new Promise<AgentChatRequest>((resolve, reject) => { });
-        //     })
-        // }
-        return "BLAH BLAH"
+
+        console.log('agentType:', agentType)
+        console.log('agentId:', agentId)
+
+        // return "BLAH BLAH"
         async function getUserInput() {
             console.log('getUserInput')
+            console.log('agentType:', agentType)
+            console.log('agentId:', agentId)
             return new Promise((res, rej) => {
                 console.log('subscribing to changes')
                 PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
@@ -267,7 +268,6 @@ class Agent {
         console.log('RECEIVED USER INPUT___BLASTOOFFFFF')
         console.log(chatRequest)
         return chatRequest;
-
     }
     async handleUpdate(params: AgentUpdate) {
         console.log("handleUpdate")
@@ -562,7 +562,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         console.log(`agentIdentifier: ${agentIdentifier} `)
         this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })
         this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, agent.handleInputRequest.bind(this))
-        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, agent.handleChatRequest.bind(this))
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, agent.handleChatRequest.bind(agent))
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, agent.handleUpdate.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, agent.handleProgress.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
