@@ -15,7 +15,7 @@
 
   let chatWindow: HTMLDivElement;
   $: {
-    console.log("change");
+    // console.log("change");
     chatWindow?.scrollTo(0, chatWindow.scrollHeight);
   }
   let fixedToBottom: boolean;
@@ -55,14 +55,16 @@
 </script>
 
 <div bind:this={chatWindow} class="flex items-start flex-col overflow-y-auto">
-  {#each $state.agents[$state.selectedAgentId].chatHistory as item}
-    {#if item.role == "user"}
-      <UserInput value={item.content} />
-    {:else}
-      <Response value={item.content} />
+  {#if $state.selectedAgentId}
+    {#each $state.agents[$state.selectedAgentId].chatHistory as item}
+      {#if item.role == "user"}
+        <UserInput value={item.content} />
+      {:else}
+        <Response value={item.content} />
+      {/if}
+    {/each}
+    {#if !isDone}
+      <Response value={progressResponse} />
     {/if}
-  {/each}
-  {#if !isDone}
-    <Response value={progressResponse} />
   {/if}
 </div>

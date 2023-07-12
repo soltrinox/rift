@@ -13,7 +13,7 @@
 
     let expanded = false;
     export let id: string = "";
-    export let name: string = "rift-chat";
+    export let name: string = "rift_chat";
 
     let doneAgent = false;
     let hasNotification = false;

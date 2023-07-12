@@ -8,6 +8,7 @@
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
+    import type { AgentChatRequest, AgentInputRequest, AgentProgress, AgentResult, AgentUpdate } from "../../src/client";
 
   // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
   console.log("RESETTING VSCODE STATE");
@@ -16,7 +17,13 @@
   console.log(vscode.getState());
 
   onMount(() => {
-    //response is saved to state in ChatWebview.svelte
+    vscode.postMessage({
+        type: "runAgent",
+        params: {
+          agent_type: 'rift_chat',
+          agent_params: {}, 
+        },
+      });
     //get initial list of agents
     vscode.postMessage({ type: "listAgents" });
   });
@@ -35,71 +42,81 @@
   if (vscodeState) state.set(vscodeState);
   let progressResponse: string;
   const incomingMessage = (event: any) => {
-    // Listen for the response
+        console.log("ChatWebview event.data.type:",event.data.type);
+        // Listen for the response
+        
+        switch (event.data.type) {
+            case "input_request": 
+                const input_request = event.data.data as AgentInputRequest;
+                let agentId = input_request.agent_id;
+                let status = input_request.tasks.task.status;
+                break;
+            case "selectedAgentId":
+                console.log(`chatwebview selectedAgentId: ${event.data.data}`);
+                state.update((state) => ({
+                  ...state,
+                  selectedAgentId: event.data.data,
+                }));
 
-    switch (event.data.type) {
-      case "selectedAgentId":
-        console.log(`chatwebview selectedAgentId: ${event.data.data}`);
-        state.update((state) => ({
-          ...state,
-          selectedAgentId: event.data.data,
-        }));
-      // TODO: focus the selected agent
-      case "chatProgress":
-        const progress = event.data.data as ChatAgentProgress;
-        const agentId = progress.id; //FIXME brent HARDCODED change later
-        progressResponse = progress.response;
-        // console.log(progressResponse);
-        isDone = progress.done;
+                // TODO: focus the selected agent
+            case "chatProgress":
+              const progress = event.data.data as ChatAgentProgress;
+              const agentId = progress.id; //FIXME brent HARDCODED change later
+              progressResponse = progress.response;
+              // console.log(progressResponse);
+              isDone = progress.done;
+                      break;
+                  
+            case "chat_request": 
+                const chat_request = event.data.data as AgentChatRequest;
+                break;
+            
+            case "update": 
+                const update = event.data.data as AgentUpdate;
+                break;
+            
+            case "result":
+                const result = event.data.data as AgentResult;
+            
+                break;
+            
+            case "progress": {
+                let progress = event.data.data as AgentProgress;
+                let agentId = progress.agent_id;
+                let status = progress.tasks.task.status;
 
-        // const randomLogSeverity = ["done", "progress"];
-        // let random = Math.floor(Math.random() * randomLogSeverity.length);
-        // // const randomLogMessage = [
-        //   "Things are going great",
-        //   "making progress",
-        //   "uh oh",
-        //   "something else",
-        // ];
-        // let random2 = Math.floor(Math.random() * randomLogMessage.length);
+                
 
-        // for sticky window^
-        if (isDone) {
-          state.update((state) => ({
-            ...state,
-            agents: {
-              ...state.agents,
-              [agentId]: {
-                ...state.agents[agentId],
-                chatHistory: [
-                  ...state.agents[agentId].chatHistory,
-                  { role: "assistant", content: progressResponse },
-                ],
-              },
-            },
-          }));
-          loading.set(false);
-          progressResponse = "";
+                // for sticky window^
+                if (status == "done") {
+                    state.update((state) => ({
+                        ...state,
+                        agents: {
+                            ...state.agents,
+                            [agentId]: {
+                                ...state.agents[agentId],
+                                chatHistory: [
+                                    ...state.agents[agentId].chatHistory,
+                                    {
+                                        role: "assistant",
+                                        content: progressResponse,
+                                    },
+                                ],
+                                tasks: state.agents[agentId].tasks,
+                            },
+                        },
+                    }));
+                    loading.set(false);
+                    progressResponse = "";
+                }
+            
+                break;
+            }
+            default:
+                console.log('no case matched for:', event.data.type, 'in LogWebview')
+                // throw new Error("no case matched: " + event.data);
         }
-        break;
-      case "agents":
-        console.log("new agents just dropped");
-        console.log(event.data.data);
-        agentRegistry = event.data.data;
-        //TODO store available agents
-        state.update((state) => ({
-          ...state,
-          availableAgents: agentRegistry,
-        }));
-        console.log("availableAgents in state" + JSON.stringify(agentRegistry));
-        break;
-      // case "chat_request":
-      //   console.log("chat_request");
-      //   console.log(event.data.data);
-      //   break;
-      default:
-        throw new Error("no case matched" + event.data);
-    }
-  };
+    };
 </script>
 
 <svelte:window on:message={incomingMessage} />

@@ -3,12 +3,12 @@
     import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
     import Logs from "./logs/Logs.svelte";
     import { DEFAULT_STATE, loading, state } from "./stores";
-    import type { AgentProgress, AgentRegistryItem } from "../../src/types";
+    import type { AgentRegistryItem } from "../../src/types";
     import Header from "./Header.svelte";
     import Chat from "./chat/Chat.svelte";
     import OmniBar from "./chat/OmniBar.svelte";
     import { onMount } from "svelte";
-
+    import type {AgentInputRequest, AgentChatRequest, AgentUpdate, AgentResult, AgentProgress} from '../../src/client'
     let agentRegistry: AgentRegistryItem[] = [];
 
     // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
@@ -17,26 +17,20 @@
     vscode.setState(DEFAULT_STATE);
     console.log(vscode.getState());
 
-    onMount(() => {
-        //response is saved to state in ChatWebview.svelte
-        //get initial list of agents
-        vscode.postMessage({ type: "listAgents" });
-    });
-
     state.subscribe((state) => {
         console.log("saving state");
         if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
             vscode.setState(state);
         }
     });
-    let agentOptions: { type: string; description?: string; svg?: string }[] = [
-        //TODO get from server
-        { type: "rift-chat", description: "ask me anything ab life bro" },
-        { type: "aider", description: "congrats ur now a 10x engineer" },
-        { type: "gpt-engineer", description: "an engineer but gpt" },
-        { type: "auto-code-review", description: "code review but meaner" },
-        { type: "repl-auto-debug", description: "let me debug for u" },
-    ];
+    // let agentOptions: { type: string; description?: string; svg?: string }[] = [
+    //     //TODO get from server
+    //     { type: "rift-chat", description: "ask me anything ab life bro" },
+    //     { type: "aider", description: "congrats ur now a 10x engineer" },
+    //     { type: "gpt-engineer", description: "an engineer but gpt" },
+    //     { type: "auto-code-review", description: "code review but meaner" },
+    //     { type: "repl-auto-debug", description: "let me debug for u" },
+    // ];
     let isDone = false;
     const vscodeState = vscode.getState();
     console.log("attempting to access vscode state:");
@@ -95,6 +89,7 @@
                     },
                 }));
 
+
                 console.log("After update");
                 console.log($state);
 
@@ -123,7 +118,11 @@
                 break;
             }
             default:
-                throw new Error("no case matched: " + event.data);
+                const notImportant = ['listAgents']
+                if(notImportant.includes(event.data.type)) return
+                
+                console.log('no case matched for:', event.data.type, 'in LogWebview')
+                // throw new Error("no case matched: " + event.data);
         }
     };
 </script>

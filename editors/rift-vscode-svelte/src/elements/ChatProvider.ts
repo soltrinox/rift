@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 // import { MorphLanguageClient, RunChatParams } from "../client";
 import * as client from "../client"
 import { getNonce } from "../getNonce";
-import { ChatAgentProgress } from "../types";
 import { logProvider } from "../extension";
 import { PubSub } from "../lib/PubSub";
 
@@ -48,6 +47,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         // Handles messages received from the webview
         webviewView.webview.onDidReceiveMessage(async (params: any) => {
             if (!this._view) throw new Error('no view')
+            console.log('ChatProvider.ts received message: ', params)
             switch (params.type) {
                 case "selectedAgentId":
                     logProvider._view?.webview.postMessage({ type: "selectedAgentId", data: params.selectedAgentId })
@@ -63,7 +63,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     let agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
                     console.log("Getting list of available agents");
                     this._view.webview.postMessage({
-                        type: 'agents',
+                        type: 'listAgents',
                         data: agents
                     });
                     break;
@@ -91,32 +91,11 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                 case "chatMessage": {
                     console.log("Sending publish message", params.messages)
                     PubSub.pub(`${params.agent_type}_${params.agent_id}_chat_request`, params.messages);
+                    break;
                 }
 
-                // Handle 'chatMessage' message
-                // case 'chatMessage':
-                //     editor = vscode.window.activeTextEditor;
-                //     let runChatParams: any = { message: params.message, messages: params.messages }
-                //     if (!editor) {
-                //         console.warn('No active text editor found');
-                //     } else {
-                //         // Get the uri and position of the current cursor
-                //         const doc = editor.document;
-                //         const position = editor.selection.active;
-                //         const textDocument = { uri: doc.uri.toString(), version: 0 }
-                //         runChatParams = { message: params.message, messages: params.messages, position, textDocument }
-                //     }
-                //     if (!params.message || !params.messages) throw new Error()
-                //     this.morph_language_client.run_chat(runChatParams, (progress) => {
-                //         console.log(progress)
-                //         if (!this._view) throw new Error('no view')
-                //         if (progress.done) console.log('WEBVIEW DONE RECEIVING / POSTING')
-                //         this._view.webview.postMessage({ type: 'chatProgress', data: progress });
-                //     })
-                //     break;
-
                 default:
-                    console.log('no case match')
+                    console.log('no case match for ', params.type, ' in ChatProvider.ts')
             }
 
         });

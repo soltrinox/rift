@@ -2,7 +2,7 @@ export type ChatAgentProgress = {
     id: string,
     response: string
     done: boolean
-};
+}; 
 
 export class ChatMessage {
     constructor(
@@ -25,13 +25,13 @@ export type AgentRegistryItem = {
 }
 
 
-// this is working
-export type AgentProgress = {
-    agent_id: string
-    agent_type: string
-    tasks: { subtasks: [{ description: string, status: string }] | [], task: { description: string, status: string } }
-    payload: any
-};
+// // this is working
+// export type AgentProgress = {
+//     agent_id: string
+//     agent_type: string
+//     tasks: { subtasks: [{ description: string, status: string }] | [], task: { description: string, status: string } }
+//     payload: any
+// };
 
 
 export class Agent {

@@ -40,8 +40,10 @@ export class LogProvider implements vscode.WebviewViewProvider {
         };
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
+        // from webview
         webviewView.webview.onDidReceiveMessage(async (data) => {
             if (!this._view) throw new Error('no view')
+            console.log('LogProvider.ts recieved:',)
             console.log(data)
             switch (data.type) {
                 case "selectedAgentId":
@@ -74,7 +76,7 @@ export class LogProvider implements vscode.WebviewViewProvider {
                     })
                     break;
                 default:
-                    console.log('no case match')
+                    console.log('no case match for ', data.type, ' in LogProvider.ts')
             }
 
         });
