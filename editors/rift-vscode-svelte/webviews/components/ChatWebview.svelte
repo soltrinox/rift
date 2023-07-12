@@ -125,7 +125,7 @@
                 }
             
                 break;
-            }
+            
             default:
                 console.log('no case matched for:', event.data.type, 'in LogWebview')
                 // throw new Error("no case matched: " + event.data);

@@ -57,19 +57,19 @@
 
                 break;
             }
-            case "chat_request": {
+            case "chat_request": 
                 const chat_request = event.data.data as AgentChatRequest;
                 break;
-            }
-            case "update": {
+            
+            case "update": 
                 const update = event.data.data as AgentUpdate;
                 break;
-            }
-            case "result": {
+            
+            case "result": 
                 const result = event.data.data as AgentResult;
                 break;
-            }
-            case "progress": {
+            
+            case "progress": 
                 let progress = event.data.data as AgentProgress;
                 let agentId = progress.agent_id;
                 let status = progress.tasks.task.status;
@@ -116,7 +116,7 @@
                     progressResponse = "";
                 }
                 break;
-            }
+            
             default:
                 const notImportant = ['listAgents']
                 if(notImportant.includes(event.data.type)) return
