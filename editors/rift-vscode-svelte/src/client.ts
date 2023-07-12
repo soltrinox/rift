@@ -77,7 +77,7 @@ class Agent {
     ranges: vscode.Range[] = []
     onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
     onStatusChange: vscode.Event<AgentStatus>
-    constructor(public readonly id: number, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
+    constructor(public readonly id: string, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
         this.id = id;
         this.status = 'running';
         this.agent_type = agent_type;

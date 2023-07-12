@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 // import { MorphLanguageClient, RunChatParams } from "../client";
-import * as client from "../client"
+import * as client from '../client'
 import { getNonce } from "../getNonce";
 import { logProvider } from "../extension";
 import { PubSub } from "../lib/PubSub";
+import { MorphLanguageClient } from "../client";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class ChatProvider implements vscode.WebviewViewProvider {
@@ -14,7 +15,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
     // Creates a new instance of `ChatProvider`.
     //  _extensionUri: The URI of the extension.
     //  morph_language_client: The MorphLanguageClient instance for communication with the server.
-    constructor(private readonly _extensionUri: vscode.Uri, public morph_language_client: client.MorphLanguageClient) {
+    constructor(private readonly _extensionUri: vscode.Uri, public morph_language_client: MorphLanguageClient) {
     }
 
     // Posts a message to the webview view.
