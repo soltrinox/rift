@@ -1,8 +1,15 @@
 <script lang="ts">
-  import {state} from "../../stores";
-  import type {AgentRegistryItem} from "../../../../src/types";
+  import { state } from "../../stores";
+  import type { AgentRegistryItem } from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
-  import {onMount} from "svelte";
+  import { onMount } from "svelte";
+  import type { SvelteStore } from "../../../../src/types";
+
+  let store: SvelteStore;
+
+  state.subscribe((s) => {
+    store = s;
+  });
 
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 
@@ -24,7 +31,7 @@
       console.log("agent_type: " + availableAgents[activeId].agent_type);
 
       console.log("THIS IS THE STATE");
-      console.log($state);
+      console.log(store);
 
       vscode.postMessage({
         type: "runAgent",
@@ -36,6 +43,9 @@
     }
     if (e.key == "ArrowDown") {
       console.log("ArrowDown");
+      console.log(`${store.selectedAgentId}`);
+      console.log("THIS IS THE STATE");
+      console.log(store);
       e.preventDefault();
       if (activeId == availableAgents.length - 1) activeId = 0;
       else activeId++;
@@ -48,20 +58,20 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeyDown}/>
+<svelte:window on:keydown={handleKeyDown} />
 <div
-        class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
+  class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
   {#each availableAgents.filter((agent) => {
     let searchString = inputValue.substring(1).toLowerCase();
     return agent.agent_type
-            .toLowerCase()
-            .includes(searchString) || agent.display_name
-            .toLowerCase()
-            .includes(searchString) || agent.agent_description
-            .toLowerCase()
-            .includes(searchString);
+        .toLowerCase()
+        .includes(searchString) || agent.display_name
+        .toLowerCase()
+        .includes(searchString) || agent.agent_description
+        .toLowerCase()
+        .includes(searchString);
   }) as agent, index}
-    <DropdownCard {agent} focused={index === activeId}/>
+    <DropdownCard {agent} focused={index === activeId} />
   {/each}
 </div>

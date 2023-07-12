@@ -1,7 +1,7 @@
 <script lang="ts">
-    import {state} from "../stores";
+    import { state } from "../stores";
     import Agent from "./Agent.svelte";
-    import type {SvelteStore} from "../../../src/types";
+    import type { SvelteStore } from "../../../src/types";
 
     let store: SvelteStore;
     state.subscribe((s) => {

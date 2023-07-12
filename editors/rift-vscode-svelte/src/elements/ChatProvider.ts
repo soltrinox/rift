@@ -4,6 +4,7 @@ import * as client from "../client"
 import { getNonce } from "../getNonce";
 import { ChatAgentProgress } from "../types";
 import { logProvider } from "../extension";
+import { PubSub } from "../lib/PubSub";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class ChatProvider implements vscode.WebviewViewProvider {
@@ -84,6 +85,11 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     const runAgentParams: client.RunAgentParams = { agent_type: params.params.agent_type, agent_params: { position, textDocument } };
                     await this.morph_language_client.run(runAgentParams);
                     break;
+
+                case "chatMessage": {
+                    console.log("Sending publish message", params.messages)
+                    PubSub.pub(`${params.agent_type}_${params.agent_id}_chat_request`, params.messages);
+                }
 
                 // Handle 'chatMessage' message
                 // case 'chatMessage':

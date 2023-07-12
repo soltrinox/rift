@@ -83,6 +83,7 @@
                         ...state.agents,
                         [agentId]: {
                             ...state.agents[agentId],
+                            type: progress.agent_type,
                             tasks: progress.tasks,
                         },
                     },

@@ -3,6 +3,7 @@
   import UserSvg from "../icons/UserSvg.svelte";
   import { loading, state } from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
+  import type { SvelteStore } from "../../../src/types";
   let dropdownOpen = false;
   let isFocused = true;
   let currentSlashCommand = "";
@@ -19,13 +20,19 @@
     textarea.blur();
     loading.set(true);
 
-    vscode.postMessage({
+    let message = {
       type: "chatMessage",
+      agent_id: $state.selectedAgentId,
+      agent_type: $state.agents[$state.selectedAgentId].type,
       messages: $state.agents[$state.selectedAgentId].chatHistory,
       message: textarea.value,
-    });
+    };
+    console.log("sendMEssage", message);
+
+    vscode.postMessage(message);
+
     console.log("updating state...");
-    state.update((state) => ({
+    state.update((state: SvelteStore) => ({
       ...state,
       agents: {
         ...state.agents,

@@ -20,6 +20,7 @@ import { ChatAgentProgress } from './types';
 import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
 import { chatProvider, logProvider } from './extension';
+import { PubSub } from './lib/PubSub';
 
 let client: LanguageClient //LanguageClient
 
@@ -200,8 +201,10 @@ class Agent {
     ranges: vscode.Range[] = []
     onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
     onStatusChange: vscode.Event<AgentStatus>
-    constructor(public readonly id: number, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
-        this.status = 'running'
+    constructor(public readonly id: number, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
+        this.id = id;
+        this.status = 'running';
+        this.agent_type = agent_type;
         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
         this.onStatusChange = this.onStatusChangeEmitter.event
@@ -211,33 +214,45 @@ class Agent {
         chatProvider._view?.webview.postMessage({ type: 'input_request', data: params });
         logProvider._view?.webview.postMessage({ type: 'input_request', data: params });
 
-        async function waitForMessage() {
-            return new Promise<AgentInputRequest>((accept, reject) => {
-                chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
-                    try {
-                        if (!chatProvider._view) throw new Error('no view')
-                        switch (params.type) {
-                            case "chatMessage": {
-                                console.log("chatMessage");
-                                inputRequest = { msg: params.params.message };
-                                accept(inputRequest);
-                                break;
-                            }
-                        }
-                    } catch (error) {
-                        reject(error);
-                    }
-                });
-            }
-            );
-        }
-        let inputRequest: AgentInputRequest = await waitForMessage();
-        return inputRequest;
+        // async function waitForMessage() {
+        //     return new Promise<AgentInputRequest>((accept, reject) => {
+        //         chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
+        //             try {
+        //                 if (!chatProvider._view) throw new Error('no view')
+        //                 switch (params.type) {
+        //                     case "chatMessage": {
+        //                         console.log("chatMessage");
+        //                         inputRequest = { msg: params.params.message };
+        //                         accept(inputRequest);
+        //                         break;
+        //                     }
+        //                 }
+        //             } catch (error) {
+        //                 reject(error);
+        //             }
+        //         });
+        //     }
+        //     );
+        //}
+        //let inputRequest: AgentInputRequest = await waitForMessage();
+        //return inputRequest;
     }
     async handleChatRequest(params: AgentChatRequest) {
-        console.log("handleChatRequest")
+        console.log("handleChatRequest");
         chatProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
         logProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
+        PubSub.sub(`${this.agent_type}_${this.id}_chat_request`, (chat) => {
+            console.log("subscription message!", chat);
+        });
+        // async function getUserInput() {
+
+        //     return new Promise<AgentChatRequest>((accept, reject) => {
+
+        //     });
+        // }
+        // let chatRequest = await getUserInput();
+        // return chatRequest;
+
     }
     async handleUpdate(params: AgentUpdate) {
         console.log("handleUpdate")
@@ -403,7 +418,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
 
     async create_client() {
         if (this.client && this.client.state != State.Stopped) {
-            console.log(`client already exists and is in state ${this.client.state}`)
+            console.log(`client already exists and is in state ${this.client.state} `)
             return
         }
         const port = DEFAULT_PORT
@@ -417,7 +432,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
                 console.error(e)
             }
         }
-        console.log(`server detected on port ${port}`)
+        console.log(`server detected on port ${port} `)
         serverOptions = tcpServerOptions(this.context, port)
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{ language: '*' }]
@@ -427,7 +442,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             serverOptions, clientOptions,
         )
         this.client.onDidChangeState(async e => {
-            console.log(`client state changed: ${e.oldState} ▸ ${e.newState}`)
+            console.log(`client state changed: ${e.oldState} ▸ ${e.newState} `)
             if (e.newState === State.Stopped) {
                 console.log('morph server stopped, restarting...')
                 await this.client.dispose()
@@ -467,18 +482,18 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         return result
     }
 
-    async run_agent(params: RunAgentParams) {
-        if (!this.client) {
-            throw new Error(`waiting for a connection to rift-engine, please make sure the rift-engine is running on port ${DEFAULT_PORT}`) // [todo] better ux here.
-        }
-        const result: RunAgentResult = await this.client.sendRequest('morph/run', params)
-        const agent = new Agent(result.id, params.agent_params.position, params.agent_params.textDocument)
-        agent.onStatusChange(e => this.changeLensEmitter.fire())
-        this.agents.set(result.id.toString(), agent)
-        // note this returns fast and then the updates are sent via notifications
-        this.changeLensEmitter.fire()
-        return `starting agent ${result.id}...`
-    }
+    // async run_agent(params: RunAgentParams) {
+    //     if (!this.client) {
+    //         throw new Error(`waiting for a connection to rift - engine, please make sure the rift - engine is running on port ${ DEFAULT_PORT } `) // [todo] better ux here.
+    //     }
+    //     const result: RunAgentResult = await this.client.sendRequest('morph/run', params)
+    //     const agent = new Agent(result.id, params.agent_params.position, params.agent_params.textDocument)
+    //     agent.onStatusChange(e => this.changeLensEmitter.fire())
+    //     this.agents.set(result.id.toString(), agent)
+    //     // note this returns fast and then the updates are sent via notifications
+    //     this.changeLensEmitter.fire()
+    //     return `starting agent ${ result.id }...`
+    // }
 
     // async run_agent_sync(params: RunCodeHelperParams) {
     //     console.log("run_agent_sync")
@@ -520,14 +535,14 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         const agent_id = result.id;
         const agent_type = params.agent_type;
 
-        const agent = new Agent(result.id, params.agent_params.position, params.agent_params.textDocument)
+        const agent = new Agent(result.id, agent_type, params.agent_params.position, params.agent_params.textDocument)
         agent.onStatusChange(e => this.changeLensEmitter.fire())
         this.agents.set(result.id.toString(), agent)
         this.changeLensEmitter.fire()
 
-        console.log(`running ${agent_type}`)
-        const agentIdentifier = `${agent_type}_${agent_id}`
-        console.log(`agentIdentifier: ${agentIdentifier}`)
+        console.log(`running ${agent_type} `)
+        const agentIdentifier = `${agent_type}_${agent_id} `
+        console.log(`agentIdentifier: ${agentIdentifier} `)
         this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })
         this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, agent.handleInputRequest.bind(this))
         this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, agent.handleChatRequest.bind(this))

@@ -8,8 +8,8 @@
     import EllipsisSvg from "../icons/EllipsisSvg.svelte";
     import EllipsisDarkSvg from "../icons/EllipsisDarkSvg.svelte";
     import Log from "./Log.svelte";
-    import {state} from "../stores";
-    import type {SvelteStore} from "../../../src/types";
+    import { state } from "../stores";
+    import type { SvelteStore } from "../../../src/types";
 
     let expanded = false;
     export let id: string = "";
@@ -19,11 +19,6 @@
     let hasNotification = false;
 
     let isDropdownOpen = false; // default state (dropdown close)
-
-    let store: SvelteStore;
-    const unsubscribe = state.subscribe((s) => {
-        store = s;
-    });
 
     function handleMessage(
         event: CustomEvent<{
@@ -59,37 +54,46 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        //     const omnibar = document.getElementById(
-        //         "omnibar"
-        //     ) as HTMLTextAreaElement;
-        //     omnibar?.focus();
-        //     omnibar.value = "/rift-chat";
-        //     hasNotification = false;
-        //     $state.agents[id].logs.splice(0);
+        const omnibar = document.getElementById(
+            "omnibar"
+        ) as HTMLTextAreaElement;
+        omnibar?.focus();
+        hasNotification = false;
+        state.update((state) => ({
+            ...state,
+            selectedAgentId: id,
+        }));
+
+        console.log("This is the state - Logs");
+        console.log($state);
     };
 </script>
 
 <div>
-    <div
-        class="flex"
-        on:click={() => (expanded = !expanded)}
-        on:keydown={() => (expanded = !expanded)}
-    >
+    <div class="flex">
         <div
             class="flex select-none hover:text-[var(--vscode-list-hoverBackground)]"
         >
             {#if expanded == false}
-                <div class="mx-1 mt-1.5">
+                <div
+                    class="mx-1 mt-1.5"
+                    on:click={() => (expanded = !expanded)}
+                    on:keydown={() => (expanded = !expanded)}
+                >
                     <ArrowRightSvg />
                 </div>
             {:else}
-                <div class="mx-1 mt-1.5">
+                <div
+                    class="mx-1 mt-1.5"
+                    on:click={() => (expanded = !expanded)}
+                    on:keydown={() => (expanded = !expanded)}
+                >
                     <ArrowDownSvg />
                 </div>
             {/if}
-            {#if store.agents[id].tasks.task.status == "done"}
+            {#if $state.agents[id].tasks.task.status == "done"}
                 <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
-            {:else if store.agents[id].tasks.task.status == "running"}
+            {:else if $state.agents[id].tasks.task.status == "running"}
                 <div class="mx-2 mt-0.5"><LogYellow /></div>
             {:else}
                 <div class="mx-2 mt-0.5"><LogRed /></div>
@@ -139,8 +143,8 @@
         </div>
     </div>
     <div hidden={!expanded}>
-        {#if store.agents[id].tasks.subtasks.length > 0}
-            {#each store.agents[id].tasks.subtasks as subtask}
+        {#if $state.agents[id].tasks.subtasks.length > 0}
+            {#each $state.agents[id].tasks.subtasks as subtask}
                 <Log {subtask} on:message={handleMessage} />
             {/each}
         {/if}

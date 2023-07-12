@@ -2,6 +2,7 @@
   import SendSvg from "../icons/SendSvg.svelte";
   import UserSvg from "../icons/UserSvg.svelte";
   import { loading, state } from "../stores";
+  import type { SvelteStore } from "../../../src/types";
   export let value: string = "";
 
   function resize(event: Event) {
@@ -18,6 +19,8 @@
 
     vscode.postMessage({
       type: "chatMessage",
+      agent_id: $state.selectedAgentId,
+      agent_type: $state.agents[$state.selectedAgentId].type,
       messages: $state.agents[$state.selectedAgentId].chatHistory,
       message: textarea.value,
     });
