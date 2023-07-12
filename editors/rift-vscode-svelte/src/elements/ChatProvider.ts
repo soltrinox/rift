@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
 // import { MorphLanguageClient, RunChatParams } from "../client";
-import * as client from '../client'
+// import * as client from '../client'
+
 import { getNonce } from "../getNonce";
 import { logProvider } from "../extension";
 import   PubSub   from "../lib/PubSub";
-import { MorphLanguageClient } from "../client";
+import { AgentRegistryItem, MorphLanguageClient, RunAgentParams } from "../client";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class ChatProvider implements vscode.WebviewViewProvider {
@@ -61,7 +62,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
                 // Handle 'getAgents' message
                 case "listAgents":
-                    let agents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
+                    let agents: AgentRegistryItem[] = await this.morph_language_client.list_agents();
                     console.log("Getting list of available agents");
                     this.postMessage('listAgents', agents)
                     break;
@@ -82,7 +83,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     let position = editor.selection.active;
 
 
-                    const runAgentParams: client.RunAgentParams = { agent_type: params.params.agent_type, agent_params: { position, textDocument } };
+                    const runAgentParams: RunAgentParams = { agent_type: params.params.agent_type, agent_params: { position, textDocument } };
                     const result = await this.morph_language_client.run(runAgentParams);
                     this.postMessage('result', result)
                     break;
@@ -152,3 +153,4 @@ export class ChatProvider implements vscode.WebviewViewProvider {
             </html>`;
     }
 }
+

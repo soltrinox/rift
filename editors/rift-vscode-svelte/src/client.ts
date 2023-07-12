@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode'
+import type { workspace, ExtensionContext } from 'vscode'
 import * as vscode from 'vscode'
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
 import {
@@ -16,11 +16,12 @@ import {
 } from 'vscode-languageclient/node'
 import * as net from 'net'
 import { join } from 'path';
-import { ChatAgentProgress } from './types';
+import type { ChatAgentProgress } from './types';
 import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
 import { chatProvider, logProvider } from './extension';
 import PubSub from './lib/PubSub';
+
 
 let client: LanguageClient //LanguageClient
 
@@ -561,13 +562,13 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         const agentIdentifier = `${agent_type}_${agent_id} `
         console.log(`agentIdentifier: ${agentIdentifier} `)
         this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })
-        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, agent.handleInputRequest.bind(this))
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, agent.handleInputRequest.bind(agent))
         this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, agent.handleChatRequest.bind(agent))
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, agent.handleUpdate.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, agent.handleProgress.bind(this)) // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, agent.handleUpdate.bind(agent)) // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, agent.handleProgress.bind(agent)) // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, agent.handleResult.bind(this)) // this should be custom
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, agent.handleResult.bind(agent)) // this should be custom
 
 
         return {id: agent_id, type: agent_type}// return agent_id to the webview

@@ -39,7 +39,8 @@
   });
 
   state.subscribe((state) => {
-    console.log("saving state");
+    console.log("saving state:");
+    console.log(state)
     if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
       vscode.setState(state);
     }
@@ -90,7 +91,7 @@
               ...prevState.agents,
               [agent_id]: {
                 ...prevState.agents[agent_id],
-                chatHistory: chat_request.messages
+                chatHistory: [...chat_request.messages]
               }
             }
           })
@@ -141,27 +142,27 @@
         // })
 
         // for sticky window^
-        if (status == "done") {
-          state.update((state) => ({
-            ...state,
-            agents: {
-              ...state.agents,
-              [agentId]: {
-                ...state.agents[agentId],
-                chatHistory: [
-                  ...state.agents[agentId].chatHistory,
-                  {
-                    role: "assistant",
-                    content: progressResponse,
-                  },
-                ],
-                tasks: state.agents[agentId].tasks,
-              },
-            },
-          }));
-          loading.set(false);
-          progressResponse = "";
-        }
+        // if (status == "done") {
+        //   state.update((state) => ({
+        //     ...state,
+        //     agents: {
+        //       ...state.agents,
+        //       [agentId]: {
+        //         ...state.agents[agentId],
+        //         chatHistory: [
+        //           ...state.agents[agentId].chatHistory,
+        //           {
+        //             role: "assistant",
+        //             content: progressResponse,
+        //           },
+        //         ],
+        //         tasks: state.agents[agentId].tasks,
+        //       },
+        //     },
+        //   }));
+        //   loading.set(false);
+        //   progressResponse = "";
+        // }
 
         break;
       }

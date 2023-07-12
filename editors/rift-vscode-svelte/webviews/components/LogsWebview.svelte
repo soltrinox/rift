@@ -17,12 +17,13 @@
     vscode.setState(DEFAULT_STATE);
     console.log(vscode.getState());
 
-    state.subscribe((state) => {
-        console.log("saving state");
-        if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
-            vscode.setState(state);
-        }
-    });
+    // state.subscribe((state) => {
+    //     console.log("saving state");
+    //     if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
+    //         vscode.setState(state);
+    //     }
+    // });
+    
     // let agentOptions: { type: string; description?: string; svg?: string }[] = [
     //     //TODO get from server
     //     { type: "rift-chat", description: "ask me anything ab life bro" },

@@ -55,8 +55,8 @@
 </script>
 
 <div bind:this={chatWindow} class="flex items-start flex-col overflow-y-auto">
-  {#if $state.selectedAgentId}
-    {#each $state.agents[$state.selectedAgentId].chatHistory as item}
+
+    {#each $state.agents[$state.selectedAgentId]?.chatHistory ?? [] as item}
       {#if item.role == "user"}
         <UserInput value={item.content} />
       {:else}
@@ -66,5 +66,5 @@
     {#if !isDone}
       <Response value={progressResponse} />
     {/if}
-  {/if}
+
 </div>
