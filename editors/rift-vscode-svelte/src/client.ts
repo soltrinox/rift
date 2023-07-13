@@ -137,6 +137,13 @@ export interface AgentProgress {
     payload: any,
 }
 
+export interface ChatProgress extends AgentProgress {
+    response: string,
+    done_streaming: boolean,
+}
+
+
+
 
 /** Represents an agent */
 // class Agent {
@@ -277,11 +284,9 @@ class Agent {
         //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
         logProvider._view?.webview.postMessage({ type: 'update', data: params });
     }
-    async handleProgress(params: AgentProgress) {
+    async handleProgress(params: ChatProgress) {
         console.log("handleProgress")
-        console.log("handleProgress")
-        //chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
-        logProvider._view?.webview.postMessage({ type: 'progress', data: { ...params } });
+        chatProvider._view?.webview.postMessage({ type: 'chatProgress', data: params });
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
     }
     async handleResult(params: AgentResult) {

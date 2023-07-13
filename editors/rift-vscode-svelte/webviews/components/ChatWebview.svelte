@@ -13,6 +13,7 @@
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
   import type {
+    ChatProgress,
     AgentChatRequest,
     AgentInputRequest,
     AgentResult,
@@ -66,11 +67,12 @@
 
       // TODO: focus the selected agent
       case "chatProgress": {
-        const progress = event.data.data as ChatAgentProgress;
-        const agentId = progress.id; //FIXME brent HARDCODED change later
+        console.log(event.data.data);
+        const progress = event.data.data as ChatProgress;
+        const agentId = progress.agent_id; //FIXME brent HARDCODED change later
         progressResponse = progress.response;
-        // console.log(progressResponse);
-        isDone = progress.done;
+        //console.log(progressResponse);
+        isDone = progress.done_streaming;
         break;
       }
       case "chat_request": {
@@ -119,45 +121,43 @@
         let status = progress.tasks.task.status;
 
         // FIXME brent -- crucial to determine where we initalize a new agent. I'm just tryna get this set up now.
-        // state.update(prevState => {
-        //   return (
-        //     {
-        //       ...prevState,
-        //       agents: {
-        //         ...prevState.agents,
-        //         [agentId]: {
-        //           agent_id: agentId,
-        //           agent_type: progress.agent_type,
-        //           ...prevState.agents[agentId],
-        //           tasks: progress.tasks
-        //         }
-        //       }
-        //     }
-        //   )
-        // })
+        state.update((prevState) => {
+          return {
+            ...prevState,
+            agents: {
+              ...prevState.agents,
+              [agentId]: {
+                agent_id: agentId,
+                agent_type: progress.agent_type,
+                ...prevState.agents[agentId],
+                tasks: progress.tasks,
+              },
+            },
+          };
+        });
 
         // for sticky window^
-        // if (status == "done") {
-        //   state.update((state) => ({
-        //     ...state,
-        //     agents: {
-        //       ...state.agents,
-        //       [agentId]: {
-        //         ...state.agents[agentId],
-        //         chatHistory: [
-        //           ...state.agents[agentId].chatHistory,
-        //           {
-        //             role: "assistant",
-        //             content: progressResponse,
-        //           },
-        //         ],
-        //         tasks: state.agents[agentId].tasks,
-        //       },
-        //     },
-        //   }));
-        //   loading.set(false);
-        //   progressResponse = "";
-        // }
+        if (status == "done") {
+          state.update((state) => ({
+            ...state,
+            agents: {
+              ...state.agents,
+              [agentId]: {
+                ...state.agents[agentId],
+                chatHistory: [
+                  ...state.agents[agentId].chatHistory,
+                  {
+                    role: "assistant",
+                    content: progressResponse,
+                  },
+                ],
+                tasks: state.agents[agentId].tasks,
+              },
+            },
+          }));
+          loading.set(false);
+          progressResponse = "";
+        }
 
         break;
       }
