@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
-import { MorphLanguageClient, RunChatParams } from "../client";
+import vscode from "vscode";
+import type { MorphLanguageClient, RunChatParams } from "../client";
 import { getNonce } from "../getNonce";
 import { ChatAgentProgress } from "../types";
 import { chatProvider } from "../extension";

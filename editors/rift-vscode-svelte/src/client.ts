@@ -17,7 +17,6 @@ import {
 import * as net from 'net'
 import { join } from 'path';
 import type { ChatAgentProgress } from './types';
-import delay from 'delay'
 import * as tcpPortUsed from 'tcp-port-used'
 import { chatProvider, logProvider } from './extension';
 import PubSub from './lib/PubSub';
@@ -308,7 +307,7 @@ type AgentType = "chat" | "code-completion"
 export type AgentIdentifier = string
 
 export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLens> {
-    client: LanguageClient
+    client: LanguageClient|undefined = undefined
     red: vscode.TextEditorDecorationType
     green: vscode.TextEditorDecorationType
     context: vscode.ExtensionContext
@@ -461,7 +460,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             console.log(`client state changed: ${e.oldState} ▸ ${e.newState} `)
             if (e.newState === State.Stopped) {
                 console.log('morph server stopped, restarting...')
-                await this.client.dispose()
+                await this.client?.dispose()
                 console.log('morph server disposed')
                 await this.create_client()
             }
@@ -471,8 +470,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     }
 
 
-    async on_config_change(args) {
-        const x = await this.client.sendRequest('workspace/didChangeConfiguration', {})
+    async on_config_change(_args :any) {
+        const x = await this.client?.sendRequest('workspace/didChangeConfiguration', {})
     }
 
 
@@ -490,11 +489,11 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     async notify_focus(tdpp: TextDocumentPositionParams | { symbol: string }) {
         // [todo] unused
         console.log(tdpp)
-        await this.client.sendNotification('morph/focus', tdpp)
+        await this.client?.sendNotification('morph/focus', tdpp)
     }
 
     async hello_world() {
-        const result = await this.client.sendRequest('hello_world')
+        const result = await this.client?.sendRequest('hello_world')
         return result
     }
 
@@ -547,6 +546,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     // with no-ops for all callbacks except for `send_progress`
 
     async run(params: RunAgentParams) {
+        if(!this.client) throw new Error()
         const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
         console.log('run agent result')
         console.log(result)
@@ -593,7 +593,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
 
 
     dispose() {
-        this.client.dispose()
+        this.client?.dispose()
     }
 
     // async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {

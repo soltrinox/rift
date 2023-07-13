@@ -1,4 +1,4 @@
-import { Tasks } from "./client";
+import type { Tasks } from "./client";
 
 export type ChatAgentProgress = {
     id: string,

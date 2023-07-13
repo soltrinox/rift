@@ -5,7 +5,7 @@ import * as vscode from "vscode";
 import { getNonce } from "../getNonce";
 import { logProvider } from "../extension";
 import   PubSub   from "../lib/PubSub";
-import { AgentRegistryItem, MorphLanguageClient, RunAgentParams } from "../client";
+import type { AgentRegistryItem, MorphLanguageClient, RunAgentParams } from "../client";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class ChatProvider implements vscode.WebviewViewProvider {
