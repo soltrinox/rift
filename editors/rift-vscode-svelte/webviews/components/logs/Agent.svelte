@@ -92,9 +92,9 @@
                     <ArrowDownSvg />
                 </div>
             {/if}
-            {#if $state.agents[id].tasks.task.status == "done"}
+            {#if $state.agents[id].tasks?.task.status == "done"}
                 <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
-            {:else if $state.agents[id].tasks.task.status == "running"}
+            {:else if $state.agents[id].tasks?.task.status == "running"}
                 <div class="mx-2 mt-0.5"><LogYellow /></div>
             {:else}
                 <div class="mx-2 mt-0.5"><LogRed /></div>

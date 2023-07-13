@@ -27,13 +27,6 @@
   console.log(vscode.getState());
 
   onMount(() => {
-    vscode.postMessage({
-      type: "runAgent",
-      params: {
-        agent_type: "rift_chat",
-        agent_params: {},
-      },
-    });
     //get initial list of agents
     vscode.postMessage({ type: "listAgents" });
   });
@@ -52,6 +45,7 @@
   console.log(vscodeState);
   if (vscodeState) state.set(vscodeState);
   let progressResponse: string;
+
   const incomingMessage = (event: any) => {
     console.log("ChatWebview event.data.type:", event.data.type);
     // Listen for the response

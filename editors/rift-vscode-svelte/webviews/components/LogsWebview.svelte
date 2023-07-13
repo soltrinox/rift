@@ -9,10 +9,10 @@
     import OmniBar from "./chat/OmniBar.svelte";
     import { onMount } from "svelte";
     import type {
-        AgentInputRequest,
         AgentChatRequest,
-        AgentUpdate,
+        AgentInputRequest,
         AgentResult,
+        AgentUpdate,
         AgentProgress,
     } from "../../src/client";
     let agentRegistry: AgentRegistryItem[] = [];
@@ -44,6 +44,7 @@
     console.log(vscodeState);
     if (vscodeState) state.set(vscodeState);
     let progressResponse: string;
+
     const incomingMessage = (event: any) => {
         console.log("LogsWebview event.data.type: " + event.data.type);
         console.log(

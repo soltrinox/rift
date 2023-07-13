@@ -1,8 +1,13 @@
-import vscode from "vscode";
-import type { MorphLanguageClient, RunChatParams } from "../client";
+import * as vscode from "vscode";
+// import { MorphLanguageClient, RunChatParams } from "../client";
+// import * as client from '../client'
+
 import { getNonce } from "../getNonce";
-import { ChatAgentProgress } from "../types";
+import { logProvider } from "../extension";
+import PubSub from "../lib/PubSub";
+import type { AgentRegistryItem, MorphLanguageClient, RunAgentParams } from "../client";
 import { chatProvider } from "../extension";
+
 
 export class LogProvider implements vscode.WebviewViewProvider {
     _view?: vscode.WebviewView;
