@@ -113,6 +113,7 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
     "@types/sass": "^1.45.0",
+    "@types/tcp-port-used": "^1.0.1",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.54.0",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
