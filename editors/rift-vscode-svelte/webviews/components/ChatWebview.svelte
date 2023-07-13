@@ -40,7 +40,7 @@
 
   state.subscribe((state) => {
     console.log("saving state:");
-    console.log(state)
+    console.log(state);
     if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
       vscode.setState(state);
     }
@@ -82,21 +82,21 @@
         const chat_request = event.data.data as AgentChatRequest;
         console.log("chat_request");
         console.log(chat_request);
-        let agent_id = chat_request.id
-        state.update(prevState => {
-          if(!agent_id || agent_id === undefined) throw new Error('id not passed to webview')
-          return ({
+        let agent_id = chat_request.id;
+        state.update((prevState) => {
+          if (!agent_id || agent_id === undefined)
+            throw new Error("id not passed to webview");
+          return {
             ...prevState,
             agents: {
               ...prevState.agents,
               [agent_id]: {
                 ...prevState.agents[agent_id],
-                chatHistory: [...chat_request.messages]
-              }
-            }
-          })
-        })
-        
+                chatHistory: [...chat_request.messages],
+              },
+            },
+          };
+        });
 
         break;
       }
@@ -166,8 +166,21 @@
 
         break;
       }
+
+      case "listAgents":
+        console.log("new agents just dropped");
+        console.log(event.data.data);
+        agentRegistry = event.data.data;
+        //TODO store available agents
+        state.update((state) => ({
+          ...state,
+          availableAgents: agentRegistry,
+        }));
+        console.log("availableAgents in state" + JSON.stringify(agentRegistry));
+        break;
+
       default:
-        console.log("no case matched for:", event.data.type, "in LogWebview");
+        console.log("no case matched for:", event.data.type, "in ChatWebview");
       // throw new Error("no case matched: " + event.data);
     }
   };

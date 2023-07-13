@@ -8,7 +8,13 @@
     import Chat from "./chat/Chat.svelte";
     import OmniBar from "./chat/OmniBar.svelte";
     import { onMount } from "svelte";
-    import type {AgentInputRequest, AgentChatRequest, AgentUpdate, AgentResult, AgentProgress} from '../../src/client'
+    import type {
+        AgentInputRequest,
+        AgentChatRequest,
+        AgentUpdate,
+        AgentResult,
+        AgentProgress,
+    } from "../../src/client";
     let agentRegistry: AgentRegistryItem[] = [];
 
     // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
@@ -23,7 +29,7 @@
     //         vscode.setState(state);
     //     }
     // });
-    
+
     // let agentOptions: { type: string; description?: string; svg?: string }[] = [
     //     //TODO get from server
     //     { type: "rift-chat", description: "ask me anything ab life bro" },
@@ -51,6 +57,7 @@
                     ...state,
                     selectedAgentId: event.data.data.selectedAgentId,
                 }));
+                break;
             case "input_request": {
                 const input_request = event.data.data as AgentInputRequest;
                 // let agentId = input_request.agent_id;
@@ -58,19 +65,20 @@
 
                 break;
             }
-            case "chat_request": 
+            case "chat_request":
                 const chat_request = event.data.data as AgentChatRequest;
                 break;
-            
-            case "update": 
+
+            case "update":
                 const update = event.data.data as AgentUpdate;
                 break;
-            
-            case "result": 
+
+            case "result":
                 const result = event.data.data as AgentResult;
                 break;
-            
-            case "progress": 
+
+            case "progress":
+                console.log("receive progress in LogsWebview");
                 let progress = event.data.data as AgentProgress;
                 let agentId = progress.agent_id;
                 let status = progress.tasks.task.status;
@@ -89,7 +97,6 @@
                         },
                     },
                 }));
-
 
                 console.log("After update");
                 console.log($state);
@@ -117,13 +124,14 @@
                     progressResponse = "";
                 }
                 break;
-            
+
             default:
-                const notImportant = ['listAgents']
-                if(notImportant.includes(event.data.type)) return
-                
-                console.log('no case matched for:', event.data.type, 'in LogWebview')
-                // throw new Error("no case matched: " + event.data);
+                console.log(
+                    "no case matched for:",
+                    event.data.type,
+                    "in LogWebview"
+                );
+            // throw new Error("no case matched: " + event.data);
         }
     };
 </script>

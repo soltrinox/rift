@@ -242,8 +242,8 @@ class Agent {
     }
     async handleChatRequest(params: AgentChatRequest) {
         console.log("handleChatRequest");
-        chatProvider._view?.webview.postMessage({ type: 'chat_request', data: {...params, id: this.id} });
-        logProvider._view?.webview.postMessage({ type: 'chat_request', data: params });
+        chatProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
+        logProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
 
         let agentType = this.agent_type
         let agentId = this.id
@@ -260,7 +260,8 @@ class Agent {
                 console.log('subscribing to changes')
                 PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
                     console.log('attempting to resolve promise')
-                res(message)})
+                    res(message)
+                })
             })
         }
         console.log("AWAITING USER UNPUT")
@@ -277,7 +278,7 @@ class Agent {
     async handleProgress(params: AgentProgress) {
         console.log("handleProgress")
         //chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
-        logProvider._view?.webview.postMessage({ type: 'progress', data: params });
+        logProvider._view?.webview.postMessage({ type: 'progress', data: { ...params, id: this.id } });
     }
     async handleResult(params: AgentResult) {
         console.log("handleResult")
@@ -307,7 +308,7 @@ type AgentType = "chat" | "code-completion"
 export type AgentIdentifier = string
 
 export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLens> {
-    client: LanguageClient|undefined = undefined
+    client: LanguageClient | undefined = undefined
     red: vscode.TextEditorDecorationType
     green: vscode.TextEditorDecorationType
     context: vscode.ExtensionContext
@@ -470,7 +471,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     }
 
 
-    async on_config_change(_args :any) {
+    async on_config_change(_args: any) {
         const x = await this.client?.sendRequest('workspace/didChangeConfiguration', {})
     }
 
@@ -546,7 +547,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     // with no-ops for all callbacks except for `send_progress`
 
     async run(params: RunAgentParams) {
-        if(!this.client) throw new Error()
+        if (!this.client) throw new Error()
         const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
         console.log('run agent result')
         console.log(result)
@@ -571,7 +572,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, agent.handleResult.bind(agent)) // this should be custom
 
 
-        return {id: agent_id, type: agent_type}// return agent_id to the webview
+        return { id: agent_id, type: agent_type }// return agent_id to the webview
     }
 
     // run should spawn an agent
