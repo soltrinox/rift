@@ -211,9 +211,6 @@ class Agent {
         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
         this.onStatusChange = this.onStatusChangeEmitter.event
-        PubSub.sub(`${this.agent_type}_${this.id}_chat_request`, (message) => {
-            this.getUserInput(message);
-        })
 
     }
     async handleInputRequest(params: AgentInputRequest) {
@@ -245,12 +242,6 @@ class Agent {
         //return inputRequest;
     }
 
-    async getUserInput(message?) {
-        return new Promise((res, rej) => {
-            res(message);
-        });
-    }
-
     async handleChatRequest(params: AgentChatRequest) {
         console.log("handleChatRequest");
         chatProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
@@ -263,20 +254,20 @@ class Agent {
         console.log('agentId:', agentId)
 
         // return "BLAH BLAH"
-        // async function getUserInput() {
-        //     console.log('getUserInput')
-        //     console.log('agentType:', agentType)
-        //     console.log('agentId:', agentId)
-        //     return new Promise((res, rej) => {
-        //         console.log('subscribing to changes')
-        //         PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
-        //             console.log('attempting to resolve promise')
-        //             res(message)
-        //         })
-        //     })
-        // }
+        async function getUserInput() {
+            console.log('getUserInput')
+            console.log('agentType:', agentType)
+            console.log('agentId:', agentId)
+            return new Promise((res, rej) => {
+                console.log('subscribing to changes')
+                PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
+                    console.log('attempting to resolve promise')
+                    res(message)
+                })
+            })
+        }
         console.log("AWAITING USER UNPUT")
-        let chatRequest = await this.getUserInput();
+        let chatRequest = await getUserInput();
         console.log('RECEIVED USER INPUT___BLASTOOFFFFF')
         console.log(chatRequest)
         return chatRequest;
