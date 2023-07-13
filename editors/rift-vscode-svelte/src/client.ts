@@ -211,6 +211,10 @@ class Agent {
         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
         this.onStatusChange = this.onStatusChangeEmitter.event
+        PubSub.sub(`${this.agent_type}_${this.id}_chat_request`, (message) => {
+            this.getUserInput(message);
+        })
+
     }
     async handleInputRequest(params: AgentInputRequest) {
         console.log("handleInputRequest");
@@ -240,6 +244,13 @@ class Agent {
         //let inputRequest: AgentInputRequest = await waitForMessage();
         //return inputRequest;
     }
+
+    async getUserInput(message?) {
+        return new Promise((res, rej) => {
+            res(message);
+        });
+    }
+
     async handleChatRequest(params: AgentChatRequest) {
         console.log("handleChatRequest");
         chatProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
@@ -252,20 +263,20 @@ class Agent {
         console.log('agentId:', agentId)
 
         // return "BLAH BLAH"
-        async function getUserInput() {
-            console.log('getUserInput')
-            console.log('agentType:', agentType)
-            console.log('agentId:', agentId)
-            return new Promise((res, rej) => {
-                console.log('subscribing to changes')
-                PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
-                    console.log('attempting to resolve promise')
-                    res(message)
-                })
-            })
-        }
+        // async function getUserInput() {
+        //     console.log('getUserInput')
+        //     console.log('agentType:', agentType)
+        //     console.log('agentId:', agentId)
+        //     return new Promise((res, rej) => {
+        //         console.log('subscribing to changes')
+        //         PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
+        //             console.log('attempting to resolve promise')
+        //             res(message)
+        //         })
+        //     })
+        // }
         console.log("AWAITING USER UNPUT")
-        let chatRequest = await getUserInput();
+        let chatRequest = await this.getUserInput();
         console.log('RECEIVED USER INPUT___BLASTOOFFFFF')
         console.log(chatRequest)
         return chatRequest;
@@ -273,19 +284,19 @@ class Agent {
     async handleUpdate(params: AgentUpdate) {
         console.log("handleUpdate")
         //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
-        await logProvider._view?.webview.postMessage({ type: 'update', data: params });
+        logProvider._view?.webview.postMessage({ type: 'update', data: params });
     }
     async handleProgress(params: AgentProgress) {
         console.log("handleProgress")
         console.log("handleProgress")
         //chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
-        await logProvider._view?.webview.postMessage({ type: 'progress', data: { ...params } });
-        await logProvider._view?.webview.postMessage({ type: 'progress', data: params });
+        logProvider._view?.webview.postMessage({ type: 'progress', data: { ...params } });
+        logProvider._view?.webview.postMessage({ type: 'progress', data: params });
     }
     async handleResult(params: AgentResult) {
         console.log("handleResult")
-        await chatProvider._view?.webview.postMessage({ type: 'result', data: params });
-        await logProvider._view?.webview.postMessage({ type: 'result', data: params });
+        chatProvider._view?.webview.postMessage({ type: 'result', data: params });
+        logProvider._view?.webview.postMessage({ type: 'result', data: params });
     }
 }
 

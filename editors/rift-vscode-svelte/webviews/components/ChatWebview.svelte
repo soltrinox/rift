@@ -62,6 +62,7 @@
           ...state,
           selectedAgentId: event.data.data,
         }));
+        document.getElementById("omnibar")?.focus();
 
       // TODO: focus the selected agent
       case "chatProgress": {

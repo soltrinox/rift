@@ -20,6 +20,9 @@
     textarea.blur();
     loading.set(true);
 
+    console.log("chat history");
+    console.log($state.agents[$state.selectedAgentId].chatHistory);
+
     let message = {
       type: "chatMessage",
       agent_id: $state.selectedAgentId,
