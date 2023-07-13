@@ -13,7 +13,7 @@
     <div class="ml-6 border-l-4" />
     {#if subtask.status == "done"}
         <div class="ml-4 mr-2 mt-0.5"><LogGreenSvg /></div>
-    {:else if subtask.status == "running"}
+    {:else if subtask.status == "running" || subtask.status == "scheduled"}
         <div class="ml-4 mr-2 mt-0.5"><LogYellow /></div>
     {:else}
         <div class="ml-4 mr-2 mt-0.5"><LogRed /></div>

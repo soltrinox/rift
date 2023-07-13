@@ -7,14 +7,15 @@ export const pub = (key: string, ...args: any) => {
     const fn = registry[key]
     if (!fn) throw new Error('published to an unawaited key')
     fn.apply(null, args);
-    registry[key] = null
 
 };
 
 export const sub = (key: string, fn: (...args: any) => void) => {
     console.log('subbing')
     console.log(key)
-    if (registry[key]) throw new Error('cannot sub twice')
+    if (registry[key]) {
+        delete registry[key]
+    }
     registry[key] = fn;
 };
 

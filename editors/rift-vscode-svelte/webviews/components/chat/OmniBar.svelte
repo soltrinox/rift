@@ -23,31 +23,36 @@
     console.log("chat history");
     console.log($state.agents[$state.selectedAgentId].chatHistory);
 
+    let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory;
+    appendedMessages.push({ role: "user", content: textarea.value });
+    console.log("appendedMessages");
+    console.log(appendedMessages);
+
     let message = {
       type: "chatMessage",
       agent_id: $state.selectedAgentId,
       agent_type: $state.agents[$state.selectedAgentId].type,
-      messages: $state.agents[$state.selectedAgentId].chatHistory,
+      messages: appendedMessages,
       message: textarea.value,
     };
     console.log("sendMEssage", message);
 
     vscode.postMessage(message);
 
-    console.log("updating state...");
-    state.update((state: SvelteStore) => ({
-      ...state,
-      agents: {
-        ...state.agents,
-        [state.selectedAgentId]: {
-          ...state.agents[state.selectedAgentId],
-          chatHistory: [
-            ...state.agents[state.selectedAgentId].chatHistory,
-            { role: "user", content: textarea.value },
-          ],
-        },
-      },
-    }));
+    // console.log("updating state...");
+    // state.update((state: SvelteStore) => ({
+    //   ...state,
+    //   agents: {
+    //     ...state.agents,
+    //     [state.selectedAgentId]: {
+    //       ...state.agents[state.selectedAgentId],
+    //       chatHistory: [
+    //         ...state.agents[state.selectedAgentId].chatHistory,
+    //         { role: "user", content: textarea.value },
+    //       ],
+    //     },
+    //   },
+    // }));
     textarea.value = "";
     textarea.focus();
   }

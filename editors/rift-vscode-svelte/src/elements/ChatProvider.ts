@@ -90,7 +90,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
                 case "chatMessage": {
                     console.log("Sending publish message", params.message)
-                    PubSub.pub(`${params.agent_type}_${params.agent_id}_chat_request`, params.message);
+                    PubSub.pub(`${params.agent_type}_${params.agent_id}_chat_request`, params);
                     break;
                 }
 

@@ -222,6 +222,7 @@ class Agent {
     }
     async handleInputRequest(params: AgentInputRequest) {
         console.log("handleInputRequest");
+        console.log(params)
         chatProvider._view?.webview.postMessage({ type: 'input_request', data: params });
         logProvider._view?.webview.postMessage({ type: 'input_request', data: params });
 
@@ -251,6 +252,7 @@ class Agent {
 
     async handleChatRequest(params: AgentChatRequest) {
         console.log("handleChatRequest");
+        console.log(params)
         chatProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
         logProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
 
@@ -281,16 +283,19 @@ class Agent {
     }
     async handleUpdate(params: AgentUpdate) {
         console.log("handleUpdate")
+        console.log(params)
         //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
         logProvider._view?.webview.postMessage({ type: 'update', data: params });
     }
     async handleProgress(params: ChatProgress) {
         console.log("handleProgress")
+        console.log(params)
         chatProvider._view?.webview.postMessage({ type: 'chatProgress', data: params });
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
     }
     async handleResult(params: AgentResult) {
         console.log("handleResult")
+        console.log(params)
         chatProvider._view?.webview.postMessage({ type: 'result', data: params });
         logProvider._view?.webview.postMessage({ type: 'result', data: params });
     }

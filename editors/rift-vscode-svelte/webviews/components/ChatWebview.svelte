@@ -71,7 +71,7 @@
         const progress = event.data.data as ChatProgress;
         const agentId = progress.agent_id; //FIXME brent HARDCODED change later
         progressResponse = progress.response;
-        //console.log(progressResponse);
+        console.log(progressResponse);
         isDone = progress.done_streaming;
         break;
       }
