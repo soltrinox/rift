@@ -137,6 +137,10 @@ export interface AgentProgress {
     payload: any,
 }
 
+export interface AgentId {
+    id: string
+}
+
 export interface ChatProgress extends AgentProgress {
     response: string,
     done_streaming: boolean,
@@ -503,6 +507,19 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
 
         return { id: agent_id, type: agent_type }// return agent_id to the webview
     }
+
+    async cancel(params: AgentId) {
+        if (!this.client) throw new Error()
+        let response = await this.client.sendRequest('morph/cancel', params);
+        return response;
+    }
+
+    //TODO:
+    // async delete(params: AgentIdParams) {
+    //     if (!this.client) throw new Error()
+    //     let response = await this.client.sendRequest('morph/delete', {})
+    //     return response;
+    // }
 
     // run should spawn an agent
     // run should specify:

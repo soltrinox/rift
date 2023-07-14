@@ -37,10 +37,6 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        const omnibar = document.getElementById(
-            "omnibar"
-        ) as HTMLTextAreaElement;
-        omnibar?.focus();
         hasNotification = false;
         state.update((state) => ({
             ...state,
@@ -57,6 +53,10 @@
 
         console.log("This is the state - Logs");
         console.log($state);
+    };
+
+    const handleCancelAgent = (e: MouseEvent) => {
+        vscode.postMessage({ type: "cancelAgent", id: id });
     };
 </script>
 
@@ -126,7 +126,10 @@
                         style:visibility={isDropdownOpen ? "visible" : "hidden"}
                     >
                         <li class="list-item">
-                            <button class="btn px-2">Cancel</button>
+                            <button
+                                class="btn px-2"
+                                on:click={handleCancelAgent}>Cancel</button
+                            >
                         </li>
                         <li class="list-item">
                             <button class="btn px-2">Delete</button>

@@ -81,8 +81,8 @@ export class LogProvider implements vscode.WebviewViewProvider {
                     });
                     break;
                 }
-                case "cancel": {
-                    this.morph_language_client
+                case "cancelAgent": {
+                    this.morph_language_client.cancel({ id: data.id });
                 }
                 case "delete": {
 
