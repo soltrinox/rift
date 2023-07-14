@@ -61,26 +61,28 @@
   }
 </script>
 
+<div>
 <div class="bg-[var(--vscode-input-background)] w-full">
-  <div class="flex items-center pt-2 pl-2">
+  <div class="flex items-center">
     <UserSvg size={12} />
     <p class="text-sm">YOU</p>
   </div>
   <div
-    class="w-full text-md p-2 min-h-8 flex flex-row items-center"
+    class="w-full text-md flex flex-row items-center"
   >
     <textarea
       bind:this={textarea}
-      class="w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
+      class="w-full block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
       placeholder="Type to chat or hit / for commands"
       on:input={resize}
       on:keydown={handleKeyDown}
       disabled={true}
       {value}
+      rows={1}
     />
   </div>
 </div>
-
+</div>
 
 
 <style>

@@ -73,7 +73,7 @@
   <RiftSvg size={12} />
   <p class="text-sm">RIFT</p>
 </div>
-<div class={`w-full text-md p-2 focus:outline-none min-h-8 flex flex-row ${value === '' && !$loading ? 'hidden' : ''}`}>
+<div class={`w-full text-md p-2 focus:outline-none flex flex-row ${value === '' && !$loading ? 'hidden' : ''}`}>
   {#if hasSvg}
     <RiftSvg />
   {/if}
@@ -82,6 +82,6 @@
     bind:this={responseBlock}
     bind:innerHTML={something}
     id="response"
-    class="w-full text-md min-h-8 focus:outline-none"
+    class="w-full text-md focus:outline-none"
   />
 </div>

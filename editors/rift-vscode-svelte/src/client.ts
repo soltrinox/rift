@@ -188,28 +188,34 @@ class Agent {
         chatProvider._view?.webview.postMessage({ type: 'input_request', data: params });
         logProvider._view?.webview.postMessage({ type: 'input_request', data: params });
 
-        // async function waitForMessage() {
-        //     return new Promise<AgentInputRequest>((accept, reject) => {
-        //         chatProvider._view?.webview.onDidReceiveMessage(async (params: any) => {
-        //             try {
-        //                 if (!chatProvider._view) throw new Error('no view')
-        //                 switch (params.type) {
-        //                     case "chatMessage": {
-        //                         console.log("chatMessage");
-        //                         inputRequest = { msg: params.params.message };
-        //                         accept(inputRequest);
-        //                         break;
-        //                     }
-        //                 }
-        //             } catch (error) {
-        //                 reject(error);
-        //             }
-        //         });
-        //     }
-        //     );
-        //}
-        //let inputRequest: AgentInputRequest = await waitForMessage();
-        //return inputRequest;
+        console.log("handleChatRequest");
+        console.log(params)
+        chatProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
+        logProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
+
+        let agentType = this.agent_type
+        let agentId = this.id
+
+        console.log('agentType:', agentType)
+        console.log('agentId:', agentId)
+
+        async function getUserInput() {
+            console.log('getUserInput')
+            console.log('agentType:', agentType)
+            console.log('agentId:', agentId)
+            return new Promise((res, rej) => {
+                console.log('subscribing to changes')
+                PubSub.sub(`${agentType}_${agentId}_input_request`, (message) => {
+                    console.log('resolving promise')
+                    res(message)
+                })
+            })
+        }
+
+        let chatRequest = await getUserInput();
+        console.log('received user input and returning to server')
+        console.log(chatRequest)
+        return chatRequest;
     }
 
     async handleChatRequest(params: AgentChatRequest) {
@@ -232,14 +238,14 @@ class Agent {
             return new Promise((res, rej) => {
                 console.log('subscribing to changes')
                 PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
-                    console.log('attempting to resolve promise')
+                    console.log('resolving promise')
                     res(message)
                 })
             })
         }
-        console.log("AWAITING USER UNPUT")
+
         let chatRequest = await getUserInput();
-        console.log('RECEIVED USER INPUT___BLASTOOFFFFF')
+        console.log('received user input and returning to server')
         console.log(chatRequest)
         return chatRequest;
     }
