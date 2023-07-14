@@ -61,9 +61,9 @@
   }
 </script>
 
-<div>
-<div class="bg-[var(--vscode-input-background)] w-full">
-  <div class="flex items-center">
+
+<div class="bg-[var(--vscode-input-background)] w-full p-2">
+  <div class="flex items-center py-1">
     <UserSvg size={12} />
     <p class="text-sm">YOU</p>
   </div>
@@ -81,7 +81,6 @@
       rows={1}
     />
   </div>
-</div>
 </div>
 
 
