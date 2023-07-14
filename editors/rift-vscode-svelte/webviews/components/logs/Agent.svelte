@@ -13,8 +13,11 @@
 
     let expanded = false;
     export let id: string = "";
+    export let selectedId = "";
     export let name: string = "rift_chat";
     export let hasNotification = false;
+
+    $: isSelected = id == selectedId;
 
     let doneAgent = false;
 
@@ -60,8 +63,8 @@
     };
 </script>
 
-<div>
-    <div class="flex">
+<div class:bg-[var(--vscode-editor-hoverHighlightBackground)]={isSelected}>
+    <div class="flex hover:bg-red">
         <div class="flex select-none">
             {#if expanded == false}
                 <div
@@ -80,10 +83,7 @@
                     <ArrowDownSvg />
                 </div>
             {/if}
-            <button
-                class="flex w-full hover:text-[var(--vscode-list-hoverBackground)]"
-                on:click={handleChatIconClick}
-            >
+            <button class="flex w-full" on:click={handleChatIconClick}>
                 {#if $state.agents[id].tasks?.task.status == "done"}
                     <div class="mx-1 mt-0.5"><LogGreenSvg /></div>
                 {:else if $state.agents[id].tasks?.task.status == "running"}
@@ -139,7 +139,7 @@
             </div>
         </div>
     </div>
-    <div hidden={!expanded}>
+    <div class="border-l ml-6 my-2 space-y-2" hidden={!expanded}>
         {#if $state.agents[id].tasks.subtasks.length > 0}
             {#each $state.agents[id].tasks.subtasks as subtask}
                 <Log {subtask} />
