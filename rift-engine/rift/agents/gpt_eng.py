@@ -25,9 +25,13 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS, Config as StepsConfig
 
-to_update = []
-def me(res):
-    to_update.add(res)
+def to_files(chat, workspace, queue: asyncio.Queue):
+    workspace["all_output.txt"] = chat
+    files = parse_chat(chat)
+    for file_name, file_content in files:
+        workspace[file_name] = file_content
+        queue.put_nowait(workspace)
+
 
 def _main(
     project_path: str = typer.Argument("projects/example", help="path"),
