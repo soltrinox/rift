@@ -142,47 +142,6 @@ export interface ChatProgress extends AgentProgress {
     done_streaming: boolean,
 }
 
-
-
-
-/** Represents an agent */
-// class Agent {
-//     status: AgentStatus;
-//     green: vscode.TextEditorDecorationType;
-//     ranges: vscode.Range[] = []
-//     onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
-//     onStatusChange: vscode.Event<AgentStatus>
-//     constructor(public readonly id: number, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
-//         this.status = 'running'
-//         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
-//         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
-//         this.onStatusChange = this.onStatusChangeEmitter.event
-//     }
-//     handleProgress(params: RunAgentProgress) {
-//         if (params.status) {
-//             if (this.status !== params.status) {
-//                 this.status = params.status
-//                 this.onStatusChangeEmitter.fire(params.status)
-//             }
-//         }
-//         if (params.ranges) {
-//             this.ranges = params.ranges
-//         }
-//         const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == params.textDocument.uri)
-//         for (const editor of editors) {
-//             // [todo] check editor is visible
-//             const version = editor.document.version
-//             if (params.status == 'accepted' || params.status == 'rejected') {
-//                 editor.setDecorations(this.green, [])
-//                 continue
-//             }
-//             if (params.ranges) {
-//                 editor.setDecorations(this.green, params.ranges.map(r => new vscode.Range(r.start.line, r.start.character, r.end.line, r.end.character)))
-//             }
-//         }
-//     }
-// }
-
 export type ChatMessage = {
     role: "user" | "assistant"
     content: string
@@ -489,18 +448,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         const x = await this.client?.sendRequest('workspace/didChangeConfiguration', {})
     }
 
-
-    // async morph_notify(params: RunAgentProgress) {
-    //     if (!this.is_running()) {
-    //         throw new Error('client not running, please wait...') // [todo] better ux here.
-    //     }
-    //     const agent = this.agents.get(params.id)
-    //     if (!agent) {
-    //         throw new Error('agent not found')
-    //     }
-    //     agent.handleProgress(params)
-    // }
-
     async notify_focus(tdpp: TextDocumentPositionParams | { symbol: string }) {
         // [todo] unused
         console.log(tdpp)
@@ -511,29 +458,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         const result = await this.client?.sendRequest('hello_world')
         return result
     }
-
-    // async run_agent(params: RunAgentParams) {
-    //     if (!this.client) {
-    //         throw new Error(`waiting for a connection to rift - engine, please make sure the rift - engine is running on port ${ DEFAULT_PORT } `) // [todo] better ux here.
-    //     }
-    //     const result: RunAgentResult = await this.client.sendRequest('morph/run', params)
-    //     const agent = new Agent(result.id, params.agent_params.position, params.agent_params.textDocument)
-    //     agent.onStatusChange(e => this.changeLensEmitter.fire())
-    //     this.agents.set(result.id.toString(), agent)
-    //     // note this returns fast and then the updates are sent via notifications
-    //     this.changeLensEmitter.fire()
-    //     return `starting agent ${ result.id }...`
-    // }
-
-    // async run_agent_sync(params: RunCodeHelperParams) {
-    //     console.log("run_agent_sync")
-    //     const result: RunAgentSyncResult = await this.client.sendRequest('morph/run_agent_sync', params)
-    //     const agent = new Agent(result.id, params.position, params.textDocument)
-    //     // agent.onStatusChange(e => this.changeLensEmitter.fire())
-    //     this.agents.set(result.id, agent)
-    //     // this.changeLensEmitter.fire()
-    //     return result.text
-    // }
 
     morphNotifyChatCallback: (progress: ChatAgentProgress) => any = async function (progress) {
         throw new Error('no callback set')
@@ -550,15 +474,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         return 'starting...'
     }
 
-    // create a SpawnAgentResult that contains a server-computed agentId
-
-
-    // note(jesse): for CodeCompletionAgent, we'll want to:
-    // feed in params = {
-    //   agent_type: "code_completion"
-    //   agentParams: RunCodeHelperParams
-    // }
-    // with no-ops for all callbacks except for `send_progress`
 
     async run(params: RunAgentParams) {
         if (!this.client) throw new Error()

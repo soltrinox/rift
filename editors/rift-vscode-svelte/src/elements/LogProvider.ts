@@ -60,7 +60,7 @@ export class LogProvider implements vscode.WebviewViewProvider {
                     vscode.env.clipboard.writeText(data.content)
                     vscode.window.showInformationMessage('Text copied to clipboard!')
                     break;
-                case 'chatMessage':
+                case 'chatMessage': {
                     const editor = vscode.window.activeTextEditor;
                     let runChatParams: any = { message: data.message, messages: data.messages };
                     if (!editor) {
@@ -78,8 +78,15 @@ export class LogProvider implements vscode.WebviewViewProvider {
                         if (!this._view) throw new Error('no view')
                         if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
                         this._view.webview.postMessage({ type: 'progress', data: progress });
-                    })
+                    });
                     break;
+                }
+                case "cancel": {
+                    this.morph_language_client
+                }
+                case "delete": {
+
+                }
                 default:
                     console.log('no case match for ', data.type, ' in LogProvider.ts')
             }

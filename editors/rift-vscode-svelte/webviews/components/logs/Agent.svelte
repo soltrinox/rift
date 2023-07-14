@@ -85,11 +85,11 @@
                 on:click={handleChatIconClick}
             >
                 {#if $state.agents[id].tasks?.task.status == "done"}
-                    <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
+                    <div class="mx-1 mt-0.5"><LogGreenSvg /></div>
                 {:else if $state.agents[id].tasks?.task.status == "running"}
                     <div class="mx-1 mt-0.5"><LogYellow /></div>
                 {:else}
-                    <div class="mx-2 mt-0.5"><LogRed /></div>
+                    <div class="mx-1 mt-0.5"><LogRed /></div>
                 {/if}
                 <div>{name}</div>
             </button>

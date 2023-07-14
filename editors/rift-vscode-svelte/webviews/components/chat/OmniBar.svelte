@@ -4,6 +4,7 @@
   import { loading, state } from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
   import type { SvelteStore } from "../../../src/types";
+  import { append } from "svelte/internal";
   let dropdownOpen = false;
   let isFocused = true;
   let currentSlashCommand = "";
@@ -40,19 +41,16 @@
     vscode.postMessage(message);
 
     // console.log("updating state...");
-    // state.update((state: SvelteStore) => ({
-    //   ...state,
-    //   agents: {
-    //     ...state.agents,
-    //     [state.selectedAgentId]: {
-    //       ...state.agents[state.selectedAgentId],
-    //       chatHistory: [
-    //         ...state.agents[state.selectedAgentId].chatHistory,
-    //         { role: "user", content: textarea.value },
-    //       ],
-    //     },
-    //   },
-    // }));
+    state.update((state: SvelteStore) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [state.selectedAgentId]: {
+          ...state.agents[state.selectedAgentId],
+          chatHistory: appendedMessages,
+        },
+      },
+    }));
     textarea.value = "";
     textarea.focus();
   }
