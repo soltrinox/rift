@@ -20,11 +20,11 @@
   } from "../../src/client";
   import { IncomingMessage } from "http";
 
-  // UNCOMMENT THE BELOW LINE AND REFRESH IF YOU NEED A HARD RESET:
-  console.log("RESETTING VSCODE STATE");
-  console.log(DEFAULT_STATE);
-  vscode.setState(DEFAULT_STATE);
-  console.log(vscode.getState());
+  // UNCOMMENT THE BELOW LINES AND REFRESH IF YOU NEED A HARD RESET:
+  // console.log("RESETTING VSCODE STATE");
+  // console.log(DEFAULT_STATE);
+  // vscode.setState(DEFAULT_STATE);
+  // console.log(vscode.getState());
 
   onMount(() => {
     vscode.postMessage({
@@ -45,6 +45,8 @@
       vscode.setState(state);
     }
   });
+
+  loading.subscribe(loading => console.log('loading:',loading))
   let agentRegistry: AgentRegistryItem[] = [];
   let isDone = false;
   const vscodeState = vscode.getState();
@@ -82,24 +84,15 @@
         // break;
       }
       case "chat_request": {
-        const chat_request = event.data.data as AgentChatRequest;
+        
+        const chat_request = event.data.data as AgentChatRequest | string;
         console.log("chat_request");
         console.log(chat_request);
-        let agent_id = chat_request.id;
-        state.update((prevState) => {
-          if (!agent_id || agent_id === undefined)
-            throw new Error("id not passed to webview");
-          return {
-            ...prevState,
-            agents: {
-              ...prevState.agents,
-              [agent_id]: {
-                ...prevState.agents[agent_id],
-                chatHistory: [...chat_request.messages],
-              },
-            },
-          };
-        });
+        
+        //dont think we need to actually do anything here b/c everything is done
+        // from the result case and progress case.
+        // could maybe disable sending messages until we get a chatRequest back. If we add that, it should be added later.
+
 
         break;
       }
@@ -150,9 +143,9 @@
                 },
               };
             });
+            loading.set(false);
           }
 
-          loading.set(false);
         }
 
         break;

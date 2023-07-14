@@ -14,6 +14,7 @@
   let textarea: HTMLTextAreaElement;
 
   function sendMessage() {
+    console.log('sendMessage called')
     textarea.blur();
     loading.set(true);
 
@@ -24,6 +25,7 @@
       messages: $state.agents[$state.selectedAgentId].chatHistory,
       message: textarea.value,
     });
+
     console.log("updating state...");
     state.update((state) => ({
       ...state,
@@ -59,6 +61,7 @@
   }
 </script>
 
+<div>
 <div class="flex items-center pt-2 pl-2 bg-[var(--vscode-input-background)]">
   <UserSvg size={12} />
   <p class="text-sm">YOU</p>
@@ -76,6 +79,9 @@
     {value}
   />
 </div>
+</div>
+
+
 
 <style>
   .hide-scrollbar::-webkit-scrollbar {

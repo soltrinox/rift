@@ -60,7 +60,7 @@
         <Response value={item.content} />
       {/if}
     {/each}
-    {#if loading}
+    {#if $loading}
       <Response value={$progressResponse} />
     {/if}
 
