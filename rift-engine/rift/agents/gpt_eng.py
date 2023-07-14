@@ -30,6 +30,7 @@ def to_files(chat, workspace, queue: asyncio.Queue):
     files = parse_chat(chat)
     for file_name, file_content in files:
         workspace[file_name] = file_content
+        print("added to queue")
         queue.put_nowait(workspace)
 
 
@@ -143,12 +144,15 @@ class GPTEngineerAgent(agent.Agent):
                     for file_path, new_contents in workspace.items()]
         finally:
             # Cleanup: cancel the main_task if it is still running.
-            if not main_task.done():
-                main_task.cancel()
-                try:
-                    await main_task
-                except asyncio.CancelledError:
-                    pass
+            try:
+                if not main_task.done():
+                    main_task.cancel()
+                    try:
+                        await main_task
+                    except asyncio.CancelledError:
+                        pass
+            except: 
+                pass
 
 if __name__ == "__main__":
     agent.launcher(GPTEngineerAgent, GPTEngineerAgentParams)
