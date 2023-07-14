@@ -1,11 +1,5 @@
 import type { Tasks } from "./client";
 
-export type ChatAgentProgress = {
-    id: string,
-    response: string
-    done: boolean
-};
-
 export class ChatMessage {
     constructor(
         public role: "user" | "assistant",

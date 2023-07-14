@@ -5,7 +5,12 @@ export const DEFAULT_STATE: SvelteStore = {
   selectedAgentId: '',
   agents: {
   },
-  availableAgents: []
+  availableAgents: [{
+    agent_type: "rift_chat",
+    agent_description: '',
+    agent_icon: '',
+    display_name: 'Rift Chat'
+  }]
 };
 
 // {
@@ -19,3 +24,4 @@ export const DEFAULT_STATE: SvelteStore = {
 
 export const state = writable<SvelteStore>(DEFAULT_STATE)
 export const loading = writable(false)
+export const progressResponse = writable('')

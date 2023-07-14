@@ -7,7 +7,6 @@
   import { append } from "svelte/internal";
   let dropdownOpen = false;
   let isFocused = true;
-  let currentSlashCommand = "";
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement;
@@ -58,7 +57,6 @@
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
       dropdownOpen = true;
-      currentSlashCommand = textarea.value;
     } else dropdownOpen = false;
   }
 
@@ -75,6 +73,19 @@
       if (!textarea.value || dropdownOpen) return;
       sendMessage();
     }
+  }
+
+  function handleRunAgent(agent_type: string) {
+    if(!$state.availableAgents.map(x => x.agent_type).includes(agent_type)) throw new Error('attempt to run unavailable agent')
+    vscode.postMessage({
+        type: "runAgent",
+        params: {
+          agent_type,
+          agent_params: {},
+        },
+      });
+    dropdownOpen = false
+    
   }
 </script>
 
@@ -106,7 +117,7 @@
     </div>
   </div>
   {#if dropdownOpen}
-    <Dropdown inputValue={currentSlashCommand} />
+    <Dropdown inputValue={textarea.value} {handleRunAgent}/>
   {/if}
 </div>
 

@@ -16,7 +16,6 @@ import {
 } from 'vscode-languageclient/node'
 import * as net from 'net'
 import { join } from 'path';
-import type { ChatAgentProgress } from './types';
 import * as tcpPortUsed from 'tcp-port-used'
 import { chatProvider, logProvider } from './extension';
 import PubSub from './lib/PubSub';
@@ -130,30 +129,30 @@ export interface Tasks {
     subtasks: Task[]
 }
 
-export interface AgentProgress {
+
+export type ChatAgentProgress = AgentProgress<{response?: string, done_streaming?: boolean}|undefined>
+
+
+export interface AgentProgress<T=any> {
     agent_id: string,
     agent_type: string,
     tasks: Tasks,
-    payload: any,
+    payload: T,
 }
 
 export interface AgentId {
     id: string
 }
 
-export interface ChatProgress extends AgentProgress {
-    response: string,
-    done_streaming: boolean,
-}
-
 export type ChatMessage = {
     role: "user" | "assistant"
     content: string
+    name?: null | string | undefined
 };
 
 export interface AgentChatRequest {
     messages: ChatMessage[]
-    id?: string
+    id: string
 }
 
 export interface AgentInputRequest {
@@ -250,10 +249,10 @@ class Agent {
         //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
         logProvider._view?.webview.postMessage({ type: 'update', data: params });
     }
-    async handleProgress(params: ChatProgress) {
+    async handleProgress(params: AgentProgress) {
         console.log("handleProgress")
         console.log(params)
-        chatProvider._view?.webview.postMessage({ type: 'chatProgress', data: params });
+        chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
     }
     async handleResult(params: AgentResult) {
