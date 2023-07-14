@@ -1,3 +1,4 @@
+import asyncio
 import typing
 try:
     import gpt_engineer
@@ -24,8 +25,9 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS, Config as StepsConfig
 
+to_update = []
 def me(res):
-    yield [file_diff.get_file_change(file_path, new_contents) for file_path, new_contents in res.in_memory_dict.items()]
+    to_update.add(res)
 
 def _main(
     project_path: str = typer.Argument("projects/example", help="path"),
@@ -119,13 +121,30 @@ class GPTEngineerAgent(agent.Agent):
         def iter_fields(obj):
             for field in fields(obj):
                 yield field.name, getattr(obj, field.name)
-        # typer.run(lambda: _main(**{k:v for k,v in iter_fields(self.run_params)}))
-        # unclear to me how to get a result from Typer
+
         params_dict = {k: v for k, v in iter_fields(self.run_params)}
-        RESULT = gpt_engineer.db.DB
-        gpt_engineer.chat_to_files.test_function=me(RESULT)
-        RESULT = _main(**params_dict)
-        yield [file_diff.get_file_change(file_path, new_contents) for file_path, new_contents in RESULT.in_memory_dict.items()]
+
+        # Create a queue for updates.
+        queue = asyncio.Queue()
+
+        # Assign a new to_files function that passes updates to the queue.
+        gpt_engineer.chat_to_files.to_files = lambda chat, workspace: to_files(chat, workspace, queue)
+
+        # Run main function and send updates from the queue.
+        try:
+            main_task = asyncio.create_task(_main(**params_dict))
+            while not main_task.done():
+                workspace = await queue.get()
+                yield [file_diff.get_file_change(file_path, new_contents) 
+                    for file_path, new_contents in workspace.items()]
+        finally:
+            # Cleanup: cancel the main_task if it is still running.
+            if not main_task.done():
+                main_task.cancel()
+                try:
+                    await main_task
+                except asyncio.CancelledError:
+                    pass
 
 if __name__ == "__main__":
     agent.launcher(GPTEngineerAgent, GPTEngineerAgentParams)
