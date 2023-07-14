@@ -27,14 +27,13 @@
   console.log(vscode.getState());
 
   onMount(() => {
-
-      vscode.postMessage({
-        type: "runAgent",
-        params: {
-          agent_type: "rift_chat",
-          agent_params: {},
-        },
-      });
+    vscode.postMessage({
+      type: "runAgent",
+      params: {
+        agent_type: "rift_chat",
+        agent_params: {},
+      },
+    });
     //get initial list of agents
     vscode.postMessage({ type: "listAgents" });
   });
@@ -47,7 +46,7 @@
     }
   });
 
-  loading.subscribe(loading => console.log('loading:',loading))
+  loading.subscribe((loading) => console.log("loading:", loading));
   let agentRegistry: AgentRegistryItem[] = [];
   let isDone = false;
   const vscodeState = vscode.getState();
@@ -85,31 +84,35 @@
         // break;
       }
       case "chat_request": {
-        
         const chat_request = event.data.data as AgentChatRequest | string;
         console.log("chat_request");
         console.log(chat_request);
 
         // this should only apply to the first message after runAgent.
         // the rest are added via the progress calls.
-        if(typeof chat_request !== 'string' && $state.agents[chat_request.id]?.chatHistory.length < 1){
-          if(chat_request.messages.length > 1) throw new Error("No previous messages on client for this ID, but server is giving multiple chat messages.")
-          state.update(prevState => ({
+        if (
+          typeof chat_request !== "string" &&
+          $state.agents[chat_request.id]?.chatHistory.length < 1
+        ) {
+          if (chat_request.messages.length > 1)
+            throw new Error(
+              "No previous messages on client for this ID, but server is giving multiple chat messages."
+            );
+          state.update((prevState) => ({
             ...prevState,
             agents: {
               ...prevState.agents,
               [chat_request.id]: {
                 ...prevState.agents[chat_request.id],
-                chatHistory: [...chat_request.messages]
-              }
-            }
-          }))
+                chatHistory: [...chat_request.messages],
+              },
+            },
+          }));
         }
-        
+
         //dont think we need to actually do anything here b/c everything is done
         // from the result case and progress case.
         // could maybe disable sending messages until we get a chatRequest back. If we add that, it should be added later.
-
 
         break;
       }
@@ -136,7 +139,7 @@
           let progress = event.data.data as ChatAgentProgress;
           let agentId = progress.agent_id;
 
-          console.log(progress)
+          console.log(progress);
           const response = progress.payload?.response;
           response && progressResponse.set(response);
 
@@ -163,7 +166,6 @@
             });
             loading.set(false);
           }
-
         }
 
         break;
@@ -190,10 +192,6 @@
 
 <div class="h-screen">
   <Header />
-  <div style="height: calc(100% - 80px);" class="overflow-y-auto">
-    <Chat />
-  </div>
-  <div style="bottom: 0px; position: absolute" class="w-full">
-    <OmniBar />
-  </div>
+  <Chat />
+  <OmniBar />
 </div>

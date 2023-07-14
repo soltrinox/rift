@@ -93,24 +93,3 @@
     />
   </div>
 </div>
-<!-- 
-<div class="bg-[var(--vscode-input-background)] w-full p-2">
-  <div class="flex items-center py-1">
-    <UserSvg size={12} />
-    <p class="text-sm">YOU</p>
-  </div>
-  <div
-    class="w-full text-md flex flex-row items-center"
-  >
-    <textarea
-      bind:this={textarea}
-      class="w-full block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
-      placeholder="Type to chat or hit / for commands"
-      on:input={resize}
-      on:keydown={handleKeyDown}
-      disabled={true}
-      {value}
-      rows={1}
-    />
-  </div>
-</div> -->

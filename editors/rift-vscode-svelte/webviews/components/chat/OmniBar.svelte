@@ -52,6 +52,8 @@
     }));
     textarea.value = "";
     textarea.focus();
+    textarea.style.height = "auto";
+    textarea.style.height = textarea.scrollHeight + "px";
   }
   function handleValueChange(e: Event) {
     resize(e);
@@ -90,7 +92,7 @@
 </script>
 
 <div
-  class="p-2 border-t border-b border-[var(--vscode-input-background)] relative"
+  class="p-2 border-t border-b border-[var(--vscode-input-background)] fixed bottom-0 w-full"
 >
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${
