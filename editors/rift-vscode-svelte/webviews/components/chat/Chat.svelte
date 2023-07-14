@@ -17,9 +17,15 @@
   $: {
     console.log("change");
     console.log(typeof chatWindow)
-    chatWindow?.scrollTo(0, chatWindow.scrollHeight);
 
-    if(chatWindow) {
+  }
+  let fixedToBottom: boolean;
+
+  onMount(async () => {
+    console.log("awaiting tick");
+    await tick();
+    chatWindow.scrollTo(0, chatWindow.scrollHeight);
+
     observer = new MutationObserver(scrollToBottomIfNearBottom);
     observer.observe(chatWindow, { childList: true, subtree: true });
 
@@ -27,8 +33,7 @@
       chatWindow.clientHeight + chatWindow.scrollTop >=
         chatWindow.scrollHeight - 15
     );
-    // height = chatWindow.scrollHeight;
-    console.log('adding event listener')
+
     chatWindow.addEventListener("scroll", function () {
       if (!chatWindow.scrollTop || !chatWindow.scrollHeight) {
         console.log(chatWindow);
@@ -40,17 +45,8 @@
         chatWindow.clientHeight + chatWindow.scrollTop >=
           chatWindow.scrollHeight - 15
       );
-      console.log(fixedToBottom)
     });
-  }
-  }
-  let fixedToBottom: boolean;
-
-  onMount(async () => {
-    console.log("awaiting tick");
-    await tick();
-    chatWindow.scrollTo(0, chatWindow.scrollHeight);
-
+  
    
   });
   onDestroy(() => {
