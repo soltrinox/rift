@@ -8,6 +8,7 @@ import rift.agents.cli_agent as agent
 import rift.util.file_diff as file_diff
 import rift.lsp.types as lsp
 
+
 from dataclasses import dataclass
 
 import json
@@ -23,6 +24,8 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS, Config as StepsConfig
 
+def me(res):
+    yield [file_diff.get_file_change(file_path, new_contents) for file_path, new_contents in res.in_memory_dict.items()]
 
 def _main(
     project_path: str = typer.Argument("projects/example", help="path"),
@@ -51,7 +54,7 @@ def _main(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
         input=DB(input_path),
-        workspace=DB(workspace_path, in_memory_dict={}),
+        workspace=DB(workspace_path), #in_memory_dict={}),
         preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
         archive=DB(archive_path),
     )
@@ -118,7 +121,10 @@ class GPTEngineerAgent(agent.Agent):
                 yield field.name, getattr(obj, field.name)
         # typer.run(lambda: _main(**{k:v for k,v in iter_fields(self.run_params)}))
         # unclear to me how to get a result from Typer
-        RESULT: gpt_engineer.db.DB = _main(**{k:v for k,v in iter_fields(self.run_params)})
+        params_dict = {k: v for k, v in iter_fields(self.run_params)}
+        RESULT = gpt_engineer.db.DB
+        gpt_engineer.chat_to_files.test_function=me(RESULT)
+        RESULT = _main(**params_dict)
         yield [file_diff.get_file_change(file_path, new_contents) for file_path, new_contents in RESULT.in_memory_dict.items()]
 
 if __name__ == "__main__":
