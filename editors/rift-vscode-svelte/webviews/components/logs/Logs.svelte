@@ -17,6 +17,7 @@
                     id={key}
                     name={value.tasks?.task.description}
                     hasNotification={value.hasNotification}
+                    selectedId={store.selectedAgentId}
                 />
             {/each}
         {/if}
