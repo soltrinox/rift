@@ -23,7 +23,6 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS, Config as StepsConfig
 
-RESULT = None
 
 def _main(
     project_path: str = typer.Argument("projects/example", help="path"),
@@ -52,8 +51,8 @@ def _main(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
         input=DB(input_path),
-        workspace=DB(workspace_path),
-        preprompts=DB(Path(__file__).parent / "preprompts"),
+        workspace=DB(workspace_path, in_memory_dict={}),
+        preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
         archive=DB(archive_path),
     )
 
@@ -69,11 +68,11 @@ def _main(
         messages = step(ai, dbs)
         dbs.logs[step.__name__] = json.dumps(messages)
 
-    if collect_consent():
-        collect_learnings(model, temperature, steps, dbs)
+    # if collect_consent():
+    #     collect_learnings(model, temperature, steps, dbs)
 
-    dbs.logs["token_usage"] = ai.format_token_usage_log()
-    RESULT = dbs.workspace
+    # dbs.logs["token_usage"] = ai.format_token_usage_log()
+    return dbs.workspace
 
 @dataclass
 class GPTEngineerAgentParams(agent.ClientParams):
@@ -91,6 +90,8 @@ class GPTEngineerAgent(agent.Agent):
         str
         ] = """\
 
+
+
                 █████████          ██████  ██████  ████████ 
              █████   ████         ██       ██   ██    ██    
            ████   ████      ██    ██   ███ ██████     ██    
@@ -104,6 +105,9 @@ class GPTEngineerAgent(agent.Agent):
   ███   ███                       ██      ██  ██ ██ ██    ██ 
    ██████                         ███████ ██   ████  ██████
 
+
+
+
 """
 
     async def run(self) -> typing.AsyncIterable[typing.List[file_diff.FileChange]]:
@@ -113,11 +117,9 @@ class GPTEngineerAgent(agent.Agent):
             for field in fields(obj):
                 yield field.name, getattr(obj, field.name)
         # typer.run(lambda: _main(**{k:v for k,v in iter_fields(self.run_params)}))
-        _main(**{k:v for k,v in iter_fields(self.run_params)})
-        assert RESULT is None
-        results = []
-
-        yield [file_diff.get_file_change(file_path, new_contents) for file_path, new_contents in RESULT.items()]
+        # unclear to me how to get a result from Typer
+        RESULT: gpt_engineer.db.DB = _main(**{k:v for k,v in iter_fields(self.run_params)})
+        yield [file_diff.get_file_change(file_path, new_contents) for file_path, new_contents in RESULT.in_memory_dict.items()]
 
 if __name__ == "__main__":
     agent.launcher(GPTEngineerAgent, GPTEngineerAgentParams)
