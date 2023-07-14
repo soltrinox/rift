@@ -13,7 +13,11 @@
     <div class="ml-3 mt-2">
         {#if Object.keys(store.agents).length > 0}
             {#each Object.entries(store.agents) as [key, value]}
-                <Agent id={key} name={value.tasks?.task.description} />
+                <Agent
+                    id={key}
+                    name={value.tasks?.task.description}
+                    hasNotification={value.hasNotification}
+                />
             {/each}
         {/if}
     </div>

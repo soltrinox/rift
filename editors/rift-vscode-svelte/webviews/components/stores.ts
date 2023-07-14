@@ -8,6 +8,14 @@ export const DEFAULT_STATE: SvelteStore = {
   availableAgents: []
 };
 
+// {
+//   "rift-chat": {
+//     type: "rift-chat",
+//     chatHistory: [{ role: "assistant", content: "How can I help?" }],
+//     tasks: { subtasks: [], task: { description: "Rift Chat", status: "running" } },
+//   },
+// }
+
 
 export const state = writable<SvelteStore>(DEFAULT_STATE)
 export const loading = writable(false)

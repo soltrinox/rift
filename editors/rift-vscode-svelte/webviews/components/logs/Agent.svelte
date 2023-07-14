@@ -14,28 +14,11 @@
     let expanded = false;
     export let id: string = "";
     export let name: string = "rift_chat";
+    export let hasNotification = false;
 
     let doneAgent = false;
-    let hasNotification = false;
 
     let isDropdownOpen = false; // default state (dropdown close)
-
-    function handleMessage(
-        event: CustomEvent<{
-            id: string;
-            hasNotification: boolean;
-            done: boolean;
-        }>
-    ) {
-        if (id == event.detail.id) {
-            if (event.detail.done) {
-                doneAgent = true;
-            }
-            if (event.detail.hasNotification) {
-                hasNotification = true;
-            }
-        }
-    }
 
     const handleDropdownClick = () => {
         isDropdownOpen = !isDropdownOpen; // togle state on click
@@ -62,6 +45,13 @@
         state.update((state) => ({
             ...state,
             selectedAgentId: id,
+            agents: {
+                ...state.agents,
+                [id]: {
+                    ...state.agents[id],
+                    hasNotification: false,
+                },
+            },
         }));
         vscode.postMessage({ type: "selectedAgentId", selectedAgentId: id });
 
@@ -72,12 +62,10 @@
 
 <div>
     <div class="flex">
-        <div
-            class="flex select-none hover:text-[var(--vscode-list-hoverBackground)]"
-        >
+        <div class="flex select-none">
             {#if expanded == false}
                 <div
-                    class="mx-1 mt-1.5"
+                    class="mx-1 mt-1.5 hover:text-[var(--vscode-list-hoverBackground)]"
                     on:click={() => (expanded = !expanded)}
                     on:keydown={() => (expanded = !expanded)}
                 >
@@ -85,25 +73,30 @@
                 </div>
             {:else}
                 <div
-                    class="mx-1 mt-1.5"
+                    class="mx-1 mt-1.5 hover:text-[var(--vscode-list-hoverBackground)]"
                     on:click={() => (expanded = !expanded)}
                     on:keydown={() => (expanded = !expanded)}
                 >
                     <ArrowDownSvg />
                 </div>
             {/if}
-            {#if $state.agents[id].tasks?.task.status == "done"}
-                <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
-            {:else if $state.agents[id].tasks?.task.status == "running"}
-                <div class="mx-2 mt-0.5"><LogYellow /></div>
-            {:else}
-                <div class="mx-2 mt-0.5"><LogRed /></div>
-            {/if}
-            <span>{name}</span>
+            <button
+                class="flex w-full hover:text-[var(--vscode-list-hoverBackground)]"
+                on:click={handleChatIconClick}
+            >
+                {#if $state.agents[id].tasks?.task.status == "done"}
+                    <div class="mx-2 mt-0.5"><LogGreenSvg /></div>
+                {:else if $state.agents[id].tasks?.task.status == "running"}
+                    <div class="mx-1 mt-0.5"><LogYellow /></div>
+                {:else}
+                    <div class="mx-2 mt-0.5"><LogRed /></div>
+                {/if}
+                <div>{name}</div>
+            </button>
         </div>
 
         <button
-            class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex"
+            class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
             on:click={handleChatIconClick}
         >
             {#if hasNotification}
@@ -146,7 +139,7 @@
     <div hidden={!expanded}>
         {#if $state.agents[id].tasks.subtasks.length > 0}
             {#each $state.agents[id].tasks.subtasks as subtask}
-                <Log {subtask} on:message={handleMessage} />
+                <Log {subtask} />
             {/each}
         {/if}
     </div>

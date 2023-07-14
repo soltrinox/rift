@@ -39,8 +39,9 @@ export type AgentProgress = {
 export class Agent {
     constructor(
         public type: string, // aider, gpt-engineer, etc
+        public hasNotification: boolean = false,
         public chatHistory: ChatMessage[] = [],
-        public tasks?: Tasks 
+        public tasks?: Tasks
     ) { }
 }
 

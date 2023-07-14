@@ -68,6 +68,30 @@
             }
             case "chat_request":
                 const chat_request = event.data.data as AgentChatRequest;
+                if ($state.selectedAgentId == chat_request.id) {
+                    state.update((state) => ({
+                        ...state,
+                        agents: {
+                            ...state.agents,
+                            [chat_request.id!]: {
+                                ...state.agents[chat_request.id!],
+                                hasNotification: false,
+                            },
+                        },
+                    }));
+                } else if ($state.selectedAgentId != chat_request.id) {
+                    state.update((state) => ({
+                        ...state,
+                        agents: {
+                            ...state.agents,
+                            [chat_request.id!]: {
+                                ...state.agents[chat_request.id!],
+                                hasNotification: true,
+                            },
+                        },
+                    }));
+                }
+
                 break;
 
             case "update":
