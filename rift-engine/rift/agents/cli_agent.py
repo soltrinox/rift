@@ -193,5 +193,5 @@ async def main(agent_cls, params):
 def launcher(agent_cls: Type[Agent], param_cls: Type[ClientParams]):
     import fire
 
-    params = fire.Fire(get_dataclass_function(param_cls))
+    params = fire.Fire(param_cls)
     asyncio.run(main(agent_cls=agent_cls, params=params), debug=params.debug)
