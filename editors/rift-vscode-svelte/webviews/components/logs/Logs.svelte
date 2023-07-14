@@ -10,7 +10,7 @@
 </script>
 
 <div>
-    <div class="ml-3 mt-2">
+    <div class="ml-3 mt-2 space-y-2">
         {#if Object.keys(store.agents).length > 0}
             {#each Object.entries(store.agents) as [key, value]}
                 <Agent
