@@ -17,6 +17,7 @@
   let textarea: HTMLTextAreaElement;
 
   function sendMessage() {
+    if($loading) return
     textarea.blur();
     loading.set(true);
 
