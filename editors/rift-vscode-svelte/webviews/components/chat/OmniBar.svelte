@@ -90,9 +90,10 @@
     
   }
 </script>
+<!-- bg-[var(--vscode-panel-background)] -->
 
 <div
-  class="p-2 border-t border-b border-[var(--vscode-input-background)] fixed bottom-0 w-full"
+  class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full" 
 >
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${

@@ -58,7 +58,7 @@
   });
 </script>
 
-<div bind:this={chatWindow} class="flex items-start flex-col overflow-y-auto">
+<div bind:this={chatWindow} class="flex items-start flex-grow flex-col overflow-y-auto">
 
     {#each $state.agents[$state.selectedAgentId]?.chatHistory ?? [] as item}
       {#if item.role == "user"}

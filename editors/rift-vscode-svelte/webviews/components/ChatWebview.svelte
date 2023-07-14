@@ -190,7 +190,7 @@
 
 <svelte:window on:message={incomingMessage} />
 
-<div class="h-screen">
+<div class="h-screen flex flex-col">
   <Header />
   <Chat />
   <OmniBar />
