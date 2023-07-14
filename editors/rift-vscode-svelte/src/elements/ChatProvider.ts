@@ -71,7 +71,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                 case "runAgent":
                     // console.log("Getting list of available agents")
                     // let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
-
+                    console.log('runAgent ran')
                     editor = vscode.window.activeTextEditor;
                     if (!editor) {
                         console.error("No active text editor found");

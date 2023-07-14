@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
-  import type { ChatAgentProgress } from "../../../src/types";
-  import { loading, state } from "../stores";
+  import { loading, state, progressResponse } from "../stores";
   import UserSvg from "../icons/UserSvg.svelte";
   import UserInput from "./UserInput.svelte";
   import RiftSvg from "../icons/RiftSvg.svelte";
@@ -9,9 +8,7 @@
   import OmniBar from "./OmniBar.svelte";
 
   let observer: MutationObserver;
-  export let progressResponse = "";
 
-  let isDone = false;
 
   let chatWindow: HTMLDivElement;
   $: {
@@ -63,8 +60,8 @@
         <Response value={item.content} />
       {/if}
     {/each}
-    {#if !isDone}
-      <Response value={progressResponse} />
+    {#if loading}
+      <Response value={$progressResponse} />
     {/if}
 
 </div>

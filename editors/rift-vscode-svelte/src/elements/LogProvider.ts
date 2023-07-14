@@ -60,25 +60,25 @@ export class LogProvider implements vscode.WebviewViewProvider {
                     vscode.env.clipboard.writeText(data.content)
                     vscode.window.showInformationMessage('Text copied to clipboard!')
                     break;
-                case 'chatMessage': {
-                    const editor = vscode.window.activeTextEditor;
-                    let runChatParams: any = { message: data.message, messages: data.messages };
-                    if (!editor) {
-                        console.warn('No active text editor found');
-                    } else {
-                        // get the uri and position of the current cursor
-                        const doc = editor.document;
-                        const position = editor.selection.active;
-                        const textDocument = { uri: doc.uri.toString(), version: 0 }
-                        runChatParams = { message: data.message, messages: data.messages, position, textDocument }
-                    }
-                    if (!data.message || !data.messages) throw new Error()
-                    this.morph_language_client.run_chat(runChatParams, (progress) => {
-                        console.log(progress)
-                        if (!this._view) throw new Error('no view')
-                        if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
-                        this._view.webview.postMessage({ type: 'progress', data: progress });
-                    });
+                case 'chatMessage': { // TODO deprecate
+                    // const editor = vscode.window.activeTextEditor;
+                    // let runChatParams: any = { message: data.message, messages: data.messages };
+                    // if (!editor) {
+                    //     console.warn('No active text editor found');
+                    // } else {
+                    //     // get the uri and position of the current cursor
+                    //     const doc = editor.document;
+                    //     const position = editor.selection.active;
+                    //     const textDocument = { uri: doc.uri.toString(), version: 0 }
+                    //     runChatParams = { message: data.message, messages: data.messages, position, textDocument }
+                    // }
+                    // if (!data.message || !data.messages) throw new Error()
+                    // this.morph_language_client.run_chat(runChatParams, (progress) => {
+                    //     console.log(progress)
+                    //     if (!this._view) throw new Error('no view')
+                    //     if (progress.done) console.log('WEBVIEW DONE RECEIVEING / POSTING')
+                    //     this._view.webview.postMessage({ type: 'progress', data: progress });
+                    // });
                     break;
                 }
                 case "cancelAgent": {

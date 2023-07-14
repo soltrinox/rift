@@ -1,9 +1,8 @@
 <script lang="ts">
   import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
   import Logs from "./logs/Logs.svelte";
-  import { DEFAULT_STATE, loading, state } from "./stores";
+  import { DEFAULT_STATE, loading, state, progressResponse } from "./stores";
   import {
-    type ChatAgentProgress,
     type AgentRegistryItem,
     type AgentProgress,
     Agent,
@@ -13,11 +12,11 @@
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
   import type {
-    ChatProgress,
     AgentChatRequest,
     AgentInputRequest,
     AgentResult,
     AgentUpdate,
+    ChatAgentProgress,
   } from "../../src/client";
   import { IncomingMessage } from "http";
 
@@ -28,6 +27,13 @@
   console.log(vscode.getState());
 
   onMount(() => {
+    vscode.postMessage({
+      type: "runAgent",
+      params: {
+        agent_type: "rift_chat",
+        agent_params: {},
+      },
+    });
     //get initial list of agents
     vscode.postMessage({ type: "listAgents" });
   });
@@ -45,7 +51,6 @@
   console.log("attempting to access vscode state:");
   console.log(vscodeState);
   if (vscodeState) state.set(vscodeState);
-  let progressResponse: string;
 
   const incomingMessage = (event: any) => {
     console.log("ChatWebview event.data.type:", event.data.type);
@@ -67,13 +72,14 @@
 
       // TODO: focus the selected agent
       case "chatProgress": {
-        console.log(event.data.data);
-        const progress = event.data.data as ChatProgress;
-        const agentId = progress.agent_id; //FIXME brent HARDCODED change later
-        progressResponse = progress.response;
-        console.log(progressResponse);
-        isDone = progress.done_streaming;
-        break;
+        //TODO deprecate?
+        // console.log(event.data.data);
+        // const progress = event.data.data as ChatProgress;
+        // const agentId = progress.agent_id; //FIXME brent HARDCODED change later
+        // progressResponse = progress.response;
+        // console.log(progressResponse);
+        // isDone = progress.done_streaming;
+        // break;
       }
       case "chat_request": {
         const chat_request = event.data.data as AgentChatRequest;
@@ -114,54 +120,42 @@
         }));
         break;
 
-      case "progress": {
-        console.log("progress");
-        let progress = event.data.data as AgentProgress;
-        let agentId = progress.agent_id;
-        let status = progress.tasks.task.status;
+      case "progress":
+        {
+          console.log("progress in ChatWebview");
+          let progress = event.data.data as ChatAgentProgress;
+          let agentId = progress.agent_id;
 
-        // FIXME brent -- crucial to determine where we initalize a new agent. I'm just tryna get this set up now.
-        state.update((prevState) => {
-          return {
-            ...prevState,
-            agents: {
-              ...prevState.agents,
-              [agentId]: {
-                agent_id: agentId,
-                agent_type: progress.agent_type,
-                ...prevState.agents[agentId],
-                tasks: progress.tasks,
-              },
-            },
-          };
-        });
+          const response = progress.payload?.response;
+          response && progressResponse.set(response);
 
-        // for sticky window^
-        if (status == "done") {
-          state.update((state) => ({
-            ...state,
-            agents: {
-              ...state.agents,
-              [agentId]: {
-                ...state.agents[agentId],
-                chatHistory: [
-                  ...state.agents[agentId].chatHistory,
-                  {
-                    role: "assistant",
-                    content: progressResponse,
+          // FIXME brent -- crucial to determine where we initalize a new agent. I'm just tryna get this set up now.
+          if (progress.payload?.done_streaming) {
+            if (!response) throw new Error(" done streaming but no response?");
+            state.update((prevState) => {
+              return {
+                ...prevState,
+                agents: {
+                  ...prevState.agents,
+                  [agentId]: {
+                    agent_id: agentId,
+                    agent_type: progress.agent_type,
+                    ...prevState.agents[agentId],
+                    tasks: progress.tasks,
+                    chatHistory: [
+                      ...prevState.agents[agentId].chatHistory,
+                      { role: "assistant", content: response },
+                    ],
                   },
-                ],
-                tasks: state.agents[agentId].tasks,
-              },
-            },
-          }));
+                },
+              };
+            });
+          }
+
           loading.set(false);
-          progressResponse = "";
         }
 
         break;
-      }
-
       case "listAgents":
         console.log("new agents just dropped");
         console.log(event.data.data);
@@ -186,7 +180,7 @@
 <div class="h-screen">
   <Header />
   <div style="height: calc(100% - 80px);" class="overflow-y-auto">
-    <Chat {progressResponse} />
+    <Chat />
   </div>
   <div style="bottom: 0px; position: absolute" class="w-full">
     <OmniBar />
