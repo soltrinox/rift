@@ -5,7 +5,12 @@ export const DEFAULT_STATE: SvelteStore = {
   selectedAgentId: '',
   agents: {
   },
-  availableAgents: []
+  availableAgents: [{
+    agent_type: "rift_chat",
+    agent_description: '',
+    agent_icon: '',
+    display_name: 'Rift Chat'
+  }]
 };
 
 // {

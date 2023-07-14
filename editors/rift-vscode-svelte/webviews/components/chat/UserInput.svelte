@@ -61,24 +61,24 @@
   }
 </script>
 
-<div>
-<div class="flex items-center pt-2 pl-2 bg-[var(--vscode-input-background)]">
-  <UserSvg size={12} />
-  <p class="text-sm">YOU</p>
-</div>
-<div
-  class="w-full text-md p-2 min-h-8 bg-[var(--vscode-input-background)] flex flex-row items-center"
->
-  <textarea
-    bind:this={textarea}
-    class="w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
-    placeholder="Type to chat or hit / for commands"
-    on:input={resize}
-    on:keydown={handleKeyDown}
-    disabled={true}
-    {value}
-  />
-</div>
+<div class="bg-[var(--vscode-input-background)] w-full">
+  <div class="flex items-center pt-2 pl-2">
+    <UserSvg size={12} />
+    <p class="text-sm">YOU</p>
+  </div>
+  <div
+    class="w-full text-md p-2 min-h-8 flex flex-row items-center"
+  >
+    <textarea
+      bind:this={textarea}
+      class="w-full min-h-8 block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
+      placeholder="Type to chat or hit / for commands"
+      on:input={resize}
+      on:keydown={handleKeyDown}
+      disabled={true}
+      {value}
+    />
+  </div>
 </div>
 
 

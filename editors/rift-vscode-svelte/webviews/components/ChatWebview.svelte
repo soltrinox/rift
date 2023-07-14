@@ -21,19 +21,20 @@
   import { IncomingMessage } from "http";
 
   // UNCOMMENT THE BELOW LINES AND REFRESH IF YOU NEED A HARD RESET:
-  // console.log("RESETTING VSCODE STATE");
-  // console.log(DEFAULT_STATE);
-  // vscode.setState(DEFAULT_STATE);
-  // console.log(vscode.getState());
+  console.log("RESETTING VSCODE STATE");
+  console.log(DEFAULT_STATE);
+  vscode.setState(DEFAULT_STATE);
+  console.log(vscode.getState());
 
   onMount(() => {
-    vscode.postMessage({
-      type: "runAgent",
-      params: {
-        agent_type: "rift_chat",
-        agent_params: {},
-      },
-    });
+
+      vscode.postMessage({
+        type: "runAgent",
+        params: {
+          agent_type: "rift_chat",
+          agent_params: {},
+        },
+      });
     //get initial list of agents
     vscode.postMessage({ type: "listAgents" });
   });
@@ -88,6 +89,22 @@
         const chat_request = event.data.data as AgentChatRequest | string;
         console.log("chat_request");
         console.log(chat_request);
+
+        // this should only apply to the first message after runAgent.
+        // the rest are added via the progress calls.
+        if(typeof chat_request !== 'string' && $state.agents[chat_request.id]?.chatHistory.length < 1){
+          if(chat_request.messages.length > 1) throw new Error("No previous messages on client for this ID, but server is giving multiple chat messages.")
+          state.update(prevState => ({
+            ...prevState,
+            agents: {
+              ...prevState.agents,
+              [chat_request.id]: {
+                ...prevState.agents[chat_request.id],
+                chatHistory: [...chat_request.messages]
+              }
+            }
+          }))
+        }
         
         //dont think we need to actually do anything here b/c everything is done
         // from the result case and progress case.
@@ -119,6 +136,7 @@
           let progress = event.data.data as ChatAgentProgress;
           let agentId = progress.agent_id;
 
+          console.log(progress)
           const response = progress.payload?.response;
           response && progressResponse.set(response);
 

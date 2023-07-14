@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
   import type { SvelteStore } from "../../../../src/types";
 
+  export let handleRunAgent:(agent_type: string) => void
   let store: SvelteStore;
 
   state.subscribe((s) => {
@@ -29,17 +30,9 @@
       e.preventDefault();
       // create agent
       console.log("agent_type: " + availableAgents[activeId].agent_type);
-
-      console.log("THIS IS THE STATE");
-      console.log(store);
-
-      vscode.postMessage({
-        type: "runAgent",
-        params: {
-          agent_type: availableAgents[activeId].agent_type,
-          agent_params: {},
-        },
-      });
+      handleRunAgent(availableAgents[activeId].agent_type)
+      // console.log("THIS IS THE STATE");
+      // console.log(store);
     }
     if (e.key == "ArrowDown") {
       console.log("ArrowDown");
@@ -72,6 +65,6 @@
         .toLowerCase()
         .includes(searchString);
   }) as agent, index}
-    <DropdownCard {agent} focused={index === activeId} />
+    <DropdownCard {agent} focused={index === activeId} {handleRunAgent} />
   {/each}
 </div>

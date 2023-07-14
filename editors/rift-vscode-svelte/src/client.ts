@@ -152,7 +152,7 @@ export type ChatMessage = {
 
 export interface AgentChatRequest {
     messages: ChatMessage[]
-    id?: string
+    id: string
 }
 
 export interface AgentInputRequest {
