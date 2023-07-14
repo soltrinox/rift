@@ -67,21 +67,21 @@
     <div class="flex hover:bg-red">
         <div class="flex select-none">
             {#if expanded == false}
-                <div
-                    class="mx-1 mt-1.5 hover:text-[var(--vscode-list-hoverBackground)]"
+                <button
+                    class="mx-1"
                     on:click={() => (expanded = !expanded)}
                     on:keydown={() => (expanded = !expanded)}
                 >
                     <ArrowRightSvg />
-                </div>
+                </button>
             {:else}
-                <div
-                    class="mx-1 mt-1.5 hover:text-[var(--vscode-list-hoverBackground)]"
+                <button
+                    class="mx-1"
                     on:click={() => (expanded = !expanded)}
                     on:keydown={() => (expanded = !expanded)}
                 >
                     <ArrowDownSvg />
-                </div>
+                </button>
             {/if}
             <button class="flex w-full" on:click={handleChatIconClick}>
                 {#if $state.agents[id].tasks?.task.status == "done"}

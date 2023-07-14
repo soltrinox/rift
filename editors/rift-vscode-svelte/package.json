@@ -67,7 +67,7 @@
         {
           "type": "webview",
           "id": "RiftChat",
-          "name": "Rift Dashboard"
+          "name": "Chat"
         },
         {
           "type": "webview",
