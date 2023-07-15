@@ -6,6 +6,7 @@
   import RiftSvg from "../icons/RiftSvg.svelte";
   import Response from "./Response.svelte";
   import OmniBar from "./OmniBar.svelte";
+  
 
   let observer: MutationObserver;
   let chatWindow: HTMLDivElement;

@@ -2,10 +2,9 @@
   import { onMount } from "svelte";
   import RiftSvg from "../icons/RiftSvg.svelte";
   import { copySvg } from "../icons/copySvg";
-  export let hasSvg = false;
   export let value = "";
   // export let isNew = false;
-  import { loading } from "../stores";
+  import { loading, state } from "../stores";
   import CopySvg from "../icons/CopySvg.svelte";
   import { SvelteComponent } from "svelte";
   let responseBlock: HTMLDivElement;
@@ -77,13 +76,10 @@
   <div
     class={`flex items-center py-1 ${value == "" && !$loading ? "hidden" : ""}`}>
     <RiftSvg size={12} />
-    <p class="text-sm">RIFT</p>
+    <p class="text-sm">{$state.agents[$state.selectedAgentId].type === 'rift_chat' ? "RIFT" : $state.agents[$state.selectedAgentId].type}</p>
   </div>
   <div
     class={`w-full text-md focus:outline-none flex flex-row ${value === "" && !$loading ? "hidden" : ""}`}>
-    {#if hasSvg}
-      <RiftSvg />
-    {/if}
     <div
       contenteditable="true"
       bind:this={responseBlock}

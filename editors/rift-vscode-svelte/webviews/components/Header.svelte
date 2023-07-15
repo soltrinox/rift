@@ -7,9 +7,6 @@
     // state.set(DEFAULT_STATE);
     // vscode.setState(DEFAULT_STATE);
     // we're no longer reseting the entire state when you hit this LMAO... just going to reset the chat history of the selectedAgent
-    console.log('sliceing')
-    console.log('curr state')
-    console.log($state)
     state.update(state => ({...state, agents: {...state.agents, [state.selectedAgentId]: {...state.agents[state.selectedAgentId], chatHistory: state.agents[state.selectedAgentId].chatHistory.slice(-1) }}})) // chop off everything but the last message
   }
 
