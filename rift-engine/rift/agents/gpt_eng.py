@@ -1,5 +1,8 @@
 import asyncio
+import threading
 import typing
+import inspect
+
 try:
     import gpt_engineer
 except ImportError:
@@ -8,7 +11,7 @@ except ImportError:
 import rift.agents.cli_agent as agent
 import rift.util.file_diff as file_diff
 import rift.lsp.types as lsp
-
+import threading
 
 from dataclasses import dataclass
 
@@ -25,13 +28,17 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS, Config as StepsConfig
 
-def to_files(chat, workspace, queue: asyncio.Queue):
+from queue import Queue
+import queue
+
+def to_files(chat, workspace, updates_queue: queue.Queue):
+    print("TOFILES CALLED")
     workspace["all_output.txt"] = chat
     files = parse_chat(chat)
     for file_name, file_content in files:
         workspace[file_name] = file_content
-        print("added to queue")
-        queue.put_nowait(workspace)
+        print("WOAH")
+        updates_queue.put(workspace.copy())
 
 
 def _main(
@@ -65,6 +72,8 @@ def _main(
         preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
         archive=DB(archive_path),
     )
+    gpt_engineer.chat_to_files.to_files = lambda chat, workspace: to_files(chat, workspace, updates_queue)
+
 
     if steps_config not in [
         StepsConfig.EXECUTE_ONLY,
@@ -130,29 +139,24 @@ class GPTEngineerAgent(agent.Agent):
         params_dict = {k: v for k, v in iter_fields(self.run_params)}
 
         # Create a queue for updates.
-        queue = asyncio.Queue()
+        updates_queue = Queue()
+        print(inspect.getsource(gpt_engineer.chat_to_files.to_files))
+        gpt_engineer.chat_to_files.to_files = lambda chat, workspace: to_files(chat, workspace, updates_queue)
+        print(inspect.getsource(gpt_engineer.chat_to_files.to_files))
+        print("TEST")
+        # Run main function in a separate thread and send updates from the queue.
+        main_thread = threading.Thread(target=_main, kwargs=params_dict, daemon=True)
+        main_thread.start()
 
-        # Assign a new to_files function that passes updates to the queue.
-        gpt_engineer.chat_to_files.to_files = lambda chat, workspace: to_files(chat, workspace, queue)
-
-        # Run main function and send updates from the queue.
-        try:
-            main_task = asyncio.create_task(_main(**params_dict))
-            while not main_task.done():
-                workspace = await queue.get()
+        while main_thread.is_alive():
+            try:
+                # Try to get update from the queue with a timeout.
+                workspace = updates_queue.get(timeout=1.0)
                 yield [file_diff.get_file_change(file_path, new_contents) 
                     for file_path, new_contents in workspace.items()]
-        finally:
-            # Cleanup: cancel the main_task if it is still running.
-            try:
-                if not main_task.done():
-                    main_task.cancel()
-                    try:
-                        await main_task
-                    except asyncio.CancelledError:
-                        pass
-            except: 
-                pass
+            except queue.Empty:
+                # If the queue is empty, just continue to the next iteration.
+                continue
 
 if __name__ == "__main__":
     agent.launcher(GPTEngineerAgent, GPTEngineerAgentParams)
