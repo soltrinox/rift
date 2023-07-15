@@ -18,7 +18,9 @@
   let textarea: HTMLTextAreaElement;
 
   function sendMessage() {
-    if($loading) return
+    if($loading) {
+      console.log('cannot send messages while ai is responding')
+      return}
     textarea.blur();
     loading.set(true);
 
@@ -76,7 +78,7 @@
         textarea.style.height = textarea.scrollHeight + "px";
         return;
       }
-      if (!textarea.value || dropdownOpen) return;
+      if (!textarea.value || $dropdownOpen) return;
       sendMessage();
     }
   }
