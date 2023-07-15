@@ -10,11 +10,13 @@ That is why we are releasing Rift, an [open-source language server](./rift-engin
 https://github.com/morph-labs/rift/assets/122334950/83c56f1c-1d9d-4d7f-b789-a131d09e8d1c
 
 
-
 ## The road ahead
 Existing code generation tooling is presently mostly code-agnostic, operating at the level of tokens in / tokens out of code LMs. The [language server protocol](https://microsoft.github.io/language-server-protocol/) (LSP) defines a standard for *language servers*, objects which index a codebase and provide structure- and runtime-aware interfaces to external development tools like IDEs.
 
 The Rift Code Engine is an AI-native language server which will expose interfaces for code transformations and code understanding in a uniform, model- and language-agnostic way --- e.g. `rift.summarize_callsites` or `rift.launch_ai_swe_async` should work on a Python codebase with [StarCoder](https://huggingface.co/blog/starcoder) as well as it works on a Rust codebase using [CodeGen](https://github.com/salesforce/CodeGen). Within the language server, models will have full programatic access to language-specific tooling like compilers, unit and integration test frameworks, and static analyzers to produce correct code with minimal user intervention. We will develop UX idioms as needed to support this functionality in the Rift IDE extensions.
+
+https://github.com/morph-labs/rift/assets/122334950/a5fee985-5bba-4cad-84d6-c019e2eff887
+
 
 ## Getting started
 ### VSCode extension
