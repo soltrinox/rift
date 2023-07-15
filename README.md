@@ -15,9 +15,6 @@ Existing code generation tooling is presently mostly code-agnostic, operating at
 
 The Rift Code Engine is an AI-native language server which will expose interfaces for code transformations and code understanding in a uniform, model- and language-agnostic way --- e.g. `rift.summarize_callsites` or `rift.launch_ai_swe_async` should work on a Python codebase with [StarCoder](https://huggingface.co/blog/starcoder) as well as it works on a Rust codebase using [CodeGen](https://github.com/salesforce/CodeGen). Within the language server, models will have full programatic access to language-specific tooling like compilers, unit and integration test frameworks, and static analyzers to produce correct code with minimal user intervention. We will develop UX idioms as needed to support this functionality in the Rift IDE extensions.
 
-https://github.com/morph-labs/rift/assets/122334950/a5fee985-5bba-4cad-84d6-c019e2eff887
-
-
 ## Getting started
 ### VSCode extension
 Install the VSCode extension from the VSCode Marketplace or by building and installing from the VSIX bundle produced by the following steps:
@@ -33,6 +30,11 @@ If you also want to develop the extension itself, you should open the extension 
 
 ### Rift Code Engine
 Run the Rift server by following the instructions in the [readme](./rift-engine/README.md).
+
+### Rift Agents API
+Add support for third-party coding agents written in Python and use access to the Rift Code Engine to propagate edits and gather input directly from the user in the IDE. See the [README here](./rift-engine/rift/agents/README.md) for the Rift Agents API.
+
+https://github.com/morph-labs/rift/assets/122334950/a5fee985-5bba-4cad-84d6-c019e2eff887
 
 ### Running local models
 From the Rift VSCode extension, press `Ctrl + ,` to open the settings tab, then search for `Rift` and select the models you want to use for chat and code completions from the dropdown menu.
