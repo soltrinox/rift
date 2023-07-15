@@ -6,13 +6,7 @@ import typing
 try:
     import gpt_engineer
     import gpt_engineer.chat_to_files
-    import gpt_engineer.db
-    from gpt_engineer.ai import AI, fallback_model
-    from gpt_engineer.collect import collect_learnings
-    from gpt_engineer.db import DB, DBs, archive
-    from gpt_engineer.learning import collect_consent
-    from gpt_engineer.steps import STEPS
-    from gpt_engineer.steps import Config as StepsConfig
+    import gpt_engineer.db    
 except ImportError:
     raise Exception("`gpt_engineer` not found. Try `pip install gpt-engineer`")
 
@@ -33,6 +27,13 @@ def to_files(chat, workspace: gpt_engineer.db.DB):
 
 # Assign a new to_files function that passes updates to the queue.
 gpt_engineer.chat_to_files.to_files = to_files
+
+from gpt_engineer.ai import AI, fallback_model
+from gpt_engineer.collect import collect_learnings
+from gpt_engineer.db import DB, DBs, archive
+from gpt_engineer.learning import collect_consent
+from gpt_engineer.steps import STEPS
+from gpt_engineer.steps import Config as StepsConfig
 
 import json
 import logging
