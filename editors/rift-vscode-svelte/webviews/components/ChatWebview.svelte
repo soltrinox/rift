@@ -165,6 +165,7 @@
               };
             });
             loading.set(false);
+            progressResponse.set('')
           }
         }
 
