@@ -7,7 +7,9 @@ At [Morph](https://morph.so), we believe that:
 
 That is why we are releasing Rift, an [open-source language server](./rift-engine) and [IDE extension](./editors/rift-vscode) that lets everyone deploy a personal AI software engineer — locally hosted, private, secure, open-source, and free.
 
-https://github.com/morph-labs/rift/assets/122334950/dd0aacd6-4cf5-4997-82f0-81fabf9c3e16
+https://github.com/morph-labs/rift/assets/122334950/83c56f1c-1d9d-4d7f-b789-a131d09e8d1c
+
+
 
 ## The road ahead
 Existing code generation tooling is presently mostly code-agnostic, operating at the level of tokens in / tokens out of code LMs. The [language server protocol](https://microsoft.github.io/language-server-protocol/) (LSP) defines a standard for *language servers*, objects which index a codebase and provide structure- and runtime-aware interfaces to external development tools like IDEs.
