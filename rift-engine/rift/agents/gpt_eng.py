@@ -140,11 +140,7 @@ class GPTEngineerAgent(agent.Agent):
         updates_queue = Queue()
 
         # Assign a new to_files function that passes updates to the queue.
-        def new_to_files(chat, workspace):
-            return to_files(chat, workspace, updates_queue)
-
-        gpt_engineer.chat_to_files.to_files = new_to_files
-
+        gpt_engineer.chat_to_files.to_files = lambda chat, workspace: to_files(chat, workspace, updates_queue)
         # Run main function in a separate thread and send updates from the queue.
         main_thread = threading.Thread(target=_main, kwargs=params_dict, daemon=True)
         main_thread.start()
