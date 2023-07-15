@@ -6,24 +6,20 @@ import typing
 try:
     import gpt_engineer
     import gpt_engineer.chat_to_files
-    import gpt_engineer.db    
+    import gpt_engineer.db
 except ImportError:
     raise Exception("`gpt_engineer` not found. Try `pip install gpt-engineer`")
 
 UPDATES_QUEUE = asyncio.Queue()
+SEEN = set()
 
 
 def to_files(chat, workspace: gpt_engineer.db.DB):
     workspace["all_output.txt"] = chat
     files = gpt_engineer.chat_to_files.parse_chat(chat)
 
-    async def _update_queue(item):
-        await UPDATES_QUEUE.put(item)
-
     for file_name, file_content in files:
         workspace[file_name] = file_content
-    asyncio.create_task(_update_queue(list(workspace.in_memory_dict.items())))
-
 
 # Assign a new to_files function that passes updates to the queue.
 gpt_engineer.chat_to_files.to_files = to_files
@@ -89,15 +85,31 @@ async def _main(
         archive(dbs)
 
     steps = STEPS[steps_config]
+    # async def execute_steps():
+
     for step in steps:
+        await asyncio.sleep(0.1)
         messages = step(ai, dbs)
+        await asyncio.sleep(0.1)
         dbs.logs[step.__name__] = json.dumps(messages)
+        
+        items = list(dbs.workspace.in_memory_dict.items())
+        if len([x for x in items if x[0] not in SEEN]) > 0:
+            await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
+            for x in items:
+                if x[0] in SEEN:
+                    pass
+                else:
+                    SEEN.add(x[0])
+        await asyncio.sleep(0.5)
+
+    # execute_steps_ = execute_steps()
 
     # if collect_consent():
     #     collect_learnings(model, temperature, steps, dbs)
 
     # dbs.logs["token_usage"] = ai.format_token_usage_log()
-    return dbs.workspace
+    # return dbs.workspace
 
 
 @dataclass
@@ -119,17 +131,17 @@ class GPTEngineerAgent(agent.Agent):
 
 
 
-                █████████          ██████  ██████  ████████ 
-             █████   ████         ██       ██   ██    ██    
-           ████   ████      ██    ██   ███ ██████     ██    
-          ███    ███     ██████   ██    ██ ██         ██    
-          ███     █████████ ███    ██████  ██         ██    
-           ███      ████   ████   
-         ████             ███     
-      ████    █████████████       ███████ ███    ██  ██████  
-   █████    ████                  ██      ████   ██ ██       
-  ███     ████                    █████   ██ ██  ██ ██   ███ 
-  ███   ███                       ██      ██  ██ ██ ██    ██ 
+                █████████          ██████  ██████  ████████
+             █████   ████         ██       ██   ██    ██
+           ████   ████      ██    ██   ███ ██████     ██
+          ███    ███     ██████   ██    ██ ██         ██
+          ███     █████████ ███    ██████  ██         ██
+           ███      ████   ████
+         ████             ███
+      ████    █████████████       ███████ ███    ██  ██████
+   █████    ████                  ██      ████   ██ ██
+  ███     ████                    █████   ██ ██  ██ ██   ███
+  ███   ███                       ██      ██  ██ ██ ██    ██
    ██████                         ███████ ██   ████  ██████
 
 
@@ -148,11 +160,13 @@ class GPTEngineerAgent(agent.Agent):
 
         main_t = asyncio.create_task(_main(**params_dict))
 
-        while not main_t.done():
+        counter = 0
+        while (not main_t.done()) or (UPDATES_QUEUE.qsize() > 0):
+            counter += 1
             try:
                 updates = await asyncio.wait_for(UPDATES_QUEUE.get(), 1.0)
                 yield [
-                    file_diff.get_file_change(file_path, new_contents)
+                    file_diff.get_file_change(file_path, new_contents, annotation_label=str(counter))
                     for file_path, new_contents in updates
                 ]
             except asyncio.TimeoutError:

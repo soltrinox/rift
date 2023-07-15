@@ -31,7 +31,6 @@ import art
 import fire
 from rift.agents.util import ainput, stream_string, stream_string_ascii
 
-
 @dataclass
 class ClientParams:
     """
@@ -159,16 +158,17 @@ async def main(agent_cls, params):
                 console.print(Panel("[AgentRunStats] report:\n" + json.dumps(self.stats, indent=2)))
 
         agent_stats = AgentRunStats()
-
+        
         async for file_changes in agent.run():
             for file_change in file_changes:
                 agent_stats.stats["changed_files"].append(file_change.uri.uri)
             await client.server.apply_workspace_edit(
                 lsp.ApplyWorkspaceEditParams(
                     file_diff.edits_from_file_changes(file_changes, user_confirmation=True),
-                    label="rift",
+                    label=file_changes[0].description or "rift",
                 )
-            )
+            )        
+            
         agent_stats.stats["elapsed_time"] = agent_stats.elapsed()
 
         console.print("\n")
