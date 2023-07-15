@@ -21,7 +21,7 @@ export const DEFAULT_STATE: SvelteStore = {
 //   },
 // }
 
-
+export const dropdownOpen = writable(false)
 export const state = writable<SvelteStore>(DEFAULT_STATE)
 export const loading = writable(false)
 export const progressResponse = writable('')

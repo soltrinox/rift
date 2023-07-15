@@ -1,12 +1,13 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
   import UserSvg from "../icons/UserSvg.svelte";
-  import { loading, state } from "../stores";
+  import { loading, state, dropdownOpen } from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
   import type { SvelteStore } from "../../../src/types";
   import { append } from "svelte/internal";
-  let dropdownOpen = false;
+
   let isFocused = true;
+  console.log('init')
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement;
@@ -57,10 +58,12 @@
     textarea.style.height = textarea.scrollHeight + "px";
   }
   function handleValueChange(e: Event) {
+    console.log('handleValueChange')
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
-      dropdownOpen = true;
-    } else dropdownOpen = false;
+      console.log("HOITYTOITY")
+      dropdownOpen.set(true)
+    } else dropdownOpen.set(false)
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -87,14 +90,14 @@
           agent_params: {},
         },
       });
-    dropdownOpen = false
+    dropdownOpen.set(false)
     
   }
 </script>
 <!-- bg-[var(--vscode-panel-background)] -->
 
 <div
-  class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full" 
+  class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative" 
 >
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${
@@ -120,7 +123,7 @@
       </button>
     </div>
   </div>
-  {#if dropdownOpen}
+  {#if $dropdownOpen}
     <Dropdown inputValue={textarea.value} {handleRunAgent}/>
   {/if}
 </div>
