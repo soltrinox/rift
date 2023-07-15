@@ -13,3 +13,8 @@
 ../*.spec
 
 *__pycache__/
+rift-engine/rift/agents/test.o
+rift-engine/rift/agents/infer-out/
+rift-engine/venv
+
+
