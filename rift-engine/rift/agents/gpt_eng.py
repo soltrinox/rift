@@ -72,8 +72,6 @@ def _main(
         preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
         archive=DB(archive_path),
     )
-    gpt_engineer.chat_to_files.to_files = lambda chat, workspace: to_files(chat, workspace, updates_queue)
-
 
     if steps_config not in [
         StepsConfig.EXECUTE_ONLY,
@@ -140,10 +138,13 @@ class GPTEngineerAgent(agent.Agent):
 
         # Create a queue for updates.
         updates_queue = Queue()
-        print(inspect.getsource(gpt_engineer.chat_to_files.to_files))
-        gpt_engineer.chat_to_files.to_files = lambda chat, workspace: to_files(chat, workspace, updates_queue)
-        print(inspect.getsource(gpt_engineer.chat_to_files.to_files))
-        print("TEST")
+
+        # Assign a new to_files function that passes updates to the queue.
+        def new_to_files(chat, workspace):
+            return to_files(chat, workspace, updates_queue)
+
+        gpt_engineer.chat_to_files.to_files = new_to_files
+
         # Run main function in a separate thread and send updates from the queue.
         main_thread = threading.Thread(target=_main, kwargs=params_dict, daemon=True)
         main_thread.start()
