@@ -102,6 +102,8 @@ async def _main(
                 else:
                     SEEN.add(x[0])
         await asyncio.sleep(0.5)
+        # if step.__name__ == "gen_entrypoint":
+        #     await asyncio.sleep(3)
 
     # execute_steps_ = execute_steps()
 
