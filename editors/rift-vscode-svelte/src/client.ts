@@ -17,7 +17,7 @@ import {
 import * as net from 'net'
 import { join } from 'path';
 import * as tcpPortUsed from 'tcp-port-used'
-import { chatProvider, logProvider } from './extension';
+import { chatProvider, logProvider, morph_language_client } from './extension';
 import PubSub from './lib/PubSub';
 
 
@@ -173,6 +173,43 @@ export type AgentResult = {
     type: string
 } //is just an ID rn
 
+
+
+const code_completion_send_progress_callback = async (params: any) => {
+    const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
+    const key: string = `code_completion_${params.agent_id}`
+    if (params.tasks) {
+        logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks })
+        if (params.tasks.task.status) {
+            if (morph_language_client.agentStates.get(key).status !== params.tasks.task.status) {
+                morph_language_client.agentStates.get(key).status = params.tasks.task.status
+                morph_language_client.agentStates.get(key).emitter.fire(params.tasks.task.status)
+            }
+        }
+    }
+    if (params.payload) {
+        if (params.payload.ranges) {
+            morph_language_client.agentStates.get(key).ranges = params.payload.ranges
+        }
+    }
+    const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == morph_language_client.agentStates.get(key).params.textDocument.uri.toString())
+    for (const editor of editors) {
+        // [todo] check editor is visible
+        const version = editor.document.version
+        if (params.tasks) {
+            if (params.tasks.task.status == 'accepted' || params.tasks.task.status == 'rejected') {
+                editor.setDecorations(green, [])
+                continue
+            }
+        }
+        if (params.payload) {
+            if (params.payload.ranges) {
+                editor.setDecorations(green, params.payload.ranges.map(r => new vscode.Range(r.start.line, r.start.character, r.end.line, r.end.character)))
+            }
+        }
+    }
+}
+
 class Agent {
     status: AgentStatus;
     green: vscode.TextEditorDecorationType;
@@ -189,35 +226,6 @@ class Agent {
 
     }
     async handleInputRequest(params: AgentInputRequest) {
-        // console.log("handleChatRequest");
-        // console.log(params);
-        // chatProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
-        // logProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
-
-        // let agentType = this.agent_type;
-        // let agentId = this.id;
-
-        // console.log('agentType:', agentType);
-        // console.log('agentId:', agentId);
-
-        // // return "BLAH BLAH"
-        // async function getUserInput() {
-        //     console.log('getUserInput');
-        //     console.log('agentType:', agentType);
-        //     console.log('agentId:', agentId);
-        //     return new Promise<AgentInputResponse>((res, rej) => {
-        //         console.log('subscribing to changes');
-        //         PubSub.sub(`${agentType}_${agentId}_input_request`, (message: AgentInputResponse) => {
-        //             console.log('resolving promise');
-        //             res(message);
-        //         })
-        //     })
-        // }
-
-        // let inputResponse: AgentInputResponse = await getUserInput();
-        // console.log('received user input and returning to server');
-        // console.log(inputResponse);
-        // return { "response": inputResponse.response };
         let response = await vscode.window.showInputBox({
             ignoreFocusOut: true,
             placeHolder: params.place_holder,
@@ -258,8 +266,8 @@ class Agent {
         return chatRequest;
     }
     async handleUpdate(params: AgentUpdate) {
-        // console.log("handleUpdate")
-        // console.log(params)
+        console.log("handleUpdate")
+        console.log(params)
         // //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
         // logProvider._view?.webview.postMessage({ type: 'update', data: params });
         vscode.window.showInformationMessage(params.msg);
@@ -269,6 +277,11 @@ class Agent {
         console.log(params)
         chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
+
+
+        if (this.agent_type === "code_completion") {
+            code_completion_send_progress_callback(params);
+        }
     }
     async handleResult(params: AgentResult) {
         console.log("handleResult")
@@ -277,6 +290,8 @@ class Agent {
         logProvider._view?.webview.postMessage({ type: 'result', data: params });
     }
 }
+
+
 
 
 
