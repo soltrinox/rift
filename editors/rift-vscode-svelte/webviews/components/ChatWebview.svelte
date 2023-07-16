@@ -19,6 +19,7 @@
     ChatAgentProgress,
   } from "../../src/client";
   import { IncomingMessage } from "http";
+  import type { SvelteStore } from "../../src/types";
 
   // UNCOMMENT THE BELOW LINES AND REFRESH IF YOU NEED A HARD RESET:
   console.log("RESETTING VSCODE STATE");
@@ -63,6 +64,19 @@
         const input_request = event.data.data as AgentInputRequest;
         // let agentId = input_request.agent_id;
         // let status = input_request.tasks.task.status;
+        state.update((prevState) => ({
+          ...prevState,
+          agents: {
+            ...prevState.agents,
+            [input_request.id]: {
+              ...prevState.agents[input_request.id],
+              inputRequest: {
+                msg: input_request.msg,
+                place_holder: input_request.place_holder,
+              },
+            },
+          },
+        }));
         break;
       case "selectedAgentId":
         console.log(`chatwebview selectedAgentId: ${event.data.data}`);

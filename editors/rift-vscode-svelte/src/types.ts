@@ -7,6 +7,11 @@ export class ChatMessage {
     ) { }
 }
 
+export type InputRequest = {
+    msg: string;
+    place_holder?: string | null
+}
+
 
 export type ChatMessageType = {
     role: "user" | "assistant",
@@ -35,6 +40,7 @@ export class Agent {
         public type: string, // aider, gpt-engineer, etc
         public hasNotification: boolean = false,
         public chatHistory: ChatMessage[] = [],
+        public inputRequest: InputRequest | null = null,
         public tasks?: Tasks
     ) { }
 }

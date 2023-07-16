@@ -61,8 +61,29 @@
                 break;
             case "input_request": {
                 const input_request = event.data.data as AgentInputRequest;
-                // let agentId = input_request.agent_id;
-                // let status = input_request.tasks.task.status;
+                if ($state.selectedAgentId == input_request.id) {
+                    state.update((state) => ({
+                        ...state,
+                        agents: {
+                            ...state.agents,
+                            [input_request.id!]: {
+                                ...state.agents[input_request.id!],
+                                hasInputNotification: false,
+                            },
+                        },
+                    }));
+                } else if ($state.selectedAgentId != input_request.id) {
+                    state.update((state) => ({
+                        ...state,
+                        agents: {
+                            ...state.agents,
+                            [input_request.id!]: {
+                                ...state.agents[input_request.id!],
+                                hasInputNotification: true,
+                            },
+                        },
+                    }));
+                }
 
                 break;
             }
@@ -75,7 +96,7 @@
                             ...state.agents,
                             [chat_request.id!]: {
                                 ...state.agents[chat_request.id!],
-                                hasNotification: false,
+                                hasChatNotification: false,
                             },
                         },
                     }));
@@ -86,7 +107,7 @@
                             ...state.agents,
                             [chat_request.id!]: {
                                 ...state.agents[chat_request.id!],
-                                hasNotification: true,
+                                hasChatNotification: true,
                             },
                         },
                     }));

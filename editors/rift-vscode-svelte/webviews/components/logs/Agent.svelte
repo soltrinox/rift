@@ -15,7 +15,8 @@
     export let id: string = "";
     export let selectedId = "";
     export let name: string = "rift_chat";
-    export let hasNotification = false;
+    export let hasChatNotification = false;
+    export let hasInputNotification = false;
 
     $: isSelected = id == selectedId;
 
@@ -40,7 +41,8 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        hasNotification = false;
+        hasChatNotification = false;
+        hasInputNotification = false;
         state.update((state) => ({
             ...state,
             selectedAgentId: id,
@@ -48,7 +50,8 @@
                 ...state.agents,
                 [id]: {
                     ...state.agents[id],
-                    hasNotification: false,
+                    hasChatNotification: false,
+                    hasInputNotification: false,
                 },
             },
         }));
@@ -99,7 +102,7 @@
             class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
             on:click={handleChatIconClick}
         >
-            {#if hasNotification}
+            {#if hasChatNotification || hasInputNotification}
                 <div
                     class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
                 />

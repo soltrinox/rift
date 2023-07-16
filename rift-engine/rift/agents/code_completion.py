@@ -24,6 +24,7 @@ from rift.server.selection import RangeSet
 
 logger = logging.getLogger(__name__)
 
+
 # dataclass for representing the result of the code completion agent run
 @dataclass
 class CodeCompletionRunResult(AgentRunResult):
@@ -86,6 +87,7 @@ class CodeCompletionAgent(Agent):
         return obj
 
     async def run(self) -> AgentRunResult:  # main entry point
+        await self.send_progress()
         instructionPrompt = self.state.params.instructionPrompt or (
             await self.request_input(
                 RequestInputRequest(
@@ -184,9 +186,7 @@ class CodeCompletionAgent(Agent):
             )
         )
 
-        plan_task = self.add_task(
-            AgentTask("Plan out code edit", generate_plan)
-        )
+        plan_task = self.add_task(AgentTask("Plan out code edit", generate_plan))
 
         await self.send_progress(
             CodeCompletionProgress(
@@ -252,9 +252,7 @@ class CodeCompletionAgent(Agent):
                         if c.range.end.line < self.state.cursor.line:
                             # the change is occurring on lines strictly above us
                             # so we can adjust the number of lines
-                            lines_to_add = (
-                                c.text.count("\n") + c.range.start.line - c.range.end.line
-                            )
+                            lines_to_add = c.text.count("\n") + c.range.start.line - c.range.end.line
                             self.state.cursor += (lines_to_add, 0)
                         else:
                             # self.cancel("someone is editing on the same line as us")

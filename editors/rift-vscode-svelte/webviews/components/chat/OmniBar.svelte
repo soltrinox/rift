@@ -7,7 +7,7 @@
   import { append } from "svelte/internal";
 
   let isFocused = true;
-  console.log('init')
+  console.log("init");
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement;
@@ -17,10 +17,58 @@
 
   let textarea: HTMLTextAreaElement;
 
+  let hasInput = false;
+  state.subscribe((s) => {
+    if (s.selectedAgentId) {
+      if (s.agents[s.selectedAgentId].inputRequest) {
+        hasInput = true;
+      }
+    }
+    hasInput = false;
+  });
+
+  function sendInput() {
+    if ($loading) {
+      console.log("cannot send messages while ai is responding");
+      return;
+    }
+    textarea.blur();
+    loading.set(true);
+
+    let input = {
+      type: "inputRequest",
+      agent_id: $state.selectedAgentId,
+      agent_type: $state.agents[$state.selectedAgentId].type,
+      msg: textarea.value,
+      place_holder: "",
+    };
+
+    console.log("sendInput", input);
+
+    vscode.postMessage(input);
+
+    // console.log("updating state...");
+    state.update((state: SvelteStore) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [state.selectedAgentId]: {
+          ...state.agents[state.selectedAgentId],
+          inputRequest: null,
+        },
+      },
+    }));
+    textarea.value = "";
+    textarea.focus();
+    textarea.style.height = "auto";
+    textarea.style.height = textarea.scrollHeight + "px";
+  }
+
   function sendMessage() {
-    if($loading) {
-      console.log('cannot send messages while ai is responding')
-      return}
+    if ($loading) {
+      console.log("cannot send messages while ai is responding");
+      return;
+    }
     textarea.blur();
     loading.set(true);
 
@@ -39,6 +87,7 @@
       messages: appendedMessages,
       message: textarea.value,
     };
+
     console.log("sendMEssage", message);
 
     vscode.postMessage(message);
@@ -59,13 +108,14 @@
     textarea.style.height = "auto";
     textarea.style.height = textarea.scrollHeight + "px";
   }
+
   function handleValueChange(e: Event) {
-    console.log('handleValueChange')
+    console.log("handleValueChange");
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
-      console.log("HOITYTOITY")
-      dropdownOpen.set(true)
-    } else dropdownOpen.set(false)
+      console.log("HOITYTOITY");
+      dropdownOpen.set(true);
+    } else dropdownOpen.set(false);
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -79,27 +129,29 @@
         return;
       }
       if (!textarea.value || $dropdownOpen) return;
-      sendMessage();
+      sendInput();
+      //sendMessage();
     }
   }
 
   function handleRunAgent(agent_type: string) {
-    if(!$state.availableAgents.map(x => x.agent_type).includes(agent_type)) throw new Error('attempt to run unavailable agent')
+    if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
+      throw new Error("attempt to run unavailable agent");
     vscode.postMessage({
-        type: "runAgent",
-        params: {
-          agent_type,
-          agent_params: {},
-        },
-      });
-    dropdownOpen.set(false)
-    
+      type: "runAgent",
+      params: {
+        agent_type,
+        agent_params: {},
+      },
+    });
+    dropdownOpen.set(false);
   }
 </script>
+
 <!-- bg-[var(--vscode-panel-background)] -->
 
 <div
-  class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative" 
+  class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative"
 >
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${
@@ -110,7 +162,9 @@
       id="omnibar"
       bind:this={textarea}
       class="w-full outline-none focus:outline-none bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
-      placeholder="Type to chat or hit / for commands"
+      placeholder={hasInput
+        ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
+        : "Type to chat or hit / for commands"}
       on:input={handleValueChange}
       on:keydown={handleKeyDown}
       on:focus={() => {
@@ -120,13 +174,13 @@
       rows={1}
     />
     <div class="justify-self-end flex">
-      <button on:click={sendMessage} class="items-center flex">
+      <button on:click={sendInput} class="items-center flex">
         <SendSvg />
       </button>
     </div>
   </div>
   {#if $dropdownOpen}
-    <Dropdown inputValue={textarea.value} {handleRunAgent}/>
+    <Dropdown inputValue={textarea.value} {handleRunAgent} />
   {/if}
 </div>
 

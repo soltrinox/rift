@@ -94,6 +94,12 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     break;
                 }
 
+                case "inputRequest": {
+                    console.log("Sending publish message", params.message)
+                    PubSub.pub(`${params.agent_type}_${params.agent_id}_input_request`, params);
+                    break;
+                }
+
                 default:
                     console.log('no case match for ', params.type, ' in ChatProvider.ts')
             }
