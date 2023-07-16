@@ -112,7 +112,7 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
-    "@types/sass": "^1.45.0",
+    "@types/showdown": "^2.0.1",
     "@types/tcp-port-used": "^1.0.1",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.54.0",
@@ -137,6 +137,7 @@
   "dependencies": {
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "delay": "^6.0.0",
+    "showdown": "^2.1.0",
     "tcp-port-used": "^1.0.2",
     "uuid": "^9.0.0",
     "vscode-jsonrpc": "^8.1.0",

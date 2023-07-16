@@ -7,6 +7,9 @@
   import { loading, state } from "../stores";
   import CopySvg from "../icons/CopySvg.svelte";
   import { SvelteComponent } from "svelte";
+  import showdown from 'showdown'
+
+  
   let responseBlock: HTMLDivElement;
   var converter = new showdown.Converter({
     omitExtraWLInCodeBlocks: true,
@@ -65,7 +68,16 @@
       return responseBlock.innerHTML;
     };
     if (responseBlock) {
+      const dsfa = responseBlock.innerHTML
       const newHTML = getHTML(responseBlock);
+      console.log('searching')
+      if(newHTML.search(dsfa) == -1) {
+        console.log('new:')
+        console.log(newHTML)
+        console.log('old')
+        console.log(dsfa)
+      }
+      console.log()
       something = newHTML;
       responseBlock.contentEditable = "false";
     }

@@ -130,6 +130,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
         const microlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'microlight.min.js'));
 
+        // <script src="${showdownUri}" nonce="${nonce}"></script>
         // Use a nonce to only allow specific scripts to be run
         const nonce = getNonce();
 
@@ -146,7 +147,6 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                         <link href="${stylesResetUri}" rel="stylesheet">
                         
                     <script src="${tailwindUri}" nonce="${nonce}"></script>
-                    <script src="${showdownUri}" nonce="${nonce}"></script>
                     <script src="${microlightUri}" nonce="${nonce}"></script>
                     <link href="${cssUri}" rel="stylesheet">
                     <script nonce="${nonce}">
