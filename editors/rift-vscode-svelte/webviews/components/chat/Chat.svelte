@@ -17,8 +17,7 @@
 
   $: {
     console.log("change");
-    console.log(typeof chatWindow)
-
+    console.log(typeof chatWindow);
   }
   let fixedToBottom: boolean;
 
@@ -47,16 +46,21 @@
           chatWindow.scrollHeight - 15
       );
     });
-  
-   
   });
   onDestroy(() => {
     observer.disconnect();
   });
 </script>
 
-<div bind:this={chatWindow} class="flex items-start flex-grow flex-col overflow-y-auto">
-
+<div
+  bind:this={chatWindow}
+  class="flex items-start flex-grow flex-col overflow-y-auto"
+>
+  {#if $state.agents[$state.selectedAgentId]?.inputRequest}
+    <Response
+      value={$state.agents[$state.selectedAgentId]?.inputRequest?.msg}
+    />
+  {:else}
     {#each $state.agents[$state.selectedAgentId]?.chatHistory ?? [] as item}
       {#if item.role == "user"}
         <UserInput value={item.content} />
@@ -67,5 +71,5 @@
     {#if $loading}
       <Response value={$progressResponse} />
     {/if}
-
+  {/if}
 </div>

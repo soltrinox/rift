@@ -16,7 +16,8 @@
                 <Agent
                     id={key}
                     name={value.tasks?.task.description}
-                    hasNotification={value.hasNotification}
+                    hasChatNotification={value.hasNotification}
+                    hasInputNotification={value.inputRequest != null}
                     selectedId={store.selectedAgentId}
                 />
             {/each}

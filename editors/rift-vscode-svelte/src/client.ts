@@ -130,10 +130,10 @@ export interface Tasks {
 }
 
 
-export type ChatAgentProgress = AgentProgress<{response?: string, done_streaming?: boolean}|undefined>
+export type ChatAgentProgress = AgentProgress<{ response?: string, done_streaming?: boolean } | undefined>
 
 
-export interface AgentProgress<T=any> {
+export interface AgentProgress<T = any> {
     agent_id: string,
     agent_type: string,
     tasks: Tasks,
@@ -156,9 +156,15 @@ export interface AgentChatRequest {
 }
 
 export interface AgentInputRequest {
+    id: string
     msg: string
     place_holder?: string | null
 }
+
+export interface AgentInputResponse {
+    response: string
+}
+
 export interface AgentUpdate {
     msg: string
 }
@@ -183,39 +189,35 @@ class Agent {
 
     }
     async handleInputRequest(params: AgentInputRequest) {
-        console.log("handleInputRequest");
-        console.log(params)
-        chatProvider._view?.webview.postMessage({ type: 'input_request', data: params });
-        logProvider._view?.webview.postMessage({ type: 'input_request', data: params });
-
         console.log("handleChatRequest");
-        console.log(params)
-        chatProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
-        logProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
+        console.log(params);
+        chatProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
+        logProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
 
-        let agentType = this.agent_type
-        let agentId = this.id
+        let agentType = this.agent_type;
+        let agentId = this.id;
 
-        console.log('agentType:', agentType)
-        console.log('agentId:', agentId)
+        console.log('agentType:', agentType);
+        console.log('agentId:', agentId);
 
+        // return "BLAH BLAH"
         async function getUserInput() {
-            console.log('getUserInput')
-            console.log('agentType:', agentType)
-            console.log('agentId:', agentId)
-            return new Promise((res, rej) => {
-                console.log('subscribing to changes')
-                PubSub.sub(`${agentType}_${agentId}_input_request`, (message) => {
-                    console.log('resolving promise')
-                    res(message)
+            console.log('getUserInput');
+            console.log('agentType:', agentType);
+            console.log('agentId:', agentId);
+            return new Promise<AgentInputResponse>((res, rej) => {
+                console.log('subscribing to changes');
+                PubSub.sub(`${agentType}_${agentId}_input_request`, (message: AgentInputResponse) => {
+                    console.log('resolving promise');
+                    res(message);
                 })
             })
         }
 
-        let chatRequest = await getUserInput();
-        console.log('received user input and returning to server')
-        console.log(chatRequest)
-        return chatRequest;
+        let inputResponse: AgentInputResponse = await getUserInput();
+        console.log('received user input and returning to server');
+        console.log(inputResponse);
+        return { "response": inputResponse.response };
     }
 
     async handleChatRequest(params: AgentChatRequest) {
