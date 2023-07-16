@@ -6,6 +6,8 @@ from typing import AsyncIterable, ClassVar, List, Optional, Type
 import rift.util.file_diff as file_diff
 from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
+from textwrap import dedent
+
 
 @dataclass
 class InferClientParams(ClientParams):
@@ -55,6 +57,55 @@ class InferAgent(Agent):
         file_changes = [file_change]
         yield file_changes
 
+system_msg = """
+Act as an expert software developer.
+Once you understand the bug report:
+1. List the functions you need to change to fix the bug.
+2. For each function to modify, give an *edit block* per the example below.
+
+You MUST format EVERY code change with an *edit block* like this:
+
+```python
+    def mul(a,b)
+        the fixed code
+```
+
+Every *edit block* must be fenced with ```...``` with the correct code language.
+Edits to different functions each need their own *edit block*.
+Give all the required changes at once in the reply.
+"""
+
+def mk_user_msg(function: str, bug:str, code:str) -> str: return f"""
+Fix the error reported by static analysis in function `{function}` as: "{bug}"
+
+The code is:
+{code}
+"""
+
+def user() -> str:
+    function = "main"
+    bug = "pointer `x` last assigned on line 15 could be null and is dereferenced at line 16, column 3."
+    code = dedent("""
+        int aa() {
+          return 0;
+        }
+
+        void foo(int **x) {
+          *x = 0;
+        }
+
+        int bb() {
+          return 0;
+        }
+
+        int main() {
+          int *x;
+          foo(&x);
+          *x = 1;
+          return 0;
+        }
+    """).lstrip()
+    return mk_user_msg(function, bug, code)
 
 if __name__ == "__main__":
     launcher(InferAgent, InferClientParams)
