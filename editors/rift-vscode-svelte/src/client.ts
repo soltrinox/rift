@@ -269,7 +269,6 @@ class Agent {
         console.log(params)
         chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
-
     }
     async handleResult(params: AgentResult) {
         console.log("handleResult")
@@ -550,9 +549,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     //     // note this returns fast and then the updates are sent via notifications
     //     return 'starting...'
     // }
-
-
-
 
     dispose() {
         this.client?.dispose()
