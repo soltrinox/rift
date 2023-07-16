@@ -84,6 +84,7 @@ class CodeCompletionAgent(Agent):
             agent_id=params.agent_id,
             server=server,
         )
+        logger.info(f"[REMOVE ME CodeCompletionAgent.create] STATE: {state}")
         return obj
 
     async def run(self) -> AgentRunResult:  # main entry point
@@ -129,6 +130,9 @@ class CodeCompletionAgent(Agent):
                         attempts -= 1
                         cf = asyncio.get_running_loop().create_future()
                         self.state.change_futures[delta] = cf
+                        logger.info(
+                            f"[REMOVE ME CodeCompletionAgent.run]\nDOCUMENTURI={self.state.document.uri}\nCURSOR: {self.state.cursor}\nDELTA: {delta}\nVERSION: {self.state.document.version}"
+                        )
                         x = await self.server.apply_insert_text(
                             self.state.document.uri,
                             self.state.cursor,
