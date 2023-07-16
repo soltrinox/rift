@@ -89,7 +89,8 @@ async def _main(
 
     for step in steps:
         await asyncio.sleep(0.1)
-        messages = step(ai, dbs)
+        messages = step(ai, dbs) # when `step.__name__` == `gen_entrypoint`, this proposes another diff for the `run.sh` shell script that you will also want to accept
+        # then all the files and `run.sh` should be SAVED before you accept the proposal to run the entrypoint
         await asyncio.sleep(0.1)
         dbs.logs[step.__name__] = json.dumps(messages)
         
@@ -102,8 +103,20 @@ async def _main(
                 else:
                     SEEN.add(x[0])
         await asyncio.sleep(0.5)
+
+        # TODO(pranav): uncomment this and increase the sleep duration as needed to make sure you can approve all the diffs before the entrypoint is generated --- this delays the appearance of the "run_entrypoint" step
         # if step.__name__ == "gen_entrypoint":
-        #     await asyncio.sleep(3)
+        #     await asyncio.sleep(3) # increase as needed
+
+        # steps:
+        # get the above flow working with the ugly ascii art
+        # fix the ascii art somehow (better fonts, etc)
+        # run it from top to bottom with the following script:
+        # contents of `prompt` should be
+        # write a reference implementation of order matching engine in Python
+        # during the clarification stage, specify that the order matching engine should run behind an HTTP server with an endpoint called `place_order` which accepts an `order` argument where an `order` is a JSON message of the shape `{order_type: Literal["market", "limit"], amount: float}` and which returns a boolean `{order_placed: boolean}`
+
+        # make sure that we run with gpt-4 for the camera ready
 
     # execute_steps_ = execute_steps()
 
