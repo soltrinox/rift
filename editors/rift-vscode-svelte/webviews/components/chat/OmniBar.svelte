@@ -27,43 +27,6 @@
     hasInput = false;
   });
 
-  function sendInput() {
-    if ($loading) {
-      console.log("cannot send messages while ai is responding");
-      return;
-    }
-    textarea.blur();
-    loading.set(true);
-
-    let input = {
-      type: "inputRequest",
-      agent_id: $state.selectedAgentId,
-      agent_type: $state.agents[$state.selectedAgentId].type,
-      msg: textarea.value,
-      place_holder: "",
-    };
-
-    console.log("sendInput", input);
-
-    vscode.postMessage(input);
-
-    // console.log("updating state...");
-    state.update((state: SvelteStore) => ({
-      ...state,
-      agents: {
-        ...state.agents,
-        [state.selectedAgentId]: {
-          ...state.agents[state.selectedAgentId],
-          inputRequest: null,
-        },
-      },
-    }));
-    textarea.value = "";
-    textarea.focus();
-    textarea.style.height = "auto";
-    textarea.style.height = textarea.scrollHeight + "px";
-  }
-
   function sendMessage() {
     if ($loading) {
       console.log("cannot send messages while ai is responding");
@@ -129,8 +92,7 @@
         return;
       }
       if (!textarea.value || $dropdownOpen) return;
-      sendInput();
-      //sendMessage();
+      sendMessage();
     }
   }
 
@@ -174,7 +136,7 @@
       rows={1}
     />
     <div class="justify-self-end flex">
-      <button on:click={sendInput} class="items-center flex">
+      <button on:click={sendMessage} class="items-center flex">
         <SendSvg />
       </button>
     </div>

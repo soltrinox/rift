@@ -9,7 +9,7 @@ export class ChatMessage {
 
 export type InputRequest = {
     msg: string;
-    place_holder?: string | null
+    place_holder: string
 }
 
 

@@ -158,7 +158,7 @@ export interface AgentChatRequest {
 export interface AgentInputRequest {
     id: string
     msg: string
-    place_holder?: string | null
+    place_holder: string
 }
 
 export interface AgentInputResponse {
@@ -189,35 +189,41 @@ class Agent {
 
     }
     async handleInputRequest(params: AgentInputRequest) {
-        console.log("handleChatRequest");
-        console.log(params);
-        chatProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
-        logProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
+        // console.log("handleChatRequest");
+        // console.log(params);
+        // chatProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
+        // logProvider._view?.webview.postMessage({ type: 'input_request', data: { ...params, id: this.id } });
 
-        let agentType = this.agent_type;
-        let agentId = this.id;
+        // let agentType = this.agent_type;
+        // let agentId = this.id;
 
-        console.log('agentType:', agentType);
-        console.log('agentId:', agentId);
+        // console.log('agentType:', agentType);
+        // console.log('agentId:', agentId);
 
-        // return "BLAH BLAH"
-        async function getUserInput() {
-            console.log('getUserInput');
-            console.log('agentType:', agentType);
-            console.log('agentId:', agentId);
-            return new Promise<AgentInputResponse>((res, rej) => {
-                console.log('subscribing to changes');
-                PubSub.sub(`${agentType}_${agentId}_input_request`, (message: AgentInputResponse) => {
-                    console.log('resolving promise');
-                    res(message);
-                })
-            })
-        }
+        // // return "BLAH BLAH"
+        // async function getUserInput() {
+        //     console.log('getUserInput');
+        //     console.log('agentType:', agentType);
+        //     console.log('agentId:', agentId);
+        //     return new Promise<AgentInputResponse>((res, rej) => {
+        //         console.log('subscribing to changes');
+        //         PubSub.sub(`${agentType}_${agentId}_input_request`, (message: AgentInputResponse) => {
+        //             console.log('resolving promise');
+        //             res(message);
+        //         })
+        //     })
+        // }
 
-        let inputResponse: AgentInputResponse = await getUserInput();
-        console.log('received user input and returning to server');
-        console.log(inputResponse);
-        return { "response": inputResponse.response };
+        // let inputResponse: AgentInputResponse = await getUserInput();
+        // console.log('received user input and returning to server');
+        // console.log(inputResponse);
+        // return { "response": inputResponse.response };
+        let response = await vscode.window.showInputBox({
+            ignoreFocusOut: true,
+            placeHolder: params.place_holder,
+            prompt: params.msg,
+        });
+        return { response: response }
     }
 
     async handleChatRequest(params: AgentChatRequest) {
@@ -252,16 +258,18 @@ class Agent {
         return chatRequest;
     }
     async handleUpdate(params: AgentUpdate) {
-        console.log("handleUpdate")
-        console.log(params)
-        //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
-        logProvider._view?.webview.postMessage({ type: 'update', data: params });
+        // console.log("handleUpdate")
+        // console.log(params)
+        // //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
+        // logProvider._view?.webview.postMessage({ type: 'update', data: params });
+        vscode.window.showInformationMessage(params.msg);
     }
     async handleProgress(params: AgentProgress) {
         console.log("handleProgress")
         console.log(params)
         chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
+
     }
     async handleResult(params: AgentResult) {
         console.log("handleResult")
