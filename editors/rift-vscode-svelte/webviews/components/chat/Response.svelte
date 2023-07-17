@@ -39,13 +39,14 @@
   }
 
   let something: string;
+  let scrollLeftArr:{[x: number|string]: number} = {}
   $: {
     const getHTML = (responseBlock: HTMLDivElement) => {
       responseBlock.innerHTML = textToFormattedHTML(value);
       responseBlock
         .querySelectorAll("code")
         .forEach((node) => node.classList.add("code"));
-      responseBlock.querySelectorAll("pre").forEach((preblock) => {
+      responseBlock.querySelectorAll("pre").forEach((preblock, index) => {
         preblock.classList.add("p-2", "my-2", "block", "overflow-x-scroll");
         preblock
           .querySelectorAll("#copy")
@@ -64,6 +65,8 @@
           vscode.postMessage({ type: "copyText", content: copyContent });
         });
         preblock.insertBefore(copyButton, preblock.firstChild);
+        if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]
+        preblock.addEventListener('scroll', (ev) => {scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft})
       });
       return responseBlock.innerHTML;
     };
