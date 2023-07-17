@@ -93,15 +93,14 @@ async def _main(
         # then all the files and `run.sh` should be SAVED before you accept the proposal to run the entrypoint
         await asyncio.sleep(0.1)
         dbs.logs[step.__name__] = json.dumps(messages)
-        
         items = list(dbs.workspace.in_memory_dict.items())
         if len([x for x in items if x[0] not in SEEN]) > 0:
             await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
             for x in items:
-                if x[0] in SEEN:
+                if hash(x) in SEEN:
                     pass
                 else:
-                    SEEN.add(x[0])
+                    SEEN.add(hash(x))
         await asyncio.sleep(0.5)
 
         # TODO(pranav): uncomment this and increase the sleep duration as needed to make sure you can approve all the diffs before the entrypoint is generated --- this delays the appearance of the "run_entrypoint" step
