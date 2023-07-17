@@ -38,3 +38,14 @@ python -m rift.agents.my_agent --port 7797 --debug False # other agent-specific 
 
 - Please note that agents can run third-party code, do not use Rift's model abstractions, and are presently not configurable through the Rift extension settings in VSCode. Be careful when running agents with untrusted code.
 - Currently each agent spins up its own Rift instance. Once support for [multiple clients](https://www.github.com/morph-labs/rift/issues/62) is added, multiple agents can interact with a single Rift server.
+
+## Supported agents
+- `smol-developer`:
+```python
+python -m rift.agents.smol --port 7797 --debug Faulse --prompt_file $PROMPT_FILE --model gpt-4-0613
+```
+
+- `gpt-engineer`:
+```python
+python -m rift.agents.gpt_eng --port 7797 --debug False --prompt $PROMPT_FILE --model gpt-4-0613
+```
