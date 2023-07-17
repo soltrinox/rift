@@ -108,12 +108,13 @@
           typeof chat_request !== "string" &&
           $state.agents[chat_request.id]?.chatHistory.length < 1
         ) {
-          if (chat_request.messages.length > 1)
-            throw new Error(
-              "No previous messages on client for this ID, but server is giving multiple chat messages."
-            );
+          if (chat_request.messages.length > 1) {
+            throw new Error( "No previous messages on client for this ID, but server is giving multiple chat messages.")
+          }
+
           state.update((prevState) => ({
             ...prevState,
+            selectedAgentId: chat_request.id,
             agents: {
               ...prevState.agents,
               [chat_request.id]: {
