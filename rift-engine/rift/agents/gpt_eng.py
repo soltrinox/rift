@@ -139,29 +139,26 @@ class GPTEngineerAgentParams(agent.ClientParams):
 class GPTEngineerAgent(agent.Agent):
     name: str = "gpt-engineer"
     run_params: typing.Type[agent.ClientParams] = GPTEngineerAgentParams
-    splash: typing.Optional[
+    splash :typing.Optional[
         str
     ] = """\
 
 
-
-                █████████          ██████  ██████  ████████
-             █████   ████         ██       ██   ██    ██
-           ████   ████      ██    ██   ███ ██████     ██
-          ███    ███     ██████   ██    ██ ██         ██
-          ███     █████████ ███    ██████  ██         ██
-           ███      ████   ████
-         ████             ███
-      ████    █████████████       ███████ ███    ██  ██████
-   █████    ████                  ██      ████   ██ ██
-  ███     ████                    █████   ██ ██  ██ ██   ███
-  ███   ███                       ██      ██  ██ ██ ██    ██
-   ██████                         ███████ ██   ████  ██████
-
+   _____ _____ _______                 ⣀⣀⣀⡀
+  / ____|  __ \__   __|             ⣰⣾⣿⣿⣿⠟⠁
+ | |  __| |__) | | |               ⣼⣿⣿⣿⡟⠁    ⢀
+ | | |_ |  ___/  | |              ⠐⣿⣿⣿⣿⡆   ⢀⣴⣿⡇
+ | |__| | |      | |              ⢈⣿⣿⣿⣿⣷⣶⣶⣶⣿⣿⣿⠃
+  \_____|_|  _  _|_|_           ⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋
+ |  ____| \ | |/ ____|        ⢀⣴⣿⣿⣿⣿⣿⣿⠟⠛⠟⠛⠛⠉
+ | |__  |  \| | |  __       ⢀⣴⣿⣿⣿⣿⣿⣿⠟⠁
+ |  __| | . ` | | |_ |    ⢀⣴⣿⣿⣿⣿⣿⣿⠟⠁
+ | |____| |\  | |__| |   ⢰⣿⠟⠻⣿⣿⣿⠟⠁
+ |______|_| \_|\_____|   ⠸⣿⣦⣴⣿⠟⠁
+                          ⠈⠉⠉
 
 
-
-"""
+    """
 
     async def run(self) -> typing.AsyncIterable[typing.List[file_diff.FileChange]]:
         from dataclasses import dataclass, fields
