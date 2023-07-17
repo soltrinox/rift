@@ -1,9 +1,11 @@
+#include<stdlib.h>
+
 int aa() {
   return 0;
 }
 
 void foo(int **x) {
-  *x = 0;
+  *x = NULL;
 }
 
 int bb() {

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from rift.llm.parser import Language, Range, parse_functions
 from dataclasses import dataclass
 
@@ -53,6 +53,20 @@ def text_edits_from_code_blocks(code_blocks: List[str], document: str, language:
                     text_edit = TextEdit(range=df.range, newText=newText)
                     text_edits.append(text_edit)
     return text_edits
+
+def new_document_from_code_blocks(code_blocks: List[str], document: str, language: Language) -> str:
+    functions_in_document = parse_functions(document, language)
+    new_document = document
+    for df in reversed(functions_in_document):
+        # find if there is a function in a code block with the same name
+        for block in code_blocks:
+            functions_in_block = parse_functions(block, language)
+            for bf in functions_in_block:
+                if bf.name == df.name:
+                    newText = block[bf.substring[0]:bf.substring[1]]
+                    oldText = document[df.substring[0]:df.substring[1]]
+                    new_document = new_document[:df.substring[0]] + newText + new_document[df.substring[1]:]
+    return new_document
 
 from textwrap import dedent
     
@@ -115,3 +129,6 @@ if __name__ == "__main__":
     code_blocks = extract_code_blocks(Test.response)
     text_edits = text_edits_from_code_blocks(code_blocks=code_blocks, document=Test.document, language=language)
     print(f"text edits: {text_edits}")
+    code_blocks = extract_code_blocks(Test.response)
+    new_document = new_document_from_code_blocks(code_blocks=code_blocks, document=Test.document, language=language)
+    print(f"new document:\n{new_document}\n")
