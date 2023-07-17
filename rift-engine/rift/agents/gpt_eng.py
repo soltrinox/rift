@@ -13,17 +13,6 @@ except ImportError:
 UPDATES_QUEUE = asyncio.Queue()
 SEEN = set()
 
-
-# def to_files(chat, workspace: gpt_engineer.db.DB):
-#     workspace["all_output.txt"] = chat
-#     files = gpt_engineer.chat_to_files.parse_chat(chat)
-
-#     for file_name, file_content in files:
-#         workspace[file_name] = file_content
-
-# # Assign a new to_files function that passes updates to the queue.
-# gpt_engineer.chat_to_files.to_files = to_files
-
 from gpt_engineer.ai import AI, fallback_model
 from gpt_engineer.collect import collect_learnings
 from gpt_engineer.db import DB, DBs, archive
@@ -93,8 +82,6 @@ async def _main(
         for step in steps:
             await asyncio.sleep(0.1)
             messages = await asyncio.get_running_loop().run_in_executor(pool, step, ai, dbs)
-            # messages = step(ai, dbs) # when `step.__name__` == `gen_entrypoint`, this proposes another diff for the `run.sh` shell script that you will also want to accept
-            # then all the files and `run.sh` should be SAVED before you accept the proposal to run the entrypoint
             await asyncio.sleep(0.1)
             dbs.logs[step.__name__] = json.dumps(messages)
             items = list(dbs.workspace.in_memory_dict.items())
@@ -106,29 +93,6 @@ async def _main(
                     else:
                         SEEN.add(x[0])
             await asyncio.sleep(0.5)
-
-        # TODO(pranav): uncomment this and increase the sleep duration as needed to make sure you can approve all the diffs before the entrypoint is generated --- this delays the appearance of the "run_entrypoint" step
-        # if step.__name__ == "gen_entrypoint":
-        #     await asyncio.sleep(3) # increase as needed
-
-        # steps:
-        # get the above flow working with the ugly ascii art
-        # fix the ascii art somehow (better fonts, etc)
-        # run it from top to bottom with the following script:
-        # contents of `prompt` should be
-        # write a reference implementation of order matching engine in Python
-        # during the clarification stage, specify that the order matching engine should run behind an HTTP server with an endpoint called `place_order` which accepts an `order` argument where an `order` is a JSON message of the shape `{order_type: Literal["market", "limit"], amount: float}` and which returns a boolean `{order_placed: boolean}`
-
-        # make sure that we run with gpt-4 for the camera ready
-
-    # execute_steps_ = execute_steps()
-
-    # if collect_consent():
-    #     collect_learnings(model, temperature, steps, dbs)
-
-    # dbs.logs["token_usage"] = ai.format_token_usage_log()
-    # return dbs.workspace
-
 
 @dataclass
 class GPTEngineerAgentParams(agent.ClientParams):
