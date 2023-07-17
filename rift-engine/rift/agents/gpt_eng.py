@@ -76,8 +76,8 @@ async def _main(
     steps = STEPS[steps_config]
     # async def execute_steps():
 
-
     from concurrent import futures
+
     with futures.ThreadPoolExecutor(1) as pool:
         for step in steps:
             await asyncio.sleep(0.1)
@@ -94,6 +94,7 @@ async def _main(
                         SEEN.add(x[0])
             await asyncio.sleep(0.5)
 
+
 @dataclass
 class GPTEngineerAgentParams(agent.ClientParams):
     project_path: str = "projects/example"
@@ -107,7 +108,7 @@ class GPTEngineerAgentParams(agent.ClientParams):
 class GPTEngineerAgent(agent.Agent):
     name: str = "gpt-engineer"
     run_params: typing.Type[agent.ClientParams] = GPTEngineerAgentParams
-    splash :typing.Optional[
+    splash: typing.Optional[
         str
     ] = """\
 
@@ -145,7 +146,9 @@ class GPTEngineerAgent(agent.Agent):
             try:
                 updates = await asyncio.wait_for(UPDATES_QUEUE.get(), 1.0)
                 yield [
-                    file_diff.get_file_change(file_path, new_contents, annotation_label=str(counter))
+                    file_diff.get_file_change(
+                        file_path, new_contents, annotation_label=str(counter)
+                    )
                     for file_path, new_contents in updates
                 ]
             except asyncio.TimeoutError:
