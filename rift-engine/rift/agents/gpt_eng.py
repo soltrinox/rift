@@ -92,7 +92,7 @@ async def _main(
     with futures.ThreadPoolExecutor(1) as pool:
         for step in steps:
             await asyncio.sleep(0.1)
-            messages = await loop.run_in_executor(pool, step, ai, dbs)
+            messages = await asyncio.get_running_loop().run_in_executor(pool, step, ai, dbs)
             # messages = step(ai, dbs) # when `step.__name__` == `gen_entrypoint`, this proposes another diff for the `run.sh` shell script that you will also want to accept
             # then all the files and `run.sh` should be SAVED before you accept the proposal to run the entrypoint
             await asyncio.sleep(0.1)
