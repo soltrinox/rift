@@ -176,11 +176,10 @@ export type AgentResult = {
 
 
 
-const code_completion_send_progress_callback = async (params: any, agent: Agent) => {
+const code_completion_send_progress = async (params: any, agent: Agent) => {
     const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' });
-    const key: string = `code_completion_${params.agent_id}`
     if (params.tasks) {
-        // logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
+        //logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
         if (params.tasks.task.status) {
             if (agent.status !== params.tasks.task.status) {
                 agent.status = params.tasks.task.status;
@@ -193,7 +192,7 @@ const code_completion_send_progress_callback = async (params: any, agent: Agent)
             agent.ranges = params.payload.ranges;
         }
     }
-    const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == agent?.params?.textDocument?.uri?.toString());
+    const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == agent?.textDocument?.uri?.toString());
     for (const editor of editors) {
         // [todo] check editor is visible
         const version = editor.document.version;
@@ -217,10 +216,12 @@ class Agent {
     ranges: vscode.Range[] = [];
     onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
     onStatusChange: vscode.Event<AgentStatus>;
-    constructor(public readonly id: string, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier, public params: any) {
+    constructor(public readonly id: string, public readonly agent_type: string, public readonly position: vscode.Position, public textDocument: TextDocumentIdentifier, public params: any) {
         this.id = id;
         this.status = 'running';
         this.agent_type = agent_type;
+        this.position = position;
+        this.textDocument = textDocument;
         this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' });
         this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
         this.onStatusChange = this.onStatusChangeEmitter.event;
@@ -280,7 +281,7 @@ class Agent {
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
 
         if (this.agent_type === "code_completion") {
-            code_completion_send_progress_callback(params, this);
+            code_completion_send_progress(params, this);
         }
     }
     async handleResult(params: AgentResult) {
@@ -331,9 +332,9 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
                         return await this.list_agents();
                     }
                 }),
-                vscode.commands.registerCommand('rift.cancel', (id: number) => this.client?.sendNotification('morph/cancel', { id })),
-                vscode.commands.registerCommand('rift.accept', (id: number) => this.client?.sendNotification('morph/accept', { id })),
-                vscode.commands.registerCommand('rift.reject', (id: number) => this.client?.sendNotification('morph/reject', { id })),
+                vscode.commands.registerCommand('rift.cancel', (id: string) => this.client?.sendNotification('morph/cancel', { id })),
+                vscode.commands.registerCommand('rift.accept', (id: string) => this.client?.sendNotification('morph/accept', { id })),
+                vscode.commands.registerCommand('rift.reject', (id: string) => this.client?.sendNotification('morph/reject', { id })),
                 vscode.workspace.onDidChangeConfiguration(this.on_config_change.bind(this)),
             )
         })
@@ -346,23 +347,29 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentStateLens[] {
         // this returns all of the lenses for the document.
-        const items: AgentStateLens[] = [];
+        let items: AgentStateLens[] = [];
+
         for (const agent of Object.values(this.agents)) {
             if (agent.agent_type != "code_completion") {
-                continue
+                continue;
             }
 
-            if (agent?.params?.textDocument?.uri?.toString() == document.uri.toString()) {
-                const line = agent.params.position.line;
+            if (agent?.textDocument?.uri?.toString() == document.uri.toString()) {
+                const line = agent?.position.line;
                 const linetext = document.lineAt(line);
+
+                //####### HARDCODED REMOVE THIS #################
+                // agent.status = "done";
+                //##############################################
+
                 if (agent.status === 'running') {
                     const running = new AgentStateLens(linetext.range, agent, {
-                        title: 'cancel',
+                        title: 'running',
                         command: 'rift.cancel',
                         tooltip: 'click to stop this agent',
                         arguments: [agent.id],
                     });
-                    items.push(running)
+                    items.push(running);
                 }
                 else if (agent.status === 'done' || agent.status === 'error') {
                     const accept = new AgentStateLens(linetext.range, agent, {
@@ -444,8 +451,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             console.log(`client already exists and is in state ${this.client.state} `);
             return;
         }
-        const port = DEFAULT_PORT
-        let serverOptions: ServerOptions
+        const port = DEFAULT_PORT;
+        let serverOptions: ServerOptions;
         while (!(await tcpPortUsed.check(port))) {
             console.log('waiting for server to come online');
             try {
@@ -459,11 +466,11 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         serverOptions = tcpServerOptions(this.context, port);
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{ language: '*' }]
-        }
+        };
         this.client = new LanguageClient(
             'morph-server', 'Morph Server',
             serverOptions, clientOptions,
-        )
+        );
         this.client.onDidChangeState(async e => {
             console.log(`client state changed: ${e.oldState} ▸ ${e.newState} `);
             if (e.newState === State.Stopped) {
@@ -472,7 +479,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
                 console.log('morph server disposed');
                 await this.create_client();
             }
-        })
+        });
         await this.client.start();
         console.log('rift-engine started');
     }
@@ -517,7 +524,15 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         const agent_id = result.id;
         const agent_type = params.agent_type;
 
-        const agent = new Agent(result.id, agent_type, params.agent_params.position, params.agent_params.textDocument, params);
+
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) throw new Error("No active text editor")
+        // get the uri and position of the current cursor
+        const doc = editor.document;
+        const textDocument = { uri: doc.uri.toString(), version: 0 };
+        const position = editor.selection.active;
+
+        const agent = new Agent(result.id, agent_type, position, textDocument, params);
         agent.onStatusChange(e => this.changeLensEmitter.fire());
         this.agents[result.id] = agent;
         this.changeLensEmitter.fire();
