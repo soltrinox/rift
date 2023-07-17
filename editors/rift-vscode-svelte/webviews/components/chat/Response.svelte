@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import RiftSvg from "../icons/RiftSvg.svelte";
   import { copySvg } from "../icons/copySvg";
   export let value = "";
@@ -8,9 +8,11 @@
   import CopySvg from "../icons/CopySvg.svelte";
   import { SvelteComponent } from "svelte";
   import showdown from 'showdown'
+  import morphdom from 'morphdom'
 
+  export let scrollToBottomIfNearBottom:((...args: any) => any) | undefined = undefined
   
-  let responseBlock: HTMLDivElement;
+  let responseBlock: HTMLDivElement|undefined;
   var converter = new showdown.Converter({
     omitExtraWLInCodeBlocks: true,
     simplifiedAutoLink: true,
@@ -39,14 +41,25 @@
   }
 
   let something: string;
-  let scrollLeftArr:{[x: number|string]: number} = {}
+  // let scrollLeftArr:{[x: number|string]: number} = {}
+  // let index:number = 0
+  // let scrollLeft:number = 0
+  // const handler = (ev: Event) => {
+  //         console.log('scroll')
+  //         scrollLeft = (ev.target as HTMLPreElement).scrollLeft
+  //         console.log(scrollLeft)
+  //         // scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft
+  //       }
   $: {
-    const getHTML = (responseBlock: HTMLDivElement) => {
+    console.log('$')
+    const getHTML = (_responseBlock: HTMLDivElement) => {
+      const responseBlock = (_responseBlock.cloneNode(true) as HTMLDivElement)
       responseBlock.innerHTML = textToFormattedHTML(value);
       responseBlock
         .querySelectorAll("code")
         .forEach((node) => node.classList.add("code"));
-      responseBlock.querySelectorAll("pre").forEach((preblock, index) => {
+      responseBlock.querySelectorAll("pre").forEach((preblock, i) => {
+        // index = i
         preblock.classList.add("p-2", "my-2", "block", "overflow-x-scroll");
         preblock
           .querySelectorAll("#copy")
@@ -65,17 +78,22 @@
           vscode.postMessage({ type: "copyText", content: copyContent });
         });
         preblock.insertBefore(copyButton, preblock.firstChild);
-        if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]
-        preblock.addEventListener('scroll', (ev) => {scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft})
+        // if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]
+        // preblock.addEventListener('scroll', handler)
       });
-      return responseBlock.innerHTML;
+      return responseBlock
     };
     if (responseBlock) {
+      console.log('newHTML')
       const newHTML = getHTML(responseBlock);
-      something = newHTML;
+      something = newHTML.innerHTML;
+
+      morphdom(responseBlock, newHTML)
       responseBlock.contentEditable = "false";
+      scrollToBottomIfNearBottom?.()
     }
   }
+
 </script>
 
 <div class=" w-full p-2">

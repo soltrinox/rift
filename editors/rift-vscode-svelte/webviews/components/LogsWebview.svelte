@@ -46,10 +46,11 @@
     let progressResponse: string;
 
     const incomingMessage = (event: any) => {
-        console.log("LogsWebview event.data.type: " + event.data.type);
-        console.log(
-            "LogsWebview event.data.type: \n" + JSON.stringify(event.data)
-        );
+        // console.log("LogsWebview event.data.type: " + event.data.type);
+        // console.log(
+        //     "LogsWebview event.data.type: \n" + JSON.stringify(event.data)
+        // );
+
         // Listen for the response
         switch (event.data.type) {
             case "selectedAgentId":
@@ -129,9 +130,9 @@
                 let agentId = progress.agent_id;
                 let status = progress.tasks.task.status;
 
-                console.log("Before update");
-                console.log($state);
-                console.log(`state agents - ${Object.keys($state.agents)}`);
+                // console.log("Before update");
+                // console.log($state);
+                // console.log(`state agents - ${Object.keys($state.agents)}`);
 
                 state.update((state) => ({
                     ...state,
@@ -145,8 +146,8 @@
                     },
                 }));
 
-                console.log("After update");
-                console.log($state);
+                // console.log("After update");
+                // console.log($state);
 
                 // for sticky window^
                 if (status == "done") {

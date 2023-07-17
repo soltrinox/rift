@@ -137,6 +137,7 @@
   "dependencies": {
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "delay": "^6.0.0",
+    "morphdom": "^2.7.0",
     "showdown": "^2.1.0",
     "tcp-port-used": "^1.0.2",
     "uuid": "^9.0.0",

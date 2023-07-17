@@ -10,16 +10,11 @@
 
   let observer: MutationObserver;
   let chatWindow: HTMLDivElement;
+  let fixedToBottom: boolean;
 
   function scrollToBottomIfNearBottom() {
     if (fixedToBottom) chatWindow.scrollTo(0, chatWindow.scrollHeight);
   }
-
-  $: {
-    console.log("change");
-    console.log(typeof chatWindow);
-  }
-  let fixedToBottom: boolean;
 
   onMount(async () => {
     console.log("awaiting tick");
@@ -69,7 +64,7 @@
       {/if}
     {/each}
     {#if $loading}
-      <Response value={$progressResponse} />
+      <Response value={$progressResponse} {scrollToBottomIfNearBottom} />
     {/if}
   {/if}
 </div>
