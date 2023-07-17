@@ -27,7 +27,7 @@ To add your own agent, you need to create a new file in this directory and subcl
 4. At the end of your file, call `launcher` with your agent class and parameters dataclass.
 
 ## Running Your Own Agent
-Use the `launcher` method defined in `cli_agent.py`. See `smol.py` for a reference implementation at the bottom of the file. Make sure the [Rift VSCode extension](../../../editors/rift-vscode/README.md) is installed and activated as well. Once configured, just run this from the VSCode terminal:
+Use the `launcher` method defined in `cli_agent.py`. See `smol.py` for a reference implementation at the bottom of the file. Make sure the [Rift VSCode extension](../../../editors/rift-vscode/README.md) is installed and activated as well. Ensure that any other Rift server processes have been killed (this will no longer be necessary after we resolve [this issue](https://www.github.com/morph-labs/rift/issues/62).) Once configured, just run this from the VSCode terminal:
 
 ```python
 # defined in ./my_agent.py
