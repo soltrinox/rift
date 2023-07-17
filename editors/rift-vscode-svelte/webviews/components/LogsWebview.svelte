@@ -96,7 +96,7 @@
                             ...state.agents,
                             [chat_request.id!]: {
                                 ...state.agents[chat_request.id!],
-                                hasChatNotification: false,
+                                hasNotification: false,
                             },
                         },
                     }));
@@ -107,7 +107,7 @@
                             ...state.agents,
                             [chat_request.id!]: {
                                 ...state.agents[chat_request.id!],
-                                hasChatNotification: true,
+                                hasNotification: true,
                             },
                         },
                     }));
@@ -131,6 +131,7 @@
 
                 console.log("Before update");
                 console.log($state);
+                console.log(`state agents - ${Object.keys($state.agents)}`);
 
                 state.update((state) => ({
                     ...state,

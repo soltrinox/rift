@@ -31,9 +31,6 @@
       // create agent
       console.log("agent_type: " + availableAgents[activeId].agent_type);
       handleRunAgent(availableAgents[activeId].agent_type);
-
-      var omnibar = document.getElementById("omnibar");
-      omnibar!.value = ""; //clear omnibar text
     }
     if (e.key == "ArrowDown") {
       console.log("ArrowDown");

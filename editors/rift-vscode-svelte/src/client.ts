@@ -228,6 +228,8 @@ class Agent {
 
     }
     async handleInputRequest(params: AgentInputRequest) {
+        logProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
+
         let response = await vscode.window.showInputBox({
             ignoreFocusOut: true,
             placeHolder: params.place_holder,
