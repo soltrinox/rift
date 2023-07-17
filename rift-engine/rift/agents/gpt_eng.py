@@ -14,15 +14,15 @@ UPDATES_QUEUE = asyncio.Queue()
 SEEN = set()
 
 
-def to_files(chat, workspace: gpt_engineer.db.DB):
-    workspace["all_output.txt"] = chat
-    files = gpt_engineer.chat_to_files.parse_chat(chat)
+# def to_files(chat, workspace: gpt_engineer.db.DB):
+#     workspace["all_output.txt"] = chat
+#     files = gpt_engineer.chat_to_files.parse_chat(chat)
 
-    for file_name, file_content in files:
-        workspace[file_name] = file_content
+#     for file_name, file_content in files:
+#         workspace[file_name] = file_content
 
-# Assign a new to_files function that passes updates to the queue.
-gpt_engineer.chat_to_files.to_files = to_files
+# # Assign a new to_files function that passes updates to the queue.
+# gpt_engineer.chat_to_files.to_files = to_files
 
 from gpt_engineer.ai import AI, fallback_model
 from gpt_engineer.collect import collect_learnings
@@ -87,21 +87,25 @@ async def _main(
     steps = STEPS[steps_config]
     # async def execute_steps():
 
-    for step in steps:
-        await asyncio.sleep(0.1)
-        messages = step(ai, dbs) # when `step.__name__` == `gen_entrypoint`, this proposes another diff for the `run.sh` shell script that you will also want to accept
-        # then all the files and `run.sh` should be SAVED before you accept the proposal to run the entrypoint
-        await asyncio.sleep(0.1)
-        dbs.logs[step.__name__] = json.dumps(messages)
-        items = list(dbs.workspace.in_memory_dict.items())
-        if len([x for x in items if x[0] not in SEEN]) > 0:
-            await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
-            for x in items:
-                if x[0] in SEEN:
-                    pass
-                else:
-                    SEEN.add(x[0])
-        await asyncio.sleep(0.5)
+
+    from concurrent import futures
+    with futures.ThreadPoolExecutor(1) as pool:
+        for step in steps:
+            await asyncio.sleep(0.1)
+            messages = await loop.run_in_executor(pool, step, ai, dbs)
+            # messages = step(ai, dbs) # when `step.__name__` == `gen_entrypoint`, this proposes another diff for the `run.sh` shell script that you will also want to accept
+            # then all the files and `run.sh` should be SAVED before you accept the proposal to run the entrypoint
+            await asyncio.sleep(0.1)
+            dbs.logs[step.__name__] = json.dumps(messages)
+            items = list(dbs.workspace.in_memory_dict.items())
+            if len([x for x in items if x[0] not in SEEN]) > 0:
+                await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
+                for x in items:
+                    if x[0] in SEEN:
+                        pass
+                    else:
+                        SEEN.add(x[0])
+            await asyncio.sleep(0.5)
 
         # TODO(pranav): uncomment this and increase the sleep duration as needed to make sure you can approve all the diffs before the entrypoint is generated --- this delays the appearance of the "run_entrypoint" step
         # if step.__name__ == "gen_entrypoint":
