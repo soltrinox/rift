@@ -106,6 +106,9 @@ class GPTEngineerAgentParams(agent.ClientParams):
 
 @dataclass
 class GPTEngineerAgent(agent.Agent):
+    """
+    Specify what you want it to build, the AI asks for clarification, and then builds it.
+    """
     name: str = "gpt-engineer"
     run_params: typing.Type[agent.ClientParams] = GPTEngineerAgentParams
     splash: typing.Optional[
