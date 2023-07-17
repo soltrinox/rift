@@ -71,16 +71,7 @@
       return responseBlock.innerHTML;
     };
     if (responseBlock) {
-      const dsfa = responseBlock.innerHTML
       const newHTML = getHTML(responseBlock);
-      console.log('searching')
-      if(newHTML.search(dsfa) == -1) {
-        console.log('new:')
-        console.log(newHTML)
-        console.log('old')
-        console.log(dsfa)
-      }
-      console.log()
       something = newHTML;
       responseBlock.contentEditable = "false";
     }
