@@ -15,7 +15,9 @@
     targetElement.style.height = `${targetElement.scrollHeight}px`;
   }
 
-  let textarea: HTMLTextAreaElement;
+  let inputValue:string = ''
+
+  let textarea: HTMLTextAreaElement|undefined;
 
   let hasInput = false;
   state.subscribe((s) => {
@@ -28,6 +30,7 @@
   });
 
   function sendMessage() {
+    if(!textarea) throw new Error()
     if ($loading) {
       console.log("cannot send messages while ai is responding");
       return;
@@ -73,15 +76,16 @@
   }
 
   function handleValueChange(e: Event) {
-    console.log("handleValueChange");
+    if(!textarea) throw new Error()
+    inputValue = textarea.value
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
-      console.log("HOITYTOITY");
       dropdownOpen.set(true);
     } else dropdownOpen.set(false);
   }
 
   function handleKeyDown(e: KeyboardEvent) {
+    if(!textarea) throw new Error()
     if (e.key === "Enter") {
       // 13 is the Enter key code
       e.preventDefault(); // Prevent default Enter key action
@@ -97,6 +101,7 @@
   }
 
   function handleRunAgent(agent_type: string) {
+    if(!textarea) throw new Error()
     if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
       throw new Error("attempt to run unavailable agent");
     vscode.postMessage({
@@ -110,6 +115,9 @@
     textarea.value = ""; //clear omnibar text
     dropdownOpen.set(false);
   }
+
+
+  
 </script>
 
 <!-- bg-[var(--vscode-panel-background)] -->
@@ -144,7 +152,7 @@
     </div>
   </div>
   {#if $dropdownOpen}
-    <Dropdown inputValue={textarea.value} {handleRunAgent} />
+  <Dropdown {inputValue} {handleRunAgent} />
   {/if}
 </div>
 

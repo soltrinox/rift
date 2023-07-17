@@ -17,10 +17,7 @@
     // have to get display name from availableAgents array (which comes from calling list Agents btw)
     console.log($state)
     displayName = $state.availableAgents.find(availableAgent => availableAgent.agent_type == $state.agents[$state.selectedAgentId].type)?.display_name
-    if(!displayName) {
-      console.log('what the fuck')
-      console.log($state)
-    }
+    if(!displayName) throw new Error()
   }
   }
 

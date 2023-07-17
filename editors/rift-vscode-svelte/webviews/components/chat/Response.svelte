@@ -51,7 +51,6 @@
   //         // scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft
   //       }
   $: {
-    console.log('$')
     const getHTML = (_responseBlock: HTMLDivElement) => {
       const responseBlock = (_responseBlock.cloneNode(true) as HTMLDivElement)
       responseBlock.innerHTML = textToFormattedHTML(value);
@@ -84,10 +83,8 @@
       return responseBlock
     };
     if (responseBlock) {
-      console.log('newHTML')
       const newHTML = getHTML(responseBlock);
       something = newHTML.innerHTML;
-
       morphdom(responseBlock, newHTML)
       responseBlock.contentEditable = "false";
       scrollToBottomIfNearBottom?.()

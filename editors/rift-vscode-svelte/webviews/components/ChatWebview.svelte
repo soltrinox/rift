@@ -139,7 +139,6 @@
         const agent_id = result.id;
         state.update((state) => ({
           ...state,
-          selectedAgentId: result.id,
           agents: {
             ...state.agents,
             [agent_id]: new Agent(result.type),

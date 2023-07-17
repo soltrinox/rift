@@ -19,11 +19,11 @@
     vscode.postMessage({ type: "listAgents" });
   });
 
-  console.log("in dropdown: " + JSON.stringify(availableAgents));
+  console.log("in dropdown: ",availableAgents)
 
   export let inputValue: string = "";
-
-  let activeId = 0;
+  if(availableAgents.length < 1) throw new Error('no available agents')
+  let activeId = availableAgents.length-1;
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
@@ -33,15 +33,10 @@
       handleRunAgent(availableAgents[activeId].agent_type);
     }
     if (e.key == "ArrowDown") {
-      console.log("ArrowDown");
-      console.log(`${store.selectedAgentId}`);
-      console.log("THIS IS THE STATE");
-      console.log(store);
       e.preventDefault();
       if (activeId == availableAgents.length - 1) activeId = 0;
       else activeId++;
     } else if (e.key == "ArrowUp") {
-      console.log("ArrowUp");
       e.preventDefault();
       if (activeId == 0) activeId = availableAgents.length - 1;
       else activeId--;
@@ -59,7 +54,8 @@
         .toLowerCase()
         .includes(searchString) || agent.display_name
         .toLowerCase()
-        .includes(searchString) || agent.agent_description
+        .includes(searchString)
+          || agent.agent_description
         .toLowerCase()
         .includes(searchString);
   }) as agent, index}
