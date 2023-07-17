@@ -47,5 +47,5 @@ python -m rift.agents.smol --port 7797 --debug Faulse --prompt_file $PROMPT_FILE
 
 - `gpt-engineer`:
 ```python
-python -m rift.agents.gpt_eng --port 7797 --debug False --prompt $PROMPT_FILE --model gpt-4-0613
+python -m rift.agents.gpt_eng --port 7797 --debug False --model gpt-4-0613
 ```
