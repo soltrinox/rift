@@ -15,8 +15,7 @@
     export let id: string = "";
     export let selectedId = "";
     export let name: string = "rift_chat";
-    export let hasChatNotification = false;
-    export let hasInputNotification = false;
+    export let hasNotification = false;
 
     $: isSelected = id == selectedId;
 
@@ -41,8 +40,7 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        hasChatNotification = false;
-        hasInputNotification = false;
+        hasNotification = false;
         state.update((state) => ({
             ...state,
             selectedAgentId: id,
@@ -50,8 +48,7 @@
                 ...state.agents,
                 [id]: {
                     ...state.agents[id],
-                    hasChatNotification: false,
-                    hasInputNotification: false,
+                    hasNotification: false,
                 },
             },
         }));
@@ -81,26 +78,26 @@
 </script>
 
 <div class:bg-[var(--vscode-editor-hoverHighlightBackground)]={isSelected}>
-    <div class="flex hover:bg-red">
-        <div class="flex select-none">
-            {#if expanded == false}
-                <button
-                    class="mx-1"
-                    on:click={() => (expanded = !expanded)}
-                    on:keydown={() => (expanded = !expanded)}
-                >
-                    <ArrowRightSvg />
-                </button>
-            {:else}
-                <button
-                    class="mx-1"
-                    on:click={() => (expanded = !expanded)}
-                    on:keydown={() => (expanded = !expanded)}
-                >
-                    <ArrowDownSvg />
-                </button>
-            {/if}
-            <button class="flex w-full" on:click={handleChatIconClick}>
+    <div class="flex">
+        {#if expanded == false}
+            <button
+                class="mx-1"
+                on:click={() => (expanded = !expanded)}
+                on:keydown={() => (expanded = !expanded)}
+            >
+                <ArrowRightSvg />
+            </button>
+        {:else}
+            <button
+                class="mx-1"
+                on:click={() => (expanded = !expanded)}
+                on:keydown={() => (expanded = !expanded)}
+            >
+                <ArrowDownSvg />
+            </button>
+        {/if}
+        <button class="flex w-full select-none" on:click={handleChatIconClick}>
+            <div class="flex">
                 {#if $state.agents[id].tasks?.task.status == "done"}
                     <div class="mx-1 mt-0.5"><LogGreenSvg /></div>
                 {:else if $state.agents[id].tasks?.task.status == "running"}
@@ -109,19 +106,17 @@
                     <div class="mx-1 mt-0.5"><LogRed /></div>
                 {/if}
                 <div>{name}</div>
-            </button>
-        </div>
-
-        <button
-            class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
-            on:click={handleChatIconClick}
-        >
-            {#if hasChatNotification || hasInputNotification}
-                <div
-                    class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
-                />
-            {/if}
-            <ChatSvg />
+            </div>
+            <div
+                class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
+            >
+                {#if hasNotification}
+                    <div
+                        class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
+                    />
+                {/if}
+                <ChatSvg />
+            </div>
         </button>
 
         <div class="dropdown inline-flex left-auto flex">

@@ -106,6 +106,8 @@
         agent_params: {},
       },
     });
+
+    textarea.value = ""; //clear omnibar text
     dropdownOpen.set(false);
   }
 </script>
