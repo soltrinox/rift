@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         // get the uri and position of the current cursor
         const doc = editor.document;
-        const textDocument = { uri: doc.uri.toString(), version: 0 };
+        const textDocument = { uri: doc.uri.toString(), version: 0 }
         const position = editor.selection.active;
         // let instructionPrompt = await vscode.window.showInputBox({
         //     ignoreFocusOut: true,
@@ -60,53 +60,53 @@ export function activate(context: vscode.ExtensionContext) {
         //     return
         // }
 
-        // const default_request_input_callback = async (params: any) => {
-        //     let response = await vscode.window.showInputBox({
-        //         ignoreFocusOut: true,
-        //         placeHolder: params.place_holder,
-        //         prompt: params.msg,
-        //     });
-        //     return { response: response }
-        // }
+        const default_request_input_callback = async (params: any) => {
+            let response = await vscode.window.showInputBox({
+                ignoreFocusOut: true,
+                placeHolder: params.place_holder,
+                prompt: params.msg,
+            });
+            return { response: response }
+        }
 
-        // const default_send_update_callback = async (params: any) => {
-        //     vscode.window.showInformationMessage(params.msg)
-        // }
+        const default_send_update_callback = async (params: any) => {
+            vscode.window.showInformationMessage(params.msg)
+        }
 
-        // const code_completion_send_progress_callback = async (params: any) => {
-        //     const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
-        //     const key: string = `code_completion_${params.agent_id}`
-        //     if (params.tasks) {
-        //         logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks })
-        //         if (params.tasks.task.status) {
-        //             if (morph_language_client.agentStates.get(key).status !== params.tasks.task.status) {
-        //                 morph_language_client.agentStates.get(key).status = params.tasks.task.status
-        //                 morph_language_client.agentStates.get(key).emitter.fire(params.tasks.task.status)
-        //             }
-        //         }
-        //     }
-        //     if (params.payload) {
-        //         if (params.payload.ranges) {
-        //             morph_language_client.agentStates.get(key).ranges = params.payload.ranges
-        //         }
-        //     }
-        //     const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == morph_language_client.agentStates.get(key).params.textDocument.uri.toString())
-        //     for (const editor of editors) {
-        //         // [todo] check editor is visible
-        //         const version = editor.document.version
-        //         if (params.tasks) {
-        //             if (params.tasks.task.status == 'accepted' || params.tasks.task.status == 'rejected') {
-        //                 editor.setDecorations(green, [])
-        //                 continue
-        //             }
-        //         }
-        //         if (params.payload) {
-        //             if (params.payload.ranges) {
-        //                 editor.setDecorations(green, params.payload.ranges.map(r => new vscode.Range(r.start.line, r.start.character, r.end.line, r.end.character)))
-        //             }
-        //         }
-        //     }
-        // }
+        const code_completion_send_progress_callback = async (params: any) => {
+            const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
+            const key: string = `code_completion_${params.agent_id}`
+            if (params.tasks) {
+                logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks })
+                if (params.tasks.task.status) {
+                    if (morph_language_client.agentStates.get(key).status !== params.tasks.task.status) {
+                        morph_language_client.agentStates.get(key).status = params.tasks.task.status
+                        morph_language_client.agentStates.get(key).emitter.fire(params.tasks.task.status)
+                    }
+                }
+            }
+            if (params.payload) {
+                if (params.payload.ranges) {
+                    morph_language_client.agentStates.get(key).ranges = params.payload.ranges
+                }
+            }
+            const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == morph_language_client.agentStates.get(key).params.textDocument.uri.toString())
+            for (const editor of editors) {
+                // [todo] check editor is visible
+                const version = editor.document.version
+                if (params.tasks) {
+                    if (params.tasks.task.status == 'accepted' || params.tasks.task.status == 'rejected') {
+                        editor.setDecorations(green, [])
+                        continue
+                    }
+                }
+                if (params.payload) {
+                    if (params.payload.ranges) {
+                        editor.setDecorations(green, params.payload.ranges.map(r => new vscode.Range(r.start.line, r.start.character, r.end.line, r.end.character)))
+                    }
+                }
+            }
+        }
 
         const r = await morph_language_client.run(
             {
