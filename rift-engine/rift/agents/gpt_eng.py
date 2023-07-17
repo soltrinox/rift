@@ -97,10 +97,10 @@ async def _main(
         if len([x for x in items if x[0] not in SEEN]) > 0:
             await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
             for x in items:
-                if hash(x) in SEEN:
+                if x[0] in SEEN:
                     pass
                 else:
-                    SEEN.add(hash(x))
+                    SEEN.add(x[0])
         await asyncio.sleep(0.5)
 
         # TODO(pranav): uncomment this and increase the sleep duration as needed to make sure you can approve all the diffs before the entrypoint is generated --- this delays the appearance of the "run_entrypoint" step
