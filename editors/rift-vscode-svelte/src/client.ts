@@ -44,13 +44,14 @@ function tcpServerOptions(context: ExtensionContext, port = DEFAULT_PORT): Serve
 
 /** Creates the server options for spinning up our own server.*/
 function createServerOptions(context: vscode.ExtensionContext, port = DEFAULT_PORT): ServerOptions {
-    let cwd = vscode.workspace.workspaceFolders![0].uri.path
+    if (!vscode.workspace.workspaceFolders) throw new Error("workspace folder does not exist");
+    let cwd = vscode.workspace.workspaceFolders[0].uri.path;
     // [todo]: we will supply different bundles for the 3 main platforms; windows, linux, osx.
     // there needs to be a decision point here where we decide which platform we are on and
     // then choose the appropriate bundle.
-    let command = join(context.extensionPath, 'resources', 'lspai')
-    let args: string[] = []
-    args = [...args, '--port', port.toString()]
+    let command = join(context.extensionPath, 'resources', 'lspai');
+    let args: string[] = [];
+    args = [...args, '--port', port.toString()];
     let e: Executable = {
         command,
         args,
@@ -175,31 +176,31 @@ export type AgentResult = {
 
 
 
-const code_completion_send_progress_callback = async (params: any) => {
-    const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
+const code_completion_send_progress_callback = async (params: any, agent: Agent) => {
+    const green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' });
     const key: string = `code_completion_${params.agent_id}`
     if (params.tasks) {
-        logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks })
+        // logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
         if (params.tasks.task.status) {
-            if (morph_language_client.agentStates.get(key).status !== params.tasks.task.status) {
-                morph_language_client.agentStates.get(key).status = params.tasks.task.status
-                morph_language_client.agentStates.get(key).emitter.fire(params.tasks.task.status)
+            if (agent.status !== params.tasks.task.status) {
+                agent.status = params.tasks.task.status;
+                agent.onStatusChangeEmitter.fire(params.tasks.task.status);
             }
         }
     }
     if (params.payload) {
         if (params.payload.ranges) {
-            morph_language_client.agentStates.get(key).ranges = params.payload.ranges
+            agent.ranges = params.payload.ranges;
         }
     }
-    const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == morph_language_client.agentStates.get(key).params.textDocument.uri.toString())
+    const editors = vscode.window.visibleTextEditors.filter(e => e.document.uri.toString() == agent?.params?.textDocument?.uri?.toString());
     for (const editor of editors) {
         // [todo] check editor is visible
-        const version = editor.document.version
+        const version = editor.document.version;
         if (params.tasks) {
             if (params.tasks.task.status == 'accepted' || params.tasks.task.status == 'rejected') {
-                editor.setDecorations(green, [])
-                continue
+                editor.setDecorations(green, []);
+                continue;
             }
         }
         if (params.payload) {
@@ -213,16 +214,16 @@ const code_completion_send_progress_callback = async (params: any) => {
 class Agent {
     status: AgentStatus;
     green: vscode.TextEditorDecorationType;
-    ranges: vscode.Range[] = []
-    onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>
-    onStatusChange: vscode.Event<AgentStatus>
-    constructor(public readonly id: string, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier) {
+    ranges: vscode.Range[] = [];
+    onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
+    onStatusChange: vscode.Event<AgentStatus>;
+    constructor(public readonly id: string, public readonly agent_type: string, public readonly startPosition: vscode.Position, public textDocument: TextDocumentIdentifier, public params: any) {
         this.id = id;
         this.status = 'running';
         this.agent_type = agent_type;
-        this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' })
-        this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>()
-        this.onStatusChange = this.onStatusChangeEmitter.event
+        this.green = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(0,255,0,0.1)' });
+        this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
+        this.onStatusChange = this.onStatusChangeEmitter.event;
 
     }
     async handleInputRequest(params: AgentInputRequest) {
@@ -231,56 +232,55 @@ class Agent {
             placeHolder: params.place_holder,
             prompt: params.msg,
         });
-        return { response: response }
+        return { response: response };
     }
 
     async handleChatRequest(params: AgentChatRequest) {
         console.log("handleChatRequest");
-        console.log(params)
+        console.log(params);
         chatProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
         logProvider._view?.webview.postMessage({ type: 'chat_request', data: { ...params, id: this.id } });
 
-        let agentType = this.agent_type
-        let agentId = this.id
+        let agentType = this.agent_type;
+        let agentId = this.id;
 
-        console.log('agentType:', agentType)
-        console.log('agentId:', agentId)
+        console.log('agentType:', agentType);
+        console.log('agentId:', agentId);
 
         // return "BLAH BLAH"
         async function getUserInput() {
-            console.log('getUserInput')
-            console.log('agentType:', agentType)
-            console.log('agentId:', agentId)
+            console.log('getUserInput');
+            console.log('agentType:', agentType);
+            console.log('agentId:', agentId);
             return new Promise((res, rej) => {
-                console.log('subscribing to changes')
+                console.log('subscribing to changes');
                 PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
-                    console.log('resolving promise')
-                    res(message)
-                })
-            })
+                    console.log('resolving promise');
+                    res(message);
+                });
+            });
         }
 
         let chatRequest = await getUserInput();
-        console.log('received user input and returning to server')
-        console.log(chatRequest)
+        console.log('received user input and returning to server');
+        console.log(chatRequest);
         return chatRequest;
     }
     async handleUpdate(params: AgentUpdate) {
-        console.log("handleUpdate")
-        console.log(params)
+        console.log("handleUpdate");
+        console.log(params);
         // //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
         // logProvider._view?.webview.postMessage({ type: 'update', data: params });
         vscode.window.showInformationMessage(params.msg);
     }
     async handleProgress(params: AgentProgress) {
-        console.log("handleProgress")
-        console.log(params)
+        console.log("handleProgress");
+        console.log(params);
         chatProvider._view?.webview.postMessage({ type: 'progress', data: params });
         logProvider._view?.webview.postMessage({ type: 'progress', data: params });
 
-
         if (this.agent_type === "code_completion") {
-            code_completion_send_progress_callback(params);
+            code_completion_send_progress_callback(params, this);
         }
     }
     async handleResult(params: AgentResult) {
@@ -292,14 +292,11 @@ class Agent {
 }
 
 
-
-
-
 export class AgentStateLens extends vscode.CodeLens {
-    id: number
-    constructor(range: vscode.Range, agentState: any, command?: vscode.Command) {
-        super(range, command)
-        this.id = agentState.agent_id
+    id: string;
+    constructor(range: vscode.Range, agent: any, command?: vscode.Command) {
+        super(range, command);
+        this.id = agent.id;
     }
 }
 
@@ -311,21 +308,21 @@ interface ModelConfig {
 }
 
 type AgentType = "chat" | "code-completion"
-export type AgentIdentifier = string
+export type AgentIdentifier = string;
 
 export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLens> {
-    client: LanguageClient | undefined = undefined
-    red: vscode.TextEditorDecorationType
-    green: vscode.TextEditorDecorationType
-    context: vscode.ExtensionContext
-    changeLensEmitter: vscode.EventEmitter<void>
-    onDidChangeCodeLenses: vscode.Event<void>
-    agents = new Map<AgentIdentifier, Agent>()
-    agentStates = new Map<AgentIdentifier, any>()
+    client: LanguageClient | undefined = undefined;
+    red: vscode.TextEditorDecorationType;
+    green: vscode.TextEditorDecorationType;
+    context: vscode.ExtensionContext;
+    changeLensEmitter: vscode.EventEmitter<void>;
+    onDidChangeCodeLenses: vscode.Event<void>;
+    agents: { [id: string]: Agent } = {};
+    // agentStates = new Map<AgentIdentifier, any>()
 
     constructor(context: vscode.ExtensionContext) {
-        this.red = { key: "TEMP_VALUE", dispose: () => { } }
-        this.green = { key: "TEMP_VALUE", dispose: () => { } }
+        this.red = { key: "TEMP_VALUE", dispose: () => { } };
+        this.green = { key: "TEMP_VALUE", dispose: () => { } };
         this.context = context
         this.create_client().then(() => {
             this.context.subscriptions.push(
@@ -342,45 +339,49 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         })
 
 
-        this.changeLensEmitter = new vscode.EventEmitter<void>()
-        this.onDidChangeCodeLenses = this.changeLensEmitter.event
+        this.changeLensEmitter = new vscode.EventEmitter<void>();
+        this.onDidChangeCodeLenses = this.changeLensEmitter.event;
     }
 
     // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
     public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentStateLens[] {
         // this returns all of the lenses for the document.
-        const items: AgentStateLens[] = []
-        for (const agentState of this.agentStates.values()) {
-            if (agentState.agent_type == "code_completion" && agentState.params.textDocument.uri.toString() == document.uri.toString()) {
-                const line = agentState.params.position.line
-                const linetext = document.lineAt(line)
-                if (agentState.status === 'running') {
-                    const running = new AgentStateLens(linetext.range, agentState, {
+        const items: AgentStateLens[] = [];
+        for (const agent of Object.values(this.agents)) {
+            if (agent.agent_type != "code_completion") {
+                continue
+            }
+
+            if (agent?.params?.textDocument?.uri?.toString() == document.uri.toString()) {
+                const line = agent.params.position.line;
+                const linetext = document.lineAt(line);
+                if (agent.status === 'running') {
+                    const running = new AgentStateLens(linetext.range, agent, {
                         title: 'cancel',
                         command: 'rift.cancel',
                         tooltip: 'click to stop this agent',
-                        arguments: [agentState.agent_id],
-                    })
+                        arguments: [agent.id],
+                    });
                     items.push(running)
                 }
-                else if (agentState.status === 'done' || agentState.status === 'error') {
-                    const accept = new AgentStateLens(linetext.range, agentState, {
+                else if (agent.status === 'done' || agent.status === 'error') {
+                    const accept = new AgentStateLens(linetext.range, agent, {
                         title: 'Accept ✅ ',
                         command: 'rift.accept',
                         tooltip: 'Accept the edits below',
-                        arguments: [agentState.agent_id],
-                    })
-                    const reject = new AgentStateLens(linetext.range, agentState, {
+                        arguments: [agent.id],
+                    });
+                    const reject = new AgentStateLens(linetext.range, agent, {
                         title: ' Reject ❌',
                         command: 'rift.reject',
                         tooltip: 'Reject the edits below and restore the original text',
-                        arguments: [agentState.agent_id]
-                    })
-                    items.push(accept, reject)
+                        arguments: [agent.id]
+                    });
+                    items.push(accept, reject);
                 }
             }
         }
-        return items
+        return items;
     }
 
     // // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
@@ -427,35 +428,35 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     }
 
     is_running() {
-        return this.client && this.client.state == State.Running
+        return this.client && this.client.state == State.Running;
     }
 
     async list_agents() {
         console.log('get agents client.ts');
-        if (!this.client) throw new Error()
-        const result: AgentRegistryItem[] = await this.client.sendRequest('morph/listAgents', {})
+        if (!this.client) throw new Error();
+        const result: AgentRegistryItem[] = await this.client.sendRequest('morph/listAgents', {});
         console.log(result);
         return result;
     }
 
     async create_client() {
         if (this.client && this.client.state != State.Stopped) {
-            console.log(`client already exists and is in state ${this.client.state} `)
-            return
+            console.log(`client already exists and is in state ${this.client.state} `);
+            return;
         }
         const port = DEFAULT_PORT
         let serverOptions: ServerOptions
         while (!(await tcpPortUsed.check(port))) {
-            console.log('waiting for server to come online')
+            console.log('waiting for server to come online');
             try {
-                await tcpPortUsed.waitUntilUsed(port, 500, 1000000)
+                await tcpPortUsed.waitUntilUsed(port, 500, 1000000);
             }
             catch (e) {
-                console.error(e)
+                console.error(e);
             }
         }
-        console.log(`server detected on port ${port} `)
-        serverOptions = tcpServerOptions(this.context, port)
+        console.log(`server detected on port ${port} `);
+        serverOptions = tcpServerOptions(this.context, port);
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{ language: '*' }]
         }
@@ -464,81 +465,78 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             serverOptions, clientOptions,
         )
         this.client.onDidChangeState(async e => {
-            console.log(`client state changed: ${e.oldState} ▸ ${e.newState} `)
+            console.log(`client state changed: ${e.oldState} ▸ ${e.newState} `);
             if (e.newState === State.Stopped) {
-                console.log('morph server stopped, restarting...')
-                await this.client?.dispose()
-                console.log('morph server disposed')
-                await this.create_client()
+                console.log('morph server stopped, restarting...');
+                await this.client?.dispose();
+                console.log('morph server disposed');
+                await this.create_client();
             }
         })
-        await this.client.start()
-        console.log('rift-engine started')
+        await this.client.start();
+        console.log('rift-engine started');
     }
 
 
     async on_config_change(_args: any) {
-        const x = await this.client?.sendRequest('workspace/didChangeConfiguration', {})
+        const x = await this.client?.sendRequest('workspace/didChangeConfiguration', {});
     }
 
     async notify_focus(tdpp: TextDocumentPositionParams | { symbol: string }) {
         // [todo] unused
-        console.log(tdpp)
-        await this.client?.sendNotification('morph/focus', tdpp)
+        console.log(tdpp);
+        await this.client?.sendNotification('morph/focus', tdpp);
     }
 
     async hello_world() {
-        const result = await this.client?.sendRequest('hello_world')
-        return result
+        const result = await this.client?.sendRequest('hello_world');
+        return result;
     }
 
     morphNotifyChatCallback: (progress: ChatAgentProgress) => any = async function (progress) {
-        throw new Error('no callback set')
+        throw new Error('no callback set');
     }
 
     async run_chat(params: RunChatParams, callback: (progress: ChatAgentProgress) => any) {
-        console.log('run chat')
-        if (!this.client) throw new Error()
-        this.morphNotifyChatCallback = callback
-        this.client.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
+        console.log('run chat');
+        if (!this.client) throw new Error();
+        this.morphNotifyChatCallback = callback;
+        this.client.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this));
 
-        const result = await this.client.sendRequest('morph/run_chat', params)
+        const result = await this.client.sendRequest('morph/run_chat', params);
         // note this returns fast and then the updates are sent via notifications
-        return 'starting...'
+        return 'starting...';
     }
 
 
     async run(params: RunAgentParams) {
-        if (!this.client) throw new Error()
+        if (!this.client) throw new Error();
         const result: RunAgentResult = await this.client.sendRequest('morph/run', params);
-        console.log('run agent result')
+        console.log('run agent result');
         console.log(result)
         const agent_id = result.id;
         const agent_type = params.agent_type;
 
-        const agent = new Agent(result.id, agent_type, params.agent_params.position, params.agent_params.textDocument)
-        agent.onStatusChange(e => this.changeLensEmitter.fire())
-        this.agents.set(result.id.toString(), agent)
-        this.changeLensEmitter.fire()
+        const agent = new Agent(result.id, agent_type, params.agent_params.position, params.agent_params.textDocument, params);
+        agent.onStatusChange(e => this.changeLensEmitter.fire());
+        this.agents[result.id] = agent;
+        this.changeLensEmitter.fire();
 
-        console.log(`running ${agent_type} `)
-        const agentIdentifier = `${agent_type}_${agent_id} `
-        console.log(`agentIdentifier: ${agentIdentifier} `)
-        this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })
-        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, agent.handleInputRequest.bind(agent))
-        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, agent.handleChatRequest.bind(agent))
+        // this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_input`, agent.handleInputRequest.bind(agent));
+        this.client.onRequest(`morph/${agent_type}_${agent_id}_request_chat`, agent.handleChatRequest.bind(agent));
         // note(jesse): for the chat agent, the request_chat callback should register another callback for handling user responses --- it should unpack the future identifier from the request_chat_request and re-pass it to the language server
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, agent.handleUpdate.bind(agent)) // this should post a message to the rift logs webview if `tasks` have been updated
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, agent.handleProgress.bind(agent)) // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_update`, agent.handleUpdate.bind(agent)); // this should post a message to the rift logs webview if `tasks` have been updated
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_progress`, agent.handleProgress.bind(agent)); // this should post a message to the rift logs webview if `tasks` have been updated
         // actually, i wonder if the server should just be generally responsible for sending notifications to the client about active tasks
-        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, agent.handleResult.bind(agent)) // this should be custom
+        this.client.onNotification(`morph/${agent_type}_${agent_id}_send_result`, agent.handleResult.bind(agent)); // this should be custom
 
 
         return { id: agent_id, type: agent_type }// return agent_id to the webview
     }
 
     async cancel(params: AgentId) {
-        if (!this.client) throw new Error()
+        if (!this.client) throw new Error();
         let response = await this.client.sendRequest('morph/cancel', params);
         return response;
     }
@@ -566,7 +564,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     // }
 
     dispose() {
-        this.client?.dispose()
+        this.client?.dispose();
     }
 
     // async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {

@@ -5,7 +5,7 @@
   import { onMount } from "svelte";
   import type { SvelteStore } from "../../../../src/types";
 
-  export let handleRunAgent:(agent_type: string) => void
+  export let handleRunAgent: (agent_type: string) => void;
   let store: SvelteStore;
 
   state.subscribe((s) => {
@@ -30,9 +30,10 @@
       e.preventDefault();
       // create agent
       console.log("agent_type: " + availableAgents[activeId].agent_type);
-      handleRunAgent(availableAgents[activeId].agent_type)
-      // console.log("THIS IS THE STATE");
-      // console.log(store);
+      handleRunAgent(availableAgents[activeId].agent_type);
+
+      var omnibar = document.getElementById("omnibar");
+      omnibar!.value = ""; //clear omnibar text
     }
     if (e.key == "ArrowDown") {
       console.log("ArrowDown");
