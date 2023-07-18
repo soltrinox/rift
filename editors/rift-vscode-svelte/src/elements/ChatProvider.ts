@@ -150,6 +150,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                     <script src="${microlightUri}" nonce="${nonce}"></script>
                     <link href="${cssUri}" rel="stylesheet">
                     <script nonce="${nonce}">
+                        console.log("TESDKDFSJHALDFKDHSFLKJAHSFKJHSDAFL");
                         const vscode = acquireVsCodeApi();
                     </script>
                 </head>

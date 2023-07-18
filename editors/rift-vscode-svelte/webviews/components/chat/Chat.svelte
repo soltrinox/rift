@@ -24,10 +24,7 @@
     observer = new MutationObserver(scrollToBottomIfNearBottom);
     observer.observe(chatWindow, { childList: true, subtree: true });
 
-    fixedToBottom = Boolean(
-      chatWindow.clientHeight + chatWindow.scrollTop >=
-        chatWindow.scrollHeight - 15
-    );
+    fixedToBottom = true
 
     chatWindow.addEventListener("scroll", function () {
       if (!chatWindow.scrollTop || !chatWindow.scrollHeight) {
@@ -38,7 +35,7 @@
       }
       fixedToBottom = Boolean(
         chatWindow.clientHeight + chatWindow.scrollTop >=
-          chatWindow.scrollHeight - 15
+          chatWindow.scrollHeight - 10
       );
     });
   });

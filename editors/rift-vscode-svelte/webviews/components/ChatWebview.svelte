@@ -28,6 +28,7 @@
   console.log(vscode.getState());
 
   onMount(() => {
+    console.log('onMount')
     vscode.postMessage({
       type: "runAgent",
       params: {
