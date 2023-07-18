@@ -127,12 +127,12 @@ class ChatAgent(Agent):
             user_response_task = asyncio.create_task(get_user_response_task.run())
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
             logger.info("got user response task future")
-            await user_response_task
+            user_response = await user_response_task
+            async with response_lock:
+                self.state.messages.append(openai.Message.user(content=user_response))
             await self.send_progress()
             assistant_response = await generate_response_task.run()
-
             await self.send_progress()
-
             async with response_lock:
                 self.state.messages.append(openai.Message.assistant(content=assistant_response))
 
