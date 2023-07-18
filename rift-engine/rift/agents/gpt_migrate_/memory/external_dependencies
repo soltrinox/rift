@@ -1,2 +1,6 @@
+rocket
 serde
-json
+serde_json
+bcrypt
+rusqlite
+serde_json

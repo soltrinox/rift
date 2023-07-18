@@ -33,7 +33,7 @@ import rift.util.file_diff as file_diff
 
 SEEN = set()
 async def _main(
-    model = "gpt-3.5-turbo-16k",
+    model = "gpt-4",
     temperature= 0,
     sourcelang= None,
     sourceentry = "app.py",
@@ -106,16 +106,16 @@ async def _main(
             internal_deps_list, external_deps_list = get_dependencies(sourcefile=sourcefile,globals=globals)
             for dependency in internal_deps_list:
                 await migrate(dependency, globals, parent_file=sourcefile)
+            await asyncio.sleep(0.5)
             file_name = write_migration(sourcefile, external_deps_list, target_deps_per_file.get(sourcefile), globals)
             items = list(globals.callback.items())
             if len([x for x in items if x[0] not in SEEN]) > 0:
-                await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
-                for x in items:
-                    if hash(x) in SEEN:
-                        pass
-                    else:
-                        SEEN.add(hash(x))
-            await asyncio.sleep(0.5)
+                    await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
+                    for x in items:
+                        if hash(x) in SEEN:
+                            pass
+                        else:
+                            SEEN.add(hash(x))
 
             target_deps_per_file[parent_file].append(file_name)
 

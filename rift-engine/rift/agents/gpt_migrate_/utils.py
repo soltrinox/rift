@@ -55,8 +55,10 @@ def llm_write_file(prompt,target_path,waiting_message,success_message,globals):
     if file_name=="INSTRUCTIONS:":
         return "INSTRUCTIONS:","",file_content
 
+    print(file_name)
+    print(target_path)
 
-    globals.callback[file_name]=file_content
+    globals.callback[os.path.join(globals.targetdir, file_name)]=file_content
     #if target_path:
     #    with open(os.path.join(globals.targetdir, target_path), 'w') as file:
     #        file.write(file_content)
@@ -82,8 +84,12 @@ def llm_write_files(prompt,target_path,waiting_message,success_message,globals):
 
     for result in results:
         file_name,language,file_content = result
-        globals.callback[file_name]=file_content
-
+        print(file_name)
+        print(target_path)
+        if target_path:
+            globals.callback[os.path.join(globals.targetdir, target_path)]=file_content
+        else:
+            globals.callback[os.path.join(globals.targetdir, file_name)]=file_content
        # if target_path:
        #     with open(os.path.join(globals.targetdir, target_path), 'w') as file:
         #        file.write(file_content)

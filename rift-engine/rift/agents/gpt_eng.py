@@ -72,7 +72,7 @@ async def _main(
         memory=DB(memory_path),
         logs=DB(memory_path / "logs"),
         input=DB(input_path),
-        workspace=DB(workspace_path, in_memory_dict={}),  # in_memory_dict={}),
+        workspace=DB(workspace_path, in_memory_dict={}),  
         preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
         archive=DB(archive_path),
     )
