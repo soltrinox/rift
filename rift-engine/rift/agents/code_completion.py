@@ -112,6 +112,7 @@ class CodeCompletionAgent(Agent):
             if stream.thoughts is not None:
                 async for delta in stream.thoughts:
                     all_deltas.append(delta)
+                    await asyncio.sleep(0.01)
 
             return "".join(all_deltas)
 
