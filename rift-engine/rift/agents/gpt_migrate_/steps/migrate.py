@@ -20,7 +20,11 @@ def get_function_signatures(targetfiles: List[str], globals):
         else:
             function_signatures_template = prompt_constructor(HIERARCHY, GUIDELINES, GET_FUNCTION_SIGNATURES)
 
-            targetfile_content = globals.callback[targetfile]
+
+            #TODO: migrate to in memeory DB.
+            targetfile_content = ""
+            with open(os.path.join(globals.targetdir, targetfile), 'r') as file:
+                targetfile_content = file.read()
             
             prompt = function_signatures_template.format(targetlang=globals.targetlang,
                                                 sourcelang=globals.sourcelang, 
@@ -33,7 +37,8 @@ def get_function_signatures(targetfiles: List[str], globals):
             sigs = json.loads(response)
             
             all_sigs.extend(sigs)
-
+            
+            #TODO: migrate to in memeory DB.
             with open(os.path.join('memory', sigs_file_name), 'w') as f:
                 json.dump(sigs, f)
 
