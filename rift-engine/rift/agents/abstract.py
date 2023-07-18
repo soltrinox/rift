@@ -79,7 +79,7 @@ class AgentState(ABC):
     """
     Abstract base class for AgentState. Always contains a copy of the params used to create the Agent.
     """
-    params: Optional[AgentRunParams] = None
+    params: AgentRunParams
 
 @dataclass
 class Agent:
@@ -109,7 +109,7 @@ class Agent:
         return f"<{self.agent_type}> {self.agent_id}"
 
     @classmethod
-    def create(cls, params: RunAgentParams, *args, **kwargs) -> Agent:
+    def create(cls, params: RunAgentParams, *args, **kwargs):
         """
         Factory function which is responsible for constructing the agent's state.
         """
