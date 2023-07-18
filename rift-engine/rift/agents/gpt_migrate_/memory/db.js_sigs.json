@@ -1,0 +1,1 @@
+[{"signature": "readItems() -> object", "description": "Reads a JSON file named 'items.json' from the 'storage' directory and returns the parsed JSON object."}, {"signature": "writeItems(groceryItems: object) -> void", "description": "Takes a JSON object as input, converts it into a string, and writes it to a file named 'items.json' in the 'storage' directory."}]

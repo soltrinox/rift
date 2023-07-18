@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./rift-engine/rift/agents/gpt_migrate_"
+    ]
+}

@@ -1,0 +1,4 @@
+typer
+langchain
+yaspin
+openai
