@@ -6,6 +6,7 @@ from typing import AsyncIterable, ClassVar, List, Optional, Type, Dict
 import rift.util.file_diff as file_diff
 from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
+from rift.IR.ir import language_from_file_extension
 from textwrap import dedent
 import openai
 
@@ -129,6 +130,7 @@ class InferAgent(Agent):
 
         file_changes: List[file_diff.FileChange] = []
         if len(prompts) > 0:
+            # Try to fix the first bug
             messages = prompts[0]
             api_key = os.environ["OPENAI_API_KEY"]
             if api_key is None:
@@ -143,20 +145,20 @@ class InferAgent(Agent):
                 raise Exception(f"Unexpected type for res: {type(res)}")
             response = res['choices'][0]['message']
             self.console.print(f"response:\n{response}\n")
-            from rift.llm.parser import Language
-            from rift.llm.response import extract_code_blocks, new_document_from_code_blocks
-            language : Language = "c"
-            code_blocks = extract_code_blocks(response["content"])
+            from rift.IR.ir import Language
+            from rift.llm.response import extract_blocks_from_response, replace_functions_from_code_blocks
+            code_blocks = extract_blocks_from_response(response["content"])
             self.console.print(f"code_blocks:\n{code_blocks}\n")
             bug0 = bugs[0]
             document = files[bug0.file]
-            new_document = new_document_from_code_blocks(code_blocks=code_blocks, document=document, language=language)
-            self.console.print(f"new_document:\n{new_document}\n")
-            path = os.path.join(os.getcwd(), bug0.file)
-            file_change = file_diff.get_file_change(path=path, new_content=new_document)
-            self.console.print(f"file_change:\n{file_change}\n")
-            file_changes.append(file_change)
-
+            language = language_from_file_extension(bug0.file)
+            if language is not None:
+                new_document = replace_functions_from_code_blocks(code_blocks=code_blocks, document=document, language=language)
+                self.console.print(f"new_document:\n{new_document}\n")
+                path = os.path.join(os.getcwd(), bug0.file)
+                file_change = file_diff.get_file_change(path=path, new_content=new_document)
+                self.console.print(f"file_change:\n{file_change}\n")
+                file_changes.append(file_change)
         await ainput("\n> Press any key to continue.\n")
 
         yield file_changes
