@@ -69,13 +69,17 @@ class AgentProgress:
 
 @dataclass
 class AgentRunResult(ABC):
-    """Abstract base class for AgentRunResult"""
+    """
+    Abstract base class for AgentRunResult
+    """
 
 
 @dataclass
 class AgentState(ABC):
-    """Abstract base class for AgentState"""
-
+    """
+    Abstract base class for AgentState. Always contains a copy of the params used to create the Agent.
+    """
+    params: Optional[AgentRunParams] = None
 
 @dataclass
 class Agent:
@@ -105,7 +109,7 @@ class Agent:
         return f"<{self.agent_type}> {self.agent_id}"
 
     @classmethod
-    def create(cls, params: RunAgentParams, *args, **kwargs):
+    def create(cls, params: RunAgentParams, *args, **kwargs) -> Agent:
         """
         Factory function which is responsible for constructing the agent's state.
         """
@@ -157,7 +161,9 @@ class Agent:
         Prompt the user for more information.
         """
         try:
-            response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
+            response = await self.server.request(
+                f"morph/{self.agent_type}_{self.agent_id}_request_input", req
+            )
             return response["response"]
         except Exception as e:
             logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
@@ -175,7 +181,9 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_chat", req)
+        response = await self.server.request(
+            f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
+        )
         return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
@@ -193,7 +201,9 @@ class Agent:
                         "description": AGENT_REGISTRY.registry[self.agent_type].display_name,
                         "status": self.task.status,
                     },
-                    "subtasks": ([{"description": x.description, "status": x.status} for x in self.tasks]),
+                    "subtasks": (
+                        [{"description": x.description, "status": x.status} for x in self.tasks]
+                    ),
                 }
             except Exception as e:
                 logger.debug(f"Caught exception: {e}")
@@ -251,7 +261,9 @@ class AgentRegistry:
     def __getitem__(self, key):
         return self.get_agent(key)
 
-    def register_agent(self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None) -> None:
+    def register_agent(
+        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
+    ) -> None:
         if agent.agent_type in self.registry:
             raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
         self.registry[agent.agent_type] = AgentRegistryItem(

@@ -96,7 +96,7 @@ class RunAgentSyncResult:
 
 
 class LspServer(BaseLspServer):
-    active_agents: dict[int, CodeCompletionAgent]
+    active_agents: dict[int, Agent]
     active_chat_agents: dict[int, asyncio.Task]
     model_config: ModelConfig
     completions_model: Optional[AbstractCodeCompletionProvider] = None
@@ -282,6 +282,14 @@ class LspServer(BaseLspServer):
                 chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
             )
             return config.create_chat()
+
+    @rpc_method("morph/restart_agent")
+    async def on_restart_agent(self, agent_id: str) -> RunAgentResult:
+        old_agent = self.active_agents[agent_id]
+        agent_params = old_agent.state.params
+        agent_type = old_agent.agent_type
+        agent_id = old_agent.agent_id
+        return await self.on_run(RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id))
 
     @rpc_method("morph/run")
     async def on_run(self, params: RunAgentParams):

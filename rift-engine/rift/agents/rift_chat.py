@@ -15,12 +15,16 @@ from rift.agents.abstract import (
     RequestInputRequest,
     RunAgentParams,
     agent,
-    RequestChatRequest
+    RequestChatRequest,
 )
 import rift.agents.abstract as agents
 import rift.llm.openai_types as openai
 from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult, AbstractChatCompletionProvider
+from rift.llm.abstract import (
+    AbstractCodeCompletionProvider,
+    InsertCodeResult,
+    AbstractChatCompletionProvider,
+)
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
@@ -28,21 +32,25 @@ from rift.agents.agenttask import AgentTask
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class ChatRunResult(AgentRunResult):
     ...
+
 
 @dataclass
 class ChatAgentParams(AgentRunParams):
     textDocument: lsp.TextDocumentIdentifier
     position: Optional[lsp.Position]
 
+
 @dataclass
 class ChatProgress(
-     AgentProgress
+    AgentProgress
 ):  # reports what tasks are active and responsible for reporting new tasks
-     response: Optional[str] = None
-     done_streaming: bool = False
+    response: Optional[str] = None
+    done_streaming: bool = False
+
 
 @dataclass
 class ChatAgentState(AgentState):
@@ -50,6 +58,7 @@ class ChatAgentState(AgentState):
     messages: list[openai.Message]
     document: lsp.TextDocumentItem
     params: ChatAgentParams
+
 
 @agent(
     agent_description="Ask questions about your code.",
@@ -64,9 +73,7 @@ class ChatAgent(Agent):
     def create(cls, params: ChatAgentParams, model, server):
         state = ChatAgentState(
             model=model,
-            messages=[
-                openai.Message.assistant("Hello! How can I help you today?")
-            ],
+            messages=[openai.Message.assistant("Hello! How can I help you today?")],
             document=server.documents[params.textDocument.uri],
             params=params,
         )
@@ -80,7 +87,9 @@ class ChatAgent(Agent):
     async def run(self) -> AgentRunResult:
         logger.info(f"[{self.agent_type}] starting ChatAgent.run()")
         from asyncio import Lock
-        response_lock = Lock()        
+
+        response_lock = Lock()
+
         async def get_user_response() -> str:
             logger.info("getting user response")
             return await self.request_chat(RequestChatRequest(messages=self.state.messages))
@@ -103,24 +112,28 @@ class ChatAgent(Agent):
         while True:
             logger.info("entering loop")
             get_user_response_task = AgentTask("Get user response", get_user_response)
-            logger.info("created get_user_response_task")            
+            logger.info("created get_user_response_task")
             sentinel_f = asyncio.get_running_loop().create_future()
+
             async def generate_response_task_args():
                 return [await sentinel_f]
-            logger.info("created future")                        
-            generate_response_task = AgentTask("Generate response", generate_response, args=generate_response_task_args)
+
+            logger.info("created future")
+            generate_response_task = AgentTask(
+                "Generate response", generate_response, args=generate_response_task_args
+            )
             self.set_tasks([get_user_response_task, generate_response_task])
             await self.send_progress()
             user_response_task = asyncio.create_task(get_user_response_task.run())
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
-            logger.info("got user response task future")                                                
+            logger.info("got user response task future")
             await user_response_task
             await self.send_progress()
             assistant_response = await generate_response_task.run()
-            
+
             await self.send_progress()
-            
+
             async with response_lock:
                 self.state.messages.append(openai.Message.assistant(content=assistant_response))
-                
+
             await self.send_progress()

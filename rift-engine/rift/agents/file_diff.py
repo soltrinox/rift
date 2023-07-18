@@ -36,7 +36,9 @@ def get_file_change(path: str, new_content: str) -> FileChange:
         return FileChange(uri=uri, old_content="", new_content=new_content, is_new_file=True)
 
 
-def edits_from_file_change(file_change: FileChange, user_confirmation: bool = False) -> WorkspaceEdit:
+def edits_from_file_change(
+    file_change: FileChange, user_confirmation: bool = False
+) -> WorkspaceEdit:
     dmp = diff_match_patch()
     diff = dmp.diff_main(file_change.old_content, file_change.new_content)
 
@@ -57,7 +59,9 @@ def edits_from_file_change(file_change: FileChange, user_confirmation: bool = Fa
 
         if op == -1:
             # text was deleted
-            edits.append(TextEdit(Range.mk(line, char, end_line, end_char), "", annotationId="rift"))
+            edits.append(
+                TextEdit(Range.mk(line, char, end_line, end_char), "", annotationId="rift")
+            )
         elif op == 1:
             # text was added
             edits.append(
@@ -72,14 +76,22 @@ def edits_from_file_change(file_change: FileChange, user_confirmation: bool = Fa
 
     changeAnnotations: dict[lsp.ChangeAnnotationIdentifier, lsp.ChangeAnnotation] = dict()
     if file_change.is_new_file:
-        documentChanges.append(CreateFile(kind="create", uri=file_change.uri.uri, annotationId="rift"))
+        documentChanges.append(
+            CreateFile(kind="create", uri=file_change.uri.uri, annotationId="rift")
+        )
     documentChanges.append(TextDocumentEdit(textDocument=file_change.uri, edits=edits))
-    changeAnnotations["rift"] = lsp.ChangeAnnotation(label="rift", needsConfirmation=user_confirmation, description=None)
+    changeAnnotations["rift"] = lsp.ChangeAnnotation(
+        label="rift", needsConfirmation=user_confirmation, description=None
+    )
     return WorkspaceEdit(documentChanges=documentChanges, changeAnnotations=changeAnnotations)
 
 
-def edits_from_file_changes(file_changes: List[FileChange], user_confirmation: bool = False) -> WorkspaceEdit:
-    documentChanges: List[Union[lsp.TextDocumentEdit, lsp.CreateFile, lsp.RenameFile, lsp.DeleteFile]] = []
+def edits_from_file_changes(
+    file_changes: List[FileChange], user_confirmation: bool = False
+) -> WorkspaceEdit:
+    documentChanges: List[
+        Union[lsp.TextDocumentEdit, lsp.CreateFile, lsp.RenameFile, lsp.DeleteFile]
+    ] = []
     changeAnnotations: Dict[ChangeAnnotationIdentifier, ChangeAnnotation] = dict()
     for file_change in file_changes:
         edit = edits_from_file_change(file_change=file_change, user_confirmation=user_confirmation)
