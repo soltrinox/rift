@@ -57,6 +57,7 @@
   if (vscodeState) state.set(vscodeState);
 
   const incomingMessage = (event: any) => {
+    if(!event.data) throw new Error()
     console.log("ChatWebview event.data.type:", event.data.type);
     // Listen for the response
 
@@ -88,16 +89,6 @@
         document.getElementById("omnibar")?.focus();
 
       // TODO: focus the selected agent
-      case "chatProgress": {
-        //TODO deprecate?
-        // console.log(event.data.data);
-        // const progress = event.data.data as ChatProgress;
-        // const agentId = progress.agent_id; //FIXME brent HARDCODED change later
-        // progressResponse = progress.response;
-        // console.log(progressResponse);
-        // isDone = progress.done_streaming;
-        // break;
-      }
       case "chat_request": {
         const chat_request = event.data.data as AgentChatRequest | string;
         console.log("chat_request");
@@ -138,6 +129,9 @@
 
       case "result":
         const result = event.data.data as AgentResult;
+        console.log('result')
+        console.log(result)
+        if(!result) throw new Error()
         const agent_id = result.id;
         state.update((state) => ({
           ...state,
@@ -150,14 +144,17 @@
 
       case "progress":
         {
-          console.log("progress in ChatWebview");
           let progress = event.data.data as ChatAgentProgress;
           let agentId = progress.agent_id;
-
+          
+          console.log("progress in ChatWebview:");
           console.log(progress);
+          console.log('state when progress in ChatWebview Comes in:')
+          console.log($state)
           const response = progress.payload?.response;
           response && progressResponse.set(response);
-
+          if(response && !$loading && !Boolean(progress.payload?.done_streaming)) loading.set(true)
+ 
           // FIXME brent -- crucial to determine where we initalize a new agent. I'm just tryna get this set up now.
           if (progress.payload?.done_streaming) {
             if (!response) throw new Error(" done streaming but no response?");

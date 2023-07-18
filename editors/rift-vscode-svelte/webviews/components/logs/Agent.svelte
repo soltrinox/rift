@@ -108,7 +108,7 @@
                 <div>{name}</div>
             </div>
             <div
-                class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
+                class="relative w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
             >
                 {#if hasNotification}
                     <div
@@ -119,7 +119,7 @@
             </div>
         </button>
 
-        <div class="dropdown inline-flex left-auto flex">
+        <div class="dropdown left-auto flex">
             <div class="flex items-center">
                 <div class="dropdown" on:focusout={handleDropdownFocusLoss}>
                     <button class="btn pt-3" on:click={handleDropdownClick}>

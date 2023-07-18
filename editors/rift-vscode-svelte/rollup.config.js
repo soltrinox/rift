@@ -62,7 +62,7 @@ export default fs
                 production && terser(),
             ],
             watch: {
-                clearScreen: false,
+                clearScreen: true,
             },
         };
     });

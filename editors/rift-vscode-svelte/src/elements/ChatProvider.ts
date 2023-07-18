@@ -49,6 +49,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
         // Handles messages received from the webview
         webviewView.webview.onDidReceiveMessage(async (params: any) => {
             if (!this._view) throw new Error('no view')
+            if(!params) throw new Error()
             console.log('ChatProvider.ts received message: ', params)
             switch (params.type) {
                 case "selectedAgentId":

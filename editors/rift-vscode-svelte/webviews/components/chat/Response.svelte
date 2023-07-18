@@ -10,6 +10,7 @@
   import showdown from 'showdown'
   import morphdom from 'morphdom'
 
+  export let last = false
   export let scrollToBottomIfNearBottom:((...args: any) => any) | undefined = undefined
   
   let responseBlock: HTMLDivElement|undefined;
@@ -93,11 +94,11 @@
 
 </script>
 
-<div class=" w-full p-2">
+<div id={last ? 'last' : undefined} class="w-full p-2">
   <div
     class={`flex items-center py-1 ${value == "" && !$loading ? "hidden" : ""}`}>
     <RiftSvg size={12} />
-    <p class="text-sm">{$state.agents[$state.selectedAgentId].type === 'rift_chat' ? "RIFT" : $state.agents[$state.selectedAgentId].type}</p>
+    <p class="text-sm">{$state.agents[$state.selectedAgentId]?.type === 'rift_chat' ? "RIFT" : $state.agents[$state.selectedAgentId]?.type}</p>
   </div>
   <div
     class={`w-full text-md focus:outline-none flex flex-row ${value === "" && !$loading ? "hidden" : ""}`}>

@@ -46,6 +46,7 @@
     console.log("appendedMessages");
     console.log(appendedMessages);
 
+    if(!$state.agents[$state.selectedAgentId]) throw new Error()
     let message = {
       type: "chatMessage",
       agent_id: $state.selectedAgentId,

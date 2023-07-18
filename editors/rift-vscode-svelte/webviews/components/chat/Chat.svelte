@@ -61,7 +61,7 @@
       {/if}
     {/each}
     {#if $loading}
-      <Response value={$progressResponse} {scrollToBottomIfNearBottom} />
+      <Response value={$progressResponse} {scrollToBottomIfNearBottom} last={true} />
     {/if}
   {/if}
 </div>

@@ -50,6 +50,7 @@ export class LogProvider implements vscode.WebviewViewProvider {
             if (!this._view) throw new Error('no view')
             console.log('LogProvider.ts recieved:',)
             console.log(data)
+            if(!data) throw new Error()
             switch (data.type) {
                 case "selectedAgentId":
                     console.log(`logprovider selectedAgentId: ${data.selectedAgentId}`);

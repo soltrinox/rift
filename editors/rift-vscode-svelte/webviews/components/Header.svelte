@@ -16,8 +16,9 @@
     if($state.selectedAgentId && Object.keys($state.agents).length) {
     // have to get display name from availableAgents array (which comes from calling list Agents btw)
     console.log($state)
+    if(!$state.agents[$state.selectedAgentId].type) throw new Error()
     displayName = $state.availableAgents.find(availableAgent => availableAgent.agent_type == $state.agents[$state.selectedAgentId].type)?.display_name
-    if(!displayName) throw new Error()
+    if(!displayName) throw new Error('no display name of selected agent which is odd')
   }
   }
 
