@@ -256,7 +256,9 @@ class CodeCompletionAgent(Agent):
                         if c.range.end.line < self.state.cursor.line:
                             # the change is occurring on lines strictly above us
                             # so we can adjust the number of lines
-                            lines_to_add = c.text.count("\n") + c.range.start.line - c.range.end.line
+                            lines_to_add = (
+                                c.text.count("\n") + c.range.start.line - c.range.end.line
+                            )
                             self.state.cursor += (lines_to_add, 0)
                         else:
                             # self.cancel("someone is editing on the same line as us")

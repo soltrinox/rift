@@ -6,6 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class AgentTask:
     """
@@ -34,7 +35,7 @@ class AgentTask:
         """
         if self._running:
             raise Exception("Task is already running")
-        
+
         self._running = True
         try:
             args = [*(await self.args())] if self.args else []
@@ -75,9 +76,7 @@ class AgentTask:
         """
         Returns whether the task is cancelled
         """
-        return self._cancelled or (
-            self._task.cancelled() if self._task else False
-        )
+        return self._cancelled or (self._task.cancelled() if self._task else False)
 
     @property
     def error(self) -> bool:
