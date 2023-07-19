@@ -113,7 +113,6 @@ class Agent:
         """
         Factory function which is responsible for constructing the agent's state.
         """
-        print("Test create agent")
         ...
 
     async def main(self):
