@@ -84,6 +84,7 @@
       return responseBlock
     };
     if (responseBlock) {
+      const dsfa = responseBlock.innerHTML
       const newHTML = getHTML(responseBlock);
       something = newHTML.innerHTML;
       morphdom(responseBlock, newHTML)
