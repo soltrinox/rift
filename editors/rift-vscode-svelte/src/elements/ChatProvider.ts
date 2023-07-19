@@ -5,135 +5,170 @@ import * as vscode from "vscode";
 import { getNonce } from "../getNonce";
 import { logProvider } from "../extension";
 import PubSub from "../lib/PubSub";
-import type { AgentRegistryItem, MorphLanguageClient, RunAgentParams } from "../client";
+import type {
+  AgentRegistryItem,
+  MorphLanguageClient,
+  RunAgentParams,
+} from "../client";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class ChatProvider implements vscode.WebviewViewProvider {
-    _view?: vscode.WebviewView;
-    _doc?: vscode.TextDocument;
+  _view?: vscode.WebviewView;
+  _doc?: vscode.TextDocument;
 
+  // Creates a new instance of `ChatProvider`.
+  //  _extensionUri: The URI of the extension.
+  //  morph_language_client: The MorphLanguageClient instance for communication with the server.
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    public morph_language_client: MorphLanguageClient
+  ) {}
 
-    // Creates a new instance of `ChatProvider`.
-    //  _extensionUri: The URI of the extension.
-    //  morph_language_client: The MorphLanguageClient instance for communication with the server.
-    constructor(private readonly _extensionUri: vscode.Uri, public morph_language_client: MorphLanguageClient) {
+  // Posts a message to the webview view.
+  //  endpoint: The endpoint to send the message to.
+  //  message: The message to send.
+  //  Throws an error if the view is not available.
+  public postMessage(endpoint: string, message: any) {
+    if (!this._view) {
+      throw new Error("No view available");
+    } else {
+      this._view.webview.postMessage({ type: endpoint, data: message });
     }
+  }
 
-    // Posts a message to the webview view.
-    //  endpoint: The endpoint to send the message to.
-    //  message: The message to send.
-    //  Throws an error if the view is not available.
-    public postMessage(endpoint: string, message: any) {
-        if (!this._view) {
-            throw new Error('No view available');
-        } else {
-            this._view.webview.postMessage({ type: endpoint, data: message });
+  public resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken
+  ) {
+    let editor: vscode.TextEditor | undefined;
+    this._view = webviewView;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [this._extensionUri],
+    };
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+    // Handles messages received from the webview
+    webviewView.webview.onDidReceiveMessage(async (params: any) => {
+      if (!this._view) throw new Error("no view");
+      console.log("ChatProvider.ts received message: ", params);
+      switch (params.type) {
+        case "selectedAgentId":
+          logProvider._view?.webview.postMessage({
+            type: "selectedAgentId",
+            data: params.selectedAgentId,
+          });
+          break;
+        case "copyText":
+          console.log("recieved copy in webview");
+          vscode.env.clipboard.writeText(params.content);
+          vscode.window.showInformationMessage("Text copied to clipboard!");
+          break;
+
+        // Handle 'getAgents' message
+        case "listAgents":
+          let agents: AgentRegistryItem[] =
+            await this.morph_language_client.list_agents();
+          console.log("Getting list of available agents");
+          this.postMessage("listAgents", agents);
+          break;
+
+        // Handle 'runAgent' message
+        case "runAgent":
+          // console.log("Getting list of available agents")
+          // let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
+          console.log("runAgent ran");
+          editor = vscode.window.activeTextEditor;
+          if (!editor) {
+            console.error("No active text editor found");
+            return;
+          }
+          // get the uri and position of the current cursor
+          let doc = editor.document;
+          let textDocument = { uri: doc.uri.toString(), version: 0 };
+          let position = editor.selection.active;
+
+          const runAgentParams: RunAgentParams = {
+            agent_type: params.params.agent_type,
+            agent_params: { position, textDocument },
+          };
+          const result = await this.morph_language_client.run(runAgentParams);
+          this.postMessage("result", result);
+          break;
+
+        case "chatMessage": {
+          console.log("Sending publish message", params.message);
+          PubSub.pub(
+            `${params.agent_type}_${params.agent_id}_chat_request`,
+            params
+          );
+          break;
         }
-    }
 
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken,
-    ) {
-        let editor: vscode.TextEditor | undefined;
-        this._view = webviewView;
-        webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [
-                this._extensionUri
-            ]
-        };
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+        case "inputRequest": {
+          console.log("Sending publish message", params.message);
+          PubSub.pub(
+            `${params.agent_type}_${params.agent_id}_input_request`,
+            params
+          );
+          break;
+        }
 
-        // Handles messages received from the webview
-        webviewView.webview.onDidReceiveMessage(async (params: any) => {
-            if (!this._view) throw new Error('no view')
-            console.log('ChatProvider.ts received message: ', params)
-            switch (params.type) {
-                case "selectedAgentId":
-                    logProvider._view?.webview.postMessage({ type: "selectedAgentId", data: params.selectedAgentId })
-                    break;
-                case "copyText":
-                    console.log('recieved copy in webview')
-                    vscode.env.clipboard.writeText(params.content)
-                    vscode.window.showInformationMessage('Text copied to clipboard!')
-                    break;
+        default:
+          console.log("no case match for ", params.type, " in ChatProvider.ts");
+      }
+    });
+  }
 
-                // Handle 'getAgents' message
-                case "listAgents":
-                    let agents: AgentRegistryItem[] = await this.morph_language_client.list_agents();
-                    console.log("Getting list of available agents");
-                    this.postMessage('listAgents', agents)
-                    break;
+  public revive(panel: vscode.WebviewView) {
+    this._view = panel;
+  }
 
-                // Handle 'runAgent' message
-                case "runAgent":
-                    // console.log("Getting list of available agents")
-                    // let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
-                    console.log('runAgent ran')
-                    editor = vscode.window.activeTextEditor;
-                    if (!editor) {
-                        console.error("No active text editor found");
-                        return;
-                    }
-                    // get the uri and position of the current cursor
-                    let doc = editor.document;
-                    let textDocument = { uri: doc.uri.toString(), version: 0 };
-                    let position = editor.selection.active;
+  private _getHtmlForWebview(webview: vscode.Webview) {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Chat.js")
+    );
 
+    const cssUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Chat.css")
+    );
 
-                    const runAgentParams: RunAgentParams = { agent_type: params.params.agent_type, agent_params: { position, textDocument } };
-                    const result = await this.morph_language_client.run(runAgentParams);
-                    this.postMessage('result', result)
-                    break;
+    const stylesResetUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "media", "reset.css")
+    );
 
-                case "chatMessage": {
-                    console.log("Sending publish message", params.message)
-                    PubSub.pub(`${params.agent_type}_${params.agent_id}_chat_request`, params);
-                    break;
-                }
+    const tailwindUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        this._extensionUri,
+        "media",
+        "scripts",
+        "tailwind.min.js"
+      )
+    );
 
-                case "inputRequest": {
-                    console.log("Sending publish message", params.message)
-                    PubSub.pub(`${params.agent_type}_${params.agent_id}_input_request`, params);
-                    break;
-                }
+    const showdownUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        this._extensionUri,
+        "media",
+        "scripts",
+        "showdown.min.js"
+      )
+    );
 
-                default:
-                    console.log('no case match for ', params.type, ' in ChatProvider.ts')
-            }
+    const microlightUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        this._extensionUri,
+        "media",
+        "scripts",
+        "microlight.min.js"
+      )
+    );
 
-        });
-    }
+    // Use a nonce to only allow specific scripts to be run
+    const nonce = getNonce();
 
-    public revive(panel: vscode.WebviewView) {
-        this._view = panel;
-    }
-
-    private _getHtmlForWebview(webview: vscode.Webview) {
-        const scriptUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Chat.js")
-        );
-
-        const cssUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Chat.css")
-        );
-
-        const stylesResetUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "media", "reset.css")
-        );
-
-        const tailwindUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'tailwind.min.js'));
-
-        const showdownUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'showdown.min.js'));
-
-        const microlightUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'scripts', 'microlight.min.js'));
-
-        // Use a nonce to only allow specific scripts to be run
-        const nonce = getNonce();
-
-        return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
             <html lang="en">
                 <head>
                     <meta charset="UTF-8">
@@ -157,6 +192,5 @@ export class ChatProvider implements vscode.WebviewViewProvider {
                 </body>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </html>`;
-    }
+  }
 }
-
