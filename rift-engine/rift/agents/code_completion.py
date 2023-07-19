@@ -84,7 +84,6 @@ class CodeCompletionAgent(Agent):
             agent_id=params.agent_id,
             server=server,
         )
-        logger.info(f"[REMOVE ME CodeCompletionAgent.create] STATE: {state}")
         return obj
 
     async def run(self) -> AgentRunResult:  # main entry point
@@ -106,7 +105,7 @@ class CodeCompletionAgent(Agent):
         )
 
         # function to asynchronously generate the plan
-        async def generate_plan():
+        async def generate_explanation():
             all_deltas = []
 
             if stream.thoughts is not None:
@@ -114,6 +113,7 @@ class CodeCompletionAgent(Agent):
                     all_deltas.append(delta)
                     await asyncio.sleep(0.01)
 
+            await self.send_progress()
             return "".join(all_deltas)
 
         # function to asynchronously generate the code
@@ -131,9 +131,6 @@ class CodeCompletionAgent(Agent):
                         attempts -= 1
                         cf = asyncio.get_running_loop().create_future()
                         self.state.change_futures[delta] = cf
-                        logger.info(
-                            f"[REMOVE ME CodeCompletionAgent.run]\nDOCUMENTURI={self.state.document.uri}\nCURSOR: {self.state.cursor}\nDELTA: {delta}\nVERSION: {self.state.document.version}"
-                        )
                         x = await self.server.apply_insert_text(
                             self.state.document.uri,
                             self.state.cursor,
@@ -159,6 +156,7 @@ class CodeCompletionAgent(Agent):
                         self.state.ranges.add(added_range)
                 all_text = "".join(all_deltas)
                 logger.info(f"{self} finished streaming {len(all_text)} characters")
+                await self.send_progress()
                 return all_text
 
             except asyncio.CancelledError as e:
@@ -191,17 +189,6 @@ class CodeCompletionAgent(Agent):
             )
         )
 
-        plan_task = self.add_task(AgentTask("Plan out code edit", generate_plan))
-
-        await self.send_progress(
-            CodeCompletionProgress(
-                response=None,
-                textDocument=self.state.document,
-                cursor=self.state.cursor,
-                ranges=self.state.ranges,
-            )
-        )
-
         code_task = self.add_task(AgentTask("Generate code", generate_code))
 
         await self.send_progress(
@@ -213,10 +200,24 @@ class CodeCompletionAgent(Agent):
             )
         )
 
-        await plan_task.run()
-        await code_task.run()
+        explanation_task = self.add_task(AgentTask("Explain code edit", generate_explanation))
 
+        await self.send_progress(
+            CodeCompletionProgress(
+                response=None,
+                textDocument=self.state.document,
+                cursor=self.state.cursor,
+                ranges=self.state.ranges,
+            )
+        )
+
+        await code_task.run()
         await self.send_progress()
+
+        explanation = await explanation_task.run()
+        await self.send_progress()
+
+        await self.send_update(explanation)
 
         return CodeCompletionRunResult()
 
@@ -279,13 +280,8 @@ class CodeCompletionAgent(Agent):
             return
         # self.status = "done"
         await self.send_progress(
-            # TODO(jesse): this is a hack
-            CodeCompletionProgress(
-                response=None,
-                textDocument=self.state.document,
-                cursor=self.state.cursor,
-                ranges=self.state.ranges,
-            )
+            payload="accepted",
+            payload_only=True,
         )
 
     async def reject(self):
@@ -311,11 +307,6 @@ class CodeCompletionAgent(Agent):
                 if not x.applied:
                     logger.error("failed to apply rejection edit")
             await self.send_progress(
-                # TODO(jesse): this is a hack
-                CodeCompletionProgress(
-                    response=None,
-                    textDocument=self.state.document,
-                    cursor=self.state.cursor,
-                    ranges=self.state.ranges,
-                )
+                payload="rejected",
+                payload_only=True,
             )

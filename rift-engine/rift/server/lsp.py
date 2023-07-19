@@ -302,7 +302,7 @@ class LspServer(BaseLspServer):
 
         # async def _run_agent():
         # logger = logging.getLogger(__name__)
-        logger.info(f"AGENT TYPE: {agent_type}")
+        # logger.info(f"AGENT TYPE: {agent_type}")
         if agent_type == "chat":
             # prepare params for ChatAgent construction
             model = await self.ensure_chat_model()

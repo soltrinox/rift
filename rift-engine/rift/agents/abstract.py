@@ -79,7 +79,9 @@ class AgentState(ABC):
     """
     Abstract base class for AgentState. Always contains a copy of the params used to create the Agent.
     """
+
     params: AgentRunParams
+
 
 @dataclass
 class Agent:
@@ -121,8 +123,10 @@ class Agent:
         """
         self.task = AgentTask(description=self.agent_type, task=self.run)
         try:
-            logger.info("[main] running main task")
-            return await self.task.run()
+            logger.info(f"{self} running")
+            result = await self.task.run()
+            await self.send_progress()  # hmm
+            return result
         except asyncio.CancelledError as e:
             logger.info(f"{self} cancelled: {e}")
             await self.cancel()
@@ -147,6 +151,8 @@ class Agent:
         """
         Cancel all tasks and update progress. Assumes that `Agent.main()` has been called and that the main task has been created.
         """
+        if self.task.cancelled:
+            return
         logger.info(f"{self.agent_type} {self.agent_id} cancel run {msg or ''}")
         self.task.cancel()
         for task in self.tasks:

@@ -40,7 +40,8 @@ class AgentTask:
         try:
             args = [*(await self.args())] if self.args else []
             kwargs = {**(await self.kwargs())} if self.kwargs else dict()
-            return await self.task(*args, **kwargs)
+            self._task = asyncio.create_task(self.task(*args, **kwargs))
+            return await self._task
         except asyncio.CancelledError:
             self._cancelled = True
         except Exception as e:
@@ -102,6 +103,4 @@ class AgentTask:
         elif self._running:
             return "running"
         else:
-            return "scheduled"
-            return "scheduled"
             return "scheduled"
