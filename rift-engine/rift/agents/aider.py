@@ -6,10 +6,14 @@ from dataclasses import dataclass, field
 from typing import Any, AsyncIterable, ClassVar, Dict, List, Literal, Optional, Type
 import rift.util.file_diff as file_diff
 
-
 logger = logging.getLogger(__name__)
 from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
+
+try:
+    import aider
+except ImportError:
+    raise Exception("`aider` not found. Try `pip install aider-chat`")
 
 @dataclass
 class AiderAgentParams(ClientParams):
