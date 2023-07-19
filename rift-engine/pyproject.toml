@@ -28,6 +28,8 @@ dependencies = [
   "transformers",
   "diff_match_patch",
   "art",
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
+  "tree-sitter",
 ]
 dynamic = ["version"]
 
