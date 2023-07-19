@@ -110,15 +110,15 @@ class ChatAgent(Agent):
             return response
 
         while True:
-            logger.info("entering loop")
+            # logger.info("entering loop")
             get_user_response_task = AgentTask("Get user response", get_user_response)
-            logger.info("created get_user_response_task")
+            # logger.info("created get_user_response_task")
             sentinel_f = asyncio.get_running_loop().create_future()
 
             async def generate_response_task_args():
                 return [await sentinel_f]
 
-            logger.info("created future")
+            # logger.info("created future")
             generate_response_task = AgentTask(
                 "Generate response", generate_response, args=generate_response_task_args
             )
@@ -126,7 +126,7 @@ class ChatAgent(Agent):
             await self.send_progress()
             user_response_task = asyncio.create_task(get_user_response_task.run())
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
-            logger.info("got user response task future")
+            # logger.info("got user response task future")
             user_response = await user_response_task
             async with response_lock:
                 self.state.messages.append(openai.Message.user(content=user_response))
