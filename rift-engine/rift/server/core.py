@@ -55,6 +55,7 @@ ModelType = Literal["openai", "hf", "gpt4all"]
 
 class CodeCapabilitiesServer:
     server: Optional[LspServer] = None
+
     def __init__(
         self,
         lsp_port: LspPort = 7797,
@@ -154,8 +155,8 @@ def create_metaserver(
 
 def main(
     port: LspPort = 7797,
-        version=False,
-        debug=False,
+    version=False,
+    debug=False,
 ):
     metaserver = create_metaserver(port, version, debug)
     asyncio.run(metaserver.run_forever(), debug=debug)
