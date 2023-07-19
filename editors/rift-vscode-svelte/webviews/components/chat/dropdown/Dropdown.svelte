@@ -14,6 +14,24 @@
 
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 
+  let filteredAgents = availableAgents
+  let activeId = availableAgents.length-1;
+
+  $: {
+    filteredAgents = availableAgents.filter((agent) => {
+    let searchString = inputValue.substring(1).toLowerCase();
+    return agent.agent_type
+        .toLowerCase()
+        .includes(searchString) || agent.display_name
+        .toLowerCase()
+        .includes(searchString)
+          || agent.agent_description
+        .toLowerCase()
+        .includes(searchString);
+    })
+    activeId = filteredAgents.length-1
+    }
+
   onMount(() => {
     //response is saved to state in ChatWebview.svelte
     vscode.postMessage({ type: "listAgents" });
@@ -23,7 +41,6 @@
 
   export let inputValue: string = "";
   if(availableAgents.length < 1) throw new Error('no available agents')
-  let activeId = availableAgents.length-1;
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
@@ -48,17 +65,7 @@
 <div
   class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
 >
-  {#each availableAgents.filter((agent) => {
-    let searchString = inputValue.substring(1).toLowerCase();
-    return agent.agent_type
-        .toLowerCase()
-        .includes(searchString) || agent.display_name
-        .toLowerCase()
-        .includes(searchString)
-          || agent.agent_description
-        .toLowerCase()
-        .includes(searchString);
-  }) as agent, index}
+  {#each filteredAgents as agent, index}
     <DropdownCard {agent} focused={index === activeId} {handleRunAgent} />
   {/each}
 </div>

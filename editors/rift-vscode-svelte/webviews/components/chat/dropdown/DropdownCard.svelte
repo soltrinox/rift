@@ -24,10 +24,7 @@
     {:else}
       <RiftSvg />
     {/if}
-    /{agent.agent_type}
-  </div>
-  <div>
-    {agent.display_name}
+    /{agent.display_name}
   </div>
   <div class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)]">
     {agent.agent_description}
