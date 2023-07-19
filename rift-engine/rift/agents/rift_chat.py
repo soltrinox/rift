@@ -85,7 +85,6 @@ class ChatAgent(Agent):
         return obj
 
     async def run(self) -> AgentRunResult:
-        logger.info(f"[{self.agent_type}] starting ChatAgent.run()")
         from asyncio import Lock
 
         response_lock = Lock()
@@ -109,8 +108,14 @@ class ChatAgent(Agent):
             logger.info(f"{self} finished streaming response.")
             return response
 
+        async def generate_response_dummy():
+            return True
+
+        get_user_response_task = AgentTask("Get user response", get_user_response)
+        old_generate_response_task = AgentTask("Generate response", generate_response_dummy)
+        self.set_tasks([get_user_response_task, old_generate_response_task])
+        await old_generate_response_task.run()
         while True:
-            # logger.info("entering loop")
             get_user_response_task = AgentTask("Get user response", get_user_response)
             # logger.info("created get_user_response_task")
             sentinel_f = asyncio.get_running_loop().create_future()
@@ -122,7 +127,7 @@ class ChatAgent(Agent):
             generate_response_task = AgentTask(
                 "Generate response", generate_response, args=generate_response_task_args
             )
-            self.set_tasks([get_user_response_task, generate_response_task])
+            self.set_tasks([get_user_response_task, old_generate_response_task])
             await self.send_progress()
             user_response_task = asyncio.create_task(get_user_response_task.run())
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
@@ -130,10 +135,12 @@ class ChatAgent(Agent):
             user_response = await user_response_task
             async with response_lock:
                 self.state.messages.append(openai.Message.user(content=user_response))
+            self.set_tasks([get_user_response_task, generate_response_task])
             await self.send_progress()
             assistant_response = await generate_response_task.run()
             await self.send_progress()
             async with response_lock:
                 self.state.messages.append(openai.Message.assistant(content=assistant_response))
 
+            old_generate_response_task = generate_response_task
             await self.send_progress()

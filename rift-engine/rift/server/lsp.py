@@ -72,9 +72,11 @@ class LspLogHandler(logging.Handler):
 class LoadFilesResult:
     documents: dict[lsp.DocumentUri, lsp.TextDocumentItem]
 
+
 @dataclass
 class LoadFilesParams:
     patterns: List[str]
+
 
 @dataclass
 class ChatAgentProgress:
@@ -130,11 +132,13 @@ class LspServer(BaseLspServer):
         with open(os.path.join(current_dir, "languages.json"), "r") as f:
             language_map = json.loads(f)
 
-        def find_matching_language(filepath: str, language_map: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
-            extension = filepath.split('.')[-1]  # Get the file extension
+        def find_matching_language(
+            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
+        ) -> Optional[str]:
+            extension = filepath.split(".")[-1]  # Get the file extension
 
             for details in language_map["languages"]:
-                if extension in details.get('extensions', []):
+                if extension in details.get("extensions", []):
                     return details["id"]
 
             return None
@@ -154,9 +158,11 @@ class LspServer(BaseLspServer):
                 text = f.read()
             doc_item = lsp.TextDocumentItem(
                 text=text,
-                uri="file://" + os.path.join(os.getcwd(), str(file_path)) if not file_path.startswith('/') else str(file_path),
+                uri="file://" + os.path.join(os.getcwd(), str(file_path))
+                if not file_path.startswith("/")
+                else str(file_path),
                 languageId=find_matching_language(file_path, language_map) or "*",
-                version=1
+                version=1,
             )
             result_documents[doc_item.uri] = doc_item
 
@@ -289,11 +295,12 @@ class LspServer(BaseLspServer):
         agent_params = old_agent.state.params
         agent_type = old_agent.agent_type
         agent_id = old_agent.agent_id
-        return await self.on_run(RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id))
+        return await self.on_run(
+            RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id)
+        )
 
     @rpc_method("morph/run")
     async def on_run(self, params: RunAgentParams):
-
         agent_type = params.agent_type
         # lol
         agent_params = params.agent_params
@@ -331,7 +338,6 @@ class LspServer(BaseLspServer):
 
         # asyncio.create_task(_run_agent())
         # return RunAgentResult(id=agent_id)
-        
 
         # async def _run_agent():
         #     logger = logging.getLogger(__name__)
@@ -355,7 +361,7 @@ class LspServer(BaseLspServer):
         #         agent = SmolAgent.create(params=agent_params, model=model, server=self)
         #     else:
         #         raise Exception(f"unsupported agent type={agent_type}")
-            
+
         #     self.active_agents[agent_id] = agent
         #     # t = asyncio.Task(agent.main())
         #     t = asyncio.create_task(agent.main())

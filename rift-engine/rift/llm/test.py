@@ -98,8 +98,11 @@ if __name__ == "__main__":
         print("REGISTER FILE: ", await client.on_did_open(params=on_did_open_params))
 
         import rift.agents.rift_chat as agentchat
+
         chat_agent_params = dict(
-            textDocument=lsp.TextDocumentIdentifier(uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0),
+            textDocument=lsp.TextDocumentIdentifier(
+                uri="file:///home/pv/Downloads/yeehaw-dev/yeehaw.py", version=0
+            ),
             position=None,
         )
         # from rift.server.lsp import AgentRunParams
