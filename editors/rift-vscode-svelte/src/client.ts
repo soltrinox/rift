@@ -269,19 +269,6 @@ type AgentType = "chat" | "code-completion";
 export type AgentIdentifier = string;
 
 
-export const DEFAULT_STATE: WebviewState = {
-  selectedAgentId: '',
-  agents: {
-  },
-  availableAgents: [{
-    agent_type: "rift_chat",
-    agent_description: '',
-    agent_icon: '',
-    display_name: 'Rift Chat'
-  }],
-  isStreaming: false,
-  streamingText: ''
-}
 
 export class MorphLanguageClient
   implements vscode.CodeLensProvider<AgentStateLens>

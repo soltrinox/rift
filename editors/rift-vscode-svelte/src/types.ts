@@ -79,3 +79,19 @@ export type WebviewState = {
 };
 
 
+
+// the only reason this is here is because types.ts is used for shared logic between the webviews and the extension.
+// Do not put more shared logic in here--we shouldn't need it. If we do, we should create a shared folder and update the eslint rules for imports
+export const DEFAULT_STATE: WebviewState = {
+  selectedAgentId: '',
+  agents: {
+  },
+  availableAgents: [{
+    agent_type: "rift_chat",
+    agent_description: '',
+    agent_icon: '',
+    display_name: 'Rift Chat'
+  }],
+  isStreaming: false,
+  streamingText: ''
+}
