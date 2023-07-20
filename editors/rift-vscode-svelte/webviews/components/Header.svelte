@@ -1,7 +1,7 @@
 <script lang='ts'>
   import RiftSvg from "./icons/RiftSvg.svelte";
   import ResetSvg from "./icons/ResetSvg.svelte";
-  import { state, DEFAULT_STATE } from "./stores";
+  import { state } from "./stores";
   function resetChat() {
     // console.log("reseting state");
     // state.set(DEFAULT_STATE);

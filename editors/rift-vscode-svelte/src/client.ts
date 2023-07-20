@@ -19,7 +19,7 @@ import { join } from "path";
 import * as tcpPortUsed from "tcp-port-used";
 import { chatProvider, logProvider } from "./extension";
 import PubSub from "./lib/PubSub";
-import { WebviewAgent, WebviewState } from "./types";
+import { DEFAULT_STATE, WebviewAgent, WebviewState } from "./types";
 import { Store } from "./lib/Store";
 
 
