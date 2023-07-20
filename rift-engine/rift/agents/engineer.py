@@ -62,13 +62,13 @@ class EngineerAgentState(AgentState):
 
 # decorator for creating the code completion agent
 @agent(
-    agent_description="Generate code following an instruction to be inserted directly at your current cursor location.",
-    display_name="Rift Code Completion",
+    agent_description="Generate code following an and ask clarifying questions.",
+    display_name="GPT Engineer",
 )
 @dataclass
 class EngineerAgent(Agent):
     state: EngineerAgentState
-    agent_type: ClassVar[str] = "code_completion"
+    agent_type: ClassVar[str] = "engineer"
 
     @classmethod
     def create(cls, params: EngineerAgentParams, model, server):
