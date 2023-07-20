@@ -11,10 +11,10 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- only disabling this because we already are handling onkeydown-->
 <div
-  class={`flex flex-col shadow-inner hover:cursor-pointer px-2 py-0.5 shadow-[inset_-35px_0px_4px_rgba(0,0,0,0.4)]
+  class={`flex flex-col hover:cursor-pointer px-2 py-0.5
     ${
       focused
-        ? "bg-[var(--vscode-quickInputList-focusBackground)]"
+        ? "bg-[var(--vscode-editor-hoverHighlightBackground)]"
         : "bg-[var(--vscode-quickInput-background)]"
     }`}
   on:click={() => handleRunAgent(agent.agent_type)}
