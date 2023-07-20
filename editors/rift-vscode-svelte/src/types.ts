@@ -44,14 +44,14 @@ export type AgentProgress = {
 
 export class WebviewAgent {
   type: string;
-  hasNotification?: boolean;    //TODO does this have to be nullable?
+  hasNotification: boolean;    //TODO does this have to be nullable?
   chatHistory?: ChatMessage[];
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
 
   constructor(type: string, hasNotification?: boolean, chatHistory?: ChatMessage[], inputRequest?: InputRequest | null, tasks?: Tasks){
     this.type = type;
-    this.hasNotification = hasNotification;
+    this.hasNotification = hasNotification ?? false;
     this.chatHistory = chatHistory;
     this.inputRequest = inputRequest;
     this.tasks = tasks;

@@ -5,7 +5,6 @@
   import {
     type AgentRegistryItem,
     type AgentProgress,
-    Agent,
     WebviewState,
   } from "../../src/types";
   import Header from "./Header.svelte";

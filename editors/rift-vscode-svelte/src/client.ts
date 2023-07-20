@@ -148,9 +148,12 @@ export interface Tasks {
   subtasks: Task[];
 }
 
-export type ChatAgentProgress = AgentProgress<
-  { response?: string; done_streaming?: boolean } | undefined
->;
+export type ChatAgentPayload = {
+  response?: string,
+  done_streaming?: boolean
+} | undefined
+
+export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
 
 export interface AgentProgress<T = any> {
   agent_id: string;
@@ -594,13 +597,27 @@ export class MorphLanguageClient
 
   }
 
-  sendProgressChange(params: ChatAgentProgress) {
+  sendProgressChange(params: AgentProgress) {
 
     let agentId = params.agent_id;
 
     const response = params.payload?.response;
 
     if(response) this.webviewState.update(state => ({...state, streamingText: response}))
+
+  //   state.update((state) => ({
+  //     ...state,
+  //     agents: {
+  //         ...state.agents,
+  //         [agentId]: {
+  //             ...state.agents[agentId],
+  //             type: progress.agent_type,
+  //             tasks: progress.tasks,
+  //         },
+  //     },
+  // }));
+
+
 
     if (params.payload?.done_streaming) {
       if (!response) throw new Error(" done streaming but no response?");
@@ -624,6 +641,20 @@ export class MorphLanguageClient
       });
 
     }
+  }
+
+  sendHasNotificationChange(agentId: string, hasNotification: boolean) {
+
+        this.webviewState.update(state => ({
+          ...state,
+          agents: {
+            ...state.agents,
+            [agentId]: {
+              ...state.agents[agentId],
+              hasNotification: (agentId == state.selectedAgentId) ? false : hasNotification //this ternary operatory will make sure we don't set currently selected agents as having notifications
+            }
+          }
+        }))
   }
 
   //TODO:
@@ -707,11 +738,71 @@ class Agent {
             },
           },
         }));*/
+                    // case "input_request": {
+            //     const input_request = event.data.data as AgentInputRequest;
+            //     if ($state.selectedAgentId == input_request.id) {
+            //         state.update((state) => ({
+            //             ...state,
+            //             agents: {
+            //                 ...state.agents,
+            //                 [input_request.id!]: {
+            //                     ...state.agents[input_request.id!],
+            //                     hasInputNotification: false,
+            //                 },
+            //             },
+            //         }));
+            //     } else if ($state.selectedAgentId != input_request.id) {
+            //         state.update((state) => ({
+            //             ...state,
+            //             agents: {
+            //                 ...state.agents,
+            //                 [input_request.id!]: {
+            //                     ...state.agents[input_request.id!],
+            //                     hasInputNotification: true,
+            //                 },
+            //             },
+            //         }));
+            //     }
 
-    logProvider._view?.webview.postMessage({
-      type: "chat_request",
-      data: { ...params, id: this.id },
-    });
+            //     break;
+            // }
+
+
+    // logProvider._view?.webview.postMessage({
+    //   type: "chat_request",
+    //   data: { ...params, id: this.id },
+    // });
+    
+
+    /* this logic was the one I pulled from logswebview that was implemented -- Brent
+                const chat_request = event.data.data as AgentChatRequest;
+                if ($state.selectedAgentId == chat_request.id) {
+                    state.update((state) => ({
+                        ...state,
+                        agents: {
+                            ...state.agents,
+                            [chat_request.id!]: {
+                                ...state.agents[chat_request.id!],
+                                hasNotification: false,
+                            },
+                        },
+                    }));
+                } else if ($state.selectedAgentId != chat_request.id) {
+                    state.update((state) => ({
+                        ...state,
+                        agents: {
+                            ...state.agents,
+                            [chat_request.id!]: {
+                                ...state.agents[chat_request.id!],
+                                hasNotification: true,
+                            },
+                        },
+                    }));
+                }
+    */
+   
+    this.morphClient.sendHasNotificationChange(params.id, true)
+
 
     let response = await vscode.window.showInputBox({
       ignoreFocusOut: true,

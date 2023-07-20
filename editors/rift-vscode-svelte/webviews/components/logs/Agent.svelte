@@ -44,18 +44,7 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        hasNotification = false;
-        state.update((state) => ({
-            ...state,
-            selectedAgentId: id,
-            agents: {
-                ...state.agents,
-                [id]: {
-                    ...state.agents[id],
-                    hasNotification: false,
-                },
-            },
-        }));
+
         vscode.postMessage({ type: "selectedAgentId", selectedAgentId: id });
 
         console.log("This is the state - Logs");
@@ -67,17 +56,17 @@
     };
     const handleDeleteAgent = (e: MouseEvent) => {
         //vscode.postMessage({ type: "cancelAgent", id: id });
-        state.update((state) => {
-            // Create a copy of the agents object without the specified agentId
-            const updatedAgents = { ...state.agents };
-            delete updatedAgents[id];
+        // state.update((state) => {
+        //     // Create a copy of the agents object without the specified agentId
+        //     const updatedAgents = { ...state.agents };
+        //     delete updatedAgents[id];
 
-            // Update the state with the new agents object
-            return {
-                ...state,
-                agents: updatedAgents,
-            };
-        });
+        //     // Update the state with the new agents object
+        //     return {
+        //         ...state,
+        //         agents: updatedAgents,
+        //     };
+        // });
     };
 </script>
 
