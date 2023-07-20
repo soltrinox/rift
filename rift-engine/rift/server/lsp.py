@@ -11,6 +11,8 @@ import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
 from rift.agents.code_completion import CodeCompletionAgent
 from rift.agents.smol import SmolAgent, SmolAgentParams
+from rift.agents.engineer import EngineerAgent, EngineerAgentParams
+
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.llm.openai_types import Message
@@ -18,6 +20,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
 from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
+
 
 from rift.server.agent import *
 from rift.server.selection import RangeSet
@@ -323,6 +326,10 @@ class LspServer(BaseLspServer):
             model = await self.ensure_completions_model()
             agent_params = ofdict(CodeCompletionAgentParams, agent_params)
             agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "engineer":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(EngineerAgentParams, agent_params)
+            agent = EngineerAgent.create(agent_params, model=model, server=self)
         elif agent_type == "smol_dev":
             model = await self.ensure_chat_model()
             agent_params = ofdict(SmolAgentParams, agent_params)
