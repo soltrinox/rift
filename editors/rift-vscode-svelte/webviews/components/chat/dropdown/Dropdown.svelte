@@ -51,7 +51,7 @@
 
 <svelte:window on:keydown={handleKeyDown} />
 <div
-  class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
+  class="absolute bottom-full drop-shadow-[0_-35px_35px_rgba(0,0,0,0.25)] left-0 w-full z-20 px-2 my-1"
 >
   {#each availableAgents.filter((agent) => {
     let searchString = inputValue.substring(1).toLowerCase();
