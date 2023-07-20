@@ -1,5 +1,7 @@
 import { readable, writable } from 'svelte/store'
+// import { DEFAULT_STATE } from '../../src/client'
 import type { WebviewState } from '../../src/types'
+
 
 const DEFAULT_STATE: WebviewState = {
   selectedAgentId: '',
