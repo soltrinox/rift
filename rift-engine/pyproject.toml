@@ -24,6 +24,7 @@ dependencies = [
   "sentencepiece",
   "transformers",
   "diff_match_patch",
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
   "smol-dev"
 ]
 dynamic = ["version"]
