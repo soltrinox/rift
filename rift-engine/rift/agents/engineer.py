@@ -22,6 +22,24 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 
+try:
+    import gpt_engineer
+    import gpt_engineer.chat_to_files
+    import gpt_engineer.db
+except ImportError:
+    raise Exception("`gpt_engineer` not found. Try `pip install gpt-engineer`")
+
+UPDATES_QUEUE = asyncio.Queue()
+SEEN = set()
+
+from gpt_engineer.ai import AI, fallback_model
+from gpt_engineer.collect import collect_learnings
+from gpt_engineer.db import DB, DBs, archive
+from gpt_engineer.learning import collect_consent
+from gpt_engineer.steps import STEPS
+from gpt_engineer.steps import Config as StepsConfig
+
+
 logger = logging.getLogger(__name__)
 
 
