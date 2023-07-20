@@ -11,7 +11,7 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- only disabling this because we already are handling onkeydown-->
 <div
-  class={`flex flex-col hover:cursor-pointer px-2 py-0.5
+  class={`flex flex-col hover:cursor-pointer px-2 py-2
     ${
       focused
         ? "bg-[var(--vscode-editor-hoverHighlightBackground)]"
@@ -27,7 +27,8 @@
         <RiftSvg size="16" />
       </div>
     {/if}
-    {agent.agent_type}
+    <!-- {agent.agent_type} -->
+    {agent.display_name}
   </div>
   <!-- <div>
     {agent.display_name}
