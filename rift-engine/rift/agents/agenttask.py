@@ -1,6 +1,5 @@
 import asyncio
-from asyncio import Future
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Awaitable, Any, Iterable, Callable, Dict
 import logging
 

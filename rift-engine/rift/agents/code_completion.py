@@ -1,9 +1,8 @@
 import asyncio
 import logging
-import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Dict, Optional
+from typing import ClassVar, Dict, Optional
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import (
@@ -149,7 +148,6 @@ class CodeCompletionAgent(Agent):
                             logger.error(f"timeout waiting for change '{delta}', retry the edit")
                         finally:
                             del self.state.change_futures[delta]
-                            pass
                     with lsp.setdoc(self.state.document):
                         added_range = lsp.Range.of_pos(self.state.cursor, len(delta))
                         self.state.cursor += len(delta)

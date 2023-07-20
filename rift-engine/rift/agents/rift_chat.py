@@ -1,9 +1,7 @@
 import asyncio
 import logging
-import uuid
-from asyncio import Future
-from dataclasses import dataclass, field
-from typing import Any, ClassVar, Dict, Optional, List
+from dataclasses import dataclass
+from typing import ClassVar, Optional
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import (
