@@ -4,14 +4,14 @@
   import type { AgentRegistryItem } from "../../../../src/types";
 
   export let focused: boolean = false;
-  export let handleRunAgent: (agent_type: string) => void
+  export let handleRunAgent: (agent_type: string) => void;
   export let agent: AgentRegistryItem;
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- only disabling this because we already are handling onkeydown-->
 <div
-  class={`flex flex-col hover:cursor-pointer ${
+  class={`flex flex-col rounded-lg p-2 drop-shadow-lg hover:cursor-pointer ${
     focused
       ? "bg-[var(--vscode-quickInputList-focusBackground)]"
       : "hover:bg-[var(--vscode-list-hoverBackground)]"
