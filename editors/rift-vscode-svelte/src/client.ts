@@ -17,7 +17,7 @@ import {
 import * as net from "net";
 import { join } from "path";
 import * as tcpPortUsed from "tcp-port-used";
-import { chatProvider, logProvider, morph_language_client } from "./extension";
+import { chatProvider, logProvider } from "./extension";
 import PubSub from "./lib/PubSub";
 
 let client: LanguageClient; //LanguageClient
@@ -373,8 +373,8 @@ export class MorphLanguageClient
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => {} };
-    this.green = { key: "TEMP_VALUE", dispose: () => {} };
+    this.red = { key: "TEMP_VALUE", dispose: () => { } };
+    this.green = { key: "TEMP_VALUE", dispose: () => { } };
     this.context = context;
     this.create_client().then(() => {
       this.context.subscriptions.push(
