@@ -122,7 +122,7 @@
         <div class="dropdown inline-flex left-auto flex">
             <div class="flex items-center">
                 <div class="dropdown" on:focusout={handleDropdownFocusLoss}>
-                    <button class="btn pt-3" on:click={handleDropdownClick}>
+                    <button class="btn py-2.5" on:click={handleDropdownClick}>
                         {#if isDropdownOpen}
                             <div class="px-2"><EllipsisDarkSvg /></div>
                         {:else}
