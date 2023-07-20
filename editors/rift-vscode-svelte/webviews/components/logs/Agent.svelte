@@ -11,7 +11,7 @@
     import { state } from "../stores";
     import type { SvelteStore } from "../../../src/types";
 
-    let expanded = false;
+    let expanded = true;
     export let id: string = "";
     export let selectedId = "";
     export let name: string = "rift_chat";
