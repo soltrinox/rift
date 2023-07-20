@@ -10,7 +10,7 @@ from rift.agents.abstract import (
     Agent,
     AgentProgress,  # AgentTask,
     AgentRunParams,
-    AgentRunResult,
+    AgentRunResult, 
     AgentState,
     RequestInputRequest,
     RunAgentParams,
@@ -27,13 +27,13 @@ logger = logging.getLogger(__name__)
 
 # dataclass for representing the result of the code completion agent run
 @dataclass
-class CodeCompletionRunResult(AgentRunResult):
+class EngineerRunResult(AgentRunResult):
     ...
 
 
 # dataclass for representing the progress of the code completion agent
 @dataclass
-class CodeCompletionProgress(AgentProgress):
+class EngineerProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
     textDocument: Optional[lsp.TextDocumentIdentifier] = None
@@ -43,7 +43,7 @@ class CodeCompletionProgress(AgentProgress):
 
 # dataclass for representing the parameters of the code completion agent
 @dataclass
-class CodeCompletionAgentParams(AgentRunParams):
+class EngineerAgentParams(AgentRunParams):
     textDocument: lsp.TextDocumentIdentifier
     position: Optional[lsp.Position]
     instructionPrompt: Optional[str] = None
@@ -51,11 +51,11 @@ class CodeCompletionAgentParams(AgentRunParams):
 
 # dataclass for representing the state of the code completion agent
 @dataclass
-class CodeCompletionAgentState(AgentState):
+class EngineerAgentState(AgentState):
     model: AbstractCodeCompletionProvider
     document: lsp.TextDocumentItem
     cursor: lsp.Position
-    params: CodeCompletionAgentParams
+    params: EngineerAgentParams
     ranges: RangeSet = field(default_factory=RangeSet)
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
@@ -66,13 +66,13 @@ class CodeCompletionAgentState(AgentState):
     display_name="Rift Code Completion",
 )
 @dataclass
-class CodeCompletionAgent(Agent):
-    state: CodeCompletionAgentState
+class EngineerAgent(Agent):
+    state: EngineerAgentState
     agent_type: ClassVar[str] = "code_completion"
 
     @classmethod
-    def create(cls, params: CodeCompletionAgentParams, model, server):
-        state = CodeCompletionAgentState(
+    def create(cls, params: EngineerAgentParams, model, server):
+        state = EngineerAgentState(
             model=model,
             document=server.documents[params.textDocument.uri],
             cursor=params.position,
@@ -162,17 +162,17 @@ class CodeCompletionAgent(Agent):
             except asyncio.CancelledError as e:
                 logger.info(f"{self} cancelled: {e}")
                 await self.cancel()
-                return CodeCompletionRunResult()
+                return EngineerRunResult()
 
             except Exception as e:
                 logger.exception("worker failed")
                 # self.status = "error"
-                return CodeCompletionRunResult()
+                return EngineerRunResult()
 
             finally:
                 self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
                 await self.send_progress(
-                    CodeCompletionProgress(
+                    EngineerProgress(
                         response=None,
                         textDocument=self.state.document,
                         cursor=self.state.cursor,
@@ -181,7 +181,7 @@ class CodeCompletionAgent(Agent):
                 )
 
         await self.send_progress(
-            CodeCompletionProgress(
+            EngineerProgress(
                 response=None,
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
@@ -192,7 +192,7 @@ class CodeCompletionAgent(Agent):
         code_task = self.add_task(AgentTask("Generate code", generate_code))
 
         await self.send_progress(
-            CodeCompletionProgress(
+            EngineerProgress(
                 response=None,
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
@@ -203,7 +203,7 @@ class CodeCompletionAgent(Agent):
         explanation_task = self.add_task(AgentTask("Explain code edit", generate_explanation))
 
         await self.send_progress(
-            CodeCompletionProgress(
+            EngineerProgress(
                 response=None,
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
@@ -219,7 +219,7 @@ class CodeCompletionAgent(Agent):
 
         await self.send_update(explanation)
 
-        return CodeCompletionRunResult()
+        return EngineerRunResult()
 
     async def on_change(
         self,
