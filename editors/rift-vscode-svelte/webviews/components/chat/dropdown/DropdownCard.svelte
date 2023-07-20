@@ -11,25 +11,30 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- only disabling this because we already are handling onkeydown-->
 <div
-  class={`flex flex-col drop-shadow-[5px_-10px_10px_rgba(0,0,0,0.25)] rounded-lg p-2 hover:cursor-pointer ${
-    focused
-      ? "bg-[var(--vscode-quickInputList-focusBackground)]"
-      : "hover:bg-[var(--vscode-list-hoverBackground)]"
-  }`}
+  class={`flex flex-col shadow-inner hover:cursor-pointer px-2 py-0.5 shadow-[inset_-35px_0px_4px_rgba(0,0,0,0.4)]
+    ${
+      focused
+        ? "bg-[var(--vscode-quickInputList-focusBackground)]"
+        : "bg-[var(--vscode-quickInput-background)]"
+    }`}
   on:click={() => handleRunAgent(agent.agent_type)}
 >
   <div class="flex flex-row">
     {#if agent.agent_icon}
       {agent.agent_type}
     {:else}
-      <RiftSvg />
+      <div class="flex items-center justify-center">
+        <RiftSvg size="16" />
+      </div>
     {/if}
-    /{agent.agent_type}
+    {agent.agent_type}
   </div>
   <!-- <div>
     {agent.display_name}
   </div> -->
-  <div class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)]">
+  <div
+    class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden"
+  >
     {agent.agent_description}
   </div>
 </div>
