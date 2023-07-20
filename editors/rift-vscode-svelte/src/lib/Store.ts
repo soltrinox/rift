@@ -1,19 +1,19 @@
 export class Store<T> {
-    state: T;
+    value: T;
     listeners: ((state: T) => void)[];
   
     constructor(initialState: T, listeners?: ((state: T) => void)[]) {
-      this.state = initialState;
+      this.value = initialState;
       this.listeners = listeners ?? [];
     }
   
     set(newState: T) {
-      this.state = newState;
+      this.value = newState;
       this.notifyListeners();
     }
   
     update(updater: (prevState: T) => T) {
-      this.state = updater(this.state);
+      this.value = updater(this.value);
       this.notifyListeners();
     }
   
@@ -23,7 +23,7 @@ export class Store<T> {
   
     notifyListeners() {
       for (let listener of this.listeners) {
-        listener(this.state);
+        listener(this.value);
       }
     }
   }

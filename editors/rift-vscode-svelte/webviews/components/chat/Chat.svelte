@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
-  import { loading, state, progressResponse } from "../stores";
+  import {  state } from "../stores";
   import UserSvg from "../icons/UserSvg.svelte";
   import UserInput from "./UserInput.svelte";
   import RiftSvg from "../icons/RiftSvg.svelte";
@@ -60,8 +60,8 @@
         <Response value={item.content} />
       {/if}
     {/each}
-    {#if $loading}
-      <Response value={$progressResponse} {scrollToBottomIfNearBottom} last={true} />
+    {#if $state.isStreaming}
+      <Response value={$state.streamingText} {scrollToBottomIfNearBottom} last={true} />
     {/if}
   {/if}
 </div>

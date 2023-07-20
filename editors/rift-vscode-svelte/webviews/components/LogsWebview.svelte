@@ -168,7 +168,6 @@
                             },
                         },
                     }));
-                    loading.set(false);
                     progressResponse = "";
                 }
                 break;

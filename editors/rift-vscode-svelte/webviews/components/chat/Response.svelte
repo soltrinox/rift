@@ -97,12 +97,12 @@
 
 <div id={last ? 'last' : undefined} class="w-full p-2">
   <div
-    class={`flex items-center py-1 ${value == "" && !$loading ? "hidden" : ""}`}>
+    class={`flex items-center py-1 ${value == "" && !$state.isStreaming ? "hidden" : ""}`}>
     <RiftSvg size={12} />
     <p class="text-sm">{$state.agents[$state.selectedAgentId]?.type === 'rift_chat' ? "RIFT" : $state.agents[$state.selectedAgentId]?.type}</p>
   </div>
   <div
-    class={`w-full text-md focus:outline-none flex flex-row ${value === "" && !$loading ? "hidden" : ""}`}>
+    class={`w-full text-md focus:outline-none flex flex-row ${value === "" && !$state.isStreaming ? "hidden" : ""}`}>
     <div
       contenteditable="true"
       bind:this={responseBlock}

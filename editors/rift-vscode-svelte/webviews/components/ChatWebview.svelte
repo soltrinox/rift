@@ -1,7 +1,7 @@
 <script lang="ts">
   import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
   import Logs from "./logs/Logs.svelte";
-  import { DEFAULT_STATE, loading, state, progressResponse } from "./stores";
+  import { DEFAULT_STATE, state } from "./stores";
   import {
     type AgentRegistryItem,
     type AgentProgress,
@@ -12,12 +12,13 @@
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
-  import type {
-    AgentChatRequest,
-    AgentInputRequest,
-    AgentResult,
-    AgentUpdate,
-    ChatAgentProgress,
+  import {
+    MorphLanguageClient,
+    type AgentChatRequest,
+    type AgentInputRequest,
+    type AgentResult,
+    type AgentUpdate,
+    type ChatAgentProgress,
   } from "../../src/client";
   import { IncomingMessage } from "http";
   
@@ -48,13 +49,11 @@
     }
   });
 
-  loading.subscribe((loading) => console.log("loading:", loading));
-  let agentRegistry: AgentRegistryItem[] = [];
   let isDone = false;
-  const vscodeState = vscode.getState();
-  console.log("attempting to access vscode state:");
-  console.log(vscodeState);
-  if (vscodeState) state.set(vscodeState);
+  // const vscodeState = vscode.getState();
+  // console.log("attempting to access vscode state:");
+  // console.log(vscodeState);
+  // if (vscodeState) state.set(vscodeState);
 
   const incomingMessage = (event: any) => {
     if(!event.data) throw new Error()
@@ -62,92 +61,19 @@
     // Listen for the response
 
     switch (event.data.type) {
-      // TODO: focus the selected agent
-      case "chat_request": {
-        const chat_request = event.data.data as AgentChatRequest | string;
-        console.log("chat_request");
-        console.log(chat_request);
-        
-        //dont think we need to actually do anything here b/c everything is done
-        // from the result case and progress case.
-        // could maybe disable sending messages until we get a chatRequest back. If we add that, it should be added later.
 
-        throw new Error('old state stuff')
-        break;
-      }
-      case "update":
-        const update = event.data.data as AgentUpdate;
-        throw new Error('old state stuff')
-        break;
-
-      case "result":
-        const result = event.data.data as AgentResult;
-        console.log('result')
-        console.log(result)
-        if(!result) throw new Error()
-        const agent_id = result.id;
-        state.update((state) => ({
-          ...state,
-          agents: {
-            ...state.agents,
-            [agent_id]: new Agent(result.type),
-          },
-        }));
-        throw new Error('old state stuff')
-        break;
-
-      case "progress":
-        {
-          let progress = event.data.data as ChatAgentProgress;
-          let agentId = progress.agent_id;
-          
-          console.log("progress in ChatWebview:");
-          console.log(progress);
-          console.log('state when progress in ChatWebview Comes in:')
-          console.log($state)
-          const response = progress.payload?.response;
-          response && progressResponse.set(response);
-          if(response && !$loading && !Boolean(progress.payload?.done_streaming)) loading.set(true)
- 
-          // FIXME brent -- crucial to determine where we initalize a new agent. I'm just tryna get this set up now.
-          if (progress.payload?.done_streaming) {
-            if (!response) throw new Error(" done streaming but no response?");
-            state.update((prevState) => {
-              return {
-                ...prevState,
-                agents: {
-                  ...prevState.agents,
-                  [agentId]: {
-                    agent_id: agentId,
-                    agent_type: progress.agent_type,
-                    ...prevState.agents[agentId],
-                    tasks: progress.tasks,
-                    chatHistory: [
-                      ...prevState.agents[agentId].chatHistory,
-                      { role: "assistant", content: response },
-                    ],
-                  },
-                },
-              };
-            });
-            loading.set(false);
-            progressResponse.set('')
-          }
-        }
-        throw new Error('old state stuff')
-        break;
-      case "listAgents":
-        console.log("new agents just dropped");
-        console.log(event.data.data);
-        agentRegistry = event.data.data;
-        //TODO store available agents
-        // state.update((state) => ({
-        //   ...state,
-        //   availableAgents: agentRegistry,
-        // }));
-        console.log("availableAgents in state" + JSON.stringify(agentRegistry));
-        throw new Error('old state stuff')
-        break;
+      // case "listAgents":
+        // console.log("new agents just dropped");
+        // console.log(event.data.data);
+        // agentRegistry = event.data.data;
+        // //TODO store available agents
+        // // state.update((state) => ({
+        // //   ...state,
+        // //   availableAgents: agentRegistry,
+        // // }));
+        // console.log("availableAgents in state" + JSON.stringify(agentRegistry));
+        // throw new Error('old state stuff')
+        // break;
 
       default:
         console.log("no case matched for:", event.data.type, "in ChatWebview");

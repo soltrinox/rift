@@ -1,7 +1,7 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
   import UserSvg from "../icons/UserSvg.svelte";
-  import { loading, state, dropdownOpen, _state } from "../stores";
+  import { state, dropdownOpen } from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
   import type { WebviewState } from "../../../src/types";
   import { append } from "svelte/internal";
@@ -30,45 +30,46 @@
 
   function sendMessage() {
     if(!textarea) throw new Error()
-    if ($loading) {
+    if ($state.isStreaming) {
       console.log("cannot send messages while ai is responding");
       return;
     }
     textarea.blur();
-    loading.set(true);
 
     console.log("chat history");
     console.log($state.agents[$state.selectedAgentId].chatHistory);
 
     let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory;
-    appendedMessages.push({ role: "user", content: textarea.value });
+    appendedMessages?.push({ role: "user", content: textarea.value });
     console.log("appendedMessages");
     console.log(appendedMessages);
 
     if(!$state.agents[$state.selectedAgentId]) throw new Error()
-    let message = {
+
+
+
+
+    vscode.postMessage({
       type: "chatMessage",
       agent_id: $state.selectedAgentId,
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
       message: textarea.value,
-    };
+    });
 
-    console.log("sendMEssage", message);
-
-    vscode.postMessage(message);
-
+    // clint.
     // console.log("updating state...");
-    state.update((state: WebviewState) => ({
-      ...state,
-      agents: {
-        ...state.agents,
-        [state.selectedAgentId]: {
-          ...state.agents[state.selectedAgentId],
-          chatHistory: appendedMessages,
-        },
-      },
-    }));
+    
+    // state.update((state: WebviewState) => ({
+    //   ...state,
+    //   agents: {
+    //     ...state.agents,
+    //     [state.selectedAgentId]: {
+    //       ...state.agents[state.selectedAgentId],
+    //       chatHistory: appendedMessages,
+    //     },
+    //   },
+    // }));
     textarea.value = "";
     textarea.focus();
     textarea.style.height = "auto";

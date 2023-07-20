@@ -19,7 +19,7 @@ import { join } from "path";
 import * as tcpPortUsed from "tcp-port-used";
 import { chatProvider, logProvider } from "./extension";
 import PubSub from "./lib/PubSub";
-import type { WebviewState } from "./types";
+import { WebviewAgent, WebviewState } from "./types";
 import { Store } from "./lib/Store";
 
 
@@ -245,147 +245,6 @@ const code_completion_send_progress = async (params: any, agent: Agent) => {
   }
 };
 
-class Agent {
-  status: AgentStatus;
-  green: vscode.TextEditorDecorationType;
-  ranges: vscode.Range[] = [];
-  onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
-  onStatusChange: vscode.Event<AgentStatus>;
-  morphClient: MorphLanguageClient
-
-  constructor(
-    public readonly id: string,
-    public readonly agent_type: string,
-    public readonly position: vscode.Position,
-    public textDocument: TextDocumentIdentifier,
-    public params: any
-  ) {
-    this.id = id;
-    this.status = "running";
-    this.agent_type = agent_type;
-    this.position = position;
-    this.textDocument = textDocument;
-    this.green = vscode.window.createTextEditorDecorationType({
-      backgroundColor: "rgba(0,255,0,0.1)",
-    });
-    this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
-    this.onStatusChange = this.onStatusChangeEmitter.event;
-  }
-  async handleInputRequest(params: AgentInputRequest) {
-    /*
-            const input_request = event.data.data as AgentInputRequest;
-        // let agentId = input_request.agent_id;
-        // let status = input_request.tasks.task.status;
-        state.update((prevState) => ({
-          ...prevState,
-          agents: {
-            ...prevState.agents,
-            [input_request.id]: {
-              ...prevState.agents[input_request.id],
-              inputRequest: {
-                msg: input_request.msg,
-                place_holder: input_request.place_holder,
-              },
-            },
-          },
-        }));*/
-
-    logProvider._view?.webview.postMessage({
-      type: "chat_request",
-      data: { ...params, id: this.id },
-    });
-
-    let response = await vscode.window.showInputBox({
-      ignoreFocusOut: true,
-      placeHolder: params.place_holder,
-      prompt: params.msg,
-    });
-    return { response: response };
-  }
-
-  async handleChatRequest(params: AgentChatRequest) {
-    console.log("handleChatRequest");
-    console.log(params);
-    chatProvider._view?.webview.postMessage({
-      type: "chat_request",
-      data: { ...params, id: this.id },
-    });
-    logProvider._view?.webview.postMessage({
-      type: "chat_request",
-      data: { ...params, id: this.id },
-    });
-
-    if (
-      typeof chat_request !== "string" &&
-      $state.agents[chat_request.id]?.chatHistory.length < 1
-    ) {
-      if (chat_request.messages.length > 1) {
-        throw new Error( "No previous messages on client for this ID, but server is giving multiple chat messages.")
-      }
-
-      this.morphClient.webviewState.update(state =>  ({
-        ...state,
-        selectedAgentId: params.id,
-        agents: {
-          ...state.agents,
-          [params.id]: {
-            ...state.agents[chat_request.id],
-            chatHistory: [...chat_request.messages],
-          },
-        },
-      }));
-    }
-
-    let agentType = this.agent_type;
-    let agentId = this.id;
-
-    console.log("agentType:", agentType);
-    console.log("agentId:", agentId);
-
-    // return "BLAH BLAH"
-    async function getUserInput() {
-      console.log("getUserInput");
-      console.log("agentType:", agentType);
-      console.log("agentId:", agentId);
-      return new Promise((res, rej) => {
-        console.log("subscribing to changes");
-        PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
-          console.log("resolving promise");
-          res(message);
-        });
-      });
-    }
-
-    let chatRequest = await getUserInput();
-    console.log("received user input and returning to server");
-    console.log(chatRequest);
-    return chatRequest;
-  }
-  async handleUpdate(params: AgentUpdate) {
-    console.log("handleUpdate");
-    console.log(params);
-    // //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
-    // logProvider._view?.webview.postMessage({ type: 'update', data: params });
-    vscode.window.showInformationMessage(params.msg);
-  }
-  async handleProgress(params: AgentProgress) {
-    console.log("handleProgress");
-    console.log(params);
-    chatProvider._view?.webview.postMessage({ type: "progress", data: params });
-    logProvider._view?.webview.postMessage({ type: "progress", data: params });
-
-    if (this.agent_type === "code_completion") {
-      code_completion_send_progress(params, this);
-    }
-  }
-  async handleResult(params: AgentResult) {
-    console.log("handleResult");
-    console.log(params);
-    chatProvider._view?.webview.postMessage({ type: "result", data: params });
-    logProvider._view?.webview.postMessage({ type: "result", data: params });
-  }
-}
-
 export class AgentStateLens extends vscode.CodeLens {
   id: string;
   constructor(range: vscode.Range, agent: any, command?: vscode.Command) {
@@ -405,7 +264,7 @@ type AgentType = "chat" | "code-completion";
 export type AgentIdentifier = string;
 
 
-export const DEFAULT_STATE = {
+export const DEFAULT_STATE:WebviewState = {
   selectedAgentId: '',
   agents: {
   },
@@ -414,7 +273,9 @@ export const DEFAULT_STATE = {
     agent_description: '',
     agent_icon: '',
     display_name: 'Rift Chat'
-  }]
+  }],
+  isStreaming: false,
+  streamingText: ''
 }
 
 export class MorphLanguageClient
@@ -423,7 +284,7 @@ export class MorphLanguageClient
   client: LanguageClient | undefined = undefined;
   red: vscode.TextEditorDecorationType;
   green: vscode.TextEditorDecorationType;
-  context: vscode.ExtensionContext;
+  static context: vscode.ExtensionContext;
   changeLensEmitter: vscode.EventEmitter<void>;
   onDidChangeCodeLenses: vscode.Event<void>;
   agents: { [id: string]: Agent } = {};
@@ -431,16 +292,16 @@ export class MorphLanguageClient
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => {} };
-    this.green = { key: "TEMP_VALUE", dispose: () => {} };
-    this.context = context;
+    this.red = { key: "TEMP_VALUE", dispose: () => { } };
+    this.green = { key: "TEMP_VALUE", dispose: () => { } };
+    MorphLanguageClient.context = context;
     this.webviewState.subscribe(state => {
       chatProvider.postMessage("stateUpdate", state);
       logProvider.postMessage("stateUpdate", state);
     })
-    
+
     this.create_client().then(() => {
-      this.context.subscriptions.push(
+      MorphLanguageClient.context.subscriptions.push(
         vscode.commands.registerCommand("extension.listAgents", async () => {
           if (client) {
             return await this.list_agents();
@@ -515,42 +376,6 @@ export class MorphLanguageClient
     return items;
   }
 
-  // // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
-  // public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentLens[] {
-  //     // this returns all of the lenses for the document.
-  //     const items: AgentLens[] = []
-  //     for (const agent of this.agents.values()) {
-  //         if (agent.textDocument.uri === document.uri.toString()) {
-  //             const line = agent.startPosition.line
-  //             const linetext = document.lineAt(line)
-  //             if (agent.status === 'running') {
-  //                 const running = new AgentLens(linetext.range, agent, {
-  //                     title: 'running',
-  //                     command: 'rift.cancel',
-  //                     tooltip: 'click to stop this agent',
-  //                     arguments: [agent.id],
-  //                 })
-  //                 items.push(running)
-  //             }
-  //             else if (agent.status === 'done' || agent.status === 'error') {
-  //                 const accept = new AgentLens(linetext.range, agent, {
-  //                     title: 'Accept ✅ ',
-  //                     command: 'rift.accept',
-  //                     tooltip: 'Accept the edits below',
-  //                     arguments: [agent.id],
-  //                 })
-  //                 const reject = new AgentLens(linetext.range, agent, {
-  //                     title: ' Reject ❌',
-  //                     command: 'rift.reject',
-  //                     tooltip: 'Reject the edits below and restore the original text',
-  //                     arguments: [agent.id]
-  //                 })
-  //                 items.push(accept, reject)
-  //             }
-  //         }
-  //     }
-  //     return items
-  // }
 
   public resolveCodeLens(
     codeLens: AgentStateLens,
@@ -594,7 +419,7 @@ export class MorphLanguageClient
       }
     }
     console.log(`server detected on port ${port} `);
-    serverOptions = tcpServerOptions(this.context, port);
+    serverOptions = tcpServerOptions(MorphLanguageClient.context, port);
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ language: "*" }],
     };
@@ -676,12 +501,37 @@ export class MorphLanguageClient
     const position = editor.selection.active;
 
     const agent = new Agent(
+      this,
       result.id,
       agent_type,
       position,
       textDocument,
       params
     );
+    
+    this.webviewState.update((state) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [agent_id]: new WebviewAgent(agent_type),
+      }
+    }
+    ))
+    /*
+    const result = event.data.data as AgentResult;
+    console.log('result')
+    console.log(result)
+    if(!result) throw new Error()
+    const agent_id = result.id;
+    state.update((state) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [agent_id]: new WebviewAgent(result.type),
+      },
+    }));*/
+
+
     agent.onStatusChange((e) => this.changeLensEmitter.fire());
     this.agents[result.id] = agent;
     this.changeLensEmitter.fire();
@@ -710,13 +560,70 @@ export class MorphLanguageClient
       agent.handleResult.bind(agent)
     ); // this should be custom
 
-    return { id: agent_id, type: agent_type }; // return agent_id to the webview
   }
 
   async cancel(params: AgentId) {
     if (!this.client) throw new Error();
     let response = await this.client.sendRequest("morph/cancel", params);
     return response;
+  }
+
+
+  sendChatHistoryChange(agentId: string, newChatHistory: ChatMessage[]) {
+    const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory
+
+    if (
+      currentChatHistory &&
+      currentChatHistory.length < 1
+    ) {
+      if (newChatHistory.length > 1) {
+        throw new Error("No previous messages on client for this ID, but server is giving multiple chat messages.")
+      }
+
+      this.webviewState.update(state => ({
+        ...state,
+        agents: {
+          ...state.agents,
+          [agentId]: {
+            ...state.agents[agentId],
+            chatHistory: [...newChatHistory],
+          },
+        },
+      }));
+    }
+
+  }
+
+  sendProgressChange(params: ChatAgentProgress) {
+
+    let agentId = params.agent_id;
+
+    const response = params.payload?.response;
+
+    if(response) this.webviewState.update(state => ({...state, streamingText: response}))
+
+    if (params.payload?.done_streaming) {
+      if (!response) throw new Error(" done streaming but no response?");
+      this.webviewState.update((prevState) => {
+        return {
+          ...prevState,
+          agents: {
+            ...prevState.agents,
+            [agentId]: {
+              agent_id: agentId,
+              agent_type: params.agent_type,
+              ...prevState.agents[agentId],
+              tasks: params.tasks,
+              chatHistory: [
+                ...prevState.agents[agentId].chatHistory ?? [],
+                { role: "assistant", content: response },
+              ],
+            },
+          },
+        };
+      });
+
+    }
   }
 
   //TODO:
@@ -751,4 +658,129 @@ export class MorphLanguageClient
   //     // return new vscode.InlineCompletionList([{insertText: snippet}]);
   //     return snippet;
   // }
+}
+
+
+class Agent {
+  status: AgentStatus;
+  green: vscode.TextEditorDecorationType;
+  ranges: vscode.Range[] = [];
+  onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
+  onStatusChange: vscode.Event<AgentStatus>;
+  morphClient: MorphLanguageClient
+
+  constructor(
+    morphClient: MorphLanguageClient,
+    public readonly id: string,
+    public readonly agent_type: string,
+    public readonly position: vscode.Position,
+    public textDocument: TextDocumentIdentifier,
+    public params: any
+  ) {
+    this.morphClient = morphClient;
+    this.id = id;
+    this.status = "running";
+    this.agent_type = agent_type;
+    this.position = position;
+    this.textDocument = textDocument;
+    this.green = vscode.window.createTextEditorDecorationType({
+      backgroundColor: "rgba(0,255,0,0.1)",
+    });
+    this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
+    this.onStatusChange = this.onStatusChangeEmitter.event;
+  }
+  async handleInputRequest(params: AgentInputRequest) {
+    /*
+            const input_request = event.data.data as AgentInputRequest;
+        // let agentId = input_request.agent_id;
+        // let status = input_request.tasks.task.status;
+        state.update((prevState) => ({
+          ...prevState,
+          agents: {
+            ...prevState.agents,
+            [input_request.id]: {
+              ...prevState.agents[input_request.id],
+              inputRequest: {
+                msg: input_request.msg,
+                place_holder: input_request.place_holder,
+              },
+            },
+          },
+        }));*/
+
+    logProvider._view?.webview.postMessage({
+      type: "chat_request",
+      data: { ...params, id: this.id },
+    });
+
+    let response = await vscode.window.showInputBox({
+      ignoreFocusOut: true,
+      placeHolder: params.place_holder,
+      prompt: params.msg,
+    });
+    return { response: response };
+  }
+
+  async handleChatRequest(params: AgentChatRequest) {
+    console.log("handleChatRequest");
+    console.log(params);
+    // chatProvider._view?.webview.postMessage({
+    //   type: "chat_request",
+    //   data: { ...params, id: this.id },
+    // });
+    // logProvider._view?.webview.postMessage({
+    //   type: "chat_request",
+    //   data: { ...params, id: this.id },
+    // });
+    this.morphClient.sendChatHistoryChange(params.id, params.messages)
+
+
+    const agentType = this.agent_type;
+    const agentId = this.id
+
+    console.log("agentType:", agentType);
+    console.log("agentId:", this.id);
+
+    // return "BLAH BLAH"
+    async function getUserInput() {
+      console.log("getUserInput");
+
+      return new Promise((res, rej) => {
+        console.log("subscribing to changes");
+        PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
+          console.log("resolving promise");
+          res(message);
+        });
+      });
+    }
+
+    let chatRequest = await getUserInput();
+    console.log("received user input and returning to server");
+    console.log(chatRequest);
+    return chatRequest;
+  }
+  async handleUpdate(params: AgentUpdate) {
+    console.log("handleUpdate");
+    console.log(params);
+    // //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
+    // logProvider._view?.webview.postMessage({ type: 'update', data: params });
+    vscode.window.showInformationMessage(params.msg);
+  }
+  async handleProgress(params: AgentProgress) {
+    console.log("handleProgress");
+    console.log(params);
+    // chatProvider._view?.webview.postMessage({ type: "progress", data: params });
+    // logProvider._view?.webview.postMessage({ type: "progress", data: params });
+    this.morphClient.sendProgressChange(params)
+
+    if (this.agent_type === "code_completion") {
+      code_completion_send_progress(params, this);
+    }
+  }
+  async handleResult(params: AgentResult) {
+    console.log("handleResult");
+    console.log(params);
+    chatProvider._view?.webview.postMessage({ type: "result", data: params });
+    logProvider._view?.webview.postMessage({ type: "result", data: params });
+  }
 }

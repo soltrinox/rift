@@ -93,12 +93,13 @@ export class ChatProvider implements vscode.WebviewViewProvider {
             agent_type: params.params.agent_type,
             agent_params: { position, textDocument },
           };
-          const result = await this.morph_language_client.run(runAgentParams);
-          this.postMessage("result", result);
+          await this.morph_language_client.run(runAgentParams);
           break;
 
         case "chatMessage": {
           console.log("Sending publish message", params.message);
+          
+          this.morph_language_client.sendChatHistoryChange(params.agent_id, params.messages)
           PubSub.pub(
             `${params.agent_type}_${params.agent_id}_chat_request`,
             params
