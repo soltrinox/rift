@@ -2,7 +2,7 @@
   import SendSvg from "../icons/SendSvg.svelte";
   import UserSvg from "../icons/UserSvg.svelte";
   import { loading, state } from "../stores";
-  import type { SvelteStore } from "../../../src/types";
+  import type { WebviewState } from "../../../src/types";
   export let value: string = "";
 
 

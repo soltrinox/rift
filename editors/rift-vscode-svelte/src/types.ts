@@ -42,7 +42,7 @@ export class Agent {
   ) {}
 }
 
-export type SvelteStore = {
+export type WebviewState = {
   selectedAgentId: string;
   agents: {
     [id: string]: Agent;

@@ -19,8 +19,7 @@
     ChatAgentProgress,
   } from "../../src/client";
   import { IncomingMessage } from "http";
-  import type { SvelteStore } from "../../src/types";
-
+  
   // UNCOMMENT THE BELOW LINES AND REFRESH IF YOU NEED A HARD RESET:
   console.log("RESETTING VSCODE STATE");
   console.log(DEFAULT_STATE);

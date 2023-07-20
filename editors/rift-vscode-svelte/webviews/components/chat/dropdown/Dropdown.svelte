@@ -3,14 +3,12 @@
   import type { AgentRegistryItem } from "../../../../src/types";
   import DropdownCard from "./DropdownCard.svelte";
   import { onMount } from "svelte";
-  import type { SvelteStore } from "../../../../src/types";
+  import type { WebviewState } from "../../../../src/types";
 
   export let handleRunAgent: (agent_type: string) => void;
-  let store: SvelteStore;
 
-  state.subscribe((s) => {
-    store = s;
-  });
+
+
 
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 

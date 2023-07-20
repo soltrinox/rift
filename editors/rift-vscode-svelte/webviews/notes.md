@@ -1,0 +1,1 @@
+Never state.update() within the webviews. The state comes from the extensions.

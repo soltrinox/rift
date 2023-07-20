@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store'
-import type { SvelteStore } from '../../src/types'
+import type { WebviewState } from '../../src/types'
 
-export const DEFAULT_STATE: SvelteStore = {
+export const DEFAULT_STATE: WebviewState = {
   selectedAgentId: '',
   agents: {
   },
@@ -21,7 +21,8 @@ export const DEFAULT_STATE: SvelteStore = {
 //   },
 // }
 
+
 export const dropdownOpen = writable(false)
-export const state = writable<SvelteStore>(DEFAULT_STATE)
+export const state = writable<WebviewState>(DEFAULT_STATE)
 export const loading = writable(false)
 export const progressResponse = writable('')

@@ -17,8 +17,9 @@ import {
 import * as net from "net";
 import { join } from "path";
 import * as tcpPortUsed from "tcp-port-used";
-import { chatProvider, logProvider, morph_language_client } from "./extension";
+import { chatProvider, logProvider } from "./extension";
 import PubSub from "./lib/PubSub";
+import { WebviewState } from "./types";
 
 let client: LanguageClient; //LanguageClient
 
@@ -360,6 +361,18 @@ interface ModelConfig {
 type AgentType = "chat" | "code-completion";
 export type AgentIdentifier = string;
 
+
+const DEFAULT_STATE = {
+  selectedAgentId: '',
+  agents: {
+  },
+  availableAgents: [{
+    agent_type: "rift_chat",
+    agent_description: '',
+    agent_icon: '',
+    display_name: 'Rift Chat'
+  }]
+}
 export class MorphLanguageClient
   implements vscode.CodeLensProvider<AgentStateLens>
 {
@@ -370,6 +383,7 @@ export class MorphLanguageClient
   changeLensEmitter: vscode.EventEmitter<void>;
   onDidChangeCodeLenses: vscode.Event<void>;
   agents: { [id: string]: Agent } = {};
+  private webviewState: WebviewState = DEFAULT_STATE
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {

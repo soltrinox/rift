@@ -3,7 +3,7 @@
   import UserSvg from "../icons/UserSvg.svelte";
   import { loading, state, dropdownOpen } from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
-  import type { SvelteStore } from "../../../src/types";
+  import type { WebviewState } from "../../../src/types";
   import { append } from "svelte/internal";
 
   let isFocused = true;
@@ -60,7 +60,7 @@
     vscode.postMessage(message);
 
     // console.log("updating state...");
-    state.update((state: SvelteStore) => ({
+    state.update((state: WebviewState) => ({
       ...state,
       agents: {
         ...state.agents,
