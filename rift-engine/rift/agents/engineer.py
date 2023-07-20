@@ -16,6 +16,9 @@ from rift.agents.abstract import (
     RunAgentParams,
     agent,
 )
+import typer
+from pathlib import Path
+
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
@@ -38,9 +41,70 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS
 from gpt_engineer.steps import Config as StepsConfig
+import json
 
 
 logger = logging.getLogger(__name__)
+
+
+async def _main(
+    project_path: str = "/Users/jwd2488/gpt-engineer/benchmark/file_explorer",
+    model: str = "gpt-4",
+    temperature: float = 0.1,
+    steps_config: StepsConfig = StepsConfig.DEFAULT,
+    verbose: bool = typer.Option(False, "--verbose", "-v"),
+    **kwargs,
+) -> DBs:
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+    print("GPT MAIN")
+    model = fallback_model(model)
+    ai = AI(
+        model=model,
+        temperature=temperature,
+    )
+
+    input_path = Path(project_path).absolute()
+    memory_path = input_path / "memory"
+    workspace_path = input_path / "workspace"
+    archive_path = input_path / "archive"
+
+    dbs = DBs(
+        memory=DB(memory_path),
+        logs=DB(memory_path / "logs"),
+        input=DB(input_path),
+        workspace=DB(workspace_path, in_memory_dict={}),  # in_memory_dict={}),
+        preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
+        archive=DB(archive_path),
+    )
+
+    if steps_config not in [
+        StepsConfig.EXECUTE_ONLY,
+        StepsConfig.USE_FEEDBACK,
+        StepsConfig.EVALUATE,
+    ]:
+        archive(dbs)
+
+    steps = STEPS[steps_config]
+    print("GPT STEPS")
+    # async def execute_steps():
+
+    from concurrent import futures
+
+    with futures.ThreadPoolExecutor(1) as pool:
+        for step in steps:
+            await asyncio.sleep(0.1)
+            messages = await asyncio.get_running_loop().run_in_executor(pool, step, ai, dbs)
+            await asyncio.sleep(0.1)
+            dbs.logs[step.__name__] = json.dumps(messages)
+            items = list(dbs.workspace.in_memory_dict.items())
+            if len([x for x in items if x[0] not in SEEN]) > 0:
+                await UPDATES_QUEUE.put([x for x in items if x[0] not in SEEN])
+                for x in items:
+                    if x[0] in SEEN:
+                        pass
+                    else:
+                        SEEN.add(x[0])
+            await asyncio.sleep(0.5)
 
 
 # dataclass for representing the result of the code completion agent run
@@ -65,7 +129,6 @@ class EngineerAgentParams(AgentRunParams):
     textDocument: lsp.TextDocumentIdentifier
     position: Optional[lsp.Position]
     instructionPrompt: Optional[str] = None
-
 
 # dataclass for representing the state of the code completion agent
 @dataclass
@@ -103,26 +166,34 @@ class EngineerAgent(Agent):
             server=server,
         )
         return obj
+    
 
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
-        instructionPrompt = self.state.params.instructionPrompt or (
-            await self.request_input(
-                RequestInputRequest(
-                    msg="Describe what you want me to do",
-                    place_holder="Please implement the rest of this function",
-                )
-            )
-        )
+        
+        #instructionPrompt = self.state.params.instructionPrompt or (
+        #    await self.request_input(
+        #        RequestInputRequest(
+        #            msg="Describe what you want me to implement",
+        #            place_holder="Please write me a game of pong in python",
+        #        )
+        #    )
+        #)
 
         self.server.register_change_callback(self.on_change, self.state.document.uri)
-        stream: InsertCodeResult = await self.state.model.insert_code(
-            self.state.document.text,
-            self.state.document.position_to_offset(self.state.cursor),
-            goal=instructionPrompt,
-        )
+        print("Starting GPT ENGINEE!R")
+        main_t = asyncio.create_task(_main())
+        print("Started")
 
-        # function to asynchronously generate the plan
+        counter = 0
+        while (not main_t.done()) or (UPDATES_QUEUE.qsize() > 0):
+            counter += 1
+            try:
+                updates = await asyncio.wait_for(UPDATES_QUEUE.get(), 1.0)
+                print(updates)
+            except asyncio.TimeoutError:
+                continue
+
         async def generate_explanation():
             all_deltas = []
 
