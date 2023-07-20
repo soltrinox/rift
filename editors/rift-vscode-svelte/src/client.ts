@@ -118,6 +118,7 @@ interface RunAgentSyncResult {
   text: string;
 }
 
+
 export type AgentStatus =
   | "running"
   | "done"
@@ -267,7 +268,7 @@ type AgentType = "chat" | "code-completion";
 export type AgentIdentifier = string;
 
 
-export const DEFAULT_STATE:WebviewState = {
+export const DEFAULT_STATE: WebviewState = {
   selectedAgentId: '',
   agents: {
   },
@@ -511,7 +512,7 @@ export class MorphLanguageClient
       textDocument,
       params
     );
-    
+
     this.webviewState.update((state) => ({
       ...state,
       agents: {
@@ -571,6 +572,21 @@ export class MorphLanguageClient
     return response;
   }
 
+  async restart_agent(agentId: string) {
+    if (!this.client) throw new Error();
+    if(!(agentId in this.webviewState.value.agents)) throw new Error(`tried to restart agent ${agentId} but couldn't find it in agents object`)
+    const agent_type = this.webviewState.value.agents[agentId].type
+    let result: RunAgentResult = await this.client.sendRequest("morph/restart_agent", agentId);
+    this.webviewState.update((state) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [agentId]: new WebviewAgent(agent_type),
+      }
+    }
+    ))
+  }
+
 
   sendChatHistoryChange(agentId: string, newChatHistory: ChatMessage[]) {
     const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory
@@ -603,19 +619,19 @@ export class MorphLanguageClient
 
     const response = params.payload?.response;
 
-    if(response) this.webviewState.update(state => ({...state, streamingText: response}))
+    if (response) this.webviewState.update(state => ({ ...state, streamingText: response }))
 
-  //   state.update((state) => ({
-  //     ...state,
-  //     agents: {
-  //         ...state.agents,
-  //         [agentId]: {
-  //             ...state.agents[agentId],
-  //             type: progress.agent_type,
-  //             tasks: progress.tasks,
-  //         },
-  //     },
-  // }));
+    this.webviewState.update((state) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [agentId]: {
+          ...state.agents[agentId],
+          type: params.agent_type,
+          tasks: params.tasks,
+        },
+      },
+    }));
 
 
 
@@ -645,16 +661,16 @@ export class MorphLanguageClient
 
   sendHasNotificationChange(agentId: string, hasNotification: boolean) {
 
-        this.webviewState.update(state => ({
-          ...state,
-          agents: {
-            ...state.agents,
-            [agentId]: {
-              ...state.agents[agentId],
-              hasNotification: (agentId == state.selectedAgentId) ? false : hasNotification //this ternary operatory will make sure we don't set currently selected agents as having notifications
-            }
-          }
-        }))
+    this.webviewState.update(state => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [agentId]: {
+          ...state.agents[agentId],
+          hasNotification: (agentId == state.selectedAgentId) ? false : hasNotification //this ternary operatory will make sure we don't set currently selected agents as having notifications
+        }
+      }
+    }))
   }
 
   //TODO:
@@ -738,41 +754,41 @@ class Agent {
             },
           },
         }));*/
-                    // case "input_request": {
-            //     const input_request = event.data.data as AgentInputRequest;
-            //     if ($state.selectedAgentId == input_request.id) {
-            //         state.update((state) => ({
-            //             ...state,
-            //             agents: {
-            //                 ...state.agents,
-            //                 [input_request.id!]: {
-            //                     ...state.agents[input_request.id!],
-            //                     hasInputNotification: false,
-            //                 },
-            //             },
-            //         }));
-            //     } else if ($state.selectedAgentId != input_request.id) {
-            //         state.update((state) => ({
-            //             ...state,
-            //             agents: {
-            //                 ...state.agents,
-            //                 [input_request.id!]: {
-            //                     ...state.agents[input_request.id!],
-            //                     hasInputNotification: true,
-            //                 },
-            //             },
-            //         }));
-            //     }
+    // case "input_request": {
+    //     const input_request = event.data.data as AgentInputRequest;
+    //     if ($state.selectedAgentId == input_request.id) {
+    //         state.update((state) => ({
+    //             ...state,
+    //             agents: {
+    //                 ...state.agents,
+    //                 [input_request.id!]: {
+    //                     ...state.agents[input_request.id!],
+    //                     hasInputNotification: false,
+    //                 },
+    //             },
+    //         }));
+    //     } else if ($state.selectedAgentId != input_request.id) {
+    //         state.update((state) => ({
+    //             ...state,
+    //             agents: {
+    //                 ...state.agents,
+    //                 [input_request.id!]: {
+    //                     ...state.agents[input_request.id!],
+    //                     hasInputNotification: true,
+    //                 },
+    //             },
+    //         }));
+    //     }
 
-            //     break;
-            // }
+    //     break;
+    // }
 
 
     // logProvider._view?.webview.postMessage({
     //   type: "chat_request",
     //   data: { ...params, id: this.id },
     // });
-    
+
 
     /* this logic was the one I pulled from logswebview that was implemented -- Brent
                 const chat_request = event.data.data as AgentChatRequest;
@@ -800,7 +816,7 @@ class Agent {
                     }));
                 }
     */
-   
+
     this.morphClient.sendHasNotificationChange(params.id, true)
 
 

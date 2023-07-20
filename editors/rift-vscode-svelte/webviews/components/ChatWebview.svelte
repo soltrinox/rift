@@ -1,7 +1,7 @@
 <script lang="ts">
   import EllipsisSvg from "./icons/EllipsisDarkSvg.svelte";
   import Logs from "./logs/Logs.svelte";
-  import { DEFAULT_STATE, state } from "./stores";
+  import { state } from "./stores";
   import {
     type AgentRegistryItem,
     type AgentProgress,
@@ -22,10 +22,6 @@
   import { IncomingMessage } from "http";
   
   // UNCOMMENT THE BELOW LINES AND REFRESH IF YOU NEED A HARD RESET:
-  console.log("RESETTING VSCODE STATE");
-  console.log(DEFAULT_STATE);
-  vscode.setState(DEFAULT_STATE);
-  console.log(vscode.getState());
 
   onMount(() => {
     console.log('onMount')
@@ -40,14 +36,8 @@
     vscode.postMessage({ type: "listAgents" });
   });
 
-  state.subscribe((state) => {
-    console.log("saving state:");
-    console.log(state);
-    if (JSON.stringify(state) != JSON.stringify(DEFAULT_STATE)) {
-      vscode.setState(state);
-    }
-  });
 
+  
   let isDone = false;
   // const vscodeState = vscode.getState();
   // console.log("attempting to access vscode state:");

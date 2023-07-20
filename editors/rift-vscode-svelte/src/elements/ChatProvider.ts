@@ -115,6 +115,10 @@ export class ChatProvider implements vscode.WebviewViewProvider {
           );
           break;
         }
+        case "restartAgent": {
+          this.morph_language_client.restart_agent(params.agentId)
+          break;
+        }
 
         default:
           console.log("no case match for ", params.type, " in ChatProvider.ts");

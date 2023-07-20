@@ -33,6 +33,7 @@ export class LogProvider implements vscode.WebviewViewProvider {
       this._view.webview.postMessage({ type: endpoint, data: message });
     }
   }
+  
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
