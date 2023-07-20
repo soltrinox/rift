@@ -1,4 +1,12 @@
-import type { Tasks } from "./client";
+export interface Task {
+  description: string;
+  status: string;
+}
+
+export interface Tasks {
+  task: Task;
+  subtasks: Task[];
+}
 
 export class ChatMessage {
   constructor(public role: "user" | "assistant", public content: string) {}

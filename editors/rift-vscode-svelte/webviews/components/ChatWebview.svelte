@@ -11,14 +11,6 @@
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
-  import {
-    MorphLanguageClient,
-    type AgentChatRequest,
-    type AgentInputRequest,
-    type AgentResult,
-    type AgentUpdate,
-    type ChatAgentProgress,
-  } from "../../src/client";
   import { IncomingMessage } from "http";
   
   // UNCOMMENT THE BELOW LINES AND REFRESH IF YOU NEED A HARD RESET:
