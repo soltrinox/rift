@@ -10,10 +10,7 @@ logger = logging.getLogger(__name__)
 from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
 
-try:
-    import aider
-except ImportError:
-    raise Exception("`aider` not found. Try `pip install aider-chat`")
+import aider_dev.aider.main as aider
 
 @dataclass
 class AiderAgentParams(ClientParams):
@@ -38,7 +35,9 @@ class AiderAgent(Agent):
 
     async def run(self) -> AsyncIterable[List[file_diff.FileChange]]:
         params = self.run_params
-        await ainput("\n> Press any key to continue.\n")
+
+        git_root = aider.get_git_root()
+        logger.info(f"Aider: Git root: {git_root}")
 
         if params.prompt_file is None:
             prompt = await ainput("\n> Prompt file not found. Please input a prompt.\n")
