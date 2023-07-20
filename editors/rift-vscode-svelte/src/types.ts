@@ -50,3 +50,5 @@ export type WebviewState = {
   availableAgents: AgentRegistryItem[];
   //    logs: { role: "user" | "assistant", content: string }[]
 };
+
+

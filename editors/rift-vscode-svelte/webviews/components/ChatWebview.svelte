@@ -6,6 +6,7 @@
     type AgentRegistryItem,
     type AgentProgress,
     Agent,
+    WebviewState,
   } from "../../src/types";
   import Header from "./Header.svelte";
   import Chat from "./chat/Chat.svelte";
@@ -61,69 +62,22 @@
     // Listen for the response
 
     switch (event.data.type) {
-      case "input_request":
-        const input_request = event.data.data as AgentInputRequest;
-        // let agentId = input_request.agent_id;
-        // let status = input_request.tasks.task.status;
-        state.update((prevState) => ({
-          ...prevState,
-          agents: {
-            ...prevState.agents,
-            [input_request.id]: {
-              ...prevState.agents[input_request.id],
-              inputRequest: {
-                msg: input_request.msg,
-                place_holder: input_request.place_holder,
-              },
-            },
-          },
-        }));
-        break;
-      case "selectedAgentId":
-        console.log(`chatwebview selectedAgentId: ${event.data.data}`);
-        state.update((state) => ({
-          ...state,
-          selectedAgentId: event.data.data,
-        }));
-        document.getElementById("omnibar")?.focus();
-
       // TODO: focus the selected agent
       case "chat_request": {
         const chat_request = event.data.data as AgentChatRequest | string;
         console.log("chat_request");
         console.log(chat_request);
-
-        // this should only apply to the first message after runAgent.
-        // the rest are added via the progress calls.
-        if (
-          typeof chat_request !== "string" &&
-          $state.agents[chat_request.id]?.chatHistory.length < 1
-        ) {
-          if (chat_request.messages.length > 1) {
-            throw new Error( "No previous messages on client for this ID, but server is giving multiple chat messages.")
-          }
-
-          state.update((prevState) => ({
-            ...prevState,
-            selectedAgentId: chat_request.id,
-            agents: {
-              ...prevState.agents,
-              [chat_request.id]: {
-                ...prevState.agents[chat_request.id],
-                chatHistory: [...chat_request.messages],
-              },
-            },
-          }));
-        }
-
+        
         //dont think we need to actually do anything here b/c everything is done
         // from the result case and progress case.
         // could maybe disable sending messages until we get a chatRequest back. If we add that, it should be added later.
 
+        throw new Error('old state stuff')
         break;
       }
       case "update":
         const update = event.data.data as AgentUpdate;
+        throw new Error('old state stuff')
         break;
 
       case "result":
@@ -139,6 +93,7 @@
             [agent_id]: new Agent(result.type),
           },
         }));
+        throw new Error('old state stuff')
         break;
 
       case "progress":
@@ -179,18 +134,19 @@
             progressResponse.set('')
           }
         }
-
+        throw new Error('old state stuff')
         break;
       case "listAgents":
         console.log("new agents just dropped");
         console.log(event.data.data);
         agentRegistry = event.data.data;
         //TODO store available agents
-        state.update((state) => ({
-          ...state,
-          availableAgents: agentRegistry,
-        }));
+        // state.update((state) => ({
+        //   ...state,
+        //   availableAgents: agentRegistry,
+        // }));
         console.log("availableAgents in state" + JSON.stringify(agentRegistry));
+        throw new Error('old state stuff')
         break;
 
       default:
@@ -200,7 +156,7 @@
   };
 </script>
 
-<svelte:window on:message={incomingMessage} />
+<!-- <svelte:window on:message={incomingMessage} /> -->
 
 <div class="h-screen flex flex-col">
   <Header />

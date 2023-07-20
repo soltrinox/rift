@@ -19,7 +19,9 @@ import { join } from "path";
 import * as tcpPortUsed from "tcp-port-used";
 import { chatProvider, logProvider } from "./extension";
 import PubSub from "./lib/PubSub";
-import { WebviewState } from "./types";
+import type { WebviewState } from "./types";
+import { Store } from "./lib/Store";
+
 
 let client: LanguageClient; //LanguageClient
 
@@ -249,6 +251,8 @@ class Agent {
   ranges: vscode.Range[] = [];
   onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
   onStatusChange: vscode.Event<AgentStatus>;
+  morphClient: MorphLanguageClient
+
   constructor(
     public readonly id: string,
     public readonly agent_type: string,
@@ -268,6 +272,24 @@ class Agent {
     this.onStatusChange = this.onStatusChangeEmitter.event;
   }
   async handleInputRequest(params: AgentInputRequest) {
+    /*
+            const input_request = event.data.data as AgentInputRequest;
+        // let agentId = input_request.agent_id;
+        // let status = input_request.tasks.task.status;
+        state.update((prevState) => ({
+          ...prevState,
+          agents: {
+            ...prevState.agents,
+            [input_request.id]: {
+              ...prevState.agents[input_request.id],
+              inputRequest: {
+                msg: input_request.msg,
+                place_holder: input_request.place_holder,
+              },
+            },
+          },
+        }));*/
+
     logProvider._view?.webview.postMessage({
       type: "chat_request",
       data: { ...params, id: this.id },
@@ -292,6 +314,27 @@ class Agent {
       type: "chat_request",
       data: { ...params, id: this.id },
     });
+
+    if (
+      typeof chat_request !== "string" &&
+      $state.agents[chat_request.id]?.chatHistory.length < 1
+    ) {
+      if (chat_request.messages.length > 1) {
+        throw new Error( "No previous messages on client for this ID, but server is giving multiple chat messages.")
+      }
+
+      this.morphClient.webviewState.update(state =>  ({
+        ...state,
+        selectedAgentId: params.id,
+        agents: {
+          ...state.agents,
+          [params.id]: {
+            ...state.agents[chat_request.id],
+            chatHistory: [...chat_request.messages],
+          },
+        },
+      }));
+    }
 
     let agentType = this.agent_type;
     let agentId = this.id;
@@ -362,7 +405,7 @@ type AgentType = "chat" | "code-completion";
 export type AgentIdentifier = string;
 
 
-const DEFAULT_STATE = {
+export const DEFAULT_STATE = {
   selectedAgentId: '',
   agents: {
   },
@@ -373,6 +416,7 @@ const DEFAULT_STATE = {
     display_name: 'Rift Chat'
   }]
 }
+
 export class MorphLanguageClient
   implements vscode.CodeLensProvider<AgentStateLens>
 {
@@ -383,13 +427,18 @@ export class MorphLanguageClient
   changeLensEmitter: vscode.EventEmitter<void>;
   onDidChangeCodeLenses: vscode.Event<void>;
   agents: { [id: string]: Agent } = {};
-  private webviewState: WebviewState = DEFAULT_STATE
+  protected webviewState = new Store<WebviewState>(DEFAULT_STATE)
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
     this.red = { key: "TEMP_VALUE", dispose: () => {} };
     this.green = { key: "TEMP_VALUE", dispose: () => {} };
     this.context = context;
+    this.webviewState.subscribe(state => {
+      chatProvider.postMessage("stateUpdate", state);
+      logProvider.postMessage("stateUpdate", state);
+    })
+    
     this.create_client().then(() => {
       this.context.subscriptions.push(
         vscode.commands.registerCommand("extension.listAgents", async () => {

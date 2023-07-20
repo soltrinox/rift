@@ -1,13 +1,12 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
   import UserSvg from "../icons/UserSvg.svelte";
-  import { loading, state, dropdownOpen } from "../stores";
+  import { loading, state, dropdownOpen, _state } from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
   import type { WebviewState } from "../../../src/types";
   import { append } from "svelte/internal";
 
   let isFocused = true;
-  console.log("init");
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement;

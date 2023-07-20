@@ -184,7 +184,7 @@
     };
 </script>
 
-<svelte:window on:message={incomingMessage} />
+<!-- <svelte:window on:message={incomingMessage} /> -->
 
 <div class="">
     <div>
