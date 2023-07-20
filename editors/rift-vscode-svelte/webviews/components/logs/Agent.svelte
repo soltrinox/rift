@@ -23,7 +23,8 @@
 
     let isDropdownOpen = false; // default state (dropdown close)
 
-    const handleDropdownClick = () => {
+    const handleDropdownClick = (event: MouseEvent) => {
+        event.stopPropagation();
         isDropdownOpen = !isDropdownOpen; // togle state on click
     };
 
@@ -77,11 +78,15 @@
     };
 </script>
 
-<div class:bg-[var(--vscode-editor-hoverHighlightBackground)]={isSelected}>
+<button
+    on:click={handleChatIconClick}
+    class:bg-[var(--vscode-editor-hoverHighlightBackground)]={isSelected}
+    class="w-full"
+>
     <div class="flex">
         {#if expanded == false}
             <button
-                class="mx-1"
+                class="px-1"
                 on:click={() => (expanded = !expanded)}
                 on:keydown={() => (expanded = !expanded)}
             >
@@ -89,14 +94,14 @@
             </button>
         {:else}
             <button
-                class="mx-1"
+                class="px-1"
                 on:click={() => (expanded = !expanded)}
                 on:keydown={() => (expanded = !expanded)}
             >
                 <ArrowDownSvg />
             </button>
         {/if}
-        <button class="flex w-full select-none" on:click={handleChatIconClick}>
+        <div class="flex w-full select-none items-center">
             <div class="flex">
                 {#if $state.agents[id].tasks?.task.status == "done"}
                     <div class="mx-1 mt-0.5"><LogGreenSvg /></div>
@@ -117,7 +122,7 @@
                 {/if}
                 <ChatSvg />
             </div>
-        </button>
+        </div>
 
         <div class="dropdown inline-flex left-auto flex">
             <div class="flex items-center">
@@ -161,7 +166,7 @@
             {/each}
         {/if}
     </div>
-</div>
+</button>
 
 <style>
     .list-item:hover {
