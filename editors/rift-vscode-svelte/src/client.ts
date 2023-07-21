@@ -245,7 +245,7 @@ const code_completion_send_progress = async (params: any, agent: Agent) => {
         editor.setDecorations(
           GREEN,
           params.payload.ranges.map(
-            (r) =>
+            (r: { start: { line: number; character: number; }; end: { line: number; character: number; }; }) =>
               new vscode.Range(
                 r.start.line,
                 r.start.character,
@@ -324,24 +324,14 @@ export class MorphLanguageClient
 
       console.log("runAgent ran");
       const editor = vscode.window.activeTextEditor;
-      if (!editor) {
-        console.error("No active text editor found");
-        return;
-      }
+      if (!editor) throw new Error("No active text editor found")
       let textDocument = { uri:  editor.document.uri.toString(), version: 0 };
       let position = editor.selection.active;
-
       const params: ChatAgentParams = {
         agent_type: "rift_chat",
         agent_params: { position, textDocument },
       }
-
-      this.run({
-        agent_type: "rift_chat",
-        agent_params: {}
-      })
-
-      
+      this.run(params)
     });
 
     this.changeLensEmitter = new vscode.EventEmitter<void>();
@@ -470,6 +460,7 @@ export class MorphLanguageClient
     });
     await this.client.start();
     console.log("rift-engine started");
+    
   }
 
   async on_config_change(_args: any) {
