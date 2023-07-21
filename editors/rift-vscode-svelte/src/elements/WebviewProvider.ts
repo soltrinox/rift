@@ -10,9 +10,10 @@ import type {
   MorphLanguageClient,
   RunAgentParams,
 } from "../client";
+import { WebviewState } from "../types";
 
 // Provides a webview view that allows users to chat and interact with the extension.
-export class ChatProvider implements vscode.WebviewViewProvider {
+export class WebviewProvider implements vscode.WebviewViewProvider {
   _view?: vscode.WebviewView;
   _doc?: vscode.TextDocument;
 
@@ -20,6 +21,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
   //  _extensionUri: The URI of the extension.
   //  morph_language_client: The MorphLanguageClient instance for communication with the server.
   constructor(
+    public name: "Chat" | "Logs",
     private readonly _extensionUri: vscode.Uri,
     public morph_language_client: MorphLanguageClient
   ) {}
@@ -28,12 +30,17 @@ export class ChatProvider implements vscode.WebviewViewProvider {
   //  endpoint: The endpoint to send the message to.
   //  message: The message to send.
   //  Throws an error if the view is not available.
-  public postMessage(endpoint: string, message: any) {
+  // notice: the only things being posted to the webviews are state objects, so this will be a private function
+  private postMessage(endpoint: string, message: any) {
     if (!this._view) {
       throw new Error("No view available");
     } else {
       this._view.webview.postMessage({ type: endpoint, data: message });
     }
+  }
+
+  public stateUpdate(state: WebviewState) {
+    this.postMessage("stateUpdate", state)
   }
 
   public resolveWebviewView(
@@ -48,6 +55,8 @@ export class ChatProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this._extensionUri],
     };
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+    this.postMessage("stateUpdate", this.morph_language_client.getWebviewState())
 
     // Handles messages received from the webview
     webviewView.webview.onDidReceiveMessage(async (params: any) => {
@@ -68,10 +77,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
         // Handle 'getAgents' message
         case "listAgents":
-          let agents: AgentRegistryItem[] =
-            await this.morph_language_client.list_agents();
-          console.log("Getting list of available agents");
-          this.postMessage("listAgents", agents);
+          this.morph_language_client.refreshWebviewAgents()
           break;
 
         // Handle 'runAgent' message
@@ -104,6 +110,7 @@ export class ChatProvider implements vscode.WebviewViewProvider {
             `${params.agent_type}_${params.agent_id}_chat_request`,
             params
           );
+
           break;
         }
 
@@ -132,11 +139,11 @@ export class ChatProvider implements vscode.WebviewViewProvider {
 
   private _getHtmlForWebview(webview: vscode.Webview) {
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Chat.js")
+      vscode.Uri.joinPath(this._extensionUri, "out", `compiled/${this.name}.js`)
     );
 
     const cssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "out", "compiled/Chat.css")
+      vscode.Uri.joinPath(this._extensionUri, "out", `compiled/${this.name}.css`)
     );
 
     const stylesResetUri = webview.asWebviewUri(

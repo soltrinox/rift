@@ -17,13 +17,6 @@
 
   onMount(() => {
     console.log('onMount')
-    vscode.postMessage({
-      type: "runAgent",
-      params: {
-        agent_type: "rift_chat",
-        agent_params: {},
-      },
-    });
     //get initial list of agents
     vscode.postMessage({ type: "listAgents" });
   });

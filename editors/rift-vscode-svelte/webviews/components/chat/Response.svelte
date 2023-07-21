@@ -4,7 +4,7 @@
   import { copySvg } from "../icons/copySvg";
   export let value = "";
   // export let isNew = false;
-  import { loading, state } from "../stores";
+  import { state } from "../stores";
   import CopySvg from "../icons/CopySvg.svelte";
   import { SvelteComponent } from "svelte";
   import showdown from 'showdown'

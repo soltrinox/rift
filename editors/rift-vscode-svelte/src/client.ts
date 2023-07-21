@@ -276,7 +276,7 @@ export class MorphLanguageClient
   client: LanguageClient | undefined = undefined;
   red: vscode.TextEditorDecorationType;
   green: vscode.TextEditorDecorationType;
-  static context: vscode.ExtensionContext;
+  context: vscode.ExtensionContext;
   changeLensEmitter: vscode.EventEmitter<void>;
   onDidChangeCodeLenses: vscode.Event<void>;
   agents: { [id: string]: Agent } = {};
@@ -286,14 +286,14 @@ export class MorphLanguageClient
   constructor(context: vscode.ExtensionContext) {
     this.red = { key: "TEMP_VALUE", dispose: () => { } };
     this.green = { key: "TEMP_VALUE", dispose: () => { } };
-    MorphLanguageClient.context = context;
+    this.context = context;
     this.webviewState.subscribe(state => {
-      chatProvider.postMessage("stateUpdate", state);
-      logProvider.postMessage("stateUpdate", state);
+      chatProvider.stateUpdate(state);
+      logProvider.stateUpdate(state);
     })
 
     this.create_client().then(() => {
-      MorphLanguageClient.context.subscriptions.push(
+      this.context.subscriptions.push(
         vscode.commands.registerCommand("extension.listAgents", async () => {
           if (client) {
             return await this.list_agents();
@@ -312,10 +312,21 @@ export class MorphLanguageClient
           this.on_config_change.bind(this)
         )
       );
+
+      this.run({
+        agent_type: "rift_chat",
+        agent_params: {},
+      })
+
+      
     });
 
     this.changeLensEmitter = new vscode.EventEmitter<void>();
     this.onDidChangeCodeLenses = this.changeLensEmitter.event;
+  }
+
+  public getWebviewState() {
+    return this.webviewState.value
   }
 
   // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
@@ -381,16 +392,20 @@ export class MorphLanguageClient
   is_running() {
     return this.client && this.client.state == State.Running;
   }
-
-  async list_agents() {
-    console.log("get agents client.ts");
+  
+  private async list_agents() {
     if (!this.client) throw new Error();
     const result: AgentRegistryItem[] = await this.client.sendRequest(
       "morph/listAgents",
       {}
     );
-    console.log(result);
     return result;
+  }
+
+  public async refreshWebviewAgents() {
+    console.log('refreshing webview agents')
+    const availableAgents = await this.list_agents()
+    this.webviewState.update(state => ({...state, availableAgents}))
   }
 
   async create_client() {
@@ -411,7 +426,7 @@ export class MorphLanguageClient
       }
     }
     console.log(`server detected on port ${port} `);
-    serverOptions = tcpServerOptions(MorphLanguageClient.context, port);
+    serverOptions = tcpServerOptions(this.context, port);
     const clientOptions: LanguageClientOptions = {
       documentSelector: [{ language: "*" }],
     };
@@ -509,19 +524,6 @@ export class MorphLanguageClient
       }
     }
     ))
-    /*
-    const result = event.data.data as AgentResult;
-    console.log('result')
-    console.log(result)
-    if(!result) throw new Error()
-    const agent_id = result.id;
-    state.update((state) => ({
-      ...state,
-      agents: {
-        ...state.agents,
-        [agent_id]: new WebviewAgent(result.type),
-      },
-    }));*/
 
 
     agent.onStatusChange((e) => this.changeLensEmitter.fire());
@@ -661,6 +663,15 @@ export class MorphLanguageClient
     }))
   }
 
+  sendSelectedAgentChange(agentId: string) {
+
+    this.webviewState.update(state => {
+      if(!(agentId in state.agents)) throw new Error('tried to change selectedAgentId to an unavailable agent.')
+
+      return ({...state, selectedAgentId: agentId})
+    })
+  }
+
   //TODO:
   // async delete(params: AgentIdParams) {
   //     if (!this.client) throw new Error()
@@ -668,31 +679,12 @@ export class MorphLanguageClient
   //     return response;
   // }
 
-  // run should spawn an agent
-  // run should specify:
-  // - agent type
-  // - callbacks for request_input, request_chat, send_progress, and send_result
-
-  // async run_chat(params: RunChatParams, callback: (progress: ChatAgentProgress) => any) {
-  //     console.log('run chat')
-  //     this.morphNotifyChatCallback = callback
-  //     this.client.onNotification('morph/chat_progress', this.morphNotifyChatCallback.bind(this))
-
-  //     const result = await this.client.sendRequest('morph/run_chat', params)
-  //     // note this returns fast and then the updates are sent via notifications
-  //     return 'starting...'
-  // }
 
   dispose() {
     this.client?.dispose();
   }
 
-  // async provideInlineCompletionItems(doc: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext, token: vscode.CancellationToken) {
-  //     const params: RunCodeHelperParams = { instructionPrompt: "complete the code", position: position, textDocument: TextDocumentIdentifier.create(doc.uri.toString()) };
-  //     const snippet = new vscode.SnippetString(await this.run_agent_sync(params));
-  //     // return new vscode.InlineCompletionList([{insertText: snippet}]);
-  //     return snippet;
-  // }
+
 }
 
 
@@ -702,17 +694,17 @@ class Agent {
   ranges: vscode.Range[] = [];
   onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
   onStatusChange: vscode.Event<AgentStatus>;
-  morphClient: MorphLanguageClient
+  morph_language_client: MorphLanguageClient
 
   constructor(
-    morphClient: MorphLanguageClient,
+    morph_language_client: MorphLanguageClient,
     public readonly id: string,
     public readonly agent_type: string,
     public readonly position: vscode.Position,
     public textDocument: TextDocumentIdentifier,
     public params: any
   ) {
-    this.morphClient = morphClient;
+    this.morph_language_client = morph_language_client;
     this.id = id;
     this.status = "running";
     this.agent_type = agent_type;
@@ -724,6 +716,7 @@ class Agent {
     this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
     this.onStatusChange = this.onStatusChangeEmitter.event;
   }
+
   async handleInputRequest(params: AgentInputRequest) {
     /*
             const input_request = event.data.data as AgentInputRequest;
@@ -805,7 +798,7 @@ class Agent {
                 }
     */
 
-    this.morphClient.sendHasNotificationChange(params.id, true)
+    this.morph_language_client.sendHasNotificationChange(params.id, true)
 
 
     let response = await vscode.window.showInputBox({
@@ -827,7 +820,7 @@ class Agent {
     //   type: "chat_request",
     //   data: { ...params, id: this.id },
     // });
-    this.morphClient.sendChatHistoryChange(params.id, params.messages)
+    this.morph_language_client.sendChatHistoryChange(params.id, params.messages)
 
 
     const agentType = this.agent_type;
@@ -857,8 +850,7 @@ class Agent {
   async handleUpdate(params: AgentUpdate) {
     console.log("handleUpdate");
     console.log(params);
-    // //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
-    // logProvider._view?.webview.postMessage({ type: 'update', data: params });
+
     vscode.window.showInformationMessage(params.msg);
   }
   async handleProgress(params: AgentProgress) {
@@ -866,7 +858,7 @@ class Agent {
     console.log(params);
     // chatProvider._view?.webview.postMessage({ type: "progress", data: params });
     // logProvider._view?.webview.postMessage({ type: "progress", data: params });
-    this.morphClient.sendProgressChange(params)
+    this.morph_language_client.sendProgressChange(params)
 
     if (this.agent_type === "code_completion") {
       code_completion_send_progress(params, this);
@@ -875,7 +867,7 @@ class Agent {
   async handleResult(params: AgentResult) {
     console.log("handleResult");
     console.log(params);
-    chatProvider._view?.webview.postMessage({ type: "result", data: params });
-    logProvider._view?.webview.postMessage({ type: "result", data: params });
+
+    throw new Error("no logic written for handle result yet")
   }
 }
