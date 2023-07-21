@@ -54,6 +54,7 @@ class CodeCompletionAgentParams(AgentRunParams):
 class CodeCompletionAgentState(AgentState):
     model: AbstractCodeCompletionProvider
     document: lsp.TextDocumentItem
+    active_range: lsp.Range
     cursor: lsp.Position
     params: CodeCompletionAgentParams
     additive_ranges: RangeSet = field(default_factory=RangeSet)
@@ -75,6 +76,7 @@ class CodeCompletionAgent(Agent):
         state = CodeCompletionAgentState(
             model=model,
             document=server.documents[params.textDocument.uri],
+            active_range=lsp.Range(params.selection.start, params.selection.end),
             cursor=params.selection.first, # begin at the start of the selection
             additive_ranges=RangeSet(),
             params=params,
@@ -118,10 +120,18 @@ class CodeCompletionAgent(Agent):
 
         # function to asynchronously generate the code
         async def generate_code():
+            # logger.info("ADDING")
+            # with lsp.setdoc(self.state.document):            
+            #     self.state.additive_ranges.add(lsp.Range.of_pos(self.cursor, 0))
+            # logger.info("DONE ADDING")
             try:
                 all_deltas = []
                 async for delta in stream.code:
                     all_deltas.append(delta)
+                    all_text = "".join(all_deltas)
+                    self.state.additive_ranges.add(lsp.Range(self.state.cursor, self.state.cursor))             
+                    RANGE = self.state.additive_ranges.cover()
+                        
                     assert len(delta) > 0
                     attempts = 10
                     while True:
@@ -131,10 +141,10 @@ class CodeCompletionAgent(Agent):
                         attempts -= 1
                         cf = asyncio.get_running_loop().create_future()
                         self.state.change_futures[delta] = cf
-                        x = await self.server.apply_insert_text(
+                        x = await self.server.apply_range_edit(
                             self.state.document.uri,
-                            self.state.cursor,
-                            delta,
+                            RANGE,
+                            "".join(all_deltas),
                             self.state.document.version,
                         )
                         if x.applied == False:
@@ -151,8 +161,10 @@ class CodeCompletionAgent(Agent):
                             del self.state.change_futures[delta]
                     with lsp.setdoc(self.state.document):
                         added_range = lsp.Range.of_pos(self.state.cursor, len(delta))
+                        self.state.additive_ranges.add(added_range)                  
+                        
                         self.state.cursor += len(delta)
-                        self.state.additive_ranges.add(added_range)
+                        # self.state.additive_ranges.add(added_range)
                         # send progress here because VSCode highlighting is triggered by the range
                         await self.send_progress(
                             CodeCompletionProgress(
@@ -269,7 +281,9 @@ class CodeCompletionAgent(Agent):
                             lines_to_add = (
                                 c.text.count("\n") + c.range.start.line - c.range.end.line
                             )
+                            logger.info(f"CURSOR BEFORE MODIFYING: {self.state.cursor}")
                             self.state.cursor += (lines_to_add, 0)
+                            logger.info(f"CURSOR AFTER MODIFYING: {self.state.cursor}")                            
                         else:
                             # self.cancel("someone is editing on the same line as us")
                             pass  # temporarily disabled
