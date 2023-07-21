@@ -1,10 +1,7 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
-  import UserSvg from "../icons/UserSvg.svelte";
-  import { state, dropdownOpen } from "../stores";
+  import {dropdownOpen, state} from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
-  import type { WebviewState } from "../../../src/types";
-  import { append } from "svelte/internal";
 
   let isFocused = true;
 
@@ -17,16 +14,6 @@
   let inputValue:string = ''
 
   let textarea: HTMLTextAreaElement|undefined;
-
-  let hasInput = false;
-  state.subscribe((s) => {
-    if (s.selectedAgentId) {
-      if (s.agents[s.selectedAgentId].inputRequest) {
-        hasInput = true;
-      }
-    }
-    hasInput = false;
-  });
 
   let hasInput = false;
   state.subscribe((s) => {
