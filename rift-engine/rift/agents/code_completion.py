@@ -58,6 +58,7 @@ class CodeCompletionAgentState(AgentState):
     cursor: lsp.Position
     params: CodeCompletionAgentParams
     additive_ranges: RangeSet = field(default_factory=RangeSet)
+    negative_ranges: RangeSet = field(default_factory=RangeSet)
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
@@ -100,8 +101,9 @@ class CodeCompletionAgent(Agent):
         )
 
         self.server.register_change_callback(self.on_change, self.state.document.uri)
-        stream: InsertCodeResult = await self.state.model.insert_code(
+        stream = await self.state.model.edit_code(
             self.state.document.text,
+            self.state.document.position_to_offset(self.state.cursor),
             self.state.document.position_to_offset(self.state.cursor),
             goal=instructionPrompt,
         )
@@ -120,16 +122,13 @@ class CodeCompletionAgent(Agent):
 
         # function to asynchronously generate the code
         async def generate_code():
-            # logger.info("ADDING")
-            # with lsp.setdoc(self.state.document):            
-            #     self.state.additive_ranges.add(lsp.Range.of_pos(self.cursor, 0))
-            # logger.info("DONE ADDING")
             try:
                 all_deltas = []
+                self.state.additive_ranges.add(lsp.Range(self.state.cursor, self.state.cursor))                
                 async for delta in stream.code:
                     all_deltas.append(delta)
                     all_text = "".join(all_deltas)
-                    self.state.additive_ranges.add(lsp.Range(self.state.cursor, self.state.cursor))             
+                    # self.state.additive_ranges.add(lsp.Range(self.state.cursor, self.state.cursor))
                     RANGE = self.state.additive_ranges.cover()
                         
                     assert len(delta) > 0
@@ -161,8 +160,7 @@ class CodeCompletionAgent(Agent):
                             del self.state.change_futures[delta]
                     with lsp.setdoc(self.state.document):
                         added_range = lsp.Range.of_pos(self.state.cursor, len(delta))
-                        self.state.additive_ranges.add(added_range)                  
-                        
+                        self.state.additive_ranges.add(added_range)
                         self.state.cursor += len(delta)
                         # self.state.additive_ranges.add(added_range)
                         # send progress here because VSCode highlighting is triggered by the range
@@ -172,6 +170,7 @@ class CodeCompletionAgent(Agent):
                                 textDocument=self.state.document,
                                 cursor=self.state.cursor,
                                 additive_ranges=self.state.additive_ranges,
+                                negative_ranges=self.state.negative_ranges,
                             )
                         )                        
                 all_text = "".join(all_deltas)
@@ -197,6 +196,7 @@ class CodeCompletionAgent(Agent):
                         textDocument=self.state.document,
                         cursor=self.state.cursor,
                         additive_ranges=self.state.additive_ranges,
+                        negative_ranges=self.state.negative_ranges,
                     )
                 )
 
@@ -206,6 +206,7 @@ class CodeCompletionAgent(Agent):
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
                 additive_ranges=self.state.additive_ranges,
+                negative_ranges=self.state.negative_ranges,
             )
         )
 
@@ -217,6 +218,7 @@ class CodeCompletionAgent(Agent):
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
                 additive_ranges=self.state.additive_ranges,
+                negative_ranges=self.state.negative_ranges,
             )
         )
 
@@ -228,6 +230,7 @@ class CodeCompletionAgent(Agent):
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
                 additive_ranges=self.state.additive_ranges,
+                negative_ranges=self.state.negative_ranges,
             )
         )
 
