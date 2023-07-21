@@ -42,6 +42,9 @@
   onDestroy(() => {
     observer.disconnect();
   });
+
+  $: console.log('st: ', $state.isStreaming)
+
 </script>
 
 <div
