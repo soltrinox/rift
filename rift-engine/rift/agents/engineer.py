@@ -5,6 +5,7 @@ from asyncio import Future
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Optional
 
+
 import rift.lsp.types as lsp
 from rift.agents.abstract import (
     Agent,
@@ -36,6 +37,7 @@ except ImportError:
 UPDATES_QUEUE = asyncio.Queue()
 INPUT_PROMPT_QUEUE = asyncio.Queue()
 INPUT_RESPONSE_QUEUE = asyncio.Queue()
+OUTPUT_CHAT_QUEUE = asyncio.Queue()
 SEEN = set()
 
 from gpt_engineer.ai import AI, fallback_model
@@ -46,6 +48,7 @@ from gpt_engineer.steps import STEPS
 from gpt_engineer.steps import Config as StepsConfig
 import threading
 import json
+import rift.llm.openai_types as openai
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +68,16 @@ def __popup_input(prompt: str) -> str:
 
 gpt_engineer.steps.input = __popup_input
 
+
+def __popup_chat(prompt: str="NONE", end=""):
+    asyncio.run(OUTPUT_CHAT_QUEUE.put(prompt))
+
+gpt_engineer.ai.print = __popup_chat
+gpt_engineer.steps.print = __popup_chat
+
+
 async def _main(
-    project_path: str = "/home/matt/projects/gpt-engineer/benchmark/file_explorer",
+    project_path: str = "/Users/jwd2488/gpt-engineer/benchmark/file_explorer",
     model: str = "gpt-4",
     temperature: float = 0.1,
     steps_config: StepsConfig = StepsConfig.DEFAULT,
@@ -80,11 +91,14 @@ async def _main(
         model=model,
         temperature=temperature,
     )
+    print("AI")
 
     input_path = Path(project_path).absolute()
     memory_path = input_path / "memory"
     workspace_path = input_path / "workspace"
     archive_path = input_path / "archive"
+
+    print("paths")
 
     dbs = DBs(
         memory=DB(memory_path),
@@ -148,6 +162,14 @@ class EngineerAgentParams(AgentRunParams):
     position: Optional[lsp.Position]
     instructionPrompt: Optional[str] = None
 
+
+@dataclass
+class ChatProgress(
+    AgentProgress
+):  # reports what tasks are active and responsible for reporting new tasks
+    response: Optional[str] = None
+    done_streaming: bool = False
+
 # dataclass for representing the state of the code completion agent
 @dataclass
 class EngineerAgentState(AgentState):
@@ -155,8 +177,10 @@ class EngineerAgentState(AgentState):
     document: lsp.TextDocumentItem
     cursor: lsp.Position
     params: EngineerAgentParams
+    messages: list[openai.Message]
     ranges: RangeSet = field(default_factory=RangeSet)
     change_futures: Dict[str, Future] = field(default_factory=dict)
+
 
 
 # decorator for creating the code completion agent
@@ -177,12 +201,31 @@ class EngineerAgent(Agent):
             cursor=params.position,
             ranges=RangeSet(),
             params=params,
+            messages=[openai.Message.assistant("Hello! What can I help you build today?")],
+
         )
         obj = cls(
             state=state,
             agent_id=params.agent_id,
             server=server,
         )
+        def __run_chat_thread():
+            print("Started handler thread")
+            while True:
+                while OUTPUT_CHAT_QUEUE.empty():
+                    pass
+                toSend = asyncio.run(OUTPUT_CHAT_QUEUE.get());
+                print(toSend)
+                response = ""
+                for delta in toSend:
+                    print(delta)
+                    response += delta
+                    asyncio.run(
+                        obj.send_progress(ChatProgress(response=response))
+                        
+                    )
+                asyncio.run( obj.send_progress(ChatProgress(response=response, done_streaming=True)))
+                asyncio.run(obj.send_progress())
 
         def __run_popup_thread():
             print("Started handler thread")
@@ -204,13 +247,17 @@ class EngineerAgent(Agent):
                 print("Sent to request input")
 
         threading.Thread(target=__run_popup_thread).start()
+        threading.Thread(target=__run_chat_thread).start()
+
 
         return obj
     
 
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
-        
+        from asyncio import Lock
+
+        response_lock = Lock()        
         #instructionPrompt = self.state.params.instructionPrompt or (
         #    await self.request_input(
         #        RequestInputRequest(
@@ -221,18 +268,16 @@ class EngineerAgent(Agent):
         #)
 
         self.server.register_change_callback(self.on_change, self.state.document.uri)
-        print("Starting GPT ENGINEE!R")
-        main_t = asyncio.create_task(_main())
-        print("Started")
+        print("Create task")
+        response = ""
+        
+        await _main()
+        print("STARTED")
 
-        counter = 0
-        while (not main_t.done()) or (UPDATES_QUEUE.qsize() > 0):
-            counter += 1
-            try:
-                updates = await asyncio.wait_for(UPDATES_QUEUE.get(), 1.0)
-                print(updates)
-            except asyncio.TimeoutError:
-                continue
+
+
+
+
 
         async def generate_explanation():
             all_deltas = []

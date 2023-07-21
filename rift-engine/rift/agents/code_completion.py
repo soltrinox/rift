@@ -60,6 +60,7 @@ class CodeCompletionAgentState(AgentState):
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
+
 # decorator for creating the code completion agent
 @agent(
     agent_description="Generate code following an instruction to be inserted directly at your current cursor location.",
@@ -85,6 +86,7 @@ class CodeCompletionAgent(Agent):
             server=server,
         )
         return obj
+    
 
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
