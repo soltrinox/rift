@@ -161,6 +161,26 @@ class Range:
         assert isinstance(offset, int)
         return Range(self.start + offset, self.end + offset)
 
+@dataclass
+class Selection(Range):
+    anchor: Position
+    active: Position
+
+    def __init__(self, anchor: Position, active: Position) -> None:
+        super().__init__(anchor, active)
+        self.anchor = anchor
+        self.active = active
+
+    @classmethod
+    def from_coordinates(cls, anchor_line: int, anchor_character: int, active_line: int, active_character: int) -> "Selection":
+        anchor = Position(anchor_line, anchor_character)
+        active = Position(active_line, active_character)
+        return cls(anchor, active)
+
+    @property
+    def is_reversed(self) -> bool:
+        return self.anchor == self.end    
+
 
 @dataclass
 class TextDocumentContentChangeEvent:
