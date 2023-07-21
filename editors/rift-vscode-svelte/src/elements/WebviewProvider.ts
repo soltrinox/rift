@@ -1,16 +1,10 @@
 import * as vscode from "vscode";
 // import { MorphLanguageClient, RunChatParams } from "../client";
 // import * as client from '../client'
-
-import { getNonce } from "../getNonce";
-import { logProvider } from "../extension";
+import {getNonce} from "../getNonce";
 import PubSub from "../lib/PubSub";
-import type {
-  AgentRegistryItem,
-  MorphLanguageClient,
-  RunAgentParams,
-} from "../client";
-import { WebviewState } from "../types";
+import type {MorphLanguageClient, RunAgentParams,} from "../client";
+import {WebviewState} from "../types";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class WebviewProvider implements vscode.WebviewViewProvider {
@@ -64,10 +58,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       console.log("ChatProvider.ts received message: ", params);
       switch (params.type) {
         case "selectedAgentId":
-          logProvider._view?.webview.postMessage({
-            type: "selectedAgentId",
-            data: params.selectedAgentId,
-          });
+          this.morph_language_client.sendSelectedAgentChange(params.selectedAgentId)
           break;
         case "copyText":
           console.log("recieved copy in webview");
