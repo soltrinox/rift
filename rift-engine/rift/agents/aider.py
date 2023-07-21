@@ -35,14 +35,18 @@ class AiderAgent(Agent):
     async def run(self) -> AsyncIterable[List[file_diff.FileChange]]:
         params = self.run_params
 
+        print(f"Number of args: {len(params.args)}")  # Added print statement
+
         logger.info(f"Aider: args: {params.args}")
 
         await ainput("\n> Press any key to continue.\n")
         logger.info("Running aider")
 
+        def on_write(filename: str, content: str):
+            logger.info(f"Writing {filename} with content {content}")
         from concurrent import futures
         with futures.ThreadPoolExecutor(1) as pool:
-            res = await asyncio.get_running_loop().run_in_executor(pool, aider.main, params.args)
+            res = await asyncio.get_running_loop().run_in_executor(pool, aider.main, params.args, on_write)
 
         await ainput("\n> Press any key to continue.\n")
 

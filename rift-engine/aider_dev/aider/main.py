@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Callable, Optional
 
 import configargparse
 import git
@@ -68,7 +69,7 @@ def check_gitignore(git_root, io, ask=True):
     io.tool_output(f"Added {pat} to .gitignore")
 
 
-def main(args=None, input=None, output=None):
+def main(args=None, on_write: Optional[Callable[[str, str], str]] = None, input=None, output=None):
     if args is None:
         args = sys.argv[1:]
 
@@ -366,6 +367,7 @@ def main(args=None, input=None, output=None):
         tool_output_color=args.tool_output_color,
         tool_error_color=args.tool_error_color,
         dry_run=args.dry_run,
+        on_write=on_write,
     )
 
     io.tool_output(f"Aider v{__version__}")
