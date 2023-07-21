@@ -29,7 +29,8 @@ dependencies = [
   "diff_match_patch",
   "art",
   "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
-  "tree-sitter",
+  "tree_sitter",
+  "tree_sitter_languages",
 ]
 dynamic = ["version"]
 
@@ -66,8 +67,6 @@ dependencies = [
   'pyinstaller',
   "gpt4all==0.3.4",
   "einops",
-  "tree_sitter",
-  "tree_sitter_languages",
 ]
 
 [tool.hatch.envs.default.scripts]
