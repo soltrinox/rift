@@ -188,7 +188,6 @@ export interface AgentChatRequest {
 }
 
 export interface AgentInputRequest {
-  id: string;
   msg: string;
   place_holder: string;
 }
@@ -331,6 +330,7 @@ export class MorphLanguageClient
         agent_params: { position, textDocument },
       }
       this.run(params)
+      this.refreshWebviewAgents()
     });
 
     this.changeLensEmitter = new vscode.EventEmitter<void>();
@@ -534,7 +534,7 @@ export class MorphLanguageClient
 
     this.webviewState.update((state) => ({
       ...state,
-      selectedAgentId: (agent.agent_type !== 'code_completion') ? agent_id : state.selectedAgentId,
+      selectedAgentId: (agent.agent_type !== 'code_completion') ? agent_id : state.selectedAgentId, //TODO handle for general cases
       agents: {
         ...state.agents,
         [agent_id]: new WebviewAgent(agent_type),
@@ -619,8 +619,11 @@ export class MorphLanguageClient
   }
 
   sendProgressChange(params: AgentProgress) {
-
+    console.log('progress')
+    console.log(params)
     let agentId = params.agent_id;
+
+    if(!(agentId in this.webviewState.value.agents)) throw new Error('progress for nonexistent agent')
 
     const response = params.payload?.response;
 
@@ -632,7 +635,7 @@ export class MorphLanguageClient
         ...state.agents,
         [agentId]: {
           ...state.agents[agentId],
-          type: params.agent_type,
+          type: params.agent_type, 
           tasks: params.tasks,
         },
       },
@@ -666,7 +669,7 @@ export class MorphLanguageClient
   }
 
   sendHasNotificationChange(agentId: string, hasNotification: boolean) {
-
+    if(!(agentId in this.webviewState.value.agents)) throw new Error('cant update nonexistent agent')
     this.webviewState.update(state => ({
       ...state,
       agents: {
@@ -814,9 +817,6 @@ class Agent {
                 }
     */
 
-    this.morph_language_client.sendHasNotificationChange(params.id, true)
-
-
     let response = await vscode.window.showInputBox({
       ignoreFocusOut: true,
       placeHolder: params.place_holder,
@@ -832,6 +832,7 @@ class Agent {
     // if(!params.id) throw new Error('no params')
   
     this.morph_language_client.sendChatHistoryChange(this.id, params.messages)
+    this.morph_language_client.sendHasNotificationChange(this.id, true)
 
     const agentType = this.agent_type;
     const agentId = this.id
@@ -863,10 +864,6 @@ class Agent {
     vscode.window.showInformationMessage(params.msg);
   }
   async handleProgress(params: AgentProgress) {
-    console.log("handleProgress");
-    console.log(params);
-    // chatProvider._view?.webview.postMessage({ type: "progress", data: params });
-    // logProvider._view?.webview.postMessage({ type: "progress", data: params });
     this.morph_language_client.sendProgressChange(params)
 
     if (this.agent_type === "code_completion") {

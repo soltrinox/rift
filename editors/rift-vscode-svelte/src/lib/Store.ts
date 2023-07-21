@@ -14,6 +14,7 @@ export class Store<T> {
   
     update(updater: (prevState: T) => T) {
       this.value = updater(this.value);
+      console.log('new state:', this.value)
       this.notifyListeners();
     }
   

@@ -11,15 +11,6 @@
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
   import { onMount } from "svelte";
-  import { IncomingMessage } from "http";
-  
-  // UNCOMMENT THE BELOW LINES AND REFRESH IF YOU NEED A HARD RESET:
-
-  onMount(() => {
-    console.log('onMount')
-    //get initial list of agents
-    vscode.postMessage({ type: "listAgents" });
-  });
 
 
   
