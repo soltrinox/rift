@@ -14,9 +14,8 @@ import aider_dev.aider.main as aider
 
 @dataclass
 class AiderAgentParams(ClientParams):
-    prompt_file: Optional[str] = None  # path to prompt file
+    args : List[str] = field(default_factory=list)
     debug: bool = False
-    model: Literal["gpt-3.5-turbo-0613", "gpt-4-0613"] = "gpt-3.5-turbo-0613"
 
 
 @dataclass
@@ -36,17 +35,14 @@ class AiderAgent(Agent):
     async def run(self) -> AsyncIterable[List[file_diff.FileChange]]:
         params = self.run_params
 
-        git_root = aider.get_git_root()
-        logger.info(f"Aider: Git root: {git_root}")
+        logger.info(f"Aider: args: {params.args}")
 
-        if params.prompt_file is None:
-            prompt = await ainput("\n> Prompt file not found. Please input a prompt.\n")
-        else:
-            with open(params.prompt_file, "r") as f:
-                prompt = f.read()
+        await ainput("\n> Press any key to continue.\n")
+        logger.info("Running aider")
 
-        logger.info("Starting aider with prompt:")
-        self.console.print(prompt, markup=True, highlight=True)
+        from concurrent import futures
+        with futures.ThreadPoolExecutor(1) as pool:
+            res = await asyncio.get_running_loop().run_in_executor(pool, aider.main, params.args)
 
         await ainput("\n> Press any key to continue.\n")
 
