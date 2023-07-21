@@ -6,7 +6,7 @@
   import RiftSvg from "../icons/RiftSvg.svelte";
   import Response from "./Response.svelte";
   import OmniBar from "./OmniBar.svelte";
-  
+
 
   let observer: MutationObserver;
   let chatWindow: HTMLDivElement;
@@ -14,6 +14,11 @@
 
   function scrollToBottomIfNearBottom() {
     if (fixedToBottom) chatWindow.scrollTo(0, chatWindow.scrollHeight);
+  }
+
+  $: {
+    console.log("change");
+    console.log(typeof chatWindow);
   }
 
   onMount(async () => {

@@ -400,6 +400,13 @@ class LspServer(BaseLspServer):
         if agent is not None:
             await agent.cancel()
 
+    @rpc_method("morph/delete")
+    async def on_delete(self, params: AgentIdParams):
+        agent: Agent = self.active_agents.pop(params.id)
+        await agent.cancel()
+        del agent
+
+
     @rpc_method("morph/listAgents")
     def on_list_agents(self, _: Any) -> List[AgentRegistryResult]:
         return AGENT_REGISTRY.list_agents()

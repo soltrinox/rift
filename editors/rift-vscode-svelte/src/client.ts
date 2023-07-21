@@ -22,7 +22,6 @@ import PubSub from "./lib/PubSub";
 import { DEFAULT_STATE, WebviewAgent, WebviewState } from "./types";
 import { Store } from "./lib/Store";
 
-
 let client: LanguageClient; //LanguageClient
 
 const DEFAULT_PORT = 7797;
@@ -126,7 +125,6 @@ interface RunAgentSyncResult {
   id: number;
   text: string;
 }
-
 
 export type AgentStatus =
   | "running"
@@ -319,7 +317,7 @@ export class MorphLanguageClient
           this.on_config_change.bind(this)
         )
       );
-          
+
       console.log("runAgent ran");
       const editor = vscode.window.activeTextEditor;
       if (!editor) throw new Error("No active text editor found")
@@ -635,7 +633,7 @@ export class MorphLanguageClient
         ...state.agents,
         [agentId]: {
           ...state.agents[agentId],
-          type: params.agent_type, 
+          type: params.agent_type,
           tasks: params.tasks,
         },
       },
@@ -830,7 +828,7 @@ class Agent {
     console.log(params);
     console.log("agentType:", this.agent_type);
     // if(!params.id) throw new Error('no params')
-  
+
     this.morph_language_client.sendChatHistoryChange(this.id, params.messages)
     this.morph_language_client.sendHasNotificationChange(this.id, true)
 

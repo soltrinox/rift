@@ -5,8 +5,8 @@ This file is adapted from  https://github.com/EdAyers/sss
 import asyncio
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, replace
-from typing import Any, Awaitable, Callable, Optional, Union
+from dataclasses import replace
+from typing import Any, Callable, Optional
 
 import rift.lsp.types as lsp
 from rift.util.misc import set_ctx
@@ -131,7 +131,6 @@ class LspServer(ExtraRpc):
         changes: lsp.DidChangeTextDocumentParams,
     ):
         """Override this method to handle document changes"""
-        pass
 
     @rpc_method("textDocument/didSave")
     def on_did_save(self, params: lsp.DidSaveTextDocumentParams):

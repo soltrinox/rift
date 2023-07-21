@@ -28,6 +28,16 @@
     hasInput = false;
   });
 
+  let hasInput = false;
+  state.subscribe((s) => {
+    if (s.selectedAgentId) {
+      if (s.agents[s.selectedAgentId].inputRequest) {
+        hasInput = true;
+      }
+    }
+    hasInput = false;
+  });
+
   function sendMessage() {
     if(!textarea) throw new Error()
     if ($state.isStreaming) {
@@ -59,7 +69,7 @@
 
     // clint.
     // console.log("updating state...");
-    
+
     // state.update((state: WebviewState) => ({
     //   ...state,
     //   agents: {
@@ -118,7 +128,7 @@
   }
 
 
-  
+
 </script>
 
 <!-- bg-[var(--vscode-panel-background)] -->

@@ -13,7 +13,7 @@
   import { onMount } from "svelte";
 
 
-  
+
   let isDone = false;
   // const vscodeState = vscode.getState();
   // console.log("attempting to access vscode state:");
@@ -50,7 +50,7 @@
 <!-- <svelte:window on:message={incomingMessage} /> -->
 
 <div class="h-screen flex flex-col">
-  <Header />
+  <!-- <Header /> -->
   <Chat />
   <OmniBar />
 </div>

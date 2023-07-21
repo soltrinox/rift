@@ -2,11 +2,9 @@
 Author: E.W.Ayers <contact@edayers.com>
 This file is adapted from  https://github.com/EdAyers/sss
 """
-import urllib.parse
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Any, Generic, Literal
+from typing import Any, Literal
 from typing import Optional
 from typing import Optional as opt
 from typing import Union

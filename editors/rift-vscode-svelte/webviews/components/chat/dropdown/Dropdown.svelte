@@ -60,8 +60,9 @@
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
+
 <div
-  class="absolute bottom-full left-0 bg-[var(--vscode-quickInput-background)] w-full z-20 px-2 drop-shadow-xl"
+  class="absolute bottom-full left-0 px-2 w-full z-20 drop-shadow-[0_-4px_16px_0px_rgba(0,0,0,0.36)]"
 >
   {#each filteredAgents as agent, index}
     <DropdownCard {agent} focused={index === activeId} {handleRunAgent} />
