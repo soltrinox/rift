@@ -166,11 +166,6 @@ class Selection(Range):
     anchor: Position
     active: Position
 
-    def __init__(self, anchor: Position, active: Position) -> None:
-        super().__init__(anchor, active)
-        self.anchor = anchor
-        self.active = active
-
     @classmethod
     def from_coordinates(cls, anchor_line: int, anchor_character: int, active_line: int, active_character: int) -> "Selection":
         anchor = Position(anchor_line, anchor_character)
@@ -183,7 +178,7 @@ class Selection(Range):
 
     @property
     def first(self) -> Position:
-        return self.anchor is not self.is_reversed else self.active
+        return self.anchor if not self.is_reversed else self.active
 
 
 @dataclass

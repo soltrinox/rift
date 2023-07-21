@@ -37,7 +37,8 @@ class CodeCompletionProgress(AgentProgress):
     thoughts: Optional[str] = None
     textDocument: Optional[lsp.TextDocumentIdentifier] = None
     cursor: Optional[lsp.Position] = None
-    ranges: Optional[RangeSet] = None
+    additive_ranges: Optional[RangeSet] = None
+    negative_ranges: Optional[RangeSet] = None
 
 
 # dataclass for representing the parameters of the code completion agent
@@ -55,7 +56,7 @@ class CodeCompletionAgentState(AgentState):
     document: lsp.TextDocumentItem
     cursor: lsp.Position
     params: CodeCompletionAgentParams
-    ranges: RangeSet = field(default_factory=RangeSet)
+    additive_ranges: RangeSet = field(default_factory=RangeSet)
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
@@ -75,7 +76,7 @@ class CodeCompletionAgent(Agent):
             model=model,
             document=server.documents[params.textDocument.uri],
             cursor=params.selection.first, # begin at the start of the selection
-            ranges=RangeSet(),
+            additive_ranges=RangeSet(),
             params=params,
         )
         obj = cls(
@@ -151,14 +152,14 @@ class CodeCompletionAgent(Agent):
                     with lsp.setdoc(self.state.document):
                         added_range = lsp.Range.of_pos(self.state.cursor, len(delta))
                         self.state.cursor += len(delta)
-                        self.state.ranges.add(added_range)
+                        self.state.additive_ranges.add(added_range)
                         # send progress here because VSCode highlighting is triggered by the range
                         await self.send_progress(
                             CodeCompletionProgress(
                                 response=None,
                                 textDocument=self.state.document,
                                 cursor=self.state.cursor,
-                                ranges=self.state.ranges,
+                                additive_ranges=self.state.additive_ranges,
                             )
                         )                        
                 all_text = "".join(all_deltas)
@@ -183,7 +184,7 @@ class CodeCompletionAgent(Agent):
                         response=None,
                         textDocument=self.state.document,
                         cursor=self.state.cursor,
-                        ranges=self.state.ranges,
+                        additive_ranges=self.state.additive_ranges,
                     )
                 )
 
@@ -192,7 +193,7 @@ class CodeCompletionAgent(Agent):
                 response=None,
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
-                ranges=self.state.ranges,
+                additive_ranges=self.state.additive_ranges,
             )
         )
 
@@ -203,7 +204,7 @@ class CodeCompletionAgent(Agent):
                 response=None,
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
-                ranges=self.state.ranges,
+                additive_ranges=self.state.additive_ranges,
             )
         )
 
@@ -214,7 +215,7 @@ class CodeCompletionAgent(Agent):
                 response=None,
                 textDocument=self.state.document,
                 cursor=self.state.cursor,
-                ranges=self.state.ranges,
+                additive_ranges=self.state.additive_ranges,
             )
         )
 
@@ -256,7 +257,7 @@ class CodeCompletionAgent(Agent):
                 # someone else caused this change
                 # [todo], in the below examples, we shouldn't cancel, but instead figure out what changed and restart the insertions with the new information.
                 with lsp.setdoc(self.state.document):
-                    self.state.ranges.apply_edit(c)
+                    self.state.additive_ranges.apply_edit(c)
                 if c.range is None:
                     await self.cancel("the whole document got replaced")
                 else:
@@ -296,10 +297,10 @@ class CodeCompletionAgent(Agent):
         logger.info(f"{self} user rejected result")
         # self.status = "done"
         with lsp.setdoc(self.state.document):
-            if self.state.ranges.is_empty:
+            if self.state.additive_ranges.is_empty:
                 logger.error("no ranges to reject")
             else:
-                edit = lsp.TextEdit(self.state.ranges.cover(), "")
+                edit = lsp.TextEdit(self.state.additive_ranges.cover(), "")
                 params = lsp.ApplyWorkspaceEditParams(
                     edit=lsp.WorkspaceEdit(
                         documentChanges=[
