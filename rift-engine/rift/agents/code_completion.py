@@ -44,7 +44,7 @@ class CodeCompletionProgress(AgentProgress):
 @dataclass
 class CodeCompletionAgentParams(AgentRunParams):
     textDocument: lsp.TextDocumentIdentifier
-    position: Optional[lsp.Position]
+    selection: Optional[lsp.Selection]
     instructionPrompt: Optional[str] = None
 
 
@@ -74,7 +74,7 @@ class CodeCompletionAgent(Agent):
         state = CodeCompletionAgentState(
             model=model,
             document=server.documents[params.textDocument.uri],
-            cursor=params.position,
+            cursor=params.selection.first, # begin at the start of the selection
             ranges=RangeSet(),
             params=params,
         )

@@ -179,7 +179,11 @@ class Selection(Range):
 
     @property
     def is_reversed(self) -> bool:
-        return self.anchor == self.end    
+        return self.anchor == self.end
+
+    @property
+    def first(self) -> Position:
+        return self.anchor is not self.is_reversed else self.active
 
 
 @dataclass
