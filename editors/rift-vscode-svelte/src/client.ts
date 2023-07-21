@@ -206,7 +206,7 @@ const GREEN = vscode.window.createTextEditorDecorationType({
   backgroundColor: "rgba(0,255,0,0.1)",
 });
 
-const code_completion_send_progress = async (params: any, agent: Agent) => {
+const code_completion_send_progress_handler = async (params: any, agent: Agent) => {
   if (params.tasks) {
     //logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
     if (params.tasks.task.status) {
