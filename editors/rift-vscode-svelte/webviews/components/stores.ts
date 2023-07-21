@@ -8,6 +8,8 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
   window.addEventListener('message', (event:any) => {
     if(event.data.type != 'stateUpdate') throw new Error(`Message passed to webview that is not stateUpdate: ${event.data.type}`)
     const newState = event.data.data as WebviewState
+    console.log('stateUpdate:')
+    console.log(newState)
     set(newState)
   })
 })

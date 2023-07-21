@@ -79,7 +79,6 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         case "listAgents":
           this.morph_language_client.refreshWebviewAgents()
           break;
-
         // Handle 'runAgent' message
         case "runAgent":
           // console.log("Getting list of available agents")
@@ -103,7 +102,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           break;
 
         case "chatMessage": {
-          console.log("Sending publish message", params.message);
+          console.log("Sending publish message", `${params.agent_type}_${params.agent_id}_chat_request`);
           
           this.morph_language_client.sendChatHistoryChange(params.agent_id, params.messages)
           PubSub.pub(
@@ -115,7 +114,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         }
 
         case "inputRequest": {
-          console.log("Sending publish message", params.message);
+          console.log("Sending publish message", `${params.agent_type}_${params.agent_id}_input_request`);
           PubSub.pub(
             `${params.agent_type}_${params.agent_id}_input_request`,
             params

@@ -53,14 +53,15 @@ export type AgentProgress = {
 export class WebviewAgent {
   type: string;
   hasNotification: boolean;    //TODO does this have to be nullable?
-  chatHistory?: ChatMessage[];
+  chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
+  // isChatAgent: boolean = false;
 
   constructor(type: string, hasNotification?: boolean, chatHistory?: ChatMessage[], inputRequest?: InputRequest | null, tasks?: Tasks){
     this.type = type;
     this.hasNotification = hasNotification ?? false;
-    this.chatHistory = chatHistory;
+    this.chatHistory = chatHistory ?? [];
     this.inputRequest = inputRequest;
     this.tasks = tasks;
   }

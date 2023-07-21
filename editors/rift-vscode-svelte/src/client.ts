@@ -185,7 +185,6 @@ export type ChatMessage = {
 
 export interface AgentChatRequest {
   messages: ChatMessage[];
-  id: string;
 }
 
 export interface AgentInputRequest {
@@ -289,7 +288,7 @@ export class MorphLanguageClient
   changeLensEmitter: vscode.EventEmitter<void>;
   onDidChangeCodeLenses: vscode.Event<void>;
   agents: { [id: string]: Agent } = {};
-  protected webviewState = new Store<WebviewState>(DEFAULT_STATE)
+  private webviewState = new Store<WebviewState>(DEFAULT_STATE)
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
@@ -321,11 +320,11 @@ export class MorphLanguageClient
           this.on_config_change.bind(this)
         )
       );
-
+          
       console.log("runAgent ran");
       const editor = vscode.window.activeTextEditor;
       if (!editor) throw new Error("No active text editor found")
-      let textDocument = { uri:  editor.document.uri.toString(), version: 0 };
+      let textDocument = { uri: editor.document.uri.toString(), version: 0 };
       let position = editor.selection.active;
       const params: ChatAgentParams = {
         agent_type: "rift_chat",
@@ -405,7 +404,7 @@ export class MorphLanguageClient
   is_running() {
     return this.client && this.client.state == State.Running;
   }
-  
+
   private async list_agents() {
     if (!this.client) throw new Error();
     const result: AgentRegistryItem[] = await this.client.sendRequest(
@@ -418,7 +417,7 @@ export class MorphLanguageClient
   public async refreshWebviewAgents() {
     console.log('refreshing webview agents')
     const availableAgents = await this.list_agents()
-    this.webviewState.update(state => ({...state, availableAgents}))
+    this.webviewState.update(state => ({ ...state, availableAgents }))
   }
 
   async create_client() {
@@ -460,11 +459,12 @@ export class MorphLanguageClient
     });
     await this.client.start();
     console.log("rift-engine started");
-    
+
   }
 
   async on_config_change(_args: any) {
-    const x = await this.client?.sendRequest(
+    if (!this.client) throw new Error('no client')
+    const x = await this.client.sendRequest(
       "workspace/didChangeConfiguration",
       {}
     );
@@ -534,6 +534,7 @@ export class MorphLanguageClient
 
     this.webviewState.update((state) => ({
       ...state,
+      selectedAgentId: (agent.agent_type !== 'code_completion') ? agent_id : state.selectedAgentId,
       agents: {
         ...state.agents,
         [agent_id]: new WebviewAgent(agent_type),
@@ -580,7 +581,7 @@ export class MorphLanguageClient
 
   async restart_agent(agentId: string) {
     if (!this.client) throw new Error();
-    if(!(agentId in this.webviewState.value.agents)) throw new Error(`tried to restart agent ${agentId} but couldn't find it in agents object`)
+    if (!(agentId in this.webviewState.value.agents)) throw new Error(`tried to restart agent ${agentId} but couldn't find it in agents object`)
     const agent_type = this.webviewState.value.agents[agentId].type
     let result: RunAgentResult = await this.client.sendRequest("morph/restart_agent", agentId);
     this.webviewState.update((state) => ({
@@ -595,17 +596,15 @@ export class MorphLanguageClient
 
 
   sendChatHistoryChange(agentId: string, newChatHistory: ChatMessage[]) {
-    const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory
+    // const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory
+    console.log(`updating chat history for ${agentId}`)
 
-    if (
-      currentChatHistory &&
-      currentChatHistory.length < 1
-    ) {
-      if (newChatHistory.length > 1) {
-        throw new Error("No previous messages on client for this ID, but server is giving multiple chat messages.")
-      }
-
-      this.webviewState.update(state => ({
+    // if (newChatHistory.length > 1) {
+    //   throw new Error("No previous messages on client for this ID, but server is giving multiple chat messages.")
+    // }
+    this.webviewState.update(state => {
+      if (!(agentId in state.agents)) throw new Error('changing chatHistory for nonexistent agent')
+      return ({
         ...state,
         agents: {
           ...state.agents,
@@ -614,8 +613,8 @@ export class MorphLanguageClient
             chatHistory: [...newChatHistory],
           },
         },
-      }));
-    }
+      })
+    });
 
   }
 
@@ -627,7 +626,7 @@ export class MorphLanguageClient
 
     if (response) this.webviewState.update(state => ({ ...state, streamingText: response }))
 
-    this.webviewState.update((state) => ({
+    this.webviewState.update(state => ({
       ...state,
       agents: {
         ...state.agents,
@@ -682,9 +681,9 @@ export class MorphLanguageClient
   sendSelectedAgentChange(agentId: string) {
 
     this.webviewState.update(state => {
-      if(!(agentId in state.agents)) throw new Error('tried to change selectedAgentId to an unavailable agent.')
+      if (!(agentId in state.agents)) throw new Error('tried to change selectedAgentId to an unavailable agent.')
 
-      return ({...state, selectedAgentId: agentId})
+      return ({ ...state, selectedAgentId: agentId })
     })
   }
 
@@ -828,21 +827,14 @@ class Agent {
   async handleChatRequest(params: AgentChatRequest) {
     console.log("handleChatRequest");
     console.log(params);
-    // chatProvider._view?.webview.postMessage({
-    //   type: "chat_request",
-    //   data: { ...params, id: this.id },
-    // });
-    // logProvider._view?.webview.postMessage({
-    //   type: "chat_request",
-    //   data: { ...params, id: this.id },
-    // });
-    this.morph_language_client.sendChatHistoryChange(params.id, params.messages)
-
+    console.log("agentType:", this.agent_type);
+    // if(!params.id) throw new Error('no params')
+  
+    this.morph_language_client.sendChatHistoryChange(this.id, params.messages)
 
     const agentType = this.agent_type;
     const agentId = this.id
 
-    console.log("agentType:", agentType);
     console.log("agentId:", this.id);
 
     // return "BLAH BLAH"
@@ -887,3 +879,33 @@ class Agent {
     throw new Error("no logic written for handle result yet")
   }
 }
+
+// class ChatAgent extends Agent {
+//   status: AgentStatus;
+//   green: vscode.TextEditorDecorationType;
+//   ranges: vscode.Range[] = [];
+//   onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
+//   onStatusChange: vscode.Event<AgentStatus>;
+//   morph_language_client: MorphLanguageClient
+
+//   constructor(
+//     morph_language_client: MorphLanguageClient,
+//     public readonly id: string,
+//     public readonly agent_type: string,
+//     public readonly position: vscode.Position,
+//     public textDocument: TextDocumentIdentifier,
+//     public params: any
+//   ) {
+//     this.morph_language_client = morph_language_client;
+//     this.id = id;
+//     this.status = "running";
+//     this.agent_type = agent_type;
+//     this.position = position;
+//     this.textDocument = textDocument;
+//     this.green = vscode.window.createTextEditorDecorationType({
+//       backgroundColor: "rgba(0,255,0,0.1)",
+//     });
+//     this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
+//     this.onStatusChange = this.onStatusChangeEmitter.event;
+//   }
+// }

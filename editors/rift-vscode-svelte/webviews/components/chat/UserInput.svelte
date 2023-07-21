@@ -1,7 +1,7 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
   import UserSvg from "../icons/UserSvg.svelte";
-  import { loading, state } from "../stores";
+  import {state } from "../stores";
   import type { WebviewState } from "../../../src/types";
   export let value: string = "";
 
