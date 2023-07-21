@@ -152,6 +152,15 @@ class CodeCompletionAgent(Agent):
                         added_range = lsp.Range.of_pos(self.state.cursor, len(delta))
                         self.state.cursor += len(delta)
                         self.state.ranges.add(added_range)
+                        # send progress here because VSCode highlighting is triggered by the range
+                        await self.send_progress(
+                            CodeCompletionProgress(
+                                response=None,
+                                textDocument=self.state.document,
+                                cursor=self.state.cursor,
+                                ranges=self.state.ranges,
+                            )
+                        )                        
                 all_text = "".join(all_deltas)
                 logger.info(f"{self} finished streaming {len(all_text)} characters")
                 await self.send_progress()
