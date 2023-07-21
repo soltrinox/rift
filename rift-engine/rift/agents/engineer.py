@@ -29,10 +29,13 @@ try:
     import gpt_engineer
     import gpt_engineer.chat_to_files
     import gpt_engineer.db
+
 except ImportError:
     raise Exception("`gpt_engineer` not found. Try `pip install gpt-engineer`")
 
 UPDATES_QUEUE = asyncio.Queue()
+INPUT_PROMPT_QUEUE = asyncio.Queue()
+INPUT_RESPONSE_QUEUE = asyncio.Queue()
 SEEN = set()
 
 from gpt_engineer.ai import AI, fallback_model
@@ -41,14 +44,29 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS
 from gpt_engineer.steps import Config as StepsConfig
+import threading
 import json
-
 
 logger = logging.getLogger(__name__)
 
+def __popup_input(prompt: str) -> str:
+    print("Started popup input")
+    asyncio.run(INPUT_PROMPT_QUEUE.put(prompt))
+    print("Pushed popup input")
+
+    print("Waiting on response")
+
+    while INPUT_RESPONSE_QUEUE.empty():
+        pass
+    resp = asyncio.run(INPUT_RESPONSE_QUEUE.get())
+    print("Got response")
+    return resp
+
+
+gpt_engineer.steps.input = __popup_input
 
 async def _main(
-    project_path: str = "/Users/jwd2488/gpt-engineer/benchmark/file_explorer",
+    project_path: str = "/home/matt/projects/gpt-engineer/benchmark/file_explorer",
     model: str = "gpt-4",
     temperature: float = 0.1,
     steps_config: StepsConfig = StepsConfig.DEFAULT,
@@ -165,6 +183,28 @@ class EngineerAgent(Agent):
             agent_id=params.agent_id,
             server=server,
         )
+
+        def __run_popup_thread():
+            print("Started handler thread")
+            while True:
+                print("Waiting on input")
+                while INPUT_PROMPT_QUEUE.empty():
+                    pass
+                prompt = asyncio.run(INPUT_PROMPT_QUEUE.get())
+                print("Got input, sending to request input")
+
+                response = asyncio.run(obj.request_input(
+                    RequestInputRequest(
+                        msg=prompt,
+                        place_holder="Please write me a game of pong in python",
+                    )
+                ))
+                print("Got user input")
+                asyncio.run(INPUT_RESPONSE_QUEUE.put(response))
+                print("Sent to request input")
+
+        threading.Thread(target=__run_popup_thread).start()
+
         return obj
     
 
