@@ -86,6 +86,15 @@ export interface RunAgentParams {
   agent_params: any;
 }
 
+export interface ChatAgentParams extends RunAgentParams {
+  agent_params: {
+    position: vscode.Position,
+    textDocument: {
+      uri: string;
+      version: number;
+    }
+  }
+}
 // interface RunAgentResult {
 //     id: number
 //     agentId: string | null
@@ -313,9 +322,23 @@ export class MorphLanguageClient
         )
       );
 
+      console.log("runAgent ran");
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        console.error("No active text editor found");
+        return;
+      }
+      let textDocument = { uri:  editor.document.uri.toString(), version: 0 };
+      let position = editor.selection.active;
+
+      const params: ChatAgentParams = {
+        agent_type: "rift_chat",
+        agent_params: { position, textDocument },
+      }
+
       this.run({
         agent_type: "rift_chat",
-        agent_params: {},
+        agent_params: {}
       })
 
       
@@ -472,22 +495,24 @@ export class MorphLanguageClient
       throw new Error("no callback set");
     };
 
-  async run_chat(
-    params: RunChatParams,
-    callback: (progress: ChatAgentProgress) => any
-  ) {
-    console.log("run chat");
-    if (!this.client) throw new Error();
-    this.morphNotifyChatCallback = callback;
-    this.client.onNotification(
-      "morph/chat_progress",
-      this.morphNotifyChatCallback.bind(this)
-    );
 
-    const result = await this.client.sendRequest("morph/run_chat", params);
-    // note this returns fast and then the updates are sent via notifications
-    return "starting...";
-  }
+  // deprecated
+  // async run_chat(
+  //   params: RunChatParams,
+  //   callback: (progress: ChatAgentProgress) => any
+  // ) {
+  //   console.log("run chat");
+  //   if (!this.client) throw new Error();
+  //   this.morphNotifyChatCallback = callback;
+  //   this.client.onNotification(
+  //     "morph/chat_progress",
+  //     this.morphNotifyChatCallback.bind(this)
+  //   );
+
+  //   const result = await this.client.sendRequest("morph/run_chat", params);
+  //   // note this returns fast and then the updates are sent via notifications
+  //   return "starting...";
+  // }
 
   async run(params: RunAgentParams) {
     if (!this.client) throw new Error();
