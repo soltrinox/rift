@@ -4,11 +4,11 @@ import * as vscode from "vscode";
 import { MorphLanguageClient, AgentProgress } from "./client";
 // import { join } from 'path';
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
-import { ChatProvider } from "./elements/ChatProvider";
-import { LogProvider } from "./elements/LogProvider";
+import { WebviewProvider } from "./elements/WebviewProvider";
 
-export let chatProvider: ChatProvider;
-export let logProvider: LogProvider;
+
+export let chatProvider: WebviewProvider;
+export let logProvider: WebviewProvider;
 // export let morph_language_client: MorphLanguageClient;
 
 // This method is called when your extension is activated
@@ -20,8 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCodeLensProvider("*", morph_language_client)
   );
 
-  chatProvider = new ChatProvider(context.extensionUri, morph_language_client);
-  logProvider = new LogProvider(context.extensionUri, morph_language_client);
+  chatProvider = new WebviewProvider("Chat", context.extensionUri, morph_language_client);
+  logProvider = new WebviewProvider("Logs", context.extensionUri, morph_language_client);
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)

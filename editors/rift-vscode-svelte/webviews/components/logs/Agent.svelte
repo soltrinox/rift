@@ -9,7 +9,7 @@
     import EllipsisDarkSvg from "../icons/EllipsisDarkSvg.svelte";
     import Log from "./Log.svelte";
     import { state } from "../stores";
-    import type { SvelteStore } from "../../../src/types";
+    import type { WebviewState } from "../../../src/types";
 
     let expanded = true;
     export let id: string = "";
@@ -18,6 +18,10 @@
     export let hasNotification = false;
 
     $: isSelected = id == selectedId;
+
+    let subtasks = $state.agents[id].tasks?.subtasks
+    $: subtasks = $state.agents[id].tasks?.subtasks
+
 
     let doneAgent = false;
 
@@ -41,22 +45,8 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        hasNotification = false;
-        state.update((state) => ({
-            ...state,
-            selectedAgentId: id,
-            agents: {
-                ...state.agents,
-                [id]: {
-                    ...state.agents[id],
-                    hasNotification: false,
-                },
-            },
-        }));
-        vscode.postMessage({ type: "selectedAgentId", selectedAgentId: id });
 
-        console.log("This is the state - Logs");
-        console.log($state);
+        vscode.postMessage({ type: "selectedAgentId", agentId: id });
     };
 
     const handleCancelAgent = (e: MouseEvent) => {
@@ -64,17 +54,17 @@
     };
     const handleDeleteAgent = (e: MouseEvent) => {
         //vscode.postMessage({ type: "cancelAgent", id: id });
-        state.update((state) => {
-            // Create a copy of the agents object without the specified agentId
-            const updatedAgents = { ...state.agents };
-            delete updatedAgents[id];
+        // state.update((state) => {
+        //     // Create a copy of the agents object without the specified agentId
+        //     const updatedAgents = { ...state.agents };
+        //     delete updatedAgents[id];
 
-            // Update the state with the new agents object
-            return {
-                ...state,
-                agents: updatedAgents,
-            };
-        });
+        //     // Update the state with the new agents object
+        //     return {
+        //         ...state,
+        //         agents: updatedAgents,
+        //     };
+        // });
     };
 </script>
 
@@ -124,7 +114,7 @@
             </div>
         </div>
 
-        <div class="dropdown inline-flex left-auto flex">
+        <div class="dropdown left-auto flex">
             <div class="flex items-center">
                 <div class="dropdown" on:focusout={handleDropdownFocusLoss}>
                     <button class="btn py-2.5" on:click={handleDropdownClick}>
@@ -160,8 +150,8 @@
         </div>
     </div>
     <div class="border-l ml-6 my-2 space-y-2" hidden={!expanded}>
-        {#if $state.agents[id].tasks.subtasks.length > 0}
-            {#each $state.agents[id].tasks.subtasks as subtask}
+        {#if subtasks}
+            {#each subtasks as subtask}
                 <Log {subtask} />
             {/each}
         {/if}

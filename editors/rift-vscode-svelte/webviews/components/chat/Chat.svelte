@@ -1,14 +1,16 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
-  import { loading, state, progressResponse } from "../stores";
+  import {  state } from "../stores";
   import UserSvg from "../icons/UserSvg.svelte";
   import UserInput from "./UserInput.svelte";
   import RiftSvg from "../icons/RiftSvg.svelte";
   import Response from "./Response.svelte";
   import OmniBar from "./OmniBar.svelte";
 
+
   let observer: MutationObserver;
   let chatWindow: HTMLDivElement;
+  let fixedToBottom: boolean;
 
   function scrollToBottomIfNearBottom() {
     if (fixedToBottom) chatWindow.scrollTo(0, chatWindow.scrollHeight);
@@ -18,7 +20,6 @@
     console.log("change");
     console.log(typeof chatWindow);
   }
-  let fixedToBottom: boolean;
 
   onMount(async () => {
     console.log("awaiting tick");
@@ -28,10 +29,7 @@
     observer = new MutationObserver(scrollToBottomIfNearBottom);
     observer.observe(chatWindow, { childList: true, subtree: true });
 
-    fixedToBottom = Boolean(
-      chatWindow.clientHeight + chatWindow.scrollTop >=
-        chatWindow.scrollHeight - 15
-    );
+    fixedToBottom = true
 
     chatWindow.addEventListener("scroll", function () {
       if (!chatWindow.scrollTop || !chatWindow.scrollHeight) {
@@ -42,13 +40,14 @@
       }
       fixedToBottom = Boolean(
         chatWindow.clientHeight + chatWindow.scrollTop >=
-          chatWindow.scrollHeight - 15
+          chatWindow.scrollHeight - 10
       );
     });
   });
   onDestroy(() => {
     observer.disconnect();
   });
+
 </script>
 
 <div
@@ -67,8 +66,8 @@
         <Response value={item.content} />
       {/if}
     {/each}
-    {#if $loading}
-      <Response value={$progressResponse} />
+    {#if $state.isStreaming}
+      <Response value={$state.streamingText} {scrollToBottomIfNearBottom} last={true} />
     {/if}
   {/if}
 </div>

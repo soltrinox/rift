@@ -1,13 +1,9 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
-  import UserSvg from "../icons/UserSvg.svelte";
-  import { loading, state, dropdownOpen } from "../stores";
+  import {dropdownOpen, state} from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
-  import type { SvelteStore } from "../../../src/types";
-  import { append } from "svelte/internal";
 
   let isFocused = true;
-  console.log("init");
 
   function resize(event: Event) {
     let targetElement = event.target as HTMLElement;
@@ -15,7 +11,9 @@
     targetElement.style.height = `${targetElement.scrollHeight}px`;
   }
 
-  let textarea: HTMLTextAreaElement;
+  let inputValue:string = ''
+
+  let textarea: HTMLTextAreaElement|undefined;
 
   let hasInput = false;
   state.subscribe((s) => {
@@ -28,44 +26,47 @@
   });
 
   function sendMessage() {
-    if ($loading) {
+    if(!textarea) throw new Error()
+    if ($state.isStreaming) {
       console.log("cannot send messages while ai is responding");
       return;
     }
     textarea.blur();
-    loading.set(true);
 
     console.log("chat history");
     console.log($state.agents[$state.selectedAgentId].chatHistory);
 
     let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory;
-    appendedMessages.push({ role: "user", content: textarea.value });
+    appendedMessages?.push({ role: "user", content: textarea.value });
     console.log("appendedMessages");
     console.log(appendedMessages);
 
-    let message = {
+    if(!$state.agents[$state.selectedAgentId]) throw new Error()
+
+
+
+
+    vscode.postMessage({
       type: "chatMessage",
       agent_id: $state.selectedAgentId,
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
       message: textarea.value,
-    };
+    });
 
-    console.log("sendMEssage", message);
-
-    vscode.postMessage(message);
-
+    // clint.
     // console.log("updating state...");
-    state.update((state: SvelteStore) => ({
-      ...state,
-      agents: {
-        ...state.agents,
-        [state.selectedAgentId]: {
-          ...state.agents[state.selectedAgentId],
-          chatHistory: appendedMessages,
-        },
-      },
-    }));
+
+    // state.update((state: WebviewState) => ({
+    //   ...state,
+    //   agents: {
+    //     ...state.agents,
+    //     [state.selectedAgentId]: {
+    //       ...state.agents[state.selectedAgentId],
+    //       chatHistory: appendedMessages,
+    //     },
+    //   },
+    // }));
     textarea.value = "";
     textarea.focus();
     textarea.style.height = "auto";
@@ -73,15 +74,16 @@
   }
 
   function handleValueChange(e: Event) {
-    console.log("handleValueChange");
+    if(!textarea) throw new Error()
+    inputValue = textarea.value
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
-      console.log("HOITYTOITY");
       dropdownOpen.set(true);
     } else dropdownOpen.set(false);
   }
 
   function handleKeyDown(e: KeyboardEvent) {
+    if(!textarea) throw new Error()
     if (e.key === "Enter") {
       // 13 is the Enter key code
       e.preventDefault(); // Prevent default Enter key action
@@ -97,6 +99,7 @@
   }
 
   function handleRunAgent(agent_type: string) {
+    if(!textarea) throw new Error()
     if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
       throw new Error("attempt to run unavailable agent");
     vscode.postMessage({
@@ -110,6 +113,9 @@
     textarea.value = ""; //clear omnibar text
     dropdownOpen.set(false);
   }
+
+
+
 </script>
 
 <!-- bg-[var(--vscode-panel-background)] -->
@@ -144,7 +150,7 @@
     </div>
   </div>
   {#if $dropdownOpen}
-    <Dropdown inputValue={textarea.value} {handleRunAgent} />
+  <Dropdown {inputValue} {handleRunAgent} />
   {/if}
 </div>
 
