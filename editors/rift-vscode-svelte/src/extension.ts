@@ -24,10 +24,10 @@ export function activate(context: vscode.ExtensionContext) {
   logProvider = new WebviewProvider("Logs", context.extensionUri, morph_language_client);
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("RiftChat", chatProvider)
+    vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, {webviewOptions: {retainContextWhenHidden: true}})
   );
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("RiftLogs", logProvider)
+    vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, {webviewOptions: {retainContextWhenHidden: true}})
   );
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
