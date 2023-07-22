@@ -412,6 +412,11 @@ export class MorphLanguageClient
     return result;
   }
 
+  public refreshWebviewState() {
+    chatProvider.stateUpdate(this.webviewState.value);
+    logProvider.stateUpdate(this.webviewState.value);
+  }
+
   public async refreshWebviewAgents() {
     console.log('refreshing webview agents')
     const availableAgents = await this.list_agents()

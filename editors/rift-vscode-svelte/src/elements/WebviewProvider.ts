@@ -55,7 +55,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     // Handles messages received from the webview
     webviewView.webview.onDidReceiveMessage(async (params: any) => {
       if (!this._view) throw new Error("no view");
-      console.log("ChatProvider.ts received message: ", params);
+      console.log("WebviewProvider.ts received message: ", params);
       switch (params.type) {
         case "selectedAgentId":
           this.morph_language_client.sendSelectedAgentChange(params.selectedAgentId)
@@ -116,12 +116,17 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           this.morph_language_client.restart_agent(params.agentId)
           break;
         }
+        case "refreshState": {
+          this.morph_language_client.refreshWebviewState()
+          break;
+        }
 
         default:
-          console.log("no case match for ", params.type, " in ChatProvider.ts");
+          console.log("no case match for ", params.type, " in WebviewProvider.ts");
       }
     });
   }
+
 
   public revive(panel: vscode.WebviewView) {
     this._view = panel;
@@ -186,7 +191,6 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
                     <script src="${microlightUri}" nonce="${nonce}"></script>
                     <link href="${cssUri}" rel="stylesheet">
                     <script nonce="${nonce}">
-                        console.log("TESDKDFSJHALDFKDHSFLKJAHSFKJHSDAFL");
                         const vscode = acquireVsCodeApi();
                     </script>
                 </head>

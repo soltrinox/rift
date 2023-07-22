@@ -12,6 +12,7 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
   }
   
   window.addEventListener('message', handler)
+  vscode.postMessage({type: "refreshState"})
   
   return () => window.removeEventListener('message', handler)
 })
