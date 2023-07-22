@@ -9,7 +9,7 @@ export interface Tasks {
 }
 
 export class ChatMessage {
-  constructor(public role: "user" | "assistant", public content: string) {}
+  constructor(public role: "user" | "assistant", public content: string) { }
 }
 
 export type InputRequest = {
@@ -52,17 +52,19 @@ export type AgentProgress = {
 
 export class WebviewAgent {
   type: string;
-  hasNotification: boolean;    //TODO does this have to be nullable?
+  hasNotification: boolean;
+  isDeleted: boolean;
   chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
   // isChatAgent: boolean = false;
-  isStreaming:boolean = false;
-  streamingText: string =  ''
+  isStreaming: boolean = false;
+  streamingText: string = ''
 
-  constructor(type: string, hasNotification?: boolean, chatHistory?: ChatMessage[], inputRequest?: InputRequest | null, tasks?: Tasks){
+  constructor(type: string, hasNotification?: boolean, chatHistory?: ChatMessage[], inputRequest?: InputRequest | null, tasks?: Tasks) {
     this.type = type;
     this.hasNotification = hasNotification ?? false;
+    this.isDeleted = false;
     this.chatHistory = chatHistory ?? [];
     this.inputRequest = inputRequest;
     this.tasks = tasks;

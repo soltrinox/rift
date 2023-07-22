@@ -582,6 +582,28 @@ export class MorphLanguageClient
     return response;
   }
 
+  async delete(params: AgentId) {
+    if (!this.client) throw new Error();
+    let response = await this.client.sendRequest("morph/cancel", params);
+    this.webviewState.update((state) => {
+      const updatedAgents = { ...state.agents }
+      updatedAgents[params.id]
+      return {
+        ...state,
+        agents: {
+          ...state.agents,
+          [params.id]: {
+            ...state.agents[params.id],
+            isDeleted: true,
+          },
+        }
+      }
+    })
+
+
+    return response;
+  }
+
   async restart_agent(agentId: string) {
     if (!this.client) throw new Error();
     if (!(agentId in this.webviewState.value.agents)) throw new Error(`tried to restart agent ${agentId} but couldn't find it in agents object`)
@@ -626,11 +648,11 @@ export class MorphLanguageClient
     console.log(params)
     let agentId = params.agent_id;
 
-    if(!(agentId in this.webviewState.value.agents)) throw new Error('progress for nonexistent agent')
+    if (!(agentId in this.webviewState.value.agents)) throw new Error('progress for nonexistent agent')
 
     const response = params.payload?.response;
 
-    if (response) this.webviewState.update(state => ({ ...state, agents: {...state.agents, [agentId]: {...state.agents[agentId], streamingText: response, isStreaming: true}} }))
+    if (response) this.webviewState.update(state => ({ ...state, agents: { ...state.agents, [agentId]: { ...state.agents[agentId], streamingText: response, isStreaming: true } } }))
 
     this.webviewState.update(state => ({
       ...state,
@@ -673,7 +695,7 @@ export class MorphLanguageClient
   }
 
   sendHasNotificationChange(agentId: string, hasNotification: boolean) {
-    if(!(agentId in this.webviewState.value.agents)) throw new Error('cant update nonexistent agent')
+    if (!(agentId in this.webviewState.value.agents)) throw new Error('cant update nonexistent agent')
     this.webviewState.update(state => ({
       ...state,
       agents: {
@@ -820,6 +842,7 @@ class Agent {
                     }));
                 }
     */
+    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
 
     let response = await vscode.window.showInputBox({
       ignoreFocusOut: true,
@@ -830,6 +853,7 @@ class Agent {
   }
 
   async handleChatRequest(params: AgentChatRequest) {
+    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
     console.log("handleChatRequest");
     console.log(params);
     console.log("agentType:", this.agent_type);
@@ -862,12 +886,14 @@ class Agent {
     return chatRequest;
   }
   async handleUpdate(params: AgentUpdate) {
+    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
     console.log("handleUpdate");
     console.log(params);
 
     vscode.window.showInformationMessage(params.msg);
   }
   async handleProgress(params: AgentProgress) {
+    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
     this.morph_language_client.sendProgressChange(params)
 
     if (this.agent_type === "code_completion") {
@@ -875,6 +901,7 @@ class Agent {
     }
   }
   async handleResult(params: AgentResult) {
+    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
     console.log("handleResult");
     console.log(params);
 
