@@ -58,7 +58,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       console.log("WebviewProvider.ts received message: ", params);
       switch (params.type) {
         case "selectedAgentId":
-          this.morph_language_client.sendSelectedAgentChange(params.selectedAgentId)
+          this.morph_language_client.sendSelectedAgentChange(params.agentId)
           break;
         case "copyText":
           console.log("recieved copy in webview");

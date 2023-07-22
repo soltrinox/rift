@@ -689,7 +689,7 @@ export class MorphLanguageClient
   sendSelectedAgentChange(agentId: string) {
 
     this.webviewState.update(state => {
-      if (!(agentId in state.agents)) throw new Error('tried to change selectedAgentId to an unavailable agent.')
+      if (!(agentId in state.agents)) throw new Error(`tried to change selectedAgentId to an unavailable agent. tried to change to ${agentId} but available agents are: ${Object.keys(state.agents)}`)
 
       return ({ ...state, selectedAgentId: agentId })
     })
