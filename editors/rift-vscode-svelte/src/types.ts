@@ -57,6 +57,8 @@ export class WebviewAgent {
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
   // isChatAgent: boolean = false;
+  isStreaming:boolean = false;
+  streamingText: string =  ''
 
   constructor(type: string, hasNotification?: boolean, chatHistory?: ChatMessage[], inputRequest?: InputRequest | null, tasks?: Tasks){
     this.type = type;
@@ -74,8 +76,6 @@ export type WebviewState = {
     [id: string]: WebviewAgent;
   };
   availableAgents: AgentRegistryItem[];
-  isStreaming: boolean;
-  streamingText: string //FIXME should just be able to update the last ChatMessage of an agent's chat history
   //    logs: { role: "user" | "assistant", content: string }[]
 };
 
@@ -93,6 +93,4 @@ export const DEFAULT_STATE: WebviewState = {
     agent_icon: '',
     display_name: 'Rift Chat'
   }],
-  isStreaming: false,
-  streamingText: ''
 }

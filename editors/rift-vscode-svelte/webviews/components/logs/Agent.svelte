@@ -103,7 +103,7 @@
                 <div>{name}</div>
             </div>
             <div
-                class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
+                class="relative w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
             >
                 {#if hasNotification}
                     <div

@@ -27,7 +27,7 @@
 
   function sendMessage() {
     if(!textarea) throw new Error()
-    if ($state.isStreaming) {
+    if ($state.agents[$state.selectedAgentId].isStreaming) {
       console.log("cannot send messages while ai is responding");
       return;
     }

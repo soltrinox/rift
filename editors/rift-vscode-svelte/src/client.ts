@@ -630,7 +630,7 @@ export class MorphLanguageClient
 
     const response = params.payload?.response;
 
-    if (response) this.webviewState.update(state => ({ ...state, streamingText: response, isStreaming: true }))
+    if (response) this.webviewState.update(state => ({ ...state, agents: {...state.agents, [agentId]: {...state.agents[agentId], streamingText: response, isStreaming: true}} }))
 
     this.webviewState.update(state => ({
       ...state,
@@ -651,13 +651,14 @@ export class MorphLanguageClient
       this.webviewState.update((prevState) => {
         return {
           ...prevState,
-          isStreaming: false,
           agents: {
             ...prevState.agents,
             [agentId]: {
+              ...prevState.agents[agentId],
               agent_id: agentId,
               agent_type: params.agent_type,
-              ...prevState.agents[agentId],
+              isStreaming: false,
+              streamingText: '',
               tasks: params.tasks,
               chatHistory: [
                 ...prevState.agents[agentId].chatHistory ?? [],

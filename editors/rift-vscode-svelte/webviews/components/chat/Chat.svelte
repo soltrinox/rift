@@ -66,8 +66,8 @@
         <Response value={item.content} />
       {/if}
     {/each}
-    {#if $state.isStreaming}
-      <Response value={$state.streamingText} {scrollToBottomIfNearBottom} last={true} />
+    {#if $state.selectedAgentId in $state.agents && $state.agents[$state.selectedAgentId].isStreaming}
+      <Response value={$state.agents[$state.selectedAgentId].streamingText} {scrollToBottomIfNearBottom} last={true} />
     {/if}
   {/if}
 </div>
