@@ -124,6 +124,15 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           this.morph_language_client.sendHasNotificationChange(params.agentId, params.hasNotification)
           break;
         }
+
+        case "focusOmnibar": {
+          this.morph_language_client.focusOmnibar()
+          break;
+        }
+        case "blurOmnibar": {
+          this.morph_language_client.blurOmnibar()
+          break;
+        }
         case "cancelAgent":
           this.morph_language_client.cancel(params.agentId)
           break;

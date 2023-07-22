@@ -24,10 +24,10 @@ export function activate(context: vscode.ExtensionContext) {
   logProvider = new WebviewProvider("Logs", context.extensionUri, morph_language_client);
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, {webviewOptions: {retainContextWhenHidden: true}})
+    vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, { webviewOptions: { retainContextWhenHidden: true } })
   );
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, {webviewOptions: {retainContextWhenHidden: true}})
+    vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, { webviewOptions: { retainContextWhenHidden: true } })
   );
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
@@ -123,6 +123,15 @@ export function activate(context: vscode.ExtensionContext) {
       );
     }
   );
+  let disposablefocusOmnibar = vscode.commands.registerCommand(
+    "rift.focus_omnibar",
+    async () => {
+      // vscode.window.createTreeView("RiftChat", chatProvider)
+      vscode.commands.executeCommand("RiftChat.focus");
+
+      morph_language_client.focusOmnibar()
+    });
+
 
   context.subscriptions.push(vscode.commands.registerCommand(
     "rift.reset_chat",
@@ -135,6 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
   //     vscode.languages.registerCodeLensProvider('*', morph_language_client)
   // )
   context.subscriptions.push(disposable);
+  context.subscriptions.push(disposablefocusOmnibar);
   context.subscriptions.push(morph_language_client);
 
   // const provider = async (document, position, context, token) => {
@@ -145,4 +155,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }

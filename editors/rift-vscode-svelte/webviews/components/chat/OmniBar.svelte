@@ -1,7 +1,8 @@
 <script lang="ts">
   import SendSvg from "../icons/SendSvg.svelte";
-  import {dropdownOpen, state} from "../stores";
+  import { dropdownOpen, state } from "../stores";
   import Dropdown from "./dropdown/Dropdown.svelte";
+  import { tick } from "svelte";
 
   let isFocused = true;
 
@@ -11,9 +12,9 @@
     targetElement.style.height = `${targetElement.scrollHeight}px`;
   }
 
-  let inputValue:string = ''
+  let inputValue: string = "";
 
-  let textarea: HTMLTextAreaElement|undefined;
+  let textarea: HTMLTextAreaElement | undefined;
 
   let hasInput = false;
   state.subscribe((s) => {
@@ -22,11 +23,15 @@
         hasInput = true;
       }
     }
+    isFocused = s.isFocused;
+    if (isFocused) {
+      textarea?.focus();
+    }
     hasInput = false;
   });
 
   function sendMessage() {
-    if(!textarea) throw new Error()
+    if (!textarea) throw new Error();
     if ($state.agents[$state.selectedAgentId].isStreaming) {
       console.log("cannot send messages while ai is responding");
       return;
@@ -41,10 +46,7 @@
     console.log("appendedMessages");
     console.log(appendedMessages);
 
-    if(!$state.agents[$state.selectedAgentId]) throw new Error()
-
-
-
+    if (!$state.agents[$state.selectedAgentId]) throw new Error();
 
     vscode.postMessage({
       type: "chatMessage",
@@ -74,8 +76,8 @@
   }
 
   function handleValueChange(e: Event) {
-    if(!textarea) throw new Error()
-    inputValue = textarea.value
+    if (!textarea) throw new Error();
+    inputValue = textarea.value;
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
       dropdownOpen.set(true);
@@ -83,7 +85,7 @@
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if(!textarea) throw new Error()
+    if (!textarea) throw new Error();
     if (e.key === "Enter") {
       // 13 is the Enter key code
       e.preventDefault(); // Prevent default Enter key action
@@ -99,7 +101,7 @@
   }
 
   function handleRunAgent(agent_type: string) {
-    if(!textarea) throw new Error()
+    if (!textarea) throw new Error();
     if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
       throw new Error("attempt to run unavailable agent");
     vscode.postMessage({
@@ -114,10 +116,28 @@
     dropdownOpen.set(false);
   }
 
-  function sendHasNotificationChange(hasNotification: boolean) {
-    vscode.postMessage({type: "sendHasNotificationChange", agentId: $state.selectedAgentId, hasNotification})
-  }
+  let onFocus = async (event: FocusEvent) => {
+    if (!textarea) throw new Error();
+    isFocused = true;
+    vscode.postMessage({
+      type: "sendHasNotificationChange",
+      agentId: $state.selectedAgentId,
+      hasNotification: false,
+    });
+    vscode.postMessage({
+      type: "focusOmnibar",
+    });
+    textarea.focus();
+    await tick();
+    textarea.select();
+  };
 
+  let onBlur = () => {
+    isFocused = false;
+    vscode.postMessage({
+      type: "blurOmnibar",
+    });
+  };
 </script>
 
 <!-- bg-[var(--vscode-panel-background)] -->
@@ -139,11 +159,8 @@
         : "Type to chat or hit / for commands"}
       on:input={handleValueChange}
       on:keydown={handleKeyDown}
-      on:focus={() => {
-        isFocused = true;
-        sendHasNotificationChange(false)
-      }}
-      on:blur={() => (isFocused = false)}
+      on:focus={onFocus}
+      on:blur={onBlur}
       rows={1}
     />
     <div class="justify-self-end flex">
@@ -153,7 +170,7 @@
     </div>
   </div>
   {#if $dropdownOpen}
-  <Dropdown {inputValue} {handleRunAgent} />
+    <Dropdown {inputValue} {handleRunAgent} />
   {/if}
 </div>
 
