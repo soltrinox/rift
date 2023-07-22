@@ -171,7 +171,7 @@ export interface AgentProgress<T = any> {
   payload: T;
 }
 
-export interface AgentId {
+export interface AgentIdParams {
   id: string;
 }
 
@@ -576,13 +576,13 @@ export class MorphLanguageClient
 
   }
 
-  async cancel(params: AgentId) {
+  async cancel(params: AgentIdParams) {
     if (!this.client) throw new Error();
     let response = await this.client.sendRequest("morph/cancel", params);
     return response;
   }
 
-  async delete(params: AgentId) {
+  async delete(params: AgentIdParams) {
     if (!this.client) throw new Error();
     let response = await this.client.sendRequest("morph/cancel", params);
     this.webviewState.update((state) => {
@@ -608,7 +608,7 @@ export class MorphLanguageClient
     if (!this.client) throw new Error();
     if (!(agentId in this.webviewState.value.agents)) throw new Error(`tried to restart agent ${agentId} but couldn't find it in agents object`)
     const agent_type = this.webviewState.value.agents[agentId].type
-    let result: RunAgentResult = await this.client.sendRequest("morph/restart_agent", agentId);
+    let result: RunAgentResult = await this.client.sendRequest("morph/restart_agent", {id: agentId});
     this.webviewState.update((state) => ({
       ...state,
       agents: {
