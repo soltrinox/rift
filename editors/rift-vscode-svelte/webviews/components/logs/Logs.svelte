@@ -13,8 +13,7 @@
                     id={key}
                     name={value.tasks?.task.description}
                     hasNotification={value.hasNotification}
-                    selectedId={$state.selectedAgentId}
-                />
+                   />
             {/each}
         {/if}
     </div>

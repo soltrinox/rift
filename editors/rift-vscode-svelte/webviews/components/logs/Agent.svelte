@@ -13,11 +13,12 @@
 
     let expanded = true;
     export let id: string = "";
-    export let selectedId = "";
     export let name: string = "rift_chat";
     export let hasNotification = false;
 
-    $: isSelected = id == selectedId;
+
+
+    $: isSelected = id == $state.selectedAgentId;
 
     let subtasks = $state.agents[id].tasks?.subtasks
     $: subtasks = $state.agents[id].tasks?.subtasks
@@ -105,12 +106,14 @@
             <div
                 class="relative w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
             >
-                {#if hasNotification}
+                {#if $state.agents[id].chatHistory.length > 0 && hasNotification}
                     <div
                         class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
                     />
                 {/if}
-                <ChatSvg />
+                {#if $state.agents[id].chatHistory.length > 0}
+                    <ChatSvg />
+                {/if}
             </div>
         </div>
 
