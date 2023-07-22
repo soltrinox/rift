@@ -206,7 +206,13 @@ const GREEN = vscode.window.createTextEditorDecorationType({
   backgroundColor: "rgba(0,255,0,0.1)",
 });
 
-const code_completion_send_progress_handler = async (params: any, agent: Agent) => {
+const RED = vscode.window.createTextEditorDecorationType({
+  backgroundColor: "rgba(255,0,0,0.1)",
+});
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+async function code_completion_send_progress_handler(params: any, agent: Agent): Promise<void> {
+    console.log(`PARAMS: ${params}`)
   if (params.tasks) {
     //logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
     if (params.tasks.task.status) {
@@ -217,14 +223,16 @@ const code_completion_send_progress_handler = async (params: any, agent: Agent) 
     }
   }
   if (params.payload) {
-    if (params.payload.ranges) {
-      agent.ranges = params.payload.ranges;
+    if (params.payload.additive_ranges) {
+      agent.additive_ranges = params.payload.additive_ranges;
     }
   }
+    console.log(`URI: ${agent?.textDocument?.uri?.toString()}`)
   const editors = vscode.window.visibleTextEditors.filter(
     (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString()
   );
-  for (const editor of editors) {
+    for (const editor of editors) {
+        console.log(`EDITOR: ${editor}`)
     // [todo] check editor is visible
     const version = editor.document.version;
     if (params.payload) {
@@ -232,29 +240,43 @@ const code_completion_send_progress_handler = async (params: any, agent: Agent) 
         agent.status = params.payload;
         agent.onStatusChangeEmitter.fire(params.payload);
         editor.setDecorations(GREEN, []);
+        editor.setDecorations(RED, []);
         agent.onStatusChangeEmitter.fire(params.payload);
         console.log("SET DECORATIONS TO NONE");
         agent.morph_language_client.delete({ id: agent.id })
       }
     }
     if (params.payload) {
-      if (params.payload.ranges) {
+        if (params.payload.additive_ranges) {
+            console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`)
         editor.setDecorations(
           GREEN,
-          params.payload.ranges.map(
-            (r: { start: { line: number; character: number; }; end: { line: number; character: number; }; }) =>
-              new vscode.Range(
-                r.start.line,
-                r.start.character,
-                r.end.line,
-                r.end.character
-              )
+          params.payload.additive_ranges.map(
+              (r) => {const result = new vscode.Range(
+              r.start.line,
+              r.start.character,
+              r.end.line,
+              r.end.character
+              ); console.log(`RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`); return result}
           )
         );
       }
+      if (params.payload.negative_ranges) {
+        editor.setDecorations(
+          RED,
+          params.payload.negative_ranges.map(
+            (r) => new vscode.Range(
+              r.start.line,
+              r.start.character,
+              r.end.line,
+              r.end.character
+            )
+          )
+        );
+      }         
     }
   }
-};
+}
 
 export class AgentStateLens extends vscode.CodeLens {
   id: string;
@@ -271,7 +293,6 @@ interface ModelConfig {
   openai_api_key?: string;
 }
 
-type AgentType = "chat" | "code-completion";
 export type AgentIdentifier = string;
 
 
@@ -549,7 +570,8 @@ export class MorphLanguageClient
 
 
     agent.onStatusChange((e) => this.changeLensEmitter.fire());
-    this.agents[result.id] = agent;
+      this.agents[result.id] = agent;
+      console.log(`REGISTERED NEW AGENT of type ${agent_type}`);
     this.changeLensEmitter.fire();
 
     // this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })
