@@ -18,6 +18,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
 from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
+from dataclasses import is_dataclass
 
 from rift.server.agent import *
 from rift.server.selection import RangeSet
@@ -290,9 +291,13 @@ class LspServer(BaseLspServer):
             return config.create_chat()
 
     @rpc_method("morph/restart_agent")
-    async def on_restart_agent(self, agent_id: str) -> RunAgentResult:
+    async def on_restart_agent(self, params: AgentIdParams) -> RunAgentResult:
+        logger.info('reset:')
+        print('test')
+        agent_id = params.id
         old_agent = self.active_agents[agent_id]
         agent_params = old_agent.state.params
+        logger.info(agent_params)
         agent_type = old_agent.agent_type
         agent_id = old_agent.agent_id
         return await self.on_run(
@@ -305,7 +310,9 @@ class LspServer(BaseLspServer):
         # lol
         agent_params = params.agent_params
         agent_id = params.agent_id or str(uuid.uuid4())[:8]
-        agent_params.update({"agent_id": agent_id})
+        # agent_params.update({"agent_id": agent_id})
+        if not params.agent_id:
+            agent_params["agent_id"] = agent_id
 
         # async def _run_agent():
         # logger = logging.getLogger(__name__)
@@ -313,19 +320,23 @@ class LspServer(BaseLspServer):
         if agent_type == "chat":
             # prepare params for ChatAgent construction
             model = await self.ensure_chat_model()
-            agent_params = ofdict(RunChatParams, agent_params)
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(RunChatParams, agent_params)
             agent = ChatAgent(agent_params, model=model, server=self)
         elif agent_type == "rift_chat":
             model = await self.ensure_chat_model()
-            agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
             agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
         elif agent_type == "code_completion":
             model = await self.ensure_completions_model()
-            agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(CodeCompletionAgentParams, agent_params)
             agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
         elif agent_type == "smol_dev":
             model = await self.ensure_chat_model()
-            agent_params = ofdict(SmolAgentParams, agent_params)
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(SmolAgentParams, agent_params)
             agent = SmolAgent.create(params=agent_params, model=model, server=self)
         else:
             raise Exception(f"unsupported agent type={agent_type}")
