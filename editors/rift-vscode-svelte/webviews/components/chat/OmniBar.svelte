@@ -114,7 +114,9 @@
     dropdownOpen.set(false);
   }
 
-
+  function sendHasNotificationChange(hasNotification: boolean) {
+    vscode.postMessage({type: "sendHasNotificationChange", agentId: $state.selectedAgentId, hasNotification})
+  }
 
 </script>
 
@@ -139,6 +141,7 @@
       on:keydown={handleKeyDown}
       on:focus={() => {
         isFocused = true;
+        sendHasNotificationChange(false)
       }}
       on:blur={() => (isFocused = false)}
       rows={1}

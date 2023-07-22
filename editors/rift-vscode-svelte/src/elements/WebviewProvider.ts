@@ -120,6 +120,10 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           this.morph_language_client.refreshWebviewState()
           break;
         }
+        case "sendHasNotificationChange": {
+          this.morph_language_client.sendHasNotificationChange(params.agentId, params.hasNotification)
+          break;
+        }
 
         default:
           console.log("no case match for ", params.type, " in WebviewProvider.ts");
