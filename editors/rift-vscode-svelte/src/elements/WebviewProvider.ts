@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 // import { MorphLanguageClient, RunChatParams } from "../client";
 // import * as client from '../client'
-import {getNonce} from "../getNonce";
+import { getNonce } from "../getNonce";
 import PubSub from "../lib/PubSub";
-import type {MorphLanguageClient, RunAgentParams,} from "../client";
-import {WebviewState} from "../types";
+import type { MorphLanguageClient, RunAgentParams, } from "../client";
+import { WebviewState } from "../types";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class WebviewProvider implements vscode.WebviewViewProvider {
@@ -18,7 +18,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     public name: "Chat" | "Logs",
     private readonly _extensionUri: vscode.Uri,
     public morph_language_client: MorphLanguageClient
-  ) {}
+  ) { }
 
   // Posts a message to the webview view.
   //  endpoint: The endpoint to send the message to.
@@ -94,7 +94,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
 
         case "chatMessage": {
           console.log("Sending publish message", `${params.agent_type}_${params.agent_id}_chat_request`);
-          
+
           this.morph_language_client.sendChatHistoryChange(params.agent_id, params.messages)
           PubSub.pub(
             `${params.agent_type}_${params.agent_id}_chat_request`,
@@ -124,6 +124,13 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           this.morph_language_client.sendHasNotificationChange(params.agentId, params.hasNotification)
           break;
         }
+        case "cancelAgent":
+          this.morph_language_client.cancel(params.agentId)
+          break;
+
+        case "deleteAgent":
+          this.morph_language_client.delete(params.agentId)
+          break;
 
         default:
           console.log("no case match for ", params.type, " in WebviewProvider.ts");

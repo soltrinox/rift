@@ -20,9 +20,8 @@
 
     $: isSelected = id == $state.selectedAgentId;
 
-    let subtasks = $state.agents[id].tasks?.subtasks
-    $: subtasks = $state.agents[id].tasks?.subtasks
-
+    let subtasks = $state.agents[id].tasks?.subtasks;
+    $: subtasks = $state.agents[id].tasks?.subtasks;
 
     let doneAgent = false;
 
@@ -46,26 +45,14 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-
         vscode.postMessage({ type: "selectedAgentId", agentId: id });
     };
 
     const handleCancelAgent = (e: MouseEvent) => {
-        vscode.postMessage({ type: "cancelAgent", id: id });
+        vscode.postMessage({ type: "cancelAgent", agentId: { id: id } });
     };
     const handleDeleteAgent = (e: MouseEvent) => {
-        //vscode.postMessage({ type: "cancelAgent", id: id });
-        // state.update((state) => {
-        //     // Create a copy of the agents object without the specified agentId
-        //     const updatedAgents = { ...state.agents };
-        //     delete updatedAgents[id];
-
-        //     // Update the state with the new agents object
-        //     return {
-        //         ...state,
-        //         agents: updatedAgents,
-        //     };
-        // });
+        vscode.postMessage({ type: "deleteAgent", agentId: { id: id } });
     };
 </script>
 
