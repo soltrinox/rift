@@ -619,6 +619,10 @@ export class MorphLanguageClient
     ))
   }
 
+  public restartActiveAgent() {
+    this.restart_agent(this.webviewState.value.selectedAgentId)
+  }
+
 
   sendChatHistoryChange(agentId: string, newChatHistory: ChatMessage[]) {
     // const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory

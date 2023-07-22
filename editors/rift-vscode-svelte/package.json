@@ -87,10 +87,27 @@
         "contents": "Agent logging."
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "rift.reset_chat",
+          "when": "view == RiftChat",
+          "group": "navigation"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "rift.run_agent",
         "title": "Rift: Code Completion"
+      },
+      {
+        "command": "rift.reset_chat",
+        "title": "Reset Chat",
+        "icon": {
+          "light": "media/icons/resetLight.svg",
+          "dark": "media/icons/resetDark.svg"
+        }
       }
     ]
   },

@@ -124,6 +124,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  context.subscriptions.push(vscode.commands.registerCommand(
+    "rift.reset_chat",
+    () => {
+      morph_language_client.restartActiveAgent()
+    }
+  ))
+
   // context.subscriptions.push(
   //     vscode.languages.registerCodeLensProvider('*', morph_language_client)
   // )
