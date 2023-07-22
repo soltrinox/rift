@@ -6,7 +6,9 @@
   "engines": {
     "vscode": "^1.54.0"
   },
-  "enabledApiProposals": ["extensionRuntime"],
+  "enabledApiProposals": [
+    "extensionRuntime"
+  ],
   "categories": [
     "Other"
   ],
@@ -15,11 +17,18 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "keybindings": {
-      "command": "rift.run_agent",
-      "key": "ctrl+m",
-      "when": "editorTextFocus"
-    },
+    "keybindings": [
+      {
+        "command": "rift.run_agent",
+        "key": "ctrl+m",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "rift.focus_omnibar",
+        "key": "ctrl+k",
+        "mac": "cmd+k"
+      }
+    ],
     "configuration": {
       "title": "Rift",
       "properties": {
@@ -108,6 +117,10 @@
           "light": "media/icons/resetLight.svg",
           "dark": "media/icons/resetDark.svg"
         }
+      },
+      {
+        "command": "rift.focus_omnibar",
+        "title": "Rift: Focus Omnibar"
       }
     ]
   },
