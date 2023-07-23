@@ -220,7 +220,7 @@ class EngineerAgent(Agent):
                 for delta in toSend:
                     print(delta)
                     response += delta
-                    asyncio.run(
+                    asyncio.run( 
                         obj.send_progress(ChatProgress(response=response))
                         
                     )
@@ -235,7 +235,7 @@ class EngineerAgent(Agent):
                     pass
                 prompt = asyncio.run(INPUT_PROMPT_QUEUE.get())
                 print("Got input, sending to request input")
-
+                asyncio.run(obj.send_progress())
                 response = asyncio.run(obj.request_input(
                     RequestInputRequest(
                         msg=prompt,
