@@ -371,6 +371,109 @@ async function code_edit_send_progress_handler(
   }
 }
 
+class Agent {
+  status: AgentStatus;
+  codeLensStatus: CodeLensStatus;
+  green: vscode.TextEditorDecorationType;
+  additive_ranges: vscode.Range[] = [];
+  onStatusChangeEmitter: vscode.EventEmitter<CodeLensStatus>;
+  onStatusChange: vscode.Event<CodeLensStatus>;
+  constructor(
+    public readonly id: string,
+    public readonly agent_type: string,
+    public readonly position: vscode.Position,
+    public textDocument: TextDocumentIdentifier,
+    public params: any
+  ) {
+    this.id = id;
+    this.status = "running";
+    this.codeLensStatus = "running";
+    this.agent_type = agent_type;
+    this.position = position;
+    this.textDocument = textDocument;
+    this.green = vscode.window.createTextEditorDecorationType({
+      backgroundColor: "rgba(0,255,0,0.1)",
+    });
+    this.onStatusChangeEmitter = new vscode.EventEmitter<CodeLensStatus>();
+    this.onStatusChange = this.onStatusChangeEmitter.event;
+  }
+  async handleInputRequest(params: AgentInputRequest) {
+    logProvider._view?.webview.postMessage({
+      type: "chat_request",
+      data: { ...params, id: this.id },
+    });
+
+    let response = await vscode.window.showInputBox({
+      ignoreFocusOut: true,
+      placeHolder: params.place_holder,
+      prompt: params.msg,
+    });
+    return { response: response };
+  }
+
+  async handleChatRequest(params: AgentChatRequest) {
+    console.log("handleChatRequest");
+    console.log(params);
+    chatProvider._view?.webview.postMessage({
+      type: "chat_request",
+      data: { ...params, id: this.id },
+    });
+    logProvider._view?.webview.postMessage({
+      type: "chat_request",
+      data: { ...params, id: this.id },
+    });
+
+    let agentType = this.agent_type;
+    let agentId = this.id;
+
+    console.log("agentType:", agentType);
+    console.log("agentId:", agentId);
+
+    // return "BLAH BLAH"
+    async function getUserInput() {
+      console.log("getUserInput");
+      console.log("agentType:", agentType);
+      console.log("agentId:", agentId);
+      return new Promise((res, rej) => {
+        console.log("subscribing to changes");
+        PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
+          console.log("resolving promise");
+          res(message);
+        });
+      });
+    }
+
+    let chatRequest = await getUserInput();
+    console.log("received user input and returning to server");
+    console.log(chatRequest);
+    return chatRequest;
+  }
+  async handleUpdate(params: AgentUpdate) {
+    console.log("handleUpdate");
+    console.log(params);
+    // //chatProvider._view?.webview.postMessage({ type: 'update', data: params });
+    // logProvider._view?.webview.postMessage({ type: 'update', data: params });
+    vscode.window.showInformationMessage(params.msg);
+  }
+  async handleProgress(params: AgentProgress) {
+    console.log("handleProgress");
+    console.log(params);
+    chatProvider._view?.webview.postMessage({ type: "progress", data: params });
+    logProvider._view?.webview.postMessage({ type: "progress", data: params });
+    if (params.agent_type === "code_completion") {
+      await code_completion_send_progress_handler(params, this);
+    } else if (params.agent_type == "code_edit") {
+      await code_completion_send_progress_handler(params, this);
+    }
+  }
+  async handleResult(params: AgentResult) {
+    console.log("handleResult");
+    console.log(params);
+    chatProvider._view?.webview.postMessage({ type: "result", data: params });
+    logProvider._view?.webview.postMessage({ type: "result", data: params });
+  }
+}
+
 export class AgentStateLens extends vscode.CodeLens {
   id: string;
   constructor(range: vscode.Range, agent: any, command?: vscode.Command) {
@@ -871,183 +974,6 @@ export class MorphLanguageClient
   }
 
 
-}
-
-
-class Agent {
-  status: AgentStatus;
-  green: vscode.TextEditorDecorationType;
-  ranges: vscode.Range[] = [];
-  onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
-  onStatusChange: vscode.Event<AgentStatus>;
-  morph_language_client: MorphLanguageClient
-
-  constructor(
-    morph_language_client: MorphLanguageClient,
-    public readonly id: string,
-    public readonly agent_type: string,
-    public readonly position: vscode.Position,
-    public textDocument: TextDocumentIdentifier,
-    public params: any
-  ) {
-    this.morph_language_client = morph_language_client;
-    this.id = id;
-    this.status = "running";
-    this.agent_type = agent_type;
-    this.position = position;
-    this.textDocument = textDocument;
-    this.green = vscode.window.createTextEditorDecorationType({
-      backgroundColor: "rgba(0,255,0,0.1)",
-    });
-    this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
-    this.onStatusChange = this.onStatusChangeEmitter.event;
-  }
-
-  async handleInputRequest(params: AgentInputRequest) {
-    /*
-            const input_request = event.data.data as AgentInputRequest;
-        // let agentId = input_request.agent_id;
-        // let status = input_request.tasks.task.status;
-        state.update((prevState) => ({
-          ...prevState,
-          agents: {
-            ...prevState.agents,
-            [input_request.id]: {
-              ...prevState.agents[input_request.id],
-              inputRequest: {
-                msg: input_request.msg,
-                place_holder: input_request.place_holder,
-              },
-            },
-          },
-        }));*/
-    // case "input_request": {
-    //     const input_request = event.data.data as AgentInputRequest;
-    //     if ($state.selectedAgentId == input_request.id) {
-    //         state.update((state) => ({
-    //             ...state,
-    //             agents: {
-    //                 ...state.agents,
-    //                 [input_request.id!]: {
-    //                     ...state.agents[input_request.id!],
-    //                     hasInputNotification: false,
-    //                 },
-    //             },
-    //         }));
-    //     } else if ($state.selectedAgentId != input_request.id) {
-    //         state.update((state) => ({
-    //             ...state,
-    //             agents: {
-    //                 ...state.agents,
-    //                 [input_request.id!]: {
-    //                     ...state.agents[input_request.id!],
-    //                     hasInputNotification: true,
-    //                 },
-    //             },
-    //         }));
-    //     }
-
-    //     break;
-    // }
-
-
-    // logProvider._view?.webview.postMessage({
-    //   type: "chat_request",
-    //   data: { ...params, id: this.id },
-    // });
-
-
-    /* this logic was the one I pulled from logswebview that was implemented -- Brent
-                const chat_request = event.data.data as AgentChatRequest;
-                if ($state.selectedAgentId == chat_request.id) {
-                    state.update((state) => ({
-                        ...state,
-                        agents: {
-                            ...state.agents,
-                            [chat_request.id!]: {
-                                ...state.agents[chat_request.id!],
-                                hasNotification: false,
-                            },
-                        },
-                    }));
-                } else if ($state.selectedAgentId != chat_request.id) {
-                    state.update((state) => ({
-                        ...state,
-                        agents: {
-                            ...state.agents,
-                            [chat_request.id!]: {
-                                ...state.agents[chat_request.id!],
-                                hasNotification: true,
-                            },
-                        },
-                    }));
-                }
-    */
-    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
-
-    let response = await vscode.window.showInputBox({
-      ignoreFocusOut: true,
-      placeHolder: params.place_holder,
-      prompt: params.msg,
-    });
-    return { response: response };
-  }
-
-  async handleChatRequest(params: AgentChatRequest) {
-    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
-    console.log("handleChatRequest");
-    console.log(params);
-    console.log("agentType:", this.agent_type);
-    // if(!params.id) throw new Error('no params')
-
-    this.morph_language_client.sendChatHistoryChange(this.id, params.messages)
-    this.morph_language_client.sendHasNotificationChange(this.id, true)
-
-    const agentType = this.agent_type;
-    const agentId = this.id
-
-    console.log("agentId:", this.id);
-
-    // return "BLAH BLAH"
-    async function getUserInput() {
-      console.log("getUserInput");
-
-      return new Promise((res, rej) => {
-        console.log("subscribing to changes");
-        PubSub.sub(`${agentType}_${agentId}_chat_request`, (message) => {
-          console.log("resolving promise");
-          res(message);
-        });
-      });
-    }
-
-    let chatRequest = await getUserInput();
-    console.log("received user input and returning to server");
-    console.log(chatRequest);
-    return chatRequest;
-  }
-  async handleUpdate(params: AgentUpdate) {
-    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
-    console.log("handleUpdate");
-    console.log(params);
-
-    vscode.window.showInformationMessage(params.msg);
-  }
-  async handleProgress(params: AgentProgress) {
-    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
-    this.morph_language_client.sendProgressChange(params)
-
-    if (this.agent_type === "code_completion") {
-      code_completion_send_progress(params, this);
-    }
-  }
-  async handleResult(params: AgentResult) {
-    if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
-    console.log("handleResult");
-    console.log(params);
-
-    throw new Error("no logic written for handle result yet")
-  }
 }
 
 // class ChatAgent extends Agent {
