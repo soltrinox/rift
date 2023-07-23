@@ -56,6 +56,8 @@
   //         console.log(scrollLeft)
   //         // scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft
   //       }
+
+  const preblockToCopyContent:string[] = []
   $: {
     const getHTML = (_responseBlock: HTMLDivElement) => {
       const responseBlock = _responseBlock.cloneNode(true) as HTMLDivElement;
@@ -66,10 +68,11 @@
       responseBlock.querySelectorAll("pre").forEach((preblock, i) => {
         // index = i
         preblock.classList.add("p-2", "my-2", "block", "overflow-x-scroll");
+        //remove prev copy buttons
         preblock
           .querySelectorAll("#copy")
           .forEach((copy) => copy.parentElement?.removeChild(copy));
-        const copyContent = value;
+        const copyContent = preblock.textContent;
         const copyButton = document.createElement("button");
         copyButton.id = "copy";
         copyButton.className =
@@ -78,9 +81,12 @@
         const copyCodeWords = document.createElement("p");
         copyCodeWords.innerText = " copy";
         copyButton.appendChild(copyCodeWords);
+        preblockToCopyContent[i] = preblock.textContent ?? ''
         copyButton.addEventListener("click", () => {
           // navigator.clipboard.writeText(copyContent)
-          vscode.postMessage({ type: "copyText", content: copyContent });
+          // console.log('copying: ', copyContent)
+
+          vscode.postMessage({ type: "copyText", content: preblockToCopyContent[i] });
         });
         preblock.insertBefore(copyButton, preblock.firstChild);
         // if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]

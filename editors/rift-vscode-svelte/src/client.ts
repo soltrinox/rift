@@ -874,8 +874,8 @@ export class MorphLanguageClient
   }
 
   sendProgressChange(params: AgentProgress) {
-    console.log('progress')
-    console.log(params)
+    // console.log('progress')
+    // console.log(params)
     let agentId = params.agent_id;
 
     if (!(agentId in this.webviewState.value.agents)) throw new Error('progress for nonexistent agent')
