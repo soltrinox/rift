@@ -184,9 +184,7 @@ class Agent:
         Prompt the user for more information.
         """
         try:
-            response = await self.server.request(
-                f"morph/{self.agent_type}_{self.agent_id}_request_input", req
-            )
+            response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
             return response["response"]
         except Exception as e:
             logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
@@ -204,9 +202,7 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        response = await self.server.request(
-            f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
-        )
+        response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_chat", req)
         return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
@@ -232,13 +228,11 @@ class Agent:
             # Try to wrap main and subtasks' data into tasks dictionary
             try:
                 tasks = {
-                "task": {
-                    "description": AGENT_REGISTRY.registry[self.agent_type].display_name,
-                    "status": self.task.status,
-                },
-                "subtasks": (
-                    [{"description": x.description, "status": x.status} for x in self.tasks]
-                ),
+                    "task": {
+                        "description": AGENT_REGISTRY.registry[self.agent_type].display_name,
+                        "status": self.task.status,
+                    },
+                    "subtasks": ([{"description": x.description, "status": x.status} for x in self.tasks]),
                 }
             # If unable to create tasks dictionary due to an exception, log the exception and set tasks to None
             except Exception as e:
@@ -247,19 +241,19 @@ class Agent:
 
         # Package all agent's progress into an AgentProgress object
         progress = AgentProgress(
-        agent_type=self.agent_type,
-        agent_id=self.agent_id,
-        tasks=tasks,
-        payload=payload,
+            agent_type=self.agent_type,
+            agent_id=self.agent_id,
+            tasks=tasks,
+            payload=payload,
         )
 
         # If the main task's status is 'error', log it as an info level message
         if self.task.status == "error":
-        logger.info(f"[error]: {self.task._task.exception()}")
+            logger.info(f"[error]: {self.task._task.exception()}")
 
         # Notify the server about the agent's progress
         await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_progress", progress)
-    
+
     async def send_result(self) -> ...:
         """Send agent result"""
         ...
@@ -303,9 +297,7 @@ class AgentRegistry:
     def __getitem__(self, key):
         return self.get_agent(key)
 
-    def register_agent(
-        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
-    ) -> None:
+    def register_agent(self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None) -> None:
         if agent.agent_type in self.registry:
             raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
         self.registry[agent.agent_type] = AgentRegistryItem(
