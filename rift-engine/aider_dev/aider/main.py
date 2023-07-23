@@ -69,7 +69,11 @@ def check_gitignore(git_root, io, ask=True):
     io.tool_output(f"Added {pat} to .gitignore")
 
 
-def main(args=None, on_write: Optional[Callable[[str, str], str]] = None, input=None, output=None):
+def main(args=None,
+         on_write: Optional[Callable[[str, str], str]] = None,
+         on_commit: Optional[Callable[[], None]] = None,
+         input=None,
+         output=None):
     if args is None:
         args = sys.argv[1:]
 
@@ -434,6 +438,7 @@ def main(args=None, on_write: Optional[Callable[[str, str], str]] = None, input=
         code_theme=args.code_theme,
         stream=args.stream,
         use_git=args.git,
+        on_commit=on_commit,
     )
 
     if args.show_repo_map:

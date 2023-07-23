@@ -8,6 +8,7 @@ import time
 import traceback
 from json.decoder import JSONDecodeError
 from pathlib import Path, PurePosixPath
+from typing import Callable, Optional
 
 import backoff
 import git
@@ -111,6 +112,7 @@ class Coder:
         code_theme="default",
         stream=True,
         use_git=True,
+        on_commit: Optional[Callable[[], None]] = None,
     ):
         if not fnames:
             fnames = []
@@ -135,6 +137,7 @@ class Coder:
         self.code_theme = code_theme
 
         self.dry_run = dry_run
+        self.on_commit = on_commit
         self.pretty = pretty
 
         if pretty:
@@ -546,6 +549,8 @@ class Coder:
 
         if edited:
             if self.repo and self.auto_commits and not self.dry_run:
+                if self.on_commit is not None:
+                    self.on_commit()
                 saved_message = self.auto_commit()
             elif hasattr(self.gpt_prompts, "files_content_gpt_edits_no_repo"):
                 saved_message = self.gpt_prompts.files_content_gpt_edits_no_repo
