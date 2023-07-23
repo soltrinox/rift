@@ -1,10 +1,9 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Dict, Iterable, Optional
+from typing import Any, Awaitable, Callable, Dict, Iterable, Optional, Union
 
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class AgentTask:
@@ -21,10 +20,10 @@ class AgentTask:
 
     description: str
     task: Callable[Any, Awaitable[Any]]
-    args: Optional[Callable[Any, Awaitable[Iterable[Any]]]] = None
-    kwargs: Optional[Callable[Any, Awaitable[Dict[Any, Any]]]] = None
+    args: Union[Iterable, Callable[Any, Awaitable[Iterable[Any]]], None] = None
+    kwargs: Union[Dict, Callable[Any, Awaitable[Dict[Any, Any]]], None] = None
     done_callback: Optional[Callable[Any, Any]] = None
-    _task: Optional[asyncio.Task] = None
+    _task: Optional[asyncio.Task] =None
     _running: bool = False
     _error: Optional[Exception] = None
     _cancelled: bool = False
@@ -38,8 +37,8 @@ class AgentTask:
 
         self._running = True
         try:
-            args = [*(await self.args())] if self.args else []
-            kwargs = {**(await self.kwargs())} if self.kwargs else dict()
+            args = list(await self.args()) if callable(self.args) else list(self.args) if self.args else []
+            kwargs = dict(await self.kwargs()) if callable(self.kwargs) else dict(self.kwargs) if self.kwargs else {}
             self._task = asyncio.create_task(self.task(*args, **kwargs))
             if self.done_callback is not None:
                 self._task.add_done_callback(self.done_callback)
