@@ -83,11 +83,11 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           // get the uri and position of the current cursor
           let doc = editor.document;
           let textDocument = { uri: doc.uri.toString(), version: 0 };
-          let position = editor.selection.active;
+          let selection = editor.selection;
 
           const runAgentParams: RunAgentParams = {
             agent_type: params.params.agent_type,
-            agent_params: { position, textDocument },
+            agent_params: { selection: selection, textDocument: textDocument },
           };
           await this.morph_language_client.run(runAgentParams);
           break;

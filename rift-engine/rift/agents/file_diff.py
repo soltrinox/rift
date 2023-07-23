@@ -1,11 +1,10 @@
 import os
 from dataclasses import dataclass
-from typing import List, Dict, Optional
-
-import rift.lsp.types as lsp
+from typing import Dict, List, Optional
 
 from diff_match_patch import diff_match_patch
 
+import rift.lsp.types as lsp
 from rift.lsp import (
     CreateFile,
     Range,

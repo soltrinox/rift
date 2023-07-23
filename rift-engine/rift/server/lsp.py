@@ -1,18 +1,18 @@
-import glob
-import os
 import asyncio
-import logging
-import uuid
+import glob
 import json
-from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Literal, Optional, Iterable, Dict
+import logging
+import os
+import uuid
+from dataclasses import dataclass, field, is_dataclass
+from typing import Any, ClassVar, Dict, Iterable, List, Literal, Optional
 
+import rift.agents.rift_chat as agentchat
 import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
 from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
 from rift.agents.reverso import ReversoAgent, ReversoAgentParams
-
 from rift.agents.smol import SmolAgent, SmolAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
@@ -20,13 +20,10 @@ from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
-from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
-from dataclasses import is_dataclass
-
 from rift.server.agent import *
+from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict
-import rift.agents.rift_chat as agentchat
 
 logger = logging.getLogger(__name__)
 
@@ -295,8 +292,8 @@ class LspServer(BaseLspServer):
 
     @rpc_method("morph/restart_agent")
     async def on_restart_agent(self, params: AgentIdParams) -> RunAgentResult:
-        logger.info('reset:')
-        print('test')
+        logger.info("reset:")
+        print("test")
         agent_id = params.id
         old_agent = self.active_agents[agent_id]
         agent_params = old_agent.state.params
@@ -343,7 +340,7 @@ class LspServer(BaseLspServer):
         elif agent_type == "reverso":
             model = await self.ensure_completions_model()
             agent_params = ofdict(ReversoAgentParams, agent_params)
-            agent = ReversoAgent.create(agent_params, model=model, server=self)                        
+            agent = ReversoAgent.create(agent_params, model=model, server=self)
         elif agent_type == "smol_dev":
             model = await self.ensure_chat_model()
             if not is_dataclass(agent_params):
@@ -427,7 +424,6 @@ class LspServer(BaseLspServer):
         agent: Agent = self.active_agents.pop(params.id)
         await agent.cancel()
         del agent
-
 
     @rpc_method("morph/listAgents")
     def on_list_agents(self, _: Any) -> List[AgentRegistryResult]:

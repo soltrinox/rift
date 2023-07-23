@@ -102,7 +102,7 @@ class LspServer(ExtraRpc):
                 ]
             )
         )
-        return await self.apply_workspace_edit(params)    
+        return await self.apply_workspace_edit(params)
 
     async def apply_workspace_edit(
         self, params: ApplyWorkspaceEditParams

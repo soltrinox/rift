@@ -92,7 +92,6 @@ class Position:
     def __le__(self, other: "Position"):
         assert isinstance(other, Position)
         return (self.line, self.character) <= (other.line, other.character)
-        
 
     def __eq__(self, other: "Position"):
         assert isinstance(other, Position)
@@ -162,13 +161,16 @@ class Range:
         assert isinstance(offset, int)
         return Range(self.start + offset, self.end + offset)
 
+
 @dataclass
 class Selection(Range):
     anchor: Position
     active: Position
 
     @classmethod
-    def from_coordinates(cls, anchor_line: int, anchor_character: int, active_line: int, active_character: int) -> "Selection":
+    def from_coordinates(
+        cls, anchor_line: int, anchor_character: int, active_line: int, active_character: int
+    ) -> "Selection":
         anchor = Position(anchor_line, anchor_character)
         active = Position(active_line, active_character)
         return cls(anchor, active)

@@ -1,7 +1,7 @@
-import random
 import asyncio
 import json
 import logging
+import random
 from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import cache, cached_property
@@ -26,11 +26,11 @@ from pydantic import BaseModel, BaseSettings, SecretStr
 import rift.util.asyncgen as asg
 from rift.llm.abstract import (
     AbstractChatCompletionProvider,
-    AbstractCodeEditProvider,
     AbstractCodeCompletionProvider,
+    AbstractCodeEditProvider,
     ChatResult,
-    InsertCodeResult,
     EditCodeResult,
+    InsertCodeResult,
 )
 from rift.llm.openai_types import (
     ChatCompletionChunk,
@@ -429,7 +429,12 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         return ChatResult(text=chatstream)
 
     async def edit_code(
-            self, document: str, cursor_offset_start: int, cursor_offset_end: int, goal=None, previous_region: str = "n/a",
+        self,
+        document: str,
+        cursor_offset_start: int,
+        cursor_offset_end: int,
+        goal=None,
+        previous_region: str = "n/a",
     ) -> EditCodeResult:
         logger.info(f"[edit_code] entered {previous_region=}")
         if goal is None:
@@ -566,9 +571,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         codestream._feed_task = t
         planstream._feed_task = t
         # logger.info("[edit_code] about to return")
-        return EditCodeResult(
-            thoughts=thoughtstream, code=codestream, plan=planstream
-        )
+        return EditCodeResult(thoughts=thoughtstream, code=codestream, plan=planstream)
 
     async def insert_code(self, document: str, cursor_offset: int, goal=None) -> InsertCodeResult:
         CURSOR_SENTINEL = "感"

@@ -1,30 +1,29 @@
-import rift.llm.openai_types as openai
 import asyncio
 import logging
+import random
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import ClassVar, Dict, Optional
 
+import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentProgress,  # AgentTask,
     AgentRunParams,
     AgentRunResult,
     AgentState,
+    RequestChatRequest,
     RequestInputRequest,
     RunAgentParams,
     agent,
-    RequestChatRequest,
 )
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeEditProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-
 from rift.util.TextStream import TextStream
-import random
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class CodeEditAgent(Agent):
             model=model,
             document=server.documents[params.textDocument.uri],
             active_range=lsp.Range(params.selection.start, params.selection.end),
-            cursor=params.selection.second, # begin at the start of the selection
+            cursor=params.selection.second,  # begin at the start of the selection
             additive_ranges=RangeSet(),
             params=params,
             selection=params.selection,
@@ -103,6 +102,7 @@ class CodeEditAgent(Agent):
     async def run(self) -> AgentRunResult:  # main entry point
         self.DIFF = None
         from asyncio import Lock
+
         response_lock = Lock()
 
         async def get_user_response() -> str:
@@ -119,10 +119,12 @@ class CodeEditAgent(Agent):
         while True:
             try:
                 # get the next prompt
-                logger.info("getting user response")
-                get_user_response_t = self.add_task(AgentTask("Get user response", get_user_response))
+                # logger.info("getting user response")
+                get_user_response_t = self.add_task(
+                    AgentTask("Get user response", get_user_response)
+                )
                 instructionPrompt = await get_user_response_t.run()
-                logger.info("got user response")
+                # logger.info("got user response")
 
                 # instructionPrompt = self.state.params.instructionPrompt or (
                 #     await self.request_input(
@@ -134,6 +136,7 @@ class CodeEditAgent(Agent):
                 # )
                 self.server.register_change_callback(self.on_change, self.state.document.uri)
                 from diff_match_patch import diff_match_patch
+
                 dmp = diff_match_patch()
 
                 # with lsp.setdoc(self.state.document):
@@ -145,9 +148,12 @@ class CodeEditAgent(Agent):
                     uroffset_start,
                     uroffset_end,
                     goal=instructionPrompt,
-                    previous_region="n/a" if self.DIFF is None else (self.accepted_diff_text(self.DIFF)),
+                    previous_region="n/a"
+                    if self.DIFF is None
+                    else (self.accepted_diff_text(self.DIFF)),
                 )
                 response_stream = TextStream()
+
                 # rf = asyncio.get_running_loop().create_future()
                 # response_stream._feed_task = rf
                 # rf2 = asyncio.get_running_loop().create_future()
@@ -158,16 +164,12 @@ class CodeEditAgent(Agent):
                         async for delta in response_stream:
                             # logger.info(f"RESPONSE DELTA: {delta=}")
                             response += delta
-                            await self.send_progress(
-                                CodeEditProgress(response=response)
-                            )
+                            await self.send_progress(CodeEditProgress(response=response))
                     except Exception as e:
                         logger.info(f"RESPONSE EXCEPTION: {e}")
                         raise e
                     finally:
-                        await self.send_progress(
-                            {"response": response, "done_streaming": True}
-                        )                        
+                        await self.send_progress({"response": response, "done_streaming": True})
                     # logger.info(f"DONE {response=}")
                     return response
 
@@ -200,8 +202,6 @@ class CodeEditAgent(Agent):
 
                 # gather_plan_task = asyncio.create_task(gather_plan())
 
-
-                
                 # gather_thoughts_task = asyncio.create_task(gather_thoughts())
 
                 # t = self.add_task(AgentTask("Generate response and code edit", generate_response))
@@ -218,6 +218,7 @@ class CodeEditAgent(Agent):
 
                 logger.info("starting to iterate through text stream")
                 self.DIFF = None
+
                 # await gather_plan_task
                 # logger.info("WAITING")
                 async def generate_code():
@@ -234,12 +235,12 @@ class CodeEditAgent(Agent):
                             try:
                                 logger.info("in main try")
                                 new_text = "".join(all_deltas)
-                                logger.info(f"{selection_text=} {new_text=}")
+                                # logger.info(f"{selection_text=} {new_text=}")
 
                                 diff = dmp.diff_lineMode(selection_text, new_text, None)
                                 dmp.diff_cleanupSemantic(diff)
                                 # logger.info(f"{diff=}")
-                                self.DIFF = diff # store the latest diff
+                                self.DIFF = diff  # store the latest diff
                                 diff_text = "".join([text for _, text in diff])
 
                                 # logger.info(f"got the diff_text: {diff_text=}")
@@ -251,9 +252,7 @@ class CodeEditAgent(Agent):
                                 self.state.change_futures[diff_text] = cf
 
                                 await self.server.apply_range_edit(
-                                    self.state.document.uri,
-                                    self.RANGE,
-                                    diff_text
+                                    self.state.document.uri, self.RANGE, diff_text
                                 )
 
                                 def add_pos_text(pos: lsp.Position, text: str):
@@ -263,7 +262,11 @@ class CodeEditAgent(Agent):
                                     else:
                                         offset = list(reversed(text)).index("\n")
                                     return lsp.Position(pos.line + line_delta, offset)
-                                self.RANGE = lsp.Range(self.state.selection.first, add_pos_text(self.state.selection.first, diff_text))
+
+                                self.RANGE = lsp.Range(
+                                    self.state.selection.first,
+                                    add_pos_text(self.state.selection.first, diff_text),
+                                )
 
                                 try:
                                     await asyncio.wait_for(cf, timeout=2)
@@ -271,7 +274,9 @@ class CodeEditAgent(Agent):
                                 except asyncio.TimeoutError:
                                     # [todo] this happens when an edit occured that clobbered this, try redoing.
                                     # logger.error(f"timeout waiting for change '{diff_text=}', retry the edit")
-                                    logger.info(f"timeout waiting for change '{diff_text=}', continuing")
+                                    logger.info(
+                                        f"timeout waiting for change '{diff_text=}', continuing"
+                                    )
                                     break
                                 finally:
                                     del self.state.change_futures[diff_text]
@@ -283,12 +288,16 @@ class CodeEditAgent(Agent):
                                         cursor = self.state.selection.first
                                         for op, text in diff:
                                             next_cursor = add_pos_text(cursor, text)
-                                            if op == -1: # delete
-                                                self.state.negative_ranges.add(lsp.Range(cursor, next_cursor))
-                                            elif op == 0: # keep
+                                            if op == -1:  # delete
+                                                self.state.negative_ranges.add(
+                                                    lsp.Range(cursor, next_cursor)
+                                                )
+                                            elif op == 0:  # keep
                                                 pass
-                                            elif op == 1: # add
-                                                self.state.additive_ranges.add(lsp.Range(cursor, next_cursor))
+                                            elif op == 1:  # add
+                                                self.state.additive_ranges.add(
+                                                    lsp.Range(cursor, next_cursor)
+                                                )
                                             cursor = next_cursor
 
                                     progress = CodeEditProgress(
@@ -298,10 +307,8 @@ class CodeEditAgent(Agent):
                                         additive_ranges=list(self.state.additive_ranges),
                                         negative_ranges=list(self.state.negative_ranges),
                                     )
-                                    logger.info(f"{progress=}")
-                                    await self.send_progress(
-                                        progress
-                                    )
+                                    # logger.info(f"{progress=}")
+                                    await self.send_progress(progress)
                             except Exception as e:
                                 logger.info(f"caught {e=} retrying")
                                 fuel -= 1
@@ -310,14 +317,15 @@ class CodeEditAgent(Agent):
                 await generate_code()
                 await gather_thoughts()
                 t = asyncio.create_task(cleanup())
-                logger.info("WAITING GENERATE RESPONSE T")
+                # logger.info("WAITING GENERATE RESPONSE T")
                 assistant_response = await generate_response_t
-                logger.info("AWAITING T")
+                # logger.info("AWAITING T")
                 await t
-                logger.info(f"{assistant_response=}")
-                self.state.messages.append(openai.Message.user(content=instructionPrompt))
-                self.state.messages.append(openai.Message.assistant(content=assistant_response))
-                logger.info("LOOPING")
+                self.state.messages += [
+                    openai.Message.user(content=instructionPrompt),
+                    openai.Message.assistant(content=assistant_response),
+                ]
+                # logger.info("LOOPING")
             finally:
                 self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
         return CodeEditRunResult()
@@ -389,15 +397,13 @@ class CodeEditAgent(Agent):
                 result += text
             elif op == 1:
                 result += text
-        return result        
+        return result
 
     async def accept(self):
         logger.info(f"{self} user accepted result")
 
         await self.server.apply_range_edit(
-            self.state.document.uri,
-            self.RANGE,
-            self.accepted_diff_text(self.DIFF)
+            self.state.document.uri, self.RANGE, self.accepted_diff_text(self.DIFF)
         )
         # if self.task.status not in ["error", "done"]:
         #     logger.error(f"cannot accept status {self.task.status}")
@@ -418,15 +424,13 @@ class CodeEditAgent(Agent):
                 result += text
             elif op == 1:
                 pass
-        return result        
+        return result
 
     async def reject(self):
         logger.info(f"{self} user rejected result")
 
         await self.server.apply_range_edit(
-            self.state.document.uri,
-            self.RANGE,
-            self.rejected_diff_text(self.DIFF)
+            self.state.document.uri, self.RANGE, self.rejected_diff_text(self.DIFF)
         )
         await self.send_progress(
             payload="rejected",

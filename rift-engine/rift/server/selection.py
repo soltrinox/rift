@@ -1,11 +1,10 @@
 import itertools
+import logging
 from dataclasses import dataclass
 from typing import Iterable, Union
 
 from rift.lsp.types import Position, Range, TextDocumentContentChangeEvent
 from rift.util.ofdict import ofdict, todict
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +83,7 @@ class RangeSet:
     def apply_edit(self, edit: TextDocumentContentChangeEvent):
         if edit.range is None:
             pass
-        ranges = set()        
+        ranges = set()
         n = len(edit.text)
         δ = n - len(edit.range)
         for range in self.ranges:
