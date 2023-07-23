@@ -352,6 +352,10 @@ class LspServer(BaseLspServer):
         self.active_agents[agent_id] = agent
         # t = asyncio.Task(agent.main())
         t = asyncio.create_task(agent.main())
+        def main_callback(fut):
+            if fut.exception():
+                logger.info(f"CAUGHT EXCEPTION={fut.exception()=}")
+        t.add_done_callback(main_callback)
         return RunAgentResult(id=agent_id)
         #     return t
 

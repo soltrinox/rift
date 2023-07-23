@@ -103,11 +103,11 @@ class CodeEditAgent(Agent):
     async def run(self) -> AgentRunResult:  # main entry point
         try:
             self.DIFF = None
+            self.RANGE = None
             async def get_user_response() -> str:
                 return await self.request_chat(RequestChatRequest(messages=self.state.messages))
 
             await self.send_progress()
-            logger.info("sent progress")
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
             with lsp.setdoc(self.state.document):
                 urtext = self.state.document.text
@@ -148,6 +148,7 @@ class CodeEditAgent(Agent):
                         goal=instructionPrompt,
                         latest_region=None if self.DIFF is None else (self.accepted_diff_text(self.DIFF)),
                     )
+                    logger.info("started streaming result")
                     response_stream = TextStream()
 
                     # rf = asyncio.get_running_loop().create_future()

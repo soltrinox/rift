@@ -505,6 +505,9 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
         )
 
+        before_cursor=document[:cursor_offset_start]
+        region=document[cursor_offset_start:cursor_offset_end]
+        after_cursor=document[cursor_offset_end:]
         if get_num_tokens(document) > max_size_document:
             tokens_before_cursor = ENCODER.encode(before_cursor)
             tokens_after_cursor = ENCODER.encode(after_cursor)
@@ -518,9 +521,9 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             after_cursor = ENCODER.decode(tokens_after_cursor)
 
         messages = create_messages(
-            before_cursor=document[:cursor_offset_start],
-            region=document[cursor_offset_start:cursor_offset_end],
-            after_cursor=document[cursor_offset_end:],
+            before_cursor=before_cursor,
+            region=region,
+            after_cursor=after_cursor,
         )
         # logger.info(f"{messages=}")
 
