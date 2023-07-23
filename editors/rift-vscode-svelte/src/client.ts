@@ -410,6 +410,7 @@ export class MorphLanguageClient
       "morph/listAgents",
       {}
     );
+
     return result;
   }
 
@@ -609,7 +610,7 @@ export class MorphLanguageClient
     if (!this.client) throw new Error();
     if (!(agentId in this.webviewState.value.agents)) throw new Error(`tried to restart agent ${agentId} but couldn't find it in agents object`)
     const agent_type = this.webviewState.value.agents[agentId].type
-    let result: RunAgentResult = await this.client.sendRequest("morph/restart_agent", {id: agentId});
+    let result: RunAgentResult = await this.client.sendRequest("morph/restart_agent", { id: agentId });
     this.webviewState.update((state) => ({
       ...state,
       agents: {
