@@ -53,21 +53,17 @@ import rift.llm.openai_types as openai
 logger = logging.getLogger(__name__)
 
 def __popup_input(prompt: str) -> str:
-    print("Started popup input")
+    #sends request for popup
     asyncio.run(INPUT_PROMPT_QUEUE.put(prompt))
-    print("Pushed popup input")
-
-    print("Waiting on response")
-
+    #waits till we get a popup
     while INPUT_RESPONSE_QUEUE.empty():
         pass
+    #loads reponse and returns
     resp = asyncio.run(INPUT_RESPONSE_QUEUE.get())
-    print("Got response")
     return resp
 
 
 gpt_engineer.steps.input = __popup_input
-
 
 def __popup_chat(prompt: str="NONE", end=""):
     asyncio.run(OUTPUT_CHAT_QUEUE.put(prompt))
@@ -239,7 +235,7 @@ class EngineerAgent(Agent):
                 response = asyncio.run(obj.request_input(
                     RequestInputRequest(
                         msg=prompt,
-                        place_holder="Please write me a game of pong in python",
+                        place_holder="write your input here",
                     )
                 ))
                 print("Got user input")
