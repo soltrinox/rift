@@ -43,6 +43,7 @@ class CodeEditProgress(AgentProgress):
     cursor: Optional[lsp.Position] = None
     additive_ranges: Optional[RangeSet] = None
     negative_ranges: Optional[RangeSet] = None
+    ready: bool = False
 
 
 # dataclass for representing the parameters of the code completion agent
@@ -100,235 +101,247 @@ class CodeEditAgent(Agent):
         return obj
 
     async def run(self) -> AgentRunResult:  # main entry point
-        self.DIFF = None
-        from asyncio import Lock
+        try:
+            self.DIFF = None
+            async def get_user_response() -> str:
+                return await self.request_chat(RequestChatRequest(messages=self.state.messages))
 
-        response_lock = Lock()
+            await self.send_progress()
+            logger.info("sent progress")
+            self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
+            with lsp.setdoc(self.state.document):
+                urtext = self.state.document.text
+                uroffset_start = self.state.document.position_to_offset(self.state.selection.first)
+                uroffset_end = self.state.document.position_to_offset(self.state.selection.second)
 
-        async def get_user_response() -> str:
-            return await self.request_chat(RequestChatRequest(messages=self.state.messages))
+            while True:
+                try:
+                    # get the next prompt
+                    # logger.info("getting user response")
+                    get_user_response_t = self.add_task(
+                        AgentTask("Get user response", get_user_response)
+                    )
+                    instructionPrompt = await get_user_response_t.run()
+                    # logger.info("got user response")
 
-        await self.send_progress()
-        logger.info("sent progress")
-        self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
-        with lsp.setdoc(self.state.document):
-            urtext = self.state.document.text
-            uroffset_start = self.state.document.position_to_offset(self.state.selection.first)
-            uroffset_end = self.state.document.position_to_offset(self.state.selection.second)
+                    # instructionPrompt = self.state.params.instructionPrompt or (
+                    #     await self.request_input(
+                    #         RequestInputRequest(
+                    #             msg="Describe what you want me to do",
+                    #             place_holder="Please implement the rest of this function",
+                    #         )
+                    #     )
+                    # )
+                    self.server.register_change_callback(self.on_change, self.state.document.uri)
+                    from diff_match_patch import diff_match_patch
 
-        while True:
-            try:
-                # get the next prompt
-                # logger.info("getting user response")
-                get_user_response_t = self.add_task(
-                    AgentTask("Get user response", get_user_response)
-                )
-                instructionPrompt = await get_user_response_t.run()
-                # logger.info("got user response")
+                    dmp = diff_match_patch()
 
-                # instructionPrompt = self.state.params.instructionPrompt or (
-                #     await self.request_input(
-                #         RequestInputRequest(
-                #             msg="Describe what you want me to do",
-                #             place_holder="Please implement the rest of this function",
-                #         )
-                #     )
-                # )
-                self.server.register_change_callback(self.on_change, self.state.document.uri)
-                from diff_match_patch import diff_match_patch
+                    # with lsp.setdoc(self.state.document):
+                    # needs to know about previous edits which is why we pass in the messages
+                    # this should preserve an old copy of the document actually
+                    # DIFF contains the most recent diff
+                    edit_code_result = await self.state.model.edit_code(
+                        urtext,
+                        uroffset_start,
+                        uroffset_end,
+                        goal=instructionPrompt,
+                        latest_region=None if self.DIFF is None else (self.accepted_diff_text(self.DIFF)),
+                    )
+                    response_stream = TextStream()
 
-                dmp = diff_match_patch()
+                    # rf = asyncio.get_running_loop().create_future()
+                    # response_stream._feed_task = rf
+                    # rf2 = asyncio.get_running_loop().create_future()
+                    async def generate_response():
+                        # logger.info("GENERATING RESPONSE")
+                        response = ""
+                        try:
+                            async for delta in response_stream:
+                                # logger.info(f"RESPONSE DELTA: {delta=}")
+                                response += delta
+                                await self.send_progress(CodeEditProgress(response=response))
+                        except Exception as e:
+                            logger.info(f"RESPONSE EXCEPTION: {e}")
+                            raise e
+                        finally:
+                            await self.send_progress({"response": response, "done_streaming": True})
+                        # logger.info(f"DONE {response=}")
+                        return response
 
-                # with lsp.setdoc(self.state.document):
-                # needs to know about previous edits which is why we pass in the messages
-                # this should preserve an old copy of the document actually
-                # DIFF contains the most recent diff
-                edit_code_result = await self.state.model.edit_code(
-                    urtext,
-                    uroffset_start,
-                    uroffset_end,
-                    goal=instructionPrompt,
-                    previous_region="n/a"
-                    if self.DIFF is None
-                    else (self.accepted_diff_text(self.DIFF)),
-                )
-                response_stream = TextStream()
+                    generate_response_t = asyncio.create_task(generate_response())
 
-                # rf = asyncio.get_running_loop().create_future()
-                # response_stream._feed_task = rf
-                # rf2 = asyncio.get_running_loop().create_future()
-                async def generate_response():
-                    # logger.info("GENERATING RESPONSE")
-                    response = ""
-                    try:
-                        async for delta in response_stream:
-                            # logger.info(f"RESPONSE DELTA: {delta=}")
-                            response += delta
-                            await self.send_progress(CodeEditProgress(response=response))
-                    except Exception as e:
-                        logger.info(f"RESPONSE EXCEPTION: {e}")
-                        raise e
-                    finally:
-                        await self.send_progress({"response": response, "done_streaming": True})
-                    # logger.info(f"DONE {response=}")
-                    return response
+                    # async def gather_plan():
+                    #     logger.info("GATHERING PLAN")
+                    #     flag = False
+                    #     async with response_lock:
+                    #         async for delta in edit_code_result.plan:
+                    #             logger.info(f"PLAN DELTA: {delta=}")
+                    #             response_stream.feed_data(delta)
+                    #         response_stream.feed_data("\n```\n")
 
-                generate_response_t = asyncio.create_task(generate_response())
+                    async def gather_thoughts():
+                        # logger.info("GATHERING THOUGHTS")
+                        flag = False
+                        # async with response_lock:
+                        async for delta in edit_code_result.thoughts:
+                            # if not flag:
+                            #     response_stream.feed_data("\n```\n\n")
+                            #     flag = True
+                            response_stream.feed_data(delta)
+                            # logger.info("DONE GATHERING THOUGHTS")
 
-                # async def gather_plan():
-                #     logger.info("GATHERING PLAN")
-                #     flag = False
-                #     async with response_lock:
-                #         async for delta in edit_code_result.plan:
-                #             logger.info(f"PLAN DELTA: {delta=}")
-                #             response_stream.feed_data(delta)
-                #         response_stream.feed_data("\n```\n")
+                    async def cleanup():
+                        # logger.info("CLEANING UP")
+                        response_stream.feed_eof()
+                        # logger.info("CLEANED UP")
 
-                async def gather_thoughts():
-                    # logger.info("GATHERING THOUGHTS")
-                    flag = False
-                    # async with response_lock:
-                    async for delta in edit_code_result.thoughts:
-                        # if not flag:
-                        #     response_stream.feed_data("\n```\n\n")
-                        #     flag = True
-                        response_stream.feed_data(delta)
-                        # logger.info("DONE GATHERING THOUGHTS")
+                    # gather_plan_task = asyncio.create_task(gather_plan())
 
-                async def cleanup():
-                    # logger.info("CLEANING UP")
-                    response_stream.feed_eof()
-                    # logger.info("CLEANED UP")
+                    # gather_thoughts_task = asyncio.create_task(gather_thoughts())
 
-                # gather_plan_task = asyncio.create_task(gather_plan())
+                    # t = self.add_task(AgentTask("Generate response and code edit", generate_response))
+                    # generate_response_t = asyncio.create_task(t.run())
 
-                # gather_thoughts_task = asyncio.create_task(gather_thoughts())
+                    logger.info("created text stream")
 
-                # t = self.add_task(AgentTask("Generate response and code edit", generate_response))
-                # generate_response_t = asyncio.create_task(t.run())
+                    all_deltas = []
+                    # logger.info(f"RANGE BEFORE ITERATION: {RANGE=}")
+                    # calculate the diff
+                    offset_start = self.state.document.position_to_offset(self.state.selection.first)
+                    offset_end = self.state.document.position_to_offset(self.state.selection.second)
+                    selection_text = self.state.document.text[offset_start:offset_end]
 
-                logger.info("created text stream")
+                    logger.info("starting to iterate through text stream")
+                    self.DIFF = None
 
-                all_deltas = []
-                # logger.info(f"RANGE BEFORE ITERATION: {RANGE=}")
-                # calculate the diff
-                offset_start = self.state.document.position_to_offset(self.state.selection.first)
-                offset_end = self.state.document.position_to_offset(self.state.selection.second)
-                selection_text = self.state.document.text[offset_start:offset_end]
-
-                logger.info("starting to iterate through text stream")
-                self.DIFF = None
-
-                # await gather_plan_task
-                # logger.info("WAITING")
-                async def generate_code():
-                    nonlocal all_deltas
-                    async for delta in edit_code_result.code:
-                        all_deltas.append(delta)
-                        # response_stream.feed_data(delta)
-                        fuel = 10
-                        while True:
-                            if self.state._done:
-                                break
-                            if fuel <= 0:
-                                raise Exception(":(")
-                            try:
-                                logger.info("in main try")
-                                new_text = "".join(all_deltas)
-                                # logger.info(f"{selection_text=} {new_text=}")
-
-                                diff = dmp.diff_lineMode(selection_text, new_text, None)
-                                dmp.diff_cleanupSemantic(diff)
-                                # logger.info(f"{diff=}")
-                                self.DIFF = diff  # store the latest diff
-                                diff_text = "".join([text for _, text in diff])
-
-                                # logger.info(f"got the diff_text: {diff_text=}")
-
-                                if diff_text == selection_text:
+                    # await gather_plan_task
+                    # logger.info("WAITING")
+                    async def generate_code():
+                        nonlocal all_deltas
+                        async for delta in edit_code_result.code:
+                            all_deltas.append(delta)
+                            # response_stream.feed_data(delta)
+                            fuel = 10
+                            while True:
+                                if self.state._done:
                                     break
-
-                                cf = asyncio.get_running_loop().create_future()
-                                self.state.change_futures[diff_text] = cf
-
-                                await self.server.apply_range_edit(
-                                    self.state.document.uri, self.RANGE, diff_text
-                                )
-
-                                def add_pos_text(pos: lsp.Position, text: str):
-                                    line_delta = text.count("\n")
-                                    if line_delta == 0:
-                                        offset = pos.character + len(text)
-                                    else:
-                                        offset = list(reversed(text)).index("\n")
-                                    return lsp.Position(pos.line + line_delta, offset)
-
-                                self.RANGE = lsp.Range(
-                                    self.state.selection.first,
-                                    add_pos_text(self.state.selection.first, diff_text),
-                                )
-
+                                if fuel <= 0:
+                                    raise Exception(":(")
                                 try:
-                                    await asyncio.wait_for(cf, timeout=2)
-                                    break
-                                except asyncio.TimeoutError:
-                                    # [todo] this happens when an edit occured that clobbered this, try redoing.
-                                    # logger.error(f"timeout waiting for change '{diff_text=}', retry the edit")
-                                    logger.info(
-                                        f"timeout waiting for change '{diff_text=}', continuing"
+                                    # logger.info("in main try")
+                                    new_text = "".join(all_deltas)
+                                    # logger.info(f"{selection_text=} {new_text=}")
+
+                                    diff = dmp.diff_lineMode(selection_text, new_text, None)
+                                    dmp.diff_cleanupSemantic(diff)
+                                    # logger.info(f"{diff=}")
+                                    self.DIFF = diff  # store the latest diff
+                                    diff_text = "".join([text for _, text in diff])
+
+                                    # logger.info(f"got the diff_text: {diff_text=}")
+
+                                    if diff_text == selection_text:
+                                        break
+
+                                    cf = asyncio.get_running_loop().create_future()
+                                    self.state.change_futures[diff_text] = cf
+
+                                    await self.server.apply_range_edit(
+                                        self.state.document.uri, self.RANGE, diff_text
                                     )
-                                    break
-                                finally:
-                                    del self.state.change_futures[diff_text]
 
-                                    # recalculate our ranges
-                                    self.state.additive_ranges = RangeSet()
-                                    self.state.negative_ranges = RangeSet()
-                                    with lsp.setdoc(self.state.document):
-                                        cursor = self.state.selection.first
-                                        for op, text in diff:
-                                            next_cursor = add_pos_text(cursor, text)
-                                            if op == -1:  # delete
-                                                self.state.negative_ranges.add(
-                                                    lsp.Range(cursor, next_cursor)
-                                                )
-                                            elif op == 0:  # keep
-                                                pass
-                                            elif op == 1:  # add
-                                                self.state.additive_ranges.add(
-                                                    lsp.Range(cursor, next_cursor)
-                                                )
-                                            cursor = next_cursor
+                                    def add_pos_text(pos: lsp.Position, text: str):
+                                        line_delta = text.count("\n")
+                                        if line_delta == 0:
+                                            offset = pos.character + len(text)
+                                        else:
+                                            offset = list(reversed(text)).index("\n")
+                                        return lsp.Position(pos.line + line_delta, offset)
 
-                                    progress = CodeEditProgress(
-                                        response=None,
-                                        textDocument=self.state.document,
-                                        cursor=self.state.cursor,
-                                        additive_ranges=list(self.state.additive_ranges),
-                                        negative_ranges=list(self.state.negative_ranges),
+                                    self.RANGE = lsp.Range(
+                                        self.state.selection.first,
+                                        add_pos_text(self.state.selection.first, diff_text),
                                     )
-                                    # logger.info(f"{progress=}")
-                                    await self.send_progress(progress)
-                            except Exception as e:
-                                logger.info(f"caught {e=} retrying")
-                                fuel -= 1
 
-                # await gather_plan_task
-                await generate_code()
-                await gather_thoughts()
-                t = asyncio.create_task(cleanup())
-                # logger.info("WAITING GENERATE RESPONSE T")
-                assistant_response = await generate_response_t
-                # logger.info("AWAITING T")
-                await t
-                self.state.messages += [
-                    openai.Message.user(content=instructionPrompt),
-                    openai.Message.assistant(content=assistant_response),
-                ]
-                # logger.info("LOOPING")
-            finally:
-                self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
-        return CodeEditRunResult()
+                                    try:
+                                        await asyncio.wait_for(cf, timeout=2)
+                                        break
+                                    except asyncio.TimeoutError:
+                                        # [todo] this happens when an edit occured that clobbered this, try redoing.
+                                        # logger.error(f"timeout waiting for change '{diff_text=}', retry the edit")
+                                        # logger.info(
+                                        #     f"timeout waiting for change '{diff_text=}', continuing"
+                                        # )
+                                        break
+                                    finally:
+                                        del self.state.change_futures[diff_text]
+
+                                        # recalculate our ranges
+                                        self.state.additive_ranges = RangeSet()
+                                        self.state.negative_ranges = RangeSet()
+                                        with lsp.setdoc(self.state.document):
+                                            cursor = self.state.selection.first
+                                            for op, text in diff:
+                                                next_cursor = add_pos_text(cursor, text)
+                                                if op == -1:  # delete
+                                                    self.state.negative_ranges.add(
+                                                        lsp.Range(cursor, next_cursor)
+                                                    )
+                                                elif op == 0:  # keep
+                                                    pass
+                                                elif op == 1:  # add
+                                                    self.state.additive_ranges.add(
+                                                        lsp.Range(cursor, next_cursor)
+                                                    )
+                                                cursor = next_cursor
+
+                                        progress = CodeEditProgress(
+                                            response=None,
+                                            textDocument=self.state.document,
+                                            cursor=self.state.cursor,
+                                            additive_ranges=list(self.state.additive_ranges),
+                                            negative_ranges=list(self.state.negative_ranges),
+                                        )
+                                        # logger.info(f"{progress=}")
+                                        await self.send_progress(progress)
+                                except Exception as e:
+                                    logger.info(f"caught {e=} retrying")
+                                    fuel -= 1
+
+                    # await gather_plan_task
+                    await generate_code()
+                    await gather_thoughts()
+                    t = asyncio.create_task(cleanup())
+                    # logger.info("WAITING GENERATE RESPONSE T")
+                    assistant_response = await generate_response_t
+                    # logger.info("AWAITING T")
+                    await t
+                    self.state.messages += [
+                        openai.Message.user(content=instructionPrompt),
+                        openai.Message.assistant(content=assistant_response),
+                    ]
+
+                    await self.send_progress(
+                        CodeEditProgress(
+                            response=None,
+                            textDocument=self.state.document,
+                            cursor=self.state.cursor,
+                            additive_ranges=list(self.state.additive_ranges),
+                            negative_ranges=list(self.state.negative_ranges),
+                            ready=True,
+                        )
+                    )
+                    # logger.info("LOOPING")
+                finally:
+                    self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
+            return CodeEditRunResult()
+        except asyncio.CancelledError as e:
+            try:
+                await self.reject()
+            except:
+                raise e
+            
 
     async def on_change(
         self,
@@ -359,7 +372,10 @@ class CodeEditAgent(Agent):
 
             if fut is not None:
                 # we caused this change
-                fut.set_result(None)
+                try:
+                    fut.set_result(None)
+                except:
+                    pass
             else:
                 # someone else caused this change
                 # [todo], in the below examples, we shouldn't cancel, but instead figure out what changed and restart the insertions with the new information.

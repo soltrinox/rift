@@ -294,24 +294,25 @@ async function code_completion_send_progress_handler(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 async function code_edit_send_progress_handler(
   params: any,
   agent: Agent
 ): Promise<void> {
   console.log(`PARAMS: ${params}`);
   if (params.tasks) {
-    // logProvider.postMessage("tasks", {
-    //   agent_id: params.agent_id,
-    //   ...params.tasks,
-    // });
+    // logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
     if (params.tasks.task.status) {
       if (agent.codeLensStatus !== params.tasks.task.status) {
         agent.codeLensStatus = params.tasks.task.status;
         agent.onStatusChangeEmitter.fire(params.tasks.task.status);
       }
     }
+    if (params.payload.ready) {
+        agent.codeLensStatus = "done";
+        agent.onStatusChangeEmitter.fire("done");
+    }
   }
+
   // if (params.payload) {
   //   if (params.payload.additive_ranges) {
   //     agent.additive_ranges = params.payload.additive_ranges;
@@ -332,6 +333,8 @@ async function code_edit_send_progress_handler(
         editor.setDecorations(GREEN, []);
         editor.setDecorations(RED, []);
         agent.onStatusChangeEmitter.fire(params.payload);
+        // console.log("SET DECORATIONS TO NONE");
+        // agent.morph_language_client.delete({ id: agent.id })
       }
     }
     if (params.payload) {
@@ -564,7 +567,7 @@ export class MorphLanguageClient
   ): AgentStateLens[] {
     // this returns all of the lenses for the document.
     let items: AgentStateLens[] = [];
-    console.log("AGENTS: ", this.agents);
+    // console.log("AGENTS: ", this.agents);
 
     for (const [id, agent] of Object.entries(this.agents)) {
       if (!["code_completion", "code_edit"].includes(agent.agent_type)) {
@@ -572,7 +575,7 @@ export class MorphLanguageClient
       }
 
       if (agent?.textDocument?.uri?.toString() == document.uri.toString()) {
-        const line = agent?.position.line;
+          const line = agent?.selection.isReversed ? agent?.selection.active : agent?.selection.anchor;
         const linetext = document.lineAt(line);
 
         //####### HARDCODED REMOVE THIS #################
@@ -746,13 +749,13 @@ export class MorphLanguageClient
     // get the uri and position of the current cursor
     const doc = editor.document;
     const textDocument = { uri: doc.uri.toString(), version: 0 };
-    const position = editor.selection.active;
+    // const position = editor.selection.active;
 
     const agent = new Agent(
       this,
       result.id,
       agent_type,
-      position,
+      editor.selection,
       textDocument,
       params
     );
@@ -989,7 +992,7 @@ class Agent {
     morph_language_client: MorphLanguageClient,
     public readonly id: string,
     public readonly agent_type: string,
-    public readonly position: vscode.Position,
+    public readonly selection: vscode.Selection,
     public textDocument: TextDocumentIdentifier,
     public params: any
   ) {
@@ -998,7 +1001,7 @@ class Agent {
       this.status = "running";
       this.codeLensStatus = "running";
     this.agent_type = agent_type;
-    this.position = position;
+    this.selection = selection;
     this.textDocument = textDocument;
     this.green = vscode.window.createTextEditorDecorationType({
       backgroundColor: "rgba(0,255,0,0.1)",
@@ -1146,7 +1149,7 @@ class Agent {
     }
 
     if (this.agent_type === "code_edit") {
-      code_completion_send_progress_handler(params, this);
+      code_edit_send_progress_handler(params, this);
     }      
   }
   async handleResult(params: AgentResult) {

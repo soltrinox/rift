@@ -120,7 +120,7 @@ The system message size can dynamically increase beyond MAX_SYSTEM_MESSAGE_SIZE 
 """
 
 MAX_CONTEXT_SIZE = 4096  # Total token limit for GPT models
-MAX_LEN_SAMPLED_COMPLETION = 512  # Reserved tokens for model's responses
+MAX_LEN_SAMPLED_COMPLETION = 768  # Reserved tokens for model's responses
 MAX_SYSTEM_MESSAGE_SIZE = 1024  # Token limit for system message
 
 
@@ -196,6 +196,7 @@ def create_system_message_truncated(
 def truncate_messages(messages: List[Message]):
     system_message_size = message_size(messages[0])
     max_size = calc_max_non_system_msgs_size(system_message_size)
+    logger.info(f"MAX SIZE: {max_size}")
     tail_messages: List[Message] = []
     running_length = 0
     for msg in reversed(messages[1:]):
@@ -354,7 +355,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         ...
 
     def chat_completions(self, messages: List[Message], *, stream: bool = False, **kwargs) -> Any:
-        logger.info(f"{messages=}")
+        # logger.info(f"{messages=}")
         endpoint = "/chat/completions"
         input_type = ChatCompletionRequest
         # TODO: don't hardcode
@@ -398,6 +399,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         non_system_messages_size = messages_size(non_system_messages)
 
         max_system_msg_size = calc_max_system_message_size(non_system_messages_size)
+
         system_message = create_system_message_truncated(
             document or "", max_system_msg_size, cursor_offset
         )
@@ -434,9 +436,9 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         cursor_offset_start: int,
         cursor_offset_end: int,
         goal=None,
-        previous_region: str = "n/a",
+        latest_region: Optional[str] = None,
     ) -> EditCodeResult:
-        logger.info(f"[edit_code] entered {previous_region=}")
+        # logger.info(f"[edit_code] entered {latest_region=}")
         if goal is None:
             goal = f"""
             Generate code to replace the given `region`. Write a partial code snippet without imports if needed.
@@ -457,8 +459,6 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                     "\n\n"
                     "You will be presented with a *task* and a source code file split into three parts: a *prefix*, *region*, and *suffix*. "
                     "The task will specify a change or new code that will replace the given region.\n You will receive the source code in the following format:\n"
-                    "==== LATEST REGION ====\n"
-                    "${latest proposed version of the REGION if applicable}\n"
                     "==== PREFIX ====\n"
                     "${source code file before the region}\n"
                     "==== REGION ====\n"
@@ -467,10 +467,8 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                     "{source code file after the region}\n\n"
                     "When presented with a task, you will:\n(1) write a detailed and elegant plan to solve this task,\n(2) write your solution for it surrounded by triple backticks, and\n(3) write a 1-2 sentence summary of your solution.\n"
                     f"Your solution will be added verbatim to replace the given region. Do *not* repeat the prefix or suffix in any way.\n"
-                    "The solution should directly replaces the given region. If the region is empty, just write something that will replace the empty string. *Do not repeat the prefix or suffix in any way*. If the region is in the middle of a function definition or class declaration, do not repeat the function signature or class declaration. Write a partial code snippet without imports if needed.\n"
+                    "The solution should directly replaces the given region. If the region is empty, just write something that will replace the empty string. *Do not repeat the prefix or suffix in any way*. If the region is in the middle of a function definition or class declaration, do not repeat the function signature or class declaration. Write a partial code snippet without imports if needed. Preserve indentation.\n"
                     f"For example, if the source code looks like this:\n"
-                    "==== LATEST REGION ====\n"
-                    "n/a\n"
                     "==== PREFIX ====\n"
                     "def hello_world():\n    \n"
                     "==== REGION ====\n"
@@ -493,12 +491,10 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                 Message.assistant("Hello! How can I help you today?"),
                 Message.user(
                     f"Please generate code completing the task which will replace the below region: {goal}\n"
-                    "==== PREVIOUS REGION ====\n"
-                    f"{previous_region}\n"
                     "==== PREFIX ====\n"
                     f"{before_cursor}"
                     "==== REGION ====\n"
-                    f"{region}\n"
+                    f"{latest_region or region}\n"
                     "==== SUFFIX ====\n"
                     f"{after_cursor}\n"
                 ),
@@ -526,7 +522,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             region=document[cursor_offset_start:cursor_offset_end],
             after_cursor=document[cursor_offset_end:],
         )
-        logger.info(f"{messages=}")
+        # logger.info(f"{messages=}")
 
         stream = TextStream.from_aiter(
             asg.map(lambda c: c.text, self.chat_completions(messages, stream=True))
