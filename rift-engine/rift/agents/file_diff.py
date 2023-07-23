@@ -2,9 +2,8 @@ import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from diff_match_patch import diff_match_patch
-
 import rift.lsp.types as lsp
+from diff_match_patch import diff_match_patch
 from rift.lsp import (
     CreateFile,
     Range,
@@ -26,6 +25,17 @@ class FileChange:
 
 
 def get_file_change(path: str, new_content: str) -> FileChange:
+    """
+    This function is used to generate a FileChange instance from a given file path and string of new content.
+    If the file at the specified path doesn't exist, an empty string would be assigned as old_content, thus indicating a new file creation.
+
+    Parameters:
+    path: A string representing the path of the file to be changed.
+    new_content: A string representing the new content to be written into the file.
+
+    Returns:
+    A FileChange instance that represents the changes to be made in the source file.
+    """
     uri = TextDocumentIdentifier(uri="file://" + path, version=0)
     if os.path.isfile(path):
         with open(path, "r") as f:
@@ -89,15 +99,38 @@ def edits_from_file_change(
 def edits_from_file_changes(
     file_changes: List[FileChange], user_confirmation: bool = False
 ) -> WorkspaceEdit:
+    """
+    Generate a WorkspaceEdit by aggregating the edits from multiple FileChanges.
+
+    Parameters:
+    file_changes: A list of FileChange, each representing a change to a file.
+    user_confirmation: Whether the user should confirm each modification manually. False by default.
+
+    Returns:
+    WorkspaceEdit containing the aggregated documentChanges and changeAnnotations.
+    """
+
+    # List to store all document changes.
     documentChanges: List[
         Union[lsp.TextDocumentEdit, lsp.CreateFile, lsp.RenameFile, lsp.DeleteFile]
     ] = []
+
+    # Dictionary to store all change annotations.
     changeAnnotations: Dict[ChangeAnnotationIdentifier, ChangeAnnotation] = dict()
+
+    # Iterate through each file change.
     for file_change in file_changes:
+        # Generate a WorkspaceEdit for this file change.
         edit = edits_from_file_change(file_change=file_change, user_confirmation=user_confirmation)
+
+        # Add the document changes for this workspace edit to our list.
         documentChanges += edit.documentChanges
+
+        # If any changeAnnotations were made in our workspace edit, update our dictionary with them.
         if edit.changeAnnotations is not None:
             changeAnnotations.update(edit.changeAnnotations)
+
+    # Return a new WorkspaceEdit that aggregates all the edits made to each file.
     return WorkspaceEdit(documentChanges=documentChanges, changeAnnotations=changeAnnotations)
 
 

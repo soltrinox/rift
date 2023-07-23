@@ -2,9 +2,8 @@ from dataclasses import dataclass, field
 from logging import getLogger
 from typing import List, Optional
 
-import smol_dev
-
 import rift.lsp.types as lsp
+import smol_dev
 from rift.agents.abstract import (
     Agent,
     AgentProgress,

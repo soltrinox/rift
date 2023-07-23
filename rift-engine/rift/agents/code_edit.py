@@ -104,6 +104,7 @@ class CodeEditAgent(Agent):
         try:
             self.DIFF = None
             self.RANGE = None
+
             async def get_user_response() -> str:
                 return await self.request_chat(RequestChatRequest(messages=self.state.messages))
 
@@ -146,7 +147,9 @@ class CodeEditAgent(Agent):
                         uroffset_start,
                         uroffset_end,
                         goal=instructionPrompt,
-                        latest_region=None if self.DIFF is None else (self.accepted_diff_text(self.DIFF)),
+                        latest_region=None
+                        if self.DIFF is None
+                        else (self.accepted_diff_text(self.DIFF)),
                     )
                     logger.info("started streaming result")
                     response_stream = TextStream()
@@ -209,7 +212,9 @@ class CodeEditAgent(Agent):
                     all_deltas = []
                     # logger.info(f"RANGE BEFORE ITERATION: {RANGE=}")
                     # calculate the diff
-                    offset_start = self.state.document.position_to_offset(self.state.selection.first)
+                    offset_start = self.state.document.position_to_offset(
+                        self.state.selection.first
+                    )
                     offset_end = self.state.document.position_to_offset(self.state.selection.second)
                     selection_text = self.state.document.text[offset_start:offset_end]
 
@@ -342,7 +347,6 @@ class CodeEditAgent(Agent):
                 await self.reject()
             except:
                 raise e
-            
 
     async def on_change(
         self,

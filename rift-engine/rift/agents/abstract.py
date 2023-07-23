@@ -218,7 +218,7 @@ class Agent:
             payload=payload,
         )
         if self.task.status == "error":
-            logger.info(f"[error]: {self.task._task.exception()}" )
+            logger.info(f"[error]: {self.task._task.exception()}")
 
         await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_progress", progress)
 
