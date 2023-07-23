@@ -56,7 +56,11 @@ class AiderAgent(Agent):
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes
         def on_commit():
+            async def get_response():
+                await ainput("\n> This is where the commit would happen. Press any key to continue.\n")
+                return True
             logger.info("Intercepted Commit")
+            asyncio.run(get_response())
 
         from concurrent import futures
         with futures.ThreadPoolExecutor(1) as pool:
