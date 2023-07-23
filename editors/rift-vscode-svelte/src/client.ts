@@ -234,6 +234,7 @@ const code_completion_send_progress = async (params: any, agent: Agent) => {
         editor.setDecorations(GREEN, []);
         agent.onStatusChangeEmitter.fire(params.payload);
         console.log("SET DECORATIONS TO NONE");
+        agent.morph_language_client.delete({ id: agent.id })
       }
     }
     if (params.payload) {
