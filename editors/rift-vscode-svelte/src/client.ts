@@ -133,6 +133,14 @@ export type AgentStatus =
   | "accepted"
   | "rejected";
 
+export type CodeLensStatus =
+  | "running"
+  | "ready"
+  | "accepted"
+  | "rejected"
+  | "error"
+  | "done";
+
 export interface RunAgentProgress {
   id: number;
   textDocument: TextDocumentIdentifier;
@@ -211,13 +219,16 @@ const RED = vscode.window.createTextEditorDecorationType({
 });
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-async function code_completion_send_progress_handler(params: any, agent: Agent): Promise<void> {
-    console.log(`PARAMS: ${params}`)
+async function code_completion_send_progress_handler(
+  params: any,
+  agent: Agent
+): Promise<void> {
+  console.log(`PARAMS: ${params}`);
   if (params.tasks) {
-    //logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
+    // logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
     if (params.tasks.task.status) {
-      if (agent.status !== params.tasks.task.status) {
-        agent.status = params.tasks.task.status;
+      if (agent.codeLensStatus !== params.tasks.task.status) {
+        agent.codeLensStatus = params.tasks.task.status;
         agent.onStatusChangeEmitter.fire(params.tasks.task.status);
       }
     }
@@ -227,17 +238,17 @@ async function code_completion_send_progress_handler(params: any, agent: Agent):
       agent.additive_ranges = params.payload.additive_ranges;
     }
   }
-    console.log(`URI: ${agent?.textDocument?.uri?.toString()}`)
+  console.log(`URI: ${agent?.textDocument?.uri?.toString()}`);
   const editors = vscode.window.visibleTextEditors.filter(
     (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString()
   );
-    for (const editor of editors) {
-        console.log(`EDITOR: ${editor}`)
+  for (const editor of editors) {
+    console.log(`EDITOR: ${editor}`);
     // [todo] check editor is visible
     const version = editor.document.version;
     if (params.payload) {
       if (params.payload == "accepted" || params.payload == "rejected") {
-        agent.status = params.payload;
+        agent.codeLensStatus = params.payload;
         agent.onStatusChangeEmitter.fire(params.payload);
         editor.setDecorations(GREEN, []);
         editor.setDecorations(RED, []);
@@ -247,33 +258,115 @@ async function code_completion_send_progress_handler(params: any, agent: Agent):
       }
     }
     if (params.payload) {
-        if (params.payload.additive_ranges) {
-            console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`)
+      if (params.payload.additive_ranges) {
+        console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
         editor.setDecorations(
           GREEN,
-          params.payload.additive_ranges.map(
-              (r) => {const result = new vscode.Range(
+          params.payload.additive_ranges.map((r) => {
+            const result = new vscode.Range(
               r.start.line,
               r.start.character,
               r.end.line,
               r.end.character
-              ); console.log(`RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`); return result}
-          )
+            );
+            console.log(
+              `RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`
+            );
+            return result;
+          })
         );
       }
       if (params.payload.negative_ranges) {
         editor.setDecorations(
           RED,
           params.payload.negative_ranges.map(
-            (r) => new vscode.Range(
+            (r) =>
+              new vscode.Range(
+                r.start.line,
+                r.start.character,
+                r.end.line,
+                r.end.character
+              )
+          )
+        );
+      }
+    }
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+async function code_edit_send_progress_handler(
+  params: any,
+  agent: Agent
+): Promise<void> {
+  console.log(`PARAMS: ${params}`);
+  if (params.tasks) {
+    logProvider.postMessage("tasks", {
+      agent_id: params.agent_id,
+      ...params.tasks,
+    });
+    if (params.tasks.task.status) {
+      if (agent.codeLensStatus !== params.tasks.task.status) {
+        agent.codeLensStatus = params.tasks.task.status;
+        agent.onStatusChangeEmitter.fire(params.tasks.task.status);
+      }
+    }
+  }
+  if (params.payload) {
+    if (params.payload.additive_ranges) {
+      agent.additive_ranges = params.payload.additive_ranges;
+    }
+  }
+  console.log(`URI: ${agent?.textDocument?.uri?.toString()}`);
+  const editors = vscode.window.visibleTextEditors.filter(
+    (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString()
+  );
+  for (const editor of editors) {
+    console.log(`EDITOR: ${editor}`);
+    // [todo] check editor is visible
+    const version = editor.document.version;
+    if (params.payload) {
+      if (params.payload == "accepted" || params.payload == "rejected") {
+        agent.codeLensStatus = params.payload;
+        agent.onStatusChangeEmitter.fire(params.payload);
+        editor.setDecorations(GREEN, []);
+        editor.setDecorations(RED, []);
+        agent.onStatusChangeEmitter.fire(params.payload);
+      }
+    }
+    if (params.payload) {
+      if (params.payload.additive_ranges) {
+        console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
+        editor.setDecorations(
+          GREEN,
+          params.payload.additive_ranges.map((r) => {
+            const result = new vscode.Range(
               r.start.line,
               r.start.character,
               r.end.line,
               r.end.character
-            )
+            );
+            console.log(
+              `RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`
+            );
+            return result;
+          })
+        );
+      }
+      if (params.payload.negative_ranges) {
+        editor.setDecorations(
+          RED,
+          params.payload.negative_ranges.map(
+            (r) =>
+              new vscode.Range(
+                r.start.line,
+                r.start.character,
+                r.end.line,
+                r.end.character
+              )
           )
         );
-      }         
+      }
     }
   }
 }
@@ -311,8 +404,8 @@ export class MorphLanguageClient
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => { } };
-    this.green = { key: "TEMP_VALUE", dispose: () => { } };
+    this.red = { key: "TEMP_VALUE", dispose: () => {} };
+    this.green = { key: "TEMP_VALUE", dispose: () => {} };
     this.context = context;
     this.webviewState.subscribe(state => {
       chatProvider.stateUpdate(state);
@@ -371,7 +464,7 @@ export class MorphLanguageClient
     console.log("AGENTS: ", this.agents);
 
     for (const [id, agent] of Object.entries(this.agents)) {
-      if (agent.agent_type != "code_completion") {
+      if (!["code_completion", "code_edit"].includes(agent.agent_type)) {
         continue;
       }
 
@@ -383,7 +476,7 @@ export class MorphLanguageClient
         // agent.status = "done";
         //##############################################
 
-        if (agent.status === "running") {
+        if (agent.codeLensStatus === "running") {
           const running = new AgentStateLens(linetext.range, agent, {
             title: "running",
             command: "rift.cancel",
@@ -391,7 +484,10 @@ export class MorphLanguageClient
             arguments: [agent.id],
           });
           items.push(running);
-        } else if (agent.status === "done" || agent.status === "error") {
+        } else if (
+          agent.codeLensStatus === "done" ||
+          agent.codeLensStatus === "error"
+        ) {
           const accept = new AgentStateLens(linetext.range, agent, {
             title: "Accept ✅ ",
             command: "rift.accept",
@@ -570,8 +666,8 @@ export class MorphLanguageClient
 
 
     agent.onStatusChange((e) => this.changeLensEmitter.fire());
-      this.agents[result.id] = agent;
-      console.log(`REGISTERED NEW AGENT of type ${agent_type}`);
+    this.agents[result.id] = agent;
+    console.log(`REGISTERED NEW AGENT of type ${agent_type}`);
     this.changeLensEmitter.fire();
 
     // this.agentStates.set(agentIdentifier, { agent_id: agent_id, agent_type: agent_type, status: "running", ranges: [], tasks: [], emitter: new vscode.EventEmitter<AgentStatus>, params: params.agent_params })

@@ -40,7 +40,8 @@ def edits_from_file_change(
     file_change: FileChange, user_confirmation: bool = False
 ) -> WorkspaceEdit:
     dmp = diff_match_patch()
-    diff = dmp.diff_main(file_change.old_content, file_change.new_content)
+    diff = dmp.diff_lineMode(file_change.old_content, file_change.new_content, None)
+    dmp.diff_cleanupSemantic(diff)
 
     line = 0  # current line number
     char = 0  # current character position within the line

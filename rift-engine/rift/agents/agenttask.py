@@ -23,6 +23,7 @@ class AgentTask:
     task: Callable[Any, Awaitable[Any]]
     args: Optional[Callable[Any, Awaitable[Iterable[Any]]]] = None
     kwargs: Optional[Callable[Any, Awaitable[Dict[Any, Any]]]] = None
+    done_callback: Optional[Callable[Any, Any]] = None
     _task: Optional[asyncio.Task] = None
     _running: bool = False
     _error: Optional[Exception] = None
@@ -40,6 +41,8 @@ class AgentTask:
             args = [*(await self.args())] if self.args else []
             kwargs = {**(await self.kwargs())} if self.kwargs else dict()
             self._task = asyncio.create_task(self.task(*args, **kwargs))
+            if self.done_callback is not None:
+                self._task.add_done_callback(self.done_callback)
             return await self._task
         except asyncio.CancelledError:
             self._cancelled = True

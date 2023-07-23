@@ -1,3 +1,4 @@
+import random
 import asyncio
 import json
 import logging
@@ -25,9 +26,11 @@ from pydantic import BaseModel, BaseSettings, SecretStr
 import rift.util.asyncgen as asg
 from rift.llm.abstract import (
     AbstractChatCompletionProvider,
+    AbstractCodeEditProvider,
     AbstractCodeCompletionProvider,
     ChatResult,
     InsertCodeResult,
+    EditCodeResult,
 )
 from rift.llm.openai_types import (
     ChatCompletionChunk,
@@ -103,7 +106,7 @@ def split_lists(list1: list, list2: list, max_size: int) -> tuple[list, list]:
 """
 Contents Order in the Context:
 
-1) System Message: This includes an introduction and the current file content. 
+1) System Message: This includes an introduction and the current file content.
 2) Non-System Messages: These are the previous dialogue turns in the chat, both from the user and the system.
 3) Model's Responses Buffer: This is a reserved space for the response that the model will generate.
 
@@ -351,6 +354,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         ...
 
     def chat_completions(self, messages: List[Message], *, stream: bool = False, **kwargs) -> Any:
+        logger.info(f"{messages=}")
         endpoint = "/chat/completions"
         input_type = ChatCompletionRequest
         # TODO: don't hardcode
@@ -424,6 +428,148 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         logger.info("Created chat stream, awaiting results.")
         return ChatResult(text=chatstream)
 
+    async def edit_code(
+            self, document: str, cursor_offset_start: int, cursor_offset_end: int, goal=None, previous_region: str = "n/a",
+    ) -> EditCodeResult:
+        logger.info(f"[edit_code] entered {previous_region=}")
+        if goal is None:
+            goal = f"""
+            Generate code to replace the given `region`. Write a partial code snippet without imports if needed.
+            """
+
+        def create_messages(before_cursor: str, region: str, after_cursor: str) -> List[Message]:
+            return [
+                Message.system(
+                    "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
+                    "- Conciseness\n"
+                    "- DRY principle\n"
+                    "- Self-documenting code with plenty of comments\n"
+                    "- Modularity\n"
+                    "- Deduplicated code\n"
+                    "- Readable code\n"
+                    "- Abstracting things away to functions for reusability\n"
+                    "- Logical thinking\n"
+                    "\n\n"
+                    "You will be presented with a *task* and a source code file split into three parts: a *prefix*, *region*, and *suffix*. "
+                    "The task will specify a change or new code that will replace the given region.\n You will receive the source code in the following format:\n"
+                    "==== LATEST REGION ====\n"
+                    "${latest proposed version of the REGION if applicable}\n"
+                    "==== PREFIX ====\n"
+                    "${source code file before the region}\n"
+                    "==== REGION ====\n"
+                    "${region}\n"
+                    "==== SUFFIX ====\n"
+                    "{source code file after the region}\n\n"
+                    "When presented with a task, you will:\n(1) write a detailed and elegant plan to solve this task,\n(2) write your solution for it surrounded by triple backticks, and\n(3) write a 1-2 sentence summary of your solution.\n"
+                    f"Your solution will be added verbatim to replace the given region. Do *not* repeat the prefix or suffix in any way.\n"
+                    "The solution should directly replaces the given region. If the region is empty, just write something that will replace the empty string. *Do not repeat the prefix or suffix in any way*. If the region is in the middle of a function definition or class declaration, do not repeat the function signature or class declaration. Write a partial code snippet without imports if needed.\n"
+                    f"For example, if the source code looks like this:\n"
+                    "==== LATEST REGION ====\n"
+                    "n/a\n"
+                    "==== PREFIX ====\n"
+                    "def hello_world():\n    \n"
+                    "==== REGION ====\n"
+                    "\n"
+                    "==== SUFFIX ====\n"
+                    "if __name__ == '__main__':\n    hello_world()\n\n"
+                    "And the task is 'implement this function and return 0', then a good response would be\n"
+                    "We will implement hello world by first using the Python `print` statement and then returning the integer literal 0.\n"
+                    "```\n"
+                    "# print hello world\n"
+                    "    print('hello world!')\n"
+                    "    # return the integer 0\n"
+                    "    return 0\n"
+                    "```\n"
+                    "I added an implementation of the rest of the `hello_world` function which uses the Ptython `print` statement to print 'hello_world' before returning the integer literal 0.\n"
+                    # "" if messages is None else (
+                    #     f"\n\nFinally, here are previous messages in your interaction reflecting previously proposed changes to the region. The user's message might refer to these.\n{messages_flattened}"
+                    # )
+                ),
+                Message.assistant("Hello! How can I help you today?"),
+                Message.user(
+                    f"Please generate code completing the task which will replace the below region: {goal}\n"
+                    "==== PREVIOUS REGION ====\n"
+                    f"{previous_region}\n"
+                    "==== PREFIX ====\n"
+                    f"{before_cursor}"
+                    "==== REGION ====\n"
+                    f"{region}\n"
+                    "==== SUFFIX ====\n"
+                    f"{after_cursor}\n"
+                ),
+            ]
+
+        messages_skeleton = create_messages("", "", "")
+        max_size_document = (
+            MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
+        )
+
+        if get_num_tokens(document) > max_size_document:
+            tokens_before_cursor = ENCODER.encode(before_cursor)
+            tokens_after_cursor = ENCODER.encode(after_cursor)
+            (tokens_before_cursor, tokens_after_cursor) = split_lists(
+                tokens_before_cursor, tokens_after_cursor, max_size_document
+            )
+            logger.debug(
+                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor"
+            )
+            before_cursor = ENCODER.decode(tokens_before_cursor)
+            after_cursor = ENCODER.decode(tokens_after_cursor)
+
+        messages = create_messages(
+            before_cursor=document[:cursor_offset_start],
+            region=document[cursor_offset_start:cursor_offset_end],
+            after_cursor=document[cursor_offset_end:],
+        )
+        logger.info(f"{messages=}")
+
+        stream = TextStream.from_aiter(
+            asg.map(lambda c: c.text, self.chat_completions(messages, stream=True))
+        )
+
+        logger.info("constructed stream")
+        logger.info(f"{stream=}")
+        thoughtstream = TextStream()
+        codestream = TextStream()
+        planstream = TextStream()
+
+        async def worker():
+            logger.info("[edit_code:worker]")
+            try:
+                prelude, stream2 = stream.split_once("```")
+                # logger.info(f"{prelude=}")
+                async for delta in prelude:
+                    # logger.info(f"plan {delta=}")
+                    planstream.feed_data(delta)
+                planstream.feed_eof()
+                lang_tag = await stream2.readuntil("\n")
+                before, after = stream2.split_once("\n```")
+                logger.info(f"{before=}")
+                logger.info("reading codestream")
+                async for delta in before:
+                    # logger.info(f"code {delta=}")
+                    codestream.feed_data(delta)
+                codestream.feed_eof()
+                # thoughtstream.feed_data("\n")
+                logger.info("reading thoughtstream")
+                async for delta in after:
+                    thoughtstream.feed_data(delta)
+                thoughtstream.feed_eof()
+            finally:
+                planstream.feed_eof()
+                thoughtstream.feed_eof()
+                codestream.feed_eof()
+                # logger.info("FED EOF TO ALL")
+
+        t = asyncio.create_task(worker())
+        thoughtstream._feed_task = t
+        codestream._feed_task = t
+        planstream._feed_task = t
+        # logger.info("[edit_code] about to return")
+        return EditCodeResult(
+            thoughts=thoughtstream, code=codestream, plan=planstream
+        )
+
     async def insert_code(self, document: str, cursor_offset: int, goal=None) -> InsertCodeResult:
         CURSOR_SENTINEL = "感"
         if goal is None:
@@ -435,11 +581,19 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             doc_text_with_cursor = before_cursor + CURSOR_SENTINEL + after_cursor
             return [
                 Message.system(
-                    f"""You are an expert software engineer and world-class systems architect with deep technical and design knowledge.
-                    When presented with a task, first write a detailed and elegant plan to solve this task and then
-                    write code to do it surrounded by triple backticks.
-                    The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}.
-                    Add comments in the code to explain your reasoning."""
+                    "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
+                    "- Conciseness\n"
+                    "- DRY principle\n"
+                    "- Self-documenting code with plenty of comments\n"
+                    "- Modularity\n"
+                    "- Deduplicated code\n"
+                    "- Readable code\n"
+                    "- Abstracting things away to functions for reusability\n"
+                    "- Logical thinking\n"
+                    "When presented with a task, first write a detailed and elegant plan to solve this task and then write code to do it surrounded by triple backticks.\n"
+                    f"The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}.\n"
+                    "Add comments in the code to explain your reasoning.\n"
+                    f"Generate code to be inserted at the cursor location, marked by {CURSOR_SENTINEL}."
                 ),
                 Message.user(
                     f"Here is the code:\n```\n{doc_text_with_cursor}\n```\n\nYour task is:\n{goal}\nInsert code at the {CURSOR_SENTINEL} which completes the task. The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}. Do not include code that is already there."

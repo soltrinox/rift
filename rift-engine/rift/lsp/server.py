@@ -81,6 +81,29 @@ class LspServer(ExtraRpc):
         )
         return await self.apply_workspace_edit(params)
 
+    async def apply_range_edit(
+        self, uri: lsp.DocumentUri, range: lsp.Range, text: str, version: int = 0
+    ):
+        assert version is not None, "version must be given, or we get no edit."
+        textDocument = lsp.TextDocumentIdentifier(uri=uri, version=version)  # [todo] version
+        newText = text
+        params = lsp.ApplyWorkspaceEditParams(
+            edit=lsp.WorkspaceEdit(
+                documentChanges=[
+                    lsp.TextDocumentEdit(
+                        textDocument=textDocument,
+                        edits=[
+                            lsp.TextEdit(
+                                range=range,
+                                newText=newText,
+                            )
+                        ],
+                    )
+                ]
+            )
+        )
+        return await self.apply_workspace_edit(params)    
+
     async def apply_workspace_edit(
         self, params: ApplyWorkspaceEditParams
     ) -> ApplyWorkspaceEditResponse:

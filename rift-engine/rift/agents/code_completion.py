@@ -78,7 +78,7 @@ class CodeCompletionAgent(Agent):
             model=model,
             document=server.documents[params.textDocument.uri],
             active_range=lsp.Range(params.selection.start, params.selection.end),
-            cursor=params.selection.first, # begin at the start of the selection
+            cursor=params.selection.first,  # begin at the start of the selection
             additive_ranges=RangeSet(),
             params=params,
         )
@@ -124,13 +124,13 @@ class CodeCompletionAgent(Agent):
         async def generate_code():
             try:
                 all_deltas = []
-                self.state.additive_ranges.add(lsp.Range(self.state.cursor, self.state.cursor))                
+                self.state.additive_ranges.add(lsp.Range(self.state.cursor, self.state.cursor))
                 async for delta in stream.code:
                     all_deltas.append(delta)
                     all_text = "".join(all_deltas)
                     # self.state.additive_ranges.add(lsp.Range(self.state.cursor, self.state.cursor))
                     RANGE = self.state.additive_ranges.cover()
-                        
+
                     assert len(delta) > 0
                     attempts = 10
                     while True:
@@ -172,7 +172,7 @@ class CodeCompletionAgent(Agent):
                                 additive_ranges=self.state.additive_ranges,
                                 negative_ranges=self.state.negative_ranges,
                             )
-                        )                        
+                        )
                 all_text = "".join(all_deltas)
                 logger.info(f"{self} finished streaming {len(all_text)} characters")
                 await self.send_progress()
@@ -286,7 +286,7 @@ class CodeCompletionAgent(Agent):
                             )
                             logger.info(f"CURSOR BEFORE MODIFYING: {self.state.cursor}")
                             self.state.cursor += (lines_to_add, 0)
-                            logger.info(f"CURSOR AFTER MODIFYING: {self.state.cursor}")                            
+                            logger.info(f"CURSOR AFTER MODIFYING: {self.state.cursor}")
                         else:
                             # self.cancel("someone is editing on the same line as us")
                             pass  # temporarily disabled

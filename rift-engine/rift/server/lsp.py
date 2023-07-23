@@ -9,7 +9,10 @@ from typing import Any, ClassVar, List, Literal, Optional, Iterable, Dict
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
-from rift.agents.code_completion import CodeCompletionAgent
+from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
+from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
+from rift.agents.reverso import ReversoAgent, ReversoAgentParams
+
 from rift.agents.smol import SmolAgent, SmolAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
@@ -333,6 +336,14 @@ class LspServer(BaseLspServer):
             if not is_dataclass(agent_params):
                 agent_params = ofdict(CodeCompletionAgentParams, agent_params)
             agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "code_edit":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(CodeEditAgentParams, agent_params)
+            agent = CodeEditAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "reverso":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(ReversoAgentParams, agent_params)
+            agent = ReversoAgent.create(agent_params, model=model, server=self)                        
         elif agent_type == "smol_dev":
             model = await self.ensure_chat_model()
             if not is_dataclass(agent_params):
