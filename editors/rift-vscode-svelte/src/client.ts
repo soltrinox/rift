@@ -87,6 +87,7 @@ export interface RunParams {
 export interface ChatAgentParams extends RunParams {
   agent_params: {
     position: vscode.Position;
+    selection: vscode.Selection
     textDocument: {
       uri: string;
       version: number;
@@ -740,9 +741,10 @@ export class MorphLanguageClient
     if (!editor) throw new Error("No active text editor found");
     let textDocument = { uri: editor.document.uri.toString(), version: 0 };
     let position = editor.selection.active;
+    
     const chatAgentParams: ChatAgentParams = {
       agent_type: params.agent_type,
-      agent_params: { position, textDocument },
+      agent_params: { selection: editor.selection, position, textDocument },
     };
 
     const result: RunAgentResult = await this.client.sendRequest(
