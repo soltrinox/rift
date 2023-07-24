@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import List, Tuple, Dict, Optional, Any
+from typing import List, Dict, Optional
 
 import rift.lsp.types as lsp
 

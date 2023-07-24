@@ -1,29 +1,30 @@
 <script lang='ts'>
   import RiftSvg from "./icons/RiftSvg.svelte";
   import ResetSvg from "./icons/ResetSvg.svelte";
-  import { state, DEFAULT_STATE } from "./stores";
+  import { state } from "./stores";
   function resetChat() {
     // console.log("reseting state");
     // state.set(DEFAULT_STATE);
     // vscode.setState(DEFAULT_STATE);
     // we're no longer reseting the entire state when you hit this LMAO... just going to reset the chat history of the selectedAgent
-    console.log('sliceing')
-    console.log('curr state')
-    console.log($state)
-    state.update(state => ({...state, agents: {...state.agents, [state.selectedAgentId]: {...state.agents[state.selectedAgentId], chatHistory: state.agents[state.selectedAgentId].chatHistory.slice(-1) }}})) // chop off everything but the last message
+    // state.update(state => ({...state, agents: {...state.agents, [state.selectedAgentId]: {...state.agents[state.selectedAgentId], chatHistory: state.agents[state.selectedAgentId].chatHistory.slice(-1) }}})) // chop off everything but the last message
+    vscode.postMessage({
+      type: "restartAgent",
+      params: {
+        agentId: $state.selectedAgentId
+      },
+    });
+    
+
   }
 
   let displayName: string | undefined
 
   $: {
     if($state.selectedAgentId && Object.keys($state.agents).length) {
-    // have to get display name from availableAgents array (which comes from calling list Agents btw)
-    console.log($state)
+    if(!$state.agents[$state.selectedAgentId].type) throw new Error()
     displayName = $state.availableAgents.find(availableAgent => availableAgent.agent_type == $state.agents[$state.selectedAgentId].type)?.display_name
-    if(!displayName) {
-      console.log('what the fuck')
-      console.log($state)
-    }
+    if(!displayName) throw new Error('no display name of selected agent which is odd')
   }
   }
 

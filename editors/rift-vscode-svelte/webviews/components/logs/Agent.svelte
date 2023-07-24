@@ -9,21 +9,26 @@
     import EllipsisDarkSvg from "../icons/EllipsisDarkSvg.svelte";
     import Log from "./Log.svelte";
     import { state } from "../stores";
-    import type { SvelteStore } from "../../../src/types";
+    import type { WebviewState } from "../../../src/types";
 
-    let expanded = false;
+    let expanded = true;
     export let id: string = "";
-    export let selectedId = "";
     export let name: string = "rift_chat";
     export let hasNotification = false;
 
-    $: isSelected = id == selectedId;
+
+
+    $: isSelected = id == $state.selectedAgentId;
+
+    let subtasks = $state.agents[id].tasks?.subtasks;
+    $: subtasks = $state.agents[id].tasks?.subtasks;
 
     let doneAgent = false;
 
     let isDropdownOpen = false; // default state (dropdown close)
 
-    const handleDropdownClick = () => {
+    const handleDropdownClick = (event: MouseEvent) => {
+        event.stopPropagation();
         isDropdownOpen = !isDropdownOpen; // togle state on click
     };
 
@@ -40,48 +45,26 @@
     };
 
     const handleChatIconClick = (e: MouseEvent) => {
-        hasNotification = false;
-        state.update((state) => ({
-            ...state,
-            selectedAgentId: id,
-            agents: {
-                ...state.agents,
-                [id]: {
-                    ...state.agents[id],
-                    hasNotification: false,
-                },
-            },
-        }));
-        vscode.postMessage({ type: "selectedAgentId", selectedAgentId: id });
-
-        console.log("This is the state - Logs");
-        console.log($state);
+        vscode.postMessage({ type: "selectedAgentId", agentId: id });
     };
 
     const handleCancelAgent = (e: MouseEvent) => {
-        vscode.postMessage({ type: "cancelAgent", id: id });
+        vscode.postMessage({ type: "cancelAgent", agentId: { id: id } });
     };
     const handleDeleteAgent = (e: MouseEvent) => {
-        //vscode.postMessage({ type: "cancelAgent", id: id });
-        state.update((state) => {
-            // Create a copy of the agents object without the specified agentId
-            const updatedAgents = { ...state.agents };
-            delete updatedAgents[id];
-
-            // Update the state with the new agents object
-            return {
-                ...state,
-                agents: updatedAgents,
-            };
-        });
+        vscode.postMessage({ type: "deleteAgent", agentId: { id: id } });
     };
 </script>
 
-<div class:bg-[var(--vscode-editor-hoverHighlightBackground)]={isSelected}>
+<button
+    on:click={handleChatIconClick}
+    class:bg-[var(--vscode-editor-hoverHighlightBackground)]={isSelected}
+    class="w-full"
+>
     <div class="flex">
         {#if expanded == false}
             <button
-                class="mx-1"
+                class="px-1"
                 on:click={() => (expanded = !expanded)}
                 on:keydown={() => (expanded = !expanded)}
             >
@@ -89,14 +72,14 @@
             </button>
         {:else}
             <button
-                class="mx-1"
+                class="px-1"
                 on:click={() => (expanded = !expanded)}
                 on:keydown={() => (expanded = !expanded)}
             >
                 <ArrowDownSvg />
             </button>
         {/if}
-        <button class="flex w-full select-none" on:click={handleChatIconClick}>
+        <div class="flex w-full select-none items-center">
             <div class="flex">
                 {#if $state.agents[id].tasks?.task.status == "done"}
                     <div class="mx-1 mt-0.5"><LogGreenSvg /></div>
@@ -108,21 +91,23 @@
                 <div>{name}</div>
             </div>
             <div
-                class="relative inline-flex w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
+                class="relative w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
             >
-                {#if hasNotification}
+                {#if $state.agents[id].chatHistory.length > 0 && hasNotification}
                     <div
                         class="absolute bottom-auto left-auto right-0 top-0 z-10 inline-block -translate-y-1/2 translate-x-2/4 rotate-0 skew-x-0 skew-y-0 scale-x-50 scale-y-50 rounded-full bg-pink-700 p-2.5 text-xs"
                     />
                 {/if}
-                <ChatSvg />
+                {#if $state.agents[id].chatHistory.length > 0}
+                    <ChatSvg />
+                {/if}
             </div>
-        </button>
+        </div>
 
-        <div class="dropdown inline-flex left-auto flex">
+        <div class="dropdown left-auto flex">
             <div class="flex items-center">
                 <div class="dropdown" on:focusout={handleDropdownFocusLoss}>
-                    <button class="btn pt-3" on:click={handleDropdownClick}>
+                    <button class="btn py-2.5" on:click={handleDropdownClick}>
                         {#if isDropdownOpen}
                             <div class="px-2"><EllipsisDarkSvg /></div>
                         {:else}
@@ -155,13 +140,13 @@
         </div>
     </div>
     <div class="border-l ml-6 my-2 space-y-2" hidden={!expanded}>
-        {#if $state.agents[id].tasks.subtasks.length > 0}
-            {#each $state.agents[id].tasks.subtasks as subtask}
+        {#if subtasks}
+            {#each subtasks as subtask}
                 <Log {subtask} />
             {/each}
         {/if}
     </div>
-</div>
+</button>
 
 <style>
     .list-item:hover {
