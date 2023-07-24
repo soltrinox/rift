@@ -56,7 +56,6 @@ export type AgentProgress = {
 export class WebviewAgent {
   type: string;
   hasNotification: boolean;
-  isDeleted: boolean;
   chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
@@ -73,7 +72,6 @@ export class WebviewAgent {
   ) {
     this.type = type;
     this.hasNotification = hasNotification ?? false;
-    this.isDeleted = false;
     this.chatHistory = chatHistory ?? [];
     this.inputRequest = inputRequest;
     this.tasks = tasks;

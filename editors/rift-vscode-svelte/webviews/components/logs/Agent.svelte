@@ -47,10 +47,10 @@
     };
 
     const handleCancelAgent = (e: MouseEvent) => {
-        vscode.postMessage({ type: "cancelAgent", agentId: { id: id } });
+        vscode.postMessage({ type: "cancelAgent", agentId: id  });
     };
     const handleDeleteAgent = (e: MouseEvent) => {
-        vscode.postMessage({ type: "deleteAgent", agentId: { id: id } });
+        vscode.postMessage({ type: "deleteAgent", agentId: id });
     };
 </script>
 

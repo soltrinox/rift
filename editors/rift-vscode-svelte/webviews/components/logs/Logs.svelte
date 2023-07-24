@@ -8,13 +8,13 @@
     <div class="space-y-1">
         {#if Object.keys($state.agents).length > 0}
             {#each Object.entries($state.agents) as [key, value]}
-                {#if !value.isDeleted}
+
                     <Agent
                         id={key}
                         name={value.tasks?.task.description}
                         hasNotification={value.hasNotification}
                     />
-                {/if}
+
             {/each}
         {/if}
     </div>

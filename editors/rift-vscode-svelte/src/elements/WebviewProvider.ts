@@ -149,10 +149,12 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "cancelAgent":
+          console.log('cancelAgent', params.agentId)
           this.morph_language_client.cancel(params.agentId);
           break;
 
         case "deleteAgent":
+          console.log('delete agent', params.agentId)
           this.morph_language_client.delete(params.agentId);
           break;
 

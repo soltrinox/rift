@@ -811,22 +811,21 @@ export class MorphLanguageClient
 
   async delete(params: AgentIdParams) {
     if (!this.client) throw new Error();
+
     let response = await this.client.sendRequest("morph/cancel", params);
     this.webviewState.update((state) => {
       const updatedAgents = { ...state.agents };
-      updatedAgents[params.id];
+      delete updatedAgents[params.id]; // delete agent
+      // update selected agent if you deleted your selected agent
+      const updatedSelectedAgentId = (params.id == state.selectedAgentId) ? Object.keys(updatedAgents)[0] : state.selectedAgentId
+      
       return {
         ...state,
-        agents: {
-          ...state.agents,
-          [params.id]: {
-            ...state.agents[params.id],
-            isDeleted: true,
-          },
-        },
+        selectedAgentId: updatedSelectedAgentId,
+        agents: updatedAgents
       };
     });
-
+    
     return response;
   }
 
@@ -939,7 +938,7 @@ export class MorphLanguageClient
 
   sendHasNotificationChange(agentId: string, hasNotification: boolean) {
     if (!(agentId in this.webviewState.value.agents))
-      throw new Error("cant update nonexistent agent");
+      throw new Error(`cant update nonexistent agent: ${agentId}`);
     this.webviewState.update((state) => ({
       ...state,
       agents: {
