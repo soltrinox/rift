@@ -72,6 +72,3 @@ jobs:
           git commit -m "chore: format code with Prettier"
           git push
         working-directory: editors/rift-vscode-svelte
-
-
-
