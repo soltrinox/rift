@@ -438,7 +438,7 @@ class LspServer(BaseLspServer):
     @rpc_method("morph/delete")
     async def on_delete(self, params: AgentIdParams):
         agent: Agent = self.active_agents.pop(params.id)
-        await agent.cancel()
+        await agent.cancel('cancel bc delete',False)
         del agent
 
     @rpc_method("morph/listAgents")

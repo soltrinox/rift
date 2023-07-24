@@ -165,7 +165,7 @@ class Agent:
         self.tasks.append(task)
         return task
 
-    async def cancel(self, msg: Optional[str] = None):
+    async def cancel(self, msg: Optional[str] = None, doesSendProgress=True):
         """
         Cancel all tasks and update progress. Assumes that `Agent.main()` has been called and that the main task has been created.
         """
@@ -176,7 +176,7 @@ class Agent:
         for task in self.tasks:
             if task is not None:
                 task.cancel()
-        await self.send_progress()
+        if doesSendProgress: await self.send_progress()
 
     async def request_input(self, req: RequestInputRequest) -> str:
         """
