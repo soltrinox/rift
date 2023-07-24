@@ -116,7 +116,7 @@
                     <ul
                         style="left: auto !important;
                         right: 0px !important;
-                        opacity: 100;z-index: 99; background-color: var(--vscode-button-secondaryBackground);"
+                        opacity: 1 !important ;z-index: 99; background-color: var(--vscode-input-background);"
                         class="dropdown-content absolute menu shadow rounded-box"
                         style:visibility={isDropdownOpen ? "visible" : "hidden"}
                     >
