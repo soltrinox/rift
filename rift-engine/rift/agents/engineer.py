@@ -4,7 +4,7 @@ import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Optional
-from rift.agents import file_diff
+import rift.util.file_diff as file_diff
 
 
 import rift.lsp.types as lsp
@@ -267,7 +267,7 @@ class EngineerAgent(Agent):
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
         steps = STEPS["default"]
-        from concurrent import futures
+1        from concurrent import futures
         tasks=[]
         for step in steps:
             tsk = AgentTask(step.__name__, None)
