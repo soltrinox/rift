@@ -28,7 +28,7 @@ class FileChange:
 
 
 def get_file_change(path: str, new_content: str, annotation_label: Optional[str] = None) -> FileChange:
-    uri = TextDocumentIdentifier(uri="file://" + path, version=0)
+    uri = TextDocumentIdentifier(uri="file://" + str(path), version=0)
     if os.path.isfile(path):
         with open(path, "r") as f:
             old_content = f.read()
