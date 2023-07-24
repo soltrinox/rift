@@ -5,7 +5,7 @@
 </script>
 
 <div>
-    <div class="space-y-1">
+    <div class="ml-3 mt-2 space-y-2">
         {#if Object.keys($state.agents).length > 0}
             {#each Object.entries($state.agents) as [key, value]}
                 {#if !value.isDeleted}

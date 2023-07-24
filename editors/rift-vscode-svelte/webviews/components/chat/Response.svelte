@@ -7,18 +7,13 @@
   import { state } from "../stores";
   import CopySvg from "../icons/CopySvg.svelte";
   import { SvelteComponent } from "svelte";
-  import showdown from "showdown";
-  import morphdom from "morphdom";
+  import showdown from 'showdown'
+  import morphdom from 'morphdom'
 
-  export let last = false;
-  export let scrollToBottomIfNearBottom: ((...args: any) => any) | undefined =
-    undefined;
-
-  $: currentAgent = $state.availableAgents.filter(
-    (agent) => agent.agent_type === $state.agents[$state.selectedAgentId]?.type
-  )[0];
-
-  let responseBlock: HTMLDivElement | undefined;
+  export let last = false
+  export let scrollToBottomIfNearBottom:((...args: any) => any) | undefined = undefined
+  
+  let responseBlock: HTMLDivElement|undefined;
   var converter = new showdown.Converter({
     omitExtraWLInCodeBlocks: true,
     simplifiedAutoLink: true,
@@ -56,11 +51,9 @@
   //         console.log(scrollLeft)
   //         // scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft
   //       }
-
-  const preblockToCopyContent:string[] = []
   $: {
     const getHTML = (_responseBlock: HTMLDivElement) => {
-      const responseBlock = _responseBlock.cloneNode(true) as HTMLDivElement;
+      const responseBlock = (_responseBlock.cloneNode(true) as HTMLDivElement)
       responseBlock.innerHTML = textToFormattedHTML(value);
       responseBlock
         .querySelectorAll("code")
@@ -68,11 +61,10 @@
       responseBlock.querySelectorAll("pre").forEach((preblock, i) => {
         // index = i
         preblock.classList.add("p-2", "my-2", "block", "overflow-x-scroll");
-        //remove prev copy buttons
         preblock
           .querySelectorAll("#copy")
           .forEach((copy) => copy.parentElement?.removeChild(copy));
-        const copyContent = preblock.textContent;
+        const copyContent = value;
         const copyButton = document.createElement("button");
         copyButton.id = "copy";
         copyButton.className =
@@ -81,56 +73,36 @@
         const copyCodeWords = document.createElement("p");
         copyCodeWords.innerText = " copy";
         copyButton.appendChild(copyCodeWords);
-        preblockToCopyContent[i] = preblock.textContent ?? ''
         copyButton.addEventListener("click", () => {
           // navigator.clipboard.writeText(copyContent)
-          // console.log('copying: ', copyContent)
-
-          vscode.postMessage({ type: "copyText", content: preblockToCopyContent[i] });
+          vscode.postMessage({ type: "copyText", content: copyContent });
         });
         preblock.insertBefore(copyButton, preblock.firstChild);
         // if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]
         // preblock.addEventListener('scroll', handler)
       });
-      return responseBlock;
+      return responseBlock
     };
     if (responseBlock) {
-      const dsfa = responseBlock.innerHTML;
+      const dsfa = responseBlock.innerHTML
       const newHTML = getHTML(responseBlock);
       something = newHTML.innerHTML;
-      morphdom(responseBlock, newHTML);
+      morphdom(responseBlock, newHTML)
       responseBlock.contentEditable = "false";
-      scrollToBottomIfNearBottom?.();
+      scrollToBottomIfNearBottom?.()
     }
   }
+
 </script>
 
-<div id={last ? "last" : undefined} class="w-full p-2">
+<div id={last ? 'last' : undefined} class="w-full p-2">
   <div
-    class={`flex items-center py-1 ${
-      value == "" && !$state.agents[$state.selectedAgentId].isStreaming
-        ? "hidden"
-        : ""
-    }`}
-  >
-    <div class="flex items-center justify-center h-[16px] w-[16px] mr-1">
-      {#if currentAgent.agent_icon}
-        {@html currentAgent.agent_icon}
-      {:else}
-        <RiftSvg size="16" />
-      {/if}
-    </div>
-    <p class="text-sm">
-      {currentAgent.display_name == "" ? "RIFT" : currentAgent.display_name}
-    </p>
+    class={`flex items-center py-1 ${value == "" && !$state.agents[$state.selectedAgentId].isStreaming ? "hidden" : ""}`}>
+    <RiftSvg size={12} />
+    <p class="text-sm">{$state.agents[$state.selectedAgentId]?.type === 'rift_chat' ? "RIFT" : $state.agents[$state.selectedAgentId]?.type}</p>
   </div>
   <div
-    class={`w-full text-md focus:outline-none flex flex-row ${
-      value === "" && !$state.agents[$state.selectedAgentId].isStreaming
-        ? "hidden"
-        : ""
-    }`}
-  >
+    class={`w-full text-md focus:outline-none flex flex-row ${value === "" && !$state.agents[$state.selectedAgentId].isStreaming ? "hidden" : ""}`}>
     <div
       contenteditable="true"
       bind:this={responseBlock}

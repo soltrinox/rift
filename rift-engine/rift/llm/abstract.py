@@ -13,13 +13,6 @@ class InsertCodeResult:
 
 
 @dataclass
-class EditCodeResult:
-    code: TextStream
-    plan: Optional[TextStream] = field(default=None)
-    thoughts: Optional[TextStream] = field(default=None)
-
-
-@dataclass
 class ChatResult:
     text: TextStream
 
@@ -34,30 +27,6 @@ class AbstractCodeCompletionProvider(ABC):
         Args:
             - document: The document to perform code completion on.
             - cursor_offset: The offset of the cursor in the document, the output should be code that can be inserted at this point.
-            - goal: A natural language statement with the goal of the code completion. If None, then we should just perform a code completion.
-        """
-        raise NotImplementedError()
-
-    async def load(self):
-        """Do any side activities needed to load the model."""
-        pass
-
-
-class AbstractCodeEditProvider(ABC):
-    @abstractmethod
-    async def edit_code(
-        self,
-        document: str,
-        cursor_offset_start: int,
-        cursor_offset_end: int,
-        goal: Optional[str] = None,
-    ) -> EditCodeResult:
-        """Perform code completion on the given document at the given cursor offset.
-
-        Args:
-            - document: The document to perform code completion on.
-            - cursor_offset_begin: Index marking the beginning of the region being edited.
-            - cursor_offset_end: Index marking the end of the region being edited.
             - goal: A natural language statement with the goal of the code completion. If None, then we should just perform a code completion.
         """
         raise NotImplementedError()
