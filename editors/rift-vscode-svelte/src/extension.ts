@@ -6,6 +6,7 @@ import { MorphLanguageClient, AgentProgress } from "./client";
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { WebviewProvider } from "./elements/WebviewProvider";
 
+
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
 // export let morph_language_client: MorphLanguageClient;
@@ -16,29 +17,17 @@ export function activate(context: vscode.ExtensionContext) {
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(
-    vscode.languages.registerCodeLensProvider("*", morph_language_client),
+    vscode.languages.registerCodeLensProvider("*", morph_language_client)
   );
 
-  chatProvider = new WebviewProvider(
-    "Chat",
-    context.extensionUri,
-    morph_language_client,
-  );
-  logProvider = new WebviewProvider(
-    "Logs",
-    context.extensionUri,
-    morph_language_client,
-  );
+  chatProvider = new WebviewProvider("Chat", context.extensionUri, morph_language_client);
+  logProvider = new WebviewProvider("Logs", context.extensionUri, morph_language_client);
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, {
-      webviewOptions: { retainContextWhenHidden: true },
-    }),
+    vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, { webviewOptions: { retainContextWhenHidden: true } })
   );
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, {
-      webviewOptions: { retainContextWhenHidden: true },
-    }),
+    vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, { webviewOptions: { retainContextWhenHidden: true } })
   );
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
@@ -125,14 +114,14 @@ export function activate(context: vscode.ExtensionContext) {
         {
           agent_type: "code_completion",
           agent_params: { position, textDocument },
-        },
+        }
         // default_request_input_callback, // handle incoming requests
         // async () => { }, // code_completion agents don't request chat
         // default_send_update_callback, // handle incoming text notifications
         // code_completion_send_progress_callback, // handle task progress updates / streaming results
         // async () => { } // code_completion agents use custom logic for accept/reject of final diffs
       );
-    },
+    }
   );
   let disposablefocusOmnibar = vscode.commands.registerCommand(
     "rift.focus_omnibar",
@@ -140,15 +129,16 @@ export function activate(context: vscode.ExtensionContext) {
       // vscode.window.createTreeView("RiftChat", chatProvider)
       vscode.commands.executeCommand("RiftChat.focus");
 
-      morph_language_client.focusOmnibar();
-    },
-  );
+      morph_language_client.focusOmnibar()
+    });
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand("rift.reset_chat", () => {
-      morph_language_client.restartActiveAgent();
-    }),
-  );
+
+  context.subscriptions.push(vscode.commands.registerCommand(
+    "rift.reset_chat",
+    () => {
+      morph_language_client.restartActiveAgent()
+    }
+  ))
 
   // context.subscriptions.push(
   //     vscode.languages.registerCodeLensProvider('*', morph_language_client)
@@ -165,4 +155,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }

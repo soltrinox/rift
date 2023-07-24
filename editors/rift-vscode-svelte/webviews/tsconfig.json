@@ -1,9 +1,13 @@
 {
-  "extends": "@tsconfig/svelte/tsconfig.json",
-  "include": ["./**/*"],
-  "exclude": ["../node_modules/*"],
-  "compilerOptions": {
-    "strict": true,
-    "typeRoots": ["../node_modules/@types", "../typeDeclarations"]
-  }
+    "extends": "@tsconfig/svelte/tsconfig.json",
+    "include": [
+        "./**/*",
+    ],
+    "exclude": [
+        "../node_modules/*"
+    ],
+    "compilerOptions": {
+        "strict": true,
+        "typeRoots" : ["../node_modules/@types", "../typeDeclarations"]
+    }
 }
