@@ -122,11 +122,11 @@
                     >
                         <li class="list-item">
                             <button
-                                class="btn px-2"
+                                class="btn px-2 text-left"
                                 on:click={handleCancelAgent}>Cancel</button
                             >
                         </li>
-                        <li class="list-item">
+                        <li class="list-item text-left">
                             <button
                                 class="btn px-2"
                                 on:click={handleDeleteAgent}>Delete</button
