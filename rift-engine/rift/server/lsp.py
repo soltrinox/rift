@@ -15,12 +15,16 @@ from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
 
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
+from rift.agents.engineer import EngineerAgent, EngineerAgentParams
+
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
+from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
+from dataclasses import is_dataclass
 from rift.server.agent import *
 from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 from rift.server.selection import RangeSet
@@ -308,8 +312,8 @@ class LspServer(BaseLspServer):
             agent_params["agent_id"] = agent_id
 
         # async def _run_agent():
-        # logger = logging.getLogger(__name__)
-        # logger.info(f"AGENT TYPE: {agent_type}")
+        logger = logging.getLogger(__name__)
+        logger.info(f"AGENT TYPE: {agent_type}")
         if agent_type == "chat":
             # prepare params for ChatAgent construction
             model = await self.ensure_chat_model()
@@ -334,6 +338,11 @@ class LspServer(BaseLspServer):
         #     model = await self.ensure_completions_model()
         #     agent_params = ofdict(ReversoAgentParams, agent_params)
         #     agent = ReversoAgent.create(agent_params, model=model, server=self)
+
+        elif agent_type == "engineer":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(EngineerAgentParams, agent_params)
+            agent = EngineerAgent.create(agent_params, model=model, server=self)
         elif agent_type == "smol_dev":
             model = await self.ensure_chat_model()
             if not is_dataclass(agent_params):

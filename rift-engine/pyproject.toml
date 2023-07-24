@@ -2,6 +2,8 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [project]
 name = "pyrift"
@@ -24,6 +26,7 @@ dependencies = [
   "sentencepiece",
   "transformers",
   "diff_match_patch",
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
   "smol-dev"
 ]
 dynamic = ["version"]
