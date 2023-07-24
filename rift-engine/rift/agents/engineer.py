@@ -14,6 +14,7 @@ from rift.agents.abstract import (
     AgentRunResult, 
     AgentState,
     RequestInputRequest,
+    RequestChatRequest,
     RunAgentParams,
     agent,
 )
@@ -64,6 +65,7 @@ def __popup_input(prompt: str) -> str:
 
 
 gpt_engineer.steps.input = __popup_input
+gpt_engineer.ai.input = __popup_input
 
 def __popup_chat(prompt: str="NONE", end=""):
     asyncio.run(OUTPUT_CHAT_QUEUE.put(prompt))
@@ -73,7 +75,7 @@ gpt_engineer.steps.print = __popup_chat
 
 
 async def _main(
-    project_path: str = "/Users/jwd2488/gpt-engineer/benchmark/file_explorer",
+    project_path: str = "/home/matt/projects/gpt-engineer/benchmark/file_explorer",
     model: str = "gpt-4",
     temperature: float = 0.1,
     steps_config: StepsConfig = StepsConfig.DEFAULT,
@@ -204,7 +206,7 @@ class EngineerAgent(Agent):
             while True:
                 while OUTPUT_CHAT_QUEUE.empty():
                     pass
-                toSend = asyncio.run(OUTPUT_CHAT_QUEUE.get());
+                toSend = asyncio.run(OUTPUT_CHAT_QUEUE.get())
                 print(toSend)
                 response = ""
                 for delta in toSend:
@@ -219,17 +221,19 @@ class EngineerAgent(Agent):
 
         def __run_popup_thread():
             while True:
-                while INPUT_PROMPT_QUEUE.empty():
+                while not OUTPUT_CHAT_QUEUE.empty():
                     pass
                 prompt = asyncio.run(INPUT_PROMPT_QUEUE.get())
-                asyncio.run(obj.send_progress())
-                response = asyncio.run(obj.request_input(
-                    RequestInputRequest(
-                        msg=prompt,
-                        place_holder="Write your input here.",
+                print("Prompt=====" + prompt)
+
+                response = asyncio.run(obj.request_chat(
+                    RequestChatRequest(
+                        messages=prompt,
                     )
                 ))
-                print(response)
+                print("Response=====" + response)
+                
+                asyncio.run(obj.send_progress())
             
                 asyncio.run(INPUT_RESPONSE_QUEUE.put(response))
 
