@@ -16,6 +16,7 @@ from rift.agents.abstract import (
     AgentState,
     RequestChatRequest,
     RequestInputRequest,
+    RequestChatRequest,
     RunAgentParams,
     agent,
 )
@@ -106,7 +107,7 @@ from asyncio import Lock
 response_lock = Lock()   
 
 async def _main(
-    project_path: str = "/Users/jwd2488/gpt-engineer/benchmark/file_explorer",
+    project_path: str = "/home/matt/projects/gpt-engineer/benchmark/file_explorer",
     model: str = "gpt-4",
     temperature: float = 0.1,
     steps_config: StepsConfig = StepsConfig.DEFAULT,
