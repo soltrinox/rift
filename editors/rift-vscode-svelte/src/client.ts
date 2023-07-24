@@ -893,8 +893,9 @@ export class MorphLanguageClient
     // console.log(params)
     let agentId = params.agent_id;
 
-    if (!(agentId in this.webviewState.value.agents))
-      throw new Error("progress for nonexistent agent");
+    if (!(agentId in this.webviewState.value.agents)){
+      console.log(params)
+      throw new Error(`progress for nonexistent agent: ${agentId}`);}
 
     const response = params.payload?.response;
 

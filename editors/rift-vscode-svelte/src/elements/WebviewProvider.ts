@@ -54,53 +54,88 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       "stateUpdate",
       this.morph_language_client.getWebviewState(),
     );
-    abstract class Message {static type: string }
 
-    class SelectedAgentIdMessage extends Message {
-      static override type = "selectedAgentId";
 
-      constructor(
-        readonly agentId: string
-      ) {
-        super();
-      }
+
+    interface SelectedAgentIdMessage {
+      readonly type: "selectedAgentId",
+      readonly agentId: string
     }
 
-    class CopyTextMessage extends Message {
-      static override type= "copyText";
 
-      constructor(
-        readonly content: string
-      ) {
-        super();
-      }
+    interface CopyTextMessage {
+      type: "copyText",
+      content: string
     }
 
-    interface RunAgentParams extends Message {
+    interface RunAgentParams {
+      type: "runAgent"
       agent_type: string
     }
 
-    interface chatMessageParams extends Message {
+    interface ChatMessageParams {
+      type: "chatMessage"
       agent_type: string,
       agent_id: string,
       messages: ChatMessage[]
     }
+    interface InputRequestParams {
+      type: "inputRequest"
+      agent_type: string,
+      agent_id: string,
+    }
 
-    type MessageType = SelectedAgentIdMessage | CopyTextMessage
+    interface ListAgentsParams {
+      type: "listAgents"
+    }
+    interface RefreshStateParams {
+      type: "refreshState"
+    }
+    interface FocusOmnibarParams {
+      type: "focusOmnibar"
+    }
+    interface BlurOmnibarParams {
+      type: "blurOmnibar"
+    }
 
+    interface RestartAgentParams {
+      type: "restartAgent",
+      agentId: string
+    }
+    interface SendHasNotificationChangeParams {
+      type: "sendHasNotificationChange",
+      agentId: string
+      hasNotification: boolean
+    }
+    
+    interface CancelAgentParams {
+      type: 'cancelAgent'
+      agentId: string
+    }
+    interface DeleteAgentParams {
+      type: 'deleteAgent'
+      agentId: string
+    }
+
+
+
+    type RegisteredMessageTypes = SelectedAgentIdMessage | CopyTextMessage | RunAgentParams | ChatMessageParams | ListAgentsParams | InputRequestParams | RestartAgentParams | RefreshStateParams | SendHasNotificationChangeParams | BlurOmnibarParams | FocusOmnibarParams | CancelAgentParams | DeleteAgentParams
+
+
+    type MessageType = RegisteredMessageTypes 
     // Handles messages received from the webview
     webviewView.webview.onDidReceiveMessage(async (message: MessageType) => {
       if (!this._view) throw new Error("no view");
       console.log("WebviewProvider.ts received message: ", message);
-      switch (message.type ) {
-        case SelectedAgentIdMessage.type:
-          // let msg = message as SelectedAgentIdMessage
-          this.morph_language_client.sendSelectedAgentChange(msg.agentId);
+      switch (message.type) {
+        case "selectedAgentId":
+          console.log(message.type)
+          this.morph_language_client.sendSelectedAgentChange(message.agentId);
           break;
-        case "copyText":          
-        // let msg = message as CopyTextMessage
+        case "copyText":
+          // let msg = message as CopyTextMessage
           console.log("recieved copy in webview");
-          vscode.env.clipboard.writeText(msg.content);
+          vscode.env.clipboard.writeText(message.content);
           vscode.window.showInformationMessage("Text copied to clipboard!");
           break;
 
@@ -175,18 +210,18 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         }
         case "cancelAgent":
           console.log('cancelAgent', message.agentId)
-          this.morph_language_client.cancel(message.agentId);
+          this.morph_language_client.cancel({id: message.agentId});
           break;
 
         case "deleteAgent":
           console.log('delete agent', message.agentId)
-          this.morph_language_client.delete(message.agentId);
+          this.morph_language_client.delete({id: message.agentId});
           break;
 
         default:
           console.log(
             "no case match for ",
-            message.type,
+            message,
             " in WebviewProvider.ts",
           );
       }
