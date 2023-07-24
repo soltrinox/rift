@@ -1,10 +1,12 @@
+import os
+import json
 import asyncio
 import logging
 import random
 from asyncio import Future
 from concurrent import futures
 from dataclasses import dataclass, field
-from typing import ClassVar, Dict, List, Optional
+from typing import ClassVar, Dict, List, Optional, Any
 
 import smol_dev
 
@@ -27,6 +29,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util.TextStream import TextStream
+import rift.util.file_diff as file_diff
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +79,7 @@ class SmolAgent(Agent):
     agent_type: ClassVar[str] = "smol_dev"
 
     @classmethod
-    def create(cls, params: SmolAgentParams, model, server):
+    def create(cls, params: SmolAgentParams, server):
         state = SmolAgentState(
             params=params,
             _done=False,
@@ -97,7 +100,7 @@ class SmolAgent(Agent):
             - generate file structure
             - generate code (in parallel)
         """
-        params = self.run_params
+        await self.send_progress()
         # await ainput("\n> Press any key to continue.\n")
 
         # if params.prompt_file is None:
@@ -108,10 +111,10 @@ class SmolAgent(Agent):
 
         # get the initial prompt
         prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
-        self.state.messages.append(openai.Messages.user(prompt))  # update messages history
+        self.state.messages.append(openai.Message.user(prompt))  # update messages history
 
-        logger.info("Starting smol-dev with prompt:")
-        self.console.print(prompt, markup=True, highlight=True)
+        # logger.info("Starting smol-dev with prompt:")
+        # self.console.print(prompt, markup=True, highlight=True)
 
         # await ainput("\n> Press any key to continue.\n")
 
@@ -119,35 +122,56 @@ class SmolAgent(Agent):
         loop = asyncio.get_running_loop()
 
         FUTURES = dict()
+        def stream_handler(chunk):
+            try:
+                chunk = chunk.decode("utf-8")
+            except:
+                pass
+            nonlocal RESPONSE
+            RESPONSE += chunk
 
-        with futures.ThreadPoolExecutor(1) as executor:
-            def stream_handler(chunk):
-                nonlocal RESPONSE
-                RESPONSE += chunk
+            # def stream_string(string):
+            #     for char in string:
+            #         print(char, end="", flush=True)
+            #         time.sleep(0.0012)
 
-                # def stream_string(string):
-                #     for char in string:
-                #         print(char, end="", flush=True)
-                #         time.sleep(0.0012)
-
-                # stream_string(chunk.decode("utf-8"))
-                fut = asyncio.run_coroutine_threadsafe(self.send_progress(
+            # stream_string(chunk.decode("utf-8"))
+            fut = asyncio.run_coroutine_threadsafe(
+                self.send_progress(
                     SmolProgress(
                         response=RESPONSE,
                     )
-                ), loop=loop)
-                FUTURES[RESPONSE] = asyncio.wrap_future(fut)            
-            plan = await asyncio.get_running_loop().run_in_executor(
-                executor,
-                smol_dev.prompts.plan,
-                prompt,
-                stream_handler=stream_handler,
-                model="gpt-3.5-turbo",
+                ),
+                loop=loop,
             )
+            FUTURES[RESPONSE] = asyncio.wrap_future(fut)
+        async def get_plan():
+            # return await asyncio.get_running_loop().run_in_executor(
+            #     executor,
+            #     smol_dev.prompts.plan,
+            #     prompt,
+            #     stream_handler=stream_handler,
+            #     model="gpt-3.5-turbo",
+            # )
+            return smol_dev.prompts.plan(prompt, stream_handler=stream_handler, model="gpt-3.5-turbo")
+
+        plan = await ((self.add_task(AgentTask(description="Generate plan", task=get_plan))).run())
+        logger.info(f"PLAN {plan=}")            
+
+        with futures.ThreadPoolExecutor(1) as executor:
 
             # await ainput("\n> Press any key to continue.\n")
+            async def get_file_paths():
+                # logger.info(f"{prompt=} {plan=}")
+                return smol_dev.prompts.specify_file_paths(
+                    prompt,
+                    plan,
+                    model="gpt-3.5-turbo",
+                )
 
-            file_paths = smol_dev.specify_file_paths(prompt, plan, model=params.model)
+            file_paths = await ((self.add_task(
+                AgentTask(description="Generate file paths", task=get_file_paths)
+            )).run())
 
             logger.info(f"Got file paths: {json.dumps(file_paths, indent=2)}")
 
@@ -172,59 +196,77 @@ class SmolAgent(Agent):
             async def generate_code_for_filepath(
                 file_path: str, position: int
             ) -> file_diff.FileChange:
-                stream_handler = lambda chunk: pbar.update(n=len(chunk))
+                # stream_handler = lambda chunk: pbar.update(n=len(chunk))
                 code_future = asyncio.ensure_future(
                     smol_dev.generate_code(
-                        prompt, plan, file_path, stream_handler=stream_handler, model=params.model
+                        prompt, plan, file_path, model="gpt-3.5-turbo"
                     )
                 )
-                with tqdm.asyncio.tqdm(position=position, unit=" chars", unit_scale=True) as pbar:
-                    async with updater.lock:
-                        updater.pbars[position] = pbar
-                        updater.dones[position] = False
-                    done = False
-                    waiter = asyncio.get_running_loop().create_future()
+                # with tqdm.asyncio.tqdm(position=position, unit=" chars", unit_scale=True) as pbar:
+                # async with updater.lock:
+                #     updater.pbars[position] = pbar
+                #     updater.dones[position] = False
+                done = False
+                # waiter = asyncio.get_running_loop().create_future()
 
-                    def cb(fut):
-                        waiter.cancel()
+                # def cb(fut):
+                #     waiter.cancel()
 
-                    code_future.add_done_callback(cb)
+                # code_future.add_done_callback(cb)
 
-                    async def spinner():
-                        spinner_index: int = 0
-                        steps = ["[⢿]", "[⣻]", "[⣽]", "[⣾]", "[⣷]", "[⣯]", "[⣟]", "[⡿]"]
-                        while True:
-                            c = steps[spinner_index % len(steps)]
-                            pbar.set_description(f"{c} Generating code for {file_path}")
-                            async with updater.lock:
-                                updater.update()
-                            spinner_index += 1
-                            await asyncio.sleep(0.05)
-                            if waiter.done():
-                                # pbar.display(f"[✔️] Generated code for {file_path}")
-                                async with updater.lock:
-                                    updater.dones[position] = True
-                                    updater.messages[
-                                        position
-                                    ] = f"[✔️] Generated code for {file_path}"
-                                    pbar.set_description(f"[✔️] Generated code for {file_path}")
-                                    updater.update()
-                                return
+                # async def spinner():
+                #     spinner_index: int = 0
+                #     steps = ["[⢿]", "[⣻]", "[⣽]", "[⣾]", "[⣷]", "[⣯]", "[⣟]", "[⡿]"]
+                #     while True:
+                #         c = steps[spinner_index % len(steps)]
+                #         pbar.set_description(f"{c} Generating code for {file_path}")
+                #         async with updater.lock:
+                #             updater.update()
+                #         spinner_index += 1
+                #         await asyncio.sleep(0.05)
+                #         if waiter.done():
+                #             # pbar.display(f"[✔️] Generated code for {file_path}")
+                #             async with updater.lock:
+                #                 updater.dones[position] = True
+                #                 updater.messages[
+                #                     position
+                #                 ] = f"[✔️] Generated code for {file_path}"
+                #                 pbar.set_description(f"[✔️] Generated code for {file_path}")
+                #                 updater.update()
+                #             return
 
-                    t = asyncio.create_task(spinner())
-                    code = await code_future
-                    absolute_file_path = os.path.join(os.getcwd(), file_path)
-                    file_change = file_diff.get_file_change(
-                        path=absolute_file_path, new_content=code
+                # t = asyncio.create_task(spinner())
+                code = await code_future
+                absolute_file_path = os.path.join(os.getcwd(), file_path)
+                file_change = file_diff.get_file_change(
+                    path=absolute_file_path, new_content=code
+                )
+                return file_change
+
+            fs = []
+            for i, fp in enumerate(file_paths):
+                fs.append(
+                    asyncio.create_task(
+                        self.add_task(
+                            AgentTask(
+                                description=f"Generate code for {fp}",
+                                task=generate_code_for_filepath,
+                                kwargs=dict(file_path=fp, position=i),
+                            )
+                        ).run()
                     )
-                    return file_change
+                )
+                stream_handler(f"Generating code for {fp}.\n")
 
-            fs = [
-                asyncio.create_task(generate_code_for_filepath(fp, position=i))
-                for i, fp in enumerate(file_paths)
-            ]
+            await asyncio.wait(FUTURES.values())
 
-            yield await asyncio.gather(*fs)
+            await self.send_progress(
+                    {"response": RESPONSE, "done_streaming": True}
+            )
+
+            file_changes = await asyncio.gather(*fs)
+            workspace_edit = file_diff.edits_from_file_changes(file_changes, user_confirmation=True)
+            await self.server.apply_workspace_edit(lsp.ApplyWorkspaceEditParams(edit=workspace_edit, label="rift"))
 
     async def on_change(
         self,
@@ -305,7 +347,7 @@ class SmolAgent(Agent):
             self.state.document.uri, self.RANGE, self.accepted_diff_text(self.DIFF)
         )
         # if self.task.status not in ["error", "done"]:
-        #     logger.error(f"cannot accept status {self.task.status}")
+        #     logger.error(f"cannot_ accept status {self.task.status}")
         #     return
         # self.status = "done"
         await self.send_progress(

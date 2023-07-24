@@ -341,7 +341,7 @@ class LspServer(BaseLspServer):
         elif agent_type == "code_edit":
             model = await self.ensure_completions_model()
             agent_params = ofdict(CodeEditAgentParams, agent_params)
-            agent = CodeEditAgent.create(agent_params, model=model, server=self)
+            agent = CodeEditAgent.create(agent_params, model=model, server=self)            
         # elif agent_type == "reverso":
         #     model = await self.ensure_completions_model()
         #     agent_params = ofdict(ReversoAgentParams, agent_params)
@@ -352,10 +352,10 @@ class LspServer(BaseLspServer):
             agent_params = ofdict(EngineerAgentParams, agent_params)
             agent = EngineerAgent.create(agent_params, model=model, server=self)
         elif agent_type == "smol_dev":
-            model = await self.ensure_chat_model()
+            # model = await self.ensure_chat_model()
             if not is_dataclass(agent_params):
                 agent_params = ofdict(SmolAgentParams, agent_params)
-            agent = SmolAgent.create(params=agent_params, model=model, server=self)
+            agent = SmolAgent.create(params=agent_params, server=self)
         else:
             raise Exception(f"unsupported agent type={agent_type}")
 

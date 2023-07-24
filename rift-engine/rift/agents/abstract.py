@@ -137,11 +137,10 @@ class Agent:
             logger.info(f"{self} running")
 
             # Await to get the result of the task
-            result = await self.task.run()
-
+            result = await asyncio.create_task(self.task.run())
+            
             # Send the progress of the task
             await self.send_progress()
-
             return result
         except asyncio.CancelledError as e:
             # Log information if task is cancelled

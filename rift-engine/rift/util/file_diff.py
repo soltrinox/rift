@@ -23,6 +23,7 @@ class FileChange:
     new_content: str
     description: Optional[str] = None
     is_new_file: bool = False
+    annotation_label: Optional[str] = None
 
 
 def get_file_change(path: str, new_content: str) -> FileChange:
