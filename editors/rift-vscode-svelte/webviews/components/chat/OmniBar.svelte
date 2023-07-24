@@ -106,10 +106,7 @@
       throw new Error("attempt to run unavailable agent");
     vscode.postMessage({
       type: "runAgent",
-      params: {
-        agent_type,
-        agent_params: {},
-      },
+      agent_type,
     });
 
     textarea.value = ""; //clear omnibar text

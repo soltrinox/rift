@@ -3,8 +3,8 @@ import * as vscode from "vscode";
 // import * as client from '../client'
 import { getNonce } from "../getNonce";
 import PubSub from "../lib/PubSub";
-import type { MorphLanguageClient, RunAgentParams } from "../client";
-import { WebviewState } from "../types";
+import type { MorphLanguageClient } from "../client";
+import { ChatMessage, WebviewState } from "../types";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class WebviewProvider implements vscode.WebviewViewProvider {
@@ -18,7 +18,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     public name: "Chat" | "Logs",
     private readonly _extensionUri: vscode.Uri,
     public morph_language_client: MorphLanguageClient,
-  ) {}
+  ) { }
 
   // Posts a message to the webview view.
   //  endpoint: The endpoint to send the message to.
@@ -54,18 +54,53 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       "stateUpdate",
       this.morph_language_client.getWebviewState(),
     );
+    abstract class Message {static type: string }
+
+    class SelectedAgentIdMessage extends Message {
+      static override type = "selectedAgentId";
+
+      constructor(
+        readonly agentId: string
+      ) {
+        super();
+      }
+    }
+
+    class CopyTextMessage extends Message {
+      static override type= "copyText";
+
+      constructor(
+        readonly content: string
+      ) {
+        super();
+      }
+    }
+
+    interface RunAgentParams extends Message {
+      agent_type: string
+    }
+
+    interface chatMessageParams extends Message {
+      agent_type: string,
+      agent_id: string,
+      messages: ChatMessage[]
+    }
+
+    type MessageType = SelectedAgentIdMessage | CopyTextMessage
 
     // Handles messages received from the webview
-    webviewView.webview.onDidReceiveMessage(async (params: any) => {
+    webviewView.webview.onDidReceiveMessage(async (message: MessageType) => {
       if (!this._view) throw new Error("no view");
-      console.log("WebviewProvider.ts received message: ", params);
-      switch (params.type) {
-        case "selectedAgentId":
-          this.morph_language_client.sendSelectedAgentChange(params.agentId);
+      console.log("WebviewProvider.ts received message: ", message);
+      switch (message.type ) {
+        case SelectedAgentIdMessage.type:
+          // let msg = message as SelectedAgentIdMessage
+          this.morph_language_client.sendSelectedAgentChange(msg.agentId);
           break;
-        case "copyText":
+        case "copyText":          
+        // let msg = message as CopyTextMessage
           console.log("recieved copy in webview");
-          vscode.env.clipboard.writeText(params.content);
+          vscode.env.clipboard.writeText(msg.content);
           vscode.window.showInformationMessage("Text copied to clipboard!");
           break;
 
@@ -78,19 +113,9 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           // console.log("Getting list of available agents")
           // let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
           console.log("runAgent ran");
-          editor = vscode.window.activeTextEditor;
-          if (!editor) {
-            console.error("No active text editor found");
-            return;
-          }
-          // get the uri and position of the current cursor
-          let doc = editor.document;
-          let textDocument = { uri: doc.uri.toString(), version: 0 };
-          let selection = editor.selection;
 
-          const runAgentParams: RunAgentParams = {
-            agent_type: params.params.agent_type,
-            agent_params: { selection: selection, textDocument: textDocument },
+          const runAgentParams = {
+            agent_type: message.agent_type,
           };
           await this.morph_language_client.run(runAgentParams);
           break;
@@ -98,16 +123,16 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         case "chatMessage": {
           console.log(
             "Sending publish message",
-            `${params.agent_type}_${params.agent_id}_chat_request`,
+            `${message.agent_type}_${message.agent_id}_chat_request`,
           );
 
           this.morph_language_client.sendChatHistoryChange(
-            params.agent_id,
-            params.messages,
+            message.agent_id,
+            message.messages,
           );
           PubSub.pub(
-            `${params.agent_type}_${params.agent_id}_chat_request`,
-            params,
+            `${message.agent_type}_${message.agent_id}_chat_request`,
+            message,
           );
 
           break;
@@ -116,16 +141,16 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         case "inputRequest": {
           console.log(
             "Sending publish message",
-            `${params.agent_type}_${params.agent_id}_input_request`,
+            `${message.agent_type}_${message.agent_id}_input_request`,
           );
           PubSub.pub(
-            `${params.agent_type}_${params.agent_id}_input_request`,
-            params,
+            `${message.agent_type}_${message.agent_id}_input_request`,
+            message,
           );
           break;
         }
         case "restartAgent": {
-          this.morph_language_client.restart_agent(params.agentId);
+          this.morph_language_client.restart_agent(message.agentId);
           break;
         }
         case "refreshState": {
@@ -134,8 +159,8 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         }
         case "sendHasNotificationChange": {
           this.morph_language_client.sendHasNotificationChange(
-            params.agentId,
-            params.hasNotification,
+            message.agentId,
+            message.hasNotification,
           );
           break;
         }
@@ -149,19 +174,19 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "cancelAgent":
-          console.log('cancelAgent', params.agentId)
-          this.morph_language_client.cancel(params.agentId);
+          console.log('cancelAgent', message.agentId)
+          this.morph_language_client.cancel(message.agentId);
           break;
 
         case "deleteAgent":
-          console.log('delete agent', params.agentId)
-          this.morph_language_client.delete(params.agentId);
+          console.log('delete agent', message.agentId)
+          this.morph_language_client.delete(message.agentId);
           break;
 
         default:
           console.log(
             "no case match for ",
-            params.type,
+            message.type,
             " in WebviewProvider.ts",
           );
       }

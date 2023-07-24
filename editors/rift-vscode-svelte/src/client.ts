@@ -80,12 +80,11 @@ interface RunCodeHelperParams {
   textDocument: TextDocumentIdentifier;
 }
 
-export interface RunAgentParams {
-  agent_type: string;
-  agent_params: any;
+export class RunParams {
+  constructor(public agent_type: string) {}
 }
 
-export interface ChatAgentParams extends RunAgentParams {
+export interface ChatAgentParams extends RunParams {
   agent_params: {
     position: vscode.Position;
     textDocument: {
@@ -541,16 +540,16 @@ export class MorphLanguageClient
         ),
       );
 
-      console.log("runAgent ran");
-      const editor = vscode.window.activeTextEditor;
-      if (!editor) throw new Error("No active text editor found");
-      let textDocument = { uri: editor.document.uri.toString(), version: 0 };
-      let position = editor.selection.active;
-      const params: ChatAgentParams = {
-        agent_type: "rift_chat",
-        agent_params: { position, textDocument },
-      };
-      this.run(params);
+      // console.log("runAgent ran");
+      // const editor = vscode.window.activeTextEditor;
+      // if (!editor) throw new Error("No active text editor found");
+      // // let textDocument = { uri: editor.document.uri.toString(), version: 0 };
+      // // let position = editor.selection.active;
+      // // const params: ChatAgentParams = {
+      // //   agent_type: "rift_chat",
+      // //   agent_params: { position, textDocument },
+      // // };
+      this.run(new RunParams("rift_chat"));
       this.refreshWebviewAgents();
     });
 
@@ -734,22 +733,32 @@ export class MorphLanguageClient
   //   return "starting...";
   // }
 
-  async run(params: RunAgentParams) {
+  async run(params: RunParams) {
     if (!this.client) throw new Error();
+
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) throw new Error("No active text editor found");
+    let textDocument = { uri: editor.document.uri.toString(), version: 0 };
+    let position = editor.selection.active;
+    const chatAgentParams: ChatAgentParams = {
+      agent_type: params.agent_type,
+      agent_params: { position, textDocument },
+    };
+
     const result: RunAgentResult = await this.client.sendRequest(
       "morph/run",
-      params,
+      chatAgentParams, // when do we need to pass in position / text document vs not? passing it in with every call now.
     );
     console.log("run agent result");
     console.log(result);
     const agent_id = result.id;
     const agent_type = params.agent_type;
 
-    const editor = vscode.window.activeTextEditor;
+    // const editor = vscode.window.activeTextEditor;
     if (!editor) throw new Error("No active text editor");
     // get the uri and position of the current cursor
-    const doc = editor.document;
-    const textDocument = { uri: doc.uri.toString(), version: 0 };
+    // const doc = editor.document;
+    // const textDocument = { uri: doc.uri.toString(), version: 0 };
     // const position = editor.selection.active;
 
     const agent = new Agent(
@@ -812,7 +821,10 @@ export class MorphLanguageClient
   async delete(params: AgentIdParams) {
     if (!this.client) throw new Error();
 
-    let response = await this.client.sendRequest("morph/cancel", params);
+    let response = await this.client.sendRequest("morph/delete", params);
+
+
+
     this.webviewState.update((state) => {
       const updatedAgents = { ...state.agents };
       delete updatedAgents[params.id]; // delete agent
