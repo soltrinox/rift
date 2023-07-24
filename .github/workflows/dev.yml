@@ -35,14 +35,18 @@ jobs:
   #       run: python -m rift.server.core --port 7797
   #       working-directory: rift-engine
   vscode-extension:
+    # Check if the PR is not from a fork
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name:  Test & Build - VSCode Extension
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
       - name: Setup Node
         uses: actions/setup-node@v2
-        with:
+        with: 
           node-version: 20
       - name: Install dependencies
         run: npm ci
@@ -53,6 +57,18 @@ jobs:
       - name: prettier
         run: npm run format
         working-directory: editors/rift-vscode-svelte
+      - name: check for modified files
+        id: git-check
+        run: echo "modified=$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)" >> $GITHUB_OUTPUT
       - name: compile
         run: npm run compile
+        working-directory: editors/rift-vscode-svelte
+      - name: commit prettier formatting
+        if: steps.git-check.outputs.modified == 'true'
+        run: |
+          git config --global user.name "kataqatsi"
+          git config --global user.email "kataqatsi@gmail.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git commit -am "chore: format code with Prettier"
+          git push
         working-directory: editors/rift-vscode-svelte
