@@ -126,12 +126,15 @@
                                 on:click={handleCancelAgent}>Cancel</button
                             >
                         </li>
+                        <!-- cant delete the last agent bc no ui for it -->
+                        {#if (Object.keys($state.agents).length > 1)}
                         <li class="list-item text-left">
                             <button
                                 class="btn px-2"
                                 on:click={handleDeleteAgent}>Delete</button
                             >
                         </li>
+                        {/if}
                     </ul>
                 </div>
             </div>
