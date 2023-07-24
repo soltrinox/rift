@@ -59,7 +59,7 @@
 <div
   class="absolute bottom-full left-0 px-2 w-full z-20 drop-shadow-[0_-4px_16px_0px_rgba(0,0,0,0.36)]"
 >
-  {#each filteredAgents as agent, index}
+  {#each filteredAgents.reverse() as agent, index}
     <DropdownCard {agent} focused={index === activeId} {handleRunAgent} />
   {/each}
 </div>
