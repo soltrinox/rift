@@ -48,8 +48,9 @@ jobs:
   #         options: "--check --verbose --line-length 100"
   #         src: "."
   #         version: "~= 22.0"      
+
   #     - name: check for modified files
-  #       id: git-check
+  #       id: git-check-black
   #       run: echo "modified=$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)" >> $GITHUB_OUTPUT
   #       working-directory: rift-engine
       
