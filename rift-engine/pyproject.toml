@@ -45,9 +45,6 @@ Source = "https://github.com/morph-labs/rift"
 [project.scripts]
 rift = "rift.server.core:app"
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
 [tool.hatch.version]
 path = "rift/__about__.py"
 
