@@ -308,8 +308,8 @@ async function code_edit_send_progress_handler(
       }
     }
     if (params.payload.ready) {
-        agent.codeLensStatus = "done";
-        agent.onStatusChangeEmitter.fire("done");
+      agent.codeLensStatus = "done";
+      agent.onStatusChangeEmitter.fire("done");
     }
   }
 
@@ -510,8 +510,8 @@ export class MorphLanguageClient
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => {} };
-    this.green = { key: "TEMP_VALUE", dispose: () => {} };
+    this.red = { key: "TEMP_VALUE", dispose: () => { } };
+    this.green = { key: "TEMP_VALUE", dispose: () => { } };
     this.context = context;
     this.webviewState.subscribe(state => {
       chatProvider.stateUpdate(state);
@@ -575,7 +575,7 @@ export class MorphLanguageClient
       }
 
       if (agent?.textDocument?.uri?.toString() == document.uri.toString()) {
-          const line = agent?.selection.isReversed ? agent?.selection.active : agent?.selection.anchor;
+        const line = agent?.selection.isReversed ? agent?.selection.active : agent?.selection.anchor;
         const linetext = document.lineAt(line);
 
         //####### HARDCODED REMOVE THIS #################
@@ -764,8 +764,8 @@ export class MorphLanguageClient
       ...state,
       selectedAgentId: (agent.agent_type !== 'code_completion') ? agent_id : state.selectedAgentId, //TODO handle for general cases
       agents: {
-        ...state.agents,
         [agent_id]: new WebviewAgent(agent_type),
+        ...state.agents,
       }
     }
     ))
@@ -980,8 +980,8 @@ export class MorphLanguageClient
 }
 
 class Agent {
-    status: AgentStatus;
-    codeLensStatus: CodeLensStatus;
+  status: AgentStatus;
+  codeLensStatus: CodeLensStatus;
   green: vscode.TextEditorDecorationType;
   ranges: vscode.Range[] = [];
   onStatusChangeEmitter: vscode.EventEmitter<CodeLensStatus>;
@@ -998,8 +998,8 @@ class Agent {
   ) {
     this.morph_language_client = morph_language_client;
     this.id = id;
-      this.status = "running";
-      this.codeLensStatus = "running";
+    this.status = "running";
+    this.codeLensStatus = "running";
     this.agent_type = agent_type;
     this.selection = selection;
     this.textDocument = textDocument;
@@ -1150,7 +1150,7 @@ class Agent {
 
     if (this.agent_type === "code_edit") {
       code_edit_send_progress_handler(params, this);
-    }      
+    }
   }
   async handleResult(params: AgentResult) {
     if (!(this.id in this.morph_language_client.agents)) throw Error("Agent does not exist")
