@@ -1,15 +1,19 @@
-import glob
-import os
 import asyncio
-import logging
-import uuid
+import glob
 import json
-from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Literal, Optional, Iterable, Dict
+import logging
+import os
+import uuid
+from dataclasses import dataclass, field, is_dataclass
+from typing import Any, ClassVar, Dict, Iterable, List, Literal, Optional
 
+import rift.agents.rift_chat as agentchat
 import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
-from rift.agents.code_completion import CodeCompletionAgent
+from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
+from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
+
+# from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
 from rift.agents.engineer import EngineerAgent, EngineerAgentParams
 
@@ -21,13 +25,10 @@ from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
 from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 from dataclasses import is_dataclass
-
-
-
 from rift.server.agent import *
+from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict
-import rift.agents.rift_chat as agentchat
 
 logger = logging.getLogger(__name__)
 
@@ -137,9 +138,7 @@ class LspServer(BaseLspServer):
         with open(os.path.join(current_dir, "languages.json"), "r") as f:
             language_map = json.loads(f)
 
-        def find_matching_language(
-            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
-        ) -> Optional[str]:
+        def find_matching_language(filepath: str, language_map: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
             extension = filepath.split(".")[-1]  # Get the file extension
 
             for details in language_map["languages"]:
@@ -277,9 +276,7 @@ class LspServer(BaseLspServer):
             assert self.completions_model is not None
             return self.completions_model
         except:
-            config = ModelConfig(
-                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
-            )
+            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
             return config.create_completions()
 
     async def ensure_chat_model(self):
@@ -289,24 +286,20 @@ class LspServer(BaseLspServer):
             assert self.chat_model is not None
             return self.chat_model
         except:
-            config = ModelConfig(
-                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
-            )
+            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
             return config.create_chat()
 
     @rpc_method("morph/restart_agent")
     async def on_restart_agent(self, params: AgentIdParams) -> RunAgentResult:
-        logger.info('reset:')
-        print('test')
+        logger.info("reset:")
+        print("test")
         agent_id = params.id
         old_agent = self.active_agents[agent_id]
         agent_params = old_agent.state.params
         logger.info(agent_params)
         agent_type = old_agent.agent_type
         agent_id = old_agent.agent_id
-        return await self.on_run(
-            RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id)
-        )
+        return await self.on_run(RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id))
 
     @rpc_method("morph/run")
     async def on_run(self, params: RunAgentParams):
@@ -337,6 +330,15 @@ class LspServer(BaseLspServer):
             if not is_dataclass(agent_params):
                 agent_params = ofdict(CodeCompletionAgentParams, agent_params)
             agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "code_edit":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(CodeEditAgentParams, agent_params)
+            agent = CodeEditAgent.create(agent_params, model=model, server=self)
+        # elif agent_type == "reverso":
+        #     model = await self.ensure_completions_model()
+        #     agent_params = ofdict(ReversoAgentParams, agent_params)
+        #     agent = ReversoAgent.create(agent_params, model=model, server=self)
+
         elif agent_type == "engineer":
             model = await self.ensure_completions_model()
             agent_params = ofdict(EngineerAgentParams, agent_params)
@@ -352,6 +354,12 @@ class LspServer(BaseLspServer):
         self.active_agents[agent_id] = agent
         # t = asyncio.Task(agent.main())
         t = asyncio.create_task(agent.main())
+
+        def main_callback(fut):
+            if fut.exception():
+                logger.info(f"CAUGHT EXCEPTION={fut.exception()=}")
+
+        t.add_done_callback(main_callback)
         return RunAgentResult(id=agent_id)
         #     return t
 
@@ -424,7 +432,6 @@ class LspServer(BaseLspServer):
         agent: Agent = self.active_agents.pop(params.id)
         await agent.cancel()
         del agent
-
 
     @rpc_method("morph/listAgents")
     def on_list_agents(self, _: Any) -> List[AgentRegistryResult]:

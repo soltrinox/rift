@@ -16,8 +16,6 @@
     export let name: string = "rift_chat";
     export let hasNotification = false;
 
-
-
     $: isSelected = id == $state.selectedAgentId;
 
     let subtasks = $state.agents[id].tasks?.subtasks;
@@ -59,12 +57,12 @@
 <button
     on:click={handleChatIconClick}
     class:bg-[var(--vscode-editor-hoverHighlightBackground)]={isSelected}
-    class="w-full"
+    class="w-full py-2"
 >
     <div class="flex">
         {#if expanded == false}
             <button
-                class="px-1"
+                class="py-2 px-4 w-[16px] h-[16px]"
                 on:click={() => (expanded = !expanded)}
                 on:keydown={() => (expanded = !expanded)}
             >
@@ -72,7 +70,7 @@
             </button>
         {:else}
             <button
-                class="px-1"
+                class="py-2 px-4 w-[16px] h-[16px]"
                 on:click={() => (expanded = !expanded)}
                 on:keydown={() => (expanded = !expanded)}
             >
@@ -118,17 +116,17 @@
                     <ul
                         style="left: auto !important;
                         right: 0px !important;
-                        opacity: 100;z-index: 99; background-color: var(--vscode-button-secondaryBackground);"
+                        opacity: 1 !important ;z-index: 99; background-color: var(--vscode-input-background);"
                         class="dropdown-content absolute menu shadow rounded-box"
                         style:visibility={isDropdownOpen ? "visible" : "hidden"}
                     >
                         <li class="list-item">
                             <button
-                                class="btn px-2"
+                                class="btn px-2 text-left"
                                 on:click={handleCancelAgent}>Cancel</button
                             >
                         </li>
-                        <li class="list-item">
+                        <li class="list-item text-left">
                             <button
                                 class="btn px-2"
                                 on:click={handleDeleteAgent}>Delete</button

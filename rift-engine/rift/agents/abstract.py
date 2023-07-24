@@ -117,16 +117,37 @@ class Agent:
 
     async def main(self):
         """
-        Called by the LSP server to handle `morph/run`.
+        The main method called by the LSP server to handle method `morph/run`.
+
+        This method:
+            - Creates a task to be run
+            - Logs the status of the running task
+            - Awaits the result of the running task
+            - Sends progress of the task
+            - Handles cancellation and exception situations
+
+        Raises:
+            asyncio.CancelledError: If the task being run was cancelled.
         """
+        # Create a task to run with assigned description and run method
         self.task = AgentTask(description=self.agent_type, task=self.run)
+
         try:
+            # Log the status of the running task
             logger.info(f"{self} running")
+
+            # Await to get the result of the task
             result = await self.task.run()
-            await self.send_progress()  # hmm
+
+            # Send the progress of the task
+            await self.send_progress()
+
             return result
         except asyncio.CancelledError as e:
+            # Log information if task is cancelled
             logger.info(f"{self} cancelled: {e}")
+
+            # Call the cancel method if a CancelledError exception happens
             await self.cancel()
 
     async def run(self) -> AgentRunResult:
@@ -156,7 +177,6 @@ class Agent:
         for task in self.tasks:
             if task is not None:
                 task.cancel()
-
         await self.send_progress()
 
     async def request_input(self, req: RequestInputRequest) -> str:
@@ -164,9 +184,7 @@ class Agent:
         Prompt the user for more information.
         """
         try:
-            response = await self.server.request(
-                f"morph/{self.agent_type}_{self.agent_id}_request_input", req
-            )
+            response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
             return response["response"]
         except Exception as e:
             logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
@@ -184,34 +202,44 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        response = await self.server.request(
-            f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
-        )
+        response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_chat", req)
         return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
         """
-        Each agent is responsible for periodically notifying the client at `morph/{agent_type}_{agent_id}_send_progress` about the status of its outstanding tasks.
+        Send an update about the progress of the agent's tasks to the server at `morph/{agent_type}_{agent_id}_send_progress`.
+        It will try to package the description and status of the main and subtasks into the payload, unless the 'payload_only' parameter is set to True.
 
-        Assumes that `Agent.main()` has been run and the main task has been created.
+        Parameters:
+        - payload (dict, optional): A dictionary containing arbitrary data about the agent's progress. Default is None.
+        - payload_only (bool, optional): If set to True, the function will not include task updates and will send only the payload. Default is False.
+
+        Note:
+        This function assumes that `Agent.main()` has been run and the main task has been created.
+
+        Returns:
+        This function does not return a value.
         """
+        # Check whether we're only sending payload or also tasks' data
         if payload_only:
+            # If only payload is to be sent, set tasks to None
             tasks = None
         else:
+            # Try to wrap main and subtasks' data into tasks dictionary
             try:
                 tasks = {
                     "task": {
                         "description": AGENT_REGISTRY.registry[self.agent_type].display_name,
                         "status": self.task.status,
                     },
-                    "subtasks": (
-                        [{"description": x.description, "status": x.status} for x in self.tasks]
-                    ),
+                    "subtasks": ([{"description": x.description, "status": x.status} for x in self.tasks]),
                 }
+            # If unable to create tasks dictionary due to an exception, log the exception and set tasks to None
             except Exception as e:
                 logger.debug(f"Caught exception: {e}")
                 tasks = None
 
+        # Package all agent's progress into an AgentProgress object
         progress = AgentProgress(
             agent_type=self.agent_type,
             agent_id=self.agent_id,
@@ -219,6 +247,11 @@ class Agent:
             payload=payload,
         )
 
+        # If the main task's status is 'error', log it as an info level message
+        if self.task.status == "error":
+            logger.info(f"[error]: {self.task._task.exception()}")
+
+        # Notify the server about the agent's progress
         await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_progress", progress)
 
     async def send_result(self) -> ...:
@@ -264,9 +297,7 @@ class AgentRegistry:
     def __getitem__(self, key):
         return self.get_agent(key)
 
-    def register_agent(
-        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
-    ) -> None:
+    def register_agent(self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None) -> None:
         if agent.agent_type in self.registry:
             raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
         self.registry[agent.agent_type] = AgentRegistryItem(

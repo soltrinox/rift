@@ -52,6 +52,7 @@ class TextStream:
             )
 
         if self._eof:
+            raise StopAsyncIteration
             raise RuntimeError(f"{func_name} called after feed_eof()")
         if self._feed_task is not None:
             if self._feed_task.done():
@@ -126,7 +127,8 @@ class TextStream:
                     if self._on_cancel is not None:
                         self._on_cancel()
                     raise
-        return self.pop_all()
+        result = self.pop_all()
+        return result
 
     @classmethod
     def from_aiter(cls, x: AsyncIterable[str], loop=None):

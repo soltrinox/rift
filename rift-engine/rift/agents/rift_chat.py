@@ -3,30 +3,29 @@ import logging
 from dataclasses import dataclass
 from typing import ClassVar, Optional
 
+import rift.agents.abstract as agents
+import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentProgress,  # AgentTask,
     AgentRunParams,
     AgentRunResult,
     AgentState,
+    RequestChatRequest,
     RequestInputRequest,
     RunAgentParams,
     agent,
-    RequestChatRequest,
 )
-import rift.agents.abstract as agents
-import rift.llm.openai_types as openai
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import (
+    AbstractChatCompletionProvider,
     AbstractCodeCompletionProvider,
     InsertCodeResult,
-    AbstractChatCompletionProvider,
 )
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.agents.agenttask import AgentTask
 
 logger = logging.getLogger(__name__)
 
