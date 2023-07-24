@@ -116,18 +116,27 @@ class SmolAgent(Agent):
         # await ainput("\n> Press any key to continue.\n")
 
         RESPONSE = ""
+        loop = asyncio.get_running_loop()
 
-        def stream_handler(chunk):
-            nonlocal RESPONSE
-
-            def stream_string(string):
-                for char in string:
-                    print(char, end="", flush=True)
-                    time.sleep(0.0012)
-
-            stream_string(chunk.decode("utf-8"))
+        FUTURES = dict()
 
         with futures.ThreadPoolExecutor(1) as executor:
+            def stream_handler(chunk):
+                nonlocal RESPONSE
+                RESPONSE += chunk
+
+                # def stream_string(string):
+                #     for char in string:
+                #         print(char, end="", flush=True)
+                #         time.sleep(0.0012)
+
+                # stream_string(chunk.decode("utf-8"))
+                fut = asyncio.run_coroutine_threadsafe(self.send_progress(
+                    SmolProgress(
+                        response=RESPONSE,
+                    )
+                ), loop=loop)
+                FUTURES[RESPONSE] = asyncio.wrap_future(fut)            
             plan = await asyncio.get_running_loop().run_in_executor(
                 executor,
                 smol_dev.prompts.plan,
@@ -136,16 +145,13 @@ class SmolAgent(Agent):
                 model="gpt-3.5-turbo",
             )
 
-            await ainput("\n> Press any key to continue.\n")
+            # await ainput("\n> Press any key to continue.\n")
 
             file_paths = smol_dev.specify_file_paths(prompt, plan, model=params.model)
 
-            logger.info("Got file paths:")
-            self.console.print(json.dumps(file_paths, indent=2), markup=True)
+            logger.info(f"Got file paths: {json.dumps(file_paths, indent=2)}")
 
             file_changes = []
-
-            await ainput("\n> Press any key to continue.\n")
 
             @dataclass
             class PBarUpdater:
