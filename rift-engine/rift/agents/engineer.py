@@ -229,6 +229,8 @@ class EngineerAgent(Agent):
                         place_holder="Write your input here.",
                     )
                 ))
+                print(response)
+            
                 asyncio.run(INPUT_RESPONSE_QUEUE.put(response))
 
         threading.Thread(target=__run_popup_thread).start()
