@@ -28,7 +28,7 @@
 //   //  endpoint: The endpoint to send the message to.
 //   //  message: The message to send.
 //   //  Throws an error if the view is not available.
-  
+
 //   private postMessage(endpoint: string, message: any) {
 //     if (!this._view) {
 //       throw new Error("No view available");
@@ -40,7 +40,6 @@
 //   public stateUpdate(state: WebviewState) {
 //     this.postMessage('stateUpdate', state)
 //   }
-  
 
 //   public resolveWebviewView(
 //     webviewView: vscode.WebviewView,
@@ -54,7 +53,7 @@
 //     };
 //     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-//     // from webview    
+//     // from webview
 //     webviewView.webview.onDidReceiveMessage(async (data) => {
 //       if (!this._view) throw new Error("no view");
 //       console.log("LogProvider.ts recieved:");
@@ -125,7 +124,6 @@
 //       )
 //     );
 
-
 //     // Use a nonce to only allow specific scripts to be run
 //     const nonce = getNonce();
 
@@ -140,7 +138,7 @@
 //                     <meta http-equiv="Content-Security-Policy" content="img-src https: data:; style-src 'unsafe-inline' ${webview.cspSource}; script-src 'nonce-${nonce}';">
 //                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 //                         <link href="${stylesResetUri}" rel="stylesheet">
-                        
+
 //                     <script src="${tailwindUri}" nonce="${nonce}"></script>
 //                     <script src="${showdownUri}" nonce="${nonce}"></script>
 //                     <script src="${microlightUri}" nonce="${nonce}"></script>
