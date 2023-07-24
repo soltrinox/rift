@@ -81,20 +81,16 @@ async def _main(
     **kwargs,
 ) -> DBs:
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    print("GPT MAIN")
     model = fallback_model(model)
     ai = AI(
         model=model,
         temperature=temperature,
     )
-    print("AI")
 
     input_path = Path(project_path).absolute()
     memory_path = input_path / "memory"
     workspace_path = input_path / "workspace"
     archive_path = input_path / "archive"
-
-    print("paths")
 
     dbs = DBs(
         memory=DB(memory_path),
@@ -113,8 +109,6 @@ async def _main(
         archive(dbs)
 
     steps = STEPS[steps_config]
-    print("GPT STEPS")
-    # async def execute_steps():
 
     from concurrent import futures
 
@@ -224,23 +218,18 @@ class EngineerAgent(Agent):
                 asyncio.run(obj.send_progress())
 
         def __run_popup_thread():
-            print("Started handler thread")
             while True:
-                print("Waiting on input")
                 while INPUT_PROMPT_QUEUE.empty():
                     pass
                 prompt = asyncio.run(INPUT_PROMPT_QUEUE.get())
-                print("Got input, sending to request input")
                 asyncio.run(obj.send_progress())
                 response = asyncio.run(obj.request_input(
                     RequestInputRequest(
                         msg=prompt,
-                        place_holder="write your input here",
+                        place_holder="Write your input here.",
                     )
                 ))
-                print("Got user input")
                 asyncio.run(INPUT_RESPONSE_QUEUE.put(response))
-                print("Sent to request input")
 
         threading.Thread(target=__run_popup_thread).start()
         threading.Thread(target=__run_chat_thread).start()
