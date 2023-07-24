@@ -1,187 +1,332 @@
+import asyncio
+import logging
+import random
+from asyncio import Future
+from concurrent import futures
 from dataclasses import dataclass, field
-from logging import getLogger
-from typing import List, Optional
+from typing import ClassVar, Dict, List, Optional
 
-import rift.lsp.types as lsp
 import smol_dev
+
+import rift.llm.openai_types as openai
+import rift.lsp.types as lsp
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentProgress,
     AgentRunParams,
     AgentRunResult,
     AgentState,
-    AgentTask,
     RequestChatRequest,
-    RequestChatResponse,
-    RequestInputResponse,
+    RequestInputRequest,
+    RunAgentParams,
+    agent,
 )
-from rift.llm.abstract import AbstractChatCompletionProvider
-from rift.llm.openai_types import Message as ChatMessage
+from rift.agents.agenttask import AgentTask
+from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
+from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
+from rift.util.TextStream import TextStream
 
-from .file_diff import FileChange, edits_from_file_changes, get_file_change
-
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
+# dataclass for representing the result of the code completion agent run
 @dataclass
-class SmolAgentRunResult(AgentRunResult):
+class SmolRunResult(AgentRunResult):
     ...
 
 
+# dataclass for representing the progress of the code completion agent
 @dataclass
-class SmolAgentProgress(AgentProgress):
+class SmolProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
+    textDocument: Optional[lsp.TextDocumentIdentifier] = None
+    cursor: Optional[lsp.Position] = None
+    additive_ranges: Optional[RangeSet] = None
+    negative_ranges: Optional[RangeSet] = None
+    ready: bool = False
 
 
+# dataclass for representing the parameters of the code completion agent
 @dataclass
-class SmolAgentParams:
-    instructionPrompt: str
+class SmolAgentParams(AgentRunParams):
     textDocument: lsp.TextDocumentIdentifier
-    position: lsp.Position
+    selection: Optional[lsp.Selection]
+    instructionPrompt: Optional[str] = None
 
 
+# dataclass for representing the state of the code completion agent
 @dataclass
 class SmolAgentState(AgentState):
-    messages: List[ChatMessage]
-    model: AbstractChatCompletionProvider
-    document: lsp.TextDocumentItem
-    cursor: lsp.Position
     params: SmolAgentParams
-    ranges: RangeSet = field(default_factory=RangeSet)
-    smol_dev: smol_dev = smol_dev  # lets you access smol_dev methods
+    _done: bool = False
+    messages: List[openai.Message] = field(default_factory=list)
 
 
+# decorator for creating the code completion agent
+@agent(
+    agent_description="Quickly generate a workspace with smol_dev",
+    display_name="Smol Developer",
+)
 @dataclass
 class SmolAgent(Agent):
-    ...
+    state: SmolAgentState
+    agent_type: ClassVar[str] = "smol_dev"
 
+    @classmethod
+    def create(cls, params: SmolAgentParams, model, server):
+        state = SmolAgentState(
+            params=params,
+            _done=False,
+            messages=[openai.Message.assistant("What do you want to build?")],
+        )
+        obj = cls(
+            state=state,
+            agent_id=params.agent_id,
+            server=server,
+        )
+        return obj
 
-# @dataclass
-# class SmolAgent(Agent):
-#     agent_type: str = "smol_dev"
-#     state: SmolAgentState
-#     tasks: Dict[str, AgentTask]
-#     server: BaseLspServer
-#     count: ClassVar[int] = 0
-#     id: int
+    async def run(self) -> AgentRunResult:
+        """
+        run through smol dev chat loop:
+            - get prompt from user via chat
+            - generate plan
+            - generate file structure
+            - generate code (in parallel)
+        """
+        params = self.run_params
+        # await ainput("\n> Press any key to continue.\n")
 
-#     @classmethod
-#     def create(cls, params: SmolAgentParams, model, server):
-#         cls.count += 1
-#         obj = cls(
-#             status="running",
-#             state=SmolAgentState(
-#                 model=model,
-#                 messages=[
-#                     ChatMessage.system("""
-#         You are an AI agent that generates code based on a prompt.
-#         When you are given the prompt, ask 3 more questions about the most important implementation details that the user might want to modify or correct.
-#         Then, generate code based on the prompt and the answers to the questions. """)
-#                 ],
-#                 params=params,
-#                 document=server.documents[params.textDocument.uri],
-#                 cursor=params.position,
-#                 ranges=RangeSet(),
-#             ), tasks=dict(), server=server, id=SmolAgent.count
-#         )
-#         return obj
+        # if params.prompt_file is None:
+        #     prompt = await ainput("\n> Prompt file not found. Please input a prompt.\n")
+        # else:
+        #     with open(params.prompt_file, "r") as f:
+        #         prompt = f.read()
 
-#     def add_task(self, task: AgentTask):
-#         self.tasks[task.id] = task
-#         return task.id
+        # get the initial prompt
+        prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
+        self.state.messages.append(openai.Messages.user(prompt))  # update messages history
 
-#     async def run(self) -> AgentRunResult:
-#         prompt_task = AgentTask("Getting Prompt", "running", [], None)
-#         self.add_task(prompt_task)
-#         self.state.messages.append(ChatMessage.assistant("""What do you want me to code?"""))
-#         user_response = await self.request_chat(RequestChatRequest(self.state.messages))
-#         # print('user_response', user_response) # right now we assume 'morph/smol_dev_1_request_chat' returns a dict with a key 'message'
-#         response = ""
-#         stream = await self.state.model.run_chat(
-#             "", self.state.messages, str(user_response["message"])
-#         )
-#         async for delta in stream.text:
-#             response += delta
+        logger.info("Starting smol-dev with prompt:")
+        self.console.print(prompt, markup=True, highlight=True)
 
-#         # # in future, loop 3 times.. right now commented out because test doesnt support
-#         # for i in range(3):
-#         #     response = ""
-#         #     user_response = await self.request_chat(RequestChatRequest(self.state.messages))
-#         #     stream = await self.state.model.run_chat(
-#         #          "", self.state.messages, str(user_response["message"])
-#         #     )
-#         #     async for delta in stream.text:
-#         #         response += delta
-#         #         from asyncio import Lock
-#         #         response_lock = Lock()
-#         #         async with response_lock:
-#         #             await self.send_progress(ChatProgress(response=response))
-#         # prompt_task.status = "done"
+        # await ainput("\n> Press any key to continue.\n")
 
-#         # This is just an example. You should create a run function based on your needs.
-#         task_id = self.add_task(AgentTask("Generate code", "running", [], None))
-#         task = self.tasks[task_id]
+        RESPONSE = ""
 
-#         try:
-#             prompt = "".join([message.content for message in self.state.messages])
-#             # planning
-#             plan_task = self.add_task(AgentTask("running", "Planning...", [], None))
-#             plan = self.state.smol_dev.plan(prompt)
-#             # temporarily commented out # plan_task.status = "done"
-#             await self.send_progress(SmolAgentProgress(tasks=self.tasks, thoughts=plan))
+        def stream_handler(chunk):
+            nonlocal RESPONSE
 
-#             # specify file paths
-#             filepath_task = self.add_task(AgentTask("running", "Determining Filepath...", [], None))
-#             file_paths = self.state.smol_dev.specify_filePaths(prompt, plan)
-#             # filepath_task.status = "done"
-#             await self.send_progress(SmolAgentProgress(tasks=self.tasks, thoughts=file_paths))
+            def stream_string(string):
+                for char in string:
+                    print(char, end="", flush=True)
+                    time.sleep(0.0012)
 
-#             self.add_task(AgentTask("Reticulating splines...", "done", [], None))
+            stream_string(chunk.decode("utf-8"))
 
-#             # generate code
-#             generated_code : List[FileChange] = []
-#             import os
-#             for file_path in file_paths:
-#                 codegen_task = self.add_task(AgentTask("running", "Codegen for: " + file_path, [], None))
-#                 code = self.state.smol_dev.generate_code(file_path, self.state.params.instructionPrompt, plan)
-#                 absolute_file_path = os.getcwd() + '/' + file_path
-#                 uri = 'file://' + absolute_file_path
-#                 file_change = get_file_change(path=absolute_file_path, new_content=code)
+        with futures.ThreadPoolExecutor(1) as executor:
+            plan = await asyncio.get_running_loop().run_in_executor(
+                executor,
+                smol_dev.prompts.plan,
+                prompt,
+                stream_handler=stream_handler,
+                model="gpt-3.5-turbo",
+            )
 
-#                 generated_code.append(file_change)
-#                 await self.send_progress(SmolAgentProgress(tasks=self.tasks, thoughts=code))
-#                 # temporarily commented out # codegen_task.status = "done"
-#                 self.send_result(code) # todo: check what send_result actually wants
-#             finalWorkspaceEdit = edits_from_file_changes(generated_code)
-#             x = await self.server.request("workspace/applyEdit", finalWorkspaceEdit)
-#             print("X: ", x)
-#             # temporarily commented out # task.status = "done"
-#             return SmolAgentRunResult()
+            await ainput("\n> Press any key to continue.\n")
 
-#         except Exception as e:
-#             task.status = "error"
-#             logger.error(f"{self} failed to run: {e}")
-#             return SmolAgentRunResult()
+            file_paths = smol_dev.specify_file_paths(prompt, plan, model=params.model)
 
-#         finally:
-#             await self.send_progress(SmolAgentProgress(tasks=self.tasks, response=None))
+            logger.info("Got file paths:")
+            self.console.print(json.dumps(file_paths, indent=2), markup=True)
 
+            file_changes = []
 
-#     async def request_input(self, request_input_request):
-#         return await self.server.request(
-#             f"morph/{self.agent_type}_{self.id}_request_input", request_input_request
-#         )
+            await ainput("\n> Press any key to continue.\n")
 
-#     async def request_chat(self, request_chat_request):
-#         return await self.server.request(
-#         f"morph/{self.agent_type}_{self.id}_request_chat", request_chat_request
-#         )
+            @dataclass
+            class PBarUpdater:
+                pbars: Dict[int, Any] = field(default_factory=dict)
+                dones: Dict[int, Any] = field(default_factory=dict)
+                messages: Dict[int, Optional[str]] = field(default_factory=dict)
+                lock: asyncio.Lock = asyncio.Lock()
 
-#     async def send_progress(self, progress):
-#         await self.server.notify(f"morph/{self.agent_type}_{self.id}_send_progress", progress)
+                def update(self):
+                    for position, pbar in self.pbars.items():
+                        if self.dones[position]:
+                            pbar.display(self.messages[position])
+                        else:
+                            pbar.update()
 
-#     async def send_result(self, result):
-#         ...  # unreachable
+            updater = PBarUpdater()
+
+            async def generate_code_for_filepath(
+                file_path: str, position: int
+            ) -> file_diff.FileChange:
+                stream_handler = lambda chunk: pbar.update(n=len(chunk))
+                code_future = asyncio.ensure_future(
+                    smol_dev.generate_code(
+                        prompt, plan, file_path, stream_handler=stream_handler, model=params.model
+                    )
+                )
+                with tqdm.asyncio.tqdm(position=position, unit=" chars", unit_scale=True) as pbar:
+                    async with updater.lock:
+                        updater.pbars[position] = pbar
+                        updater.dones[position] = False
+                    done = False
+                    waiter = asyncio.get_running_loop().create_future()
+
+                    def cb(fut):
+                        waiter.cancel()
+
+                    code_future.add_done_callback(cb)
+
+                    async def spinner():
+                        spinner_index: int = 0
+                        steps = ["[⢿]", "[⣻]", "[⣽]", "[⣾]", "[⣷]", "[⣯]", "[⣟]", "[⡿]"]
+                        while True:
+                            c = steps[spinner_index % len(steps)]
+                            pbar.set_description(f"{c} Generating code for {file_path}")
+                            async with updater.lock:
+                                updater.update()
+                            spinner_index += 1
+                            await asyncio.sleep(0.05)
+                            if waiter.done():
+                                # pbar.display(f"[✔️] Generated code for {file_path}")
+                                async with updater.lock:
+                                    updater.dones[position] = True
+                                    updater.messages[
+                                        position
+                                    ] = f"[✔️] Generated code for {file_path}"
+                                    pbar.set_description(f"[✔️] Generated code for {file_path}")
+                                    updater.update()
+                                return
+
+                    t = asyncio.create_task(spinner())
+                    code = await code_future
+                    absolute_file_path = os.path.join(os.getcwd(), file_path)
+                    file_change = file_diff.get_file_change(
+                        path=absolute_file_path, new_content=code
+                    )
+                    return file_change
+
+            fs = [
+                asyncio.create_task(generate_code_for_filepath(fp, position=i))
+                for i, fp in enumerate(file_paths)
+            ]
+
+            yield await asyncio.gather(*fs)
+
+    async def on_change(
+        self,
+        *,
+        before: lsp.TextDocumentItem,
+        after: lsp.TextDocumentItem,
+        changes: lsp.DidChangeTextDocumentParams,
+    ):
+        if self.task.status != "running":
+            return
+        """
+        [todo]
+        When a change happens:
+        1. if the change is before our 'working area', then we stop the completion request and run again.
+        2. if the change is in our 'working area', then the user is correcting something that
+        3. if the change is after our 'working area', then just keep going.
+        4. if _we_ caused the change, then just keep going.
+        """
+        assert changes.textDocument.uri == self.state.document.uri
+        self.state.document = before
+        for c in changes.contentChanges:
+            # logger.info(f"contentChange: {c=}")
+            # fut = self.state.change_futures.get(c.text)
+            fut = None
+            for span, vfut in self.state.change_futures.items():
+                if c.text in span:
+                    fut = vfut
+
+            if fut is not None:
+                # we caused this change
+                try:
+                    fut.set_result(None)
+                except:
+                    pass
+            else:
+                # someone else caused this change
+                # [todo], in the below examples, we shouldn't cancel, but instead figure out what changed and restart the insertions with the new information.
+                with lsp.setdoc(self.state.document):
+                    self.state.additive_ranges.apply_edit(c)
+                if c.range is None:
+                    await self.cancel("the whole document got replaced")
+                else:
+                    if c.range.end <= self.state.cursor:
+                        # some text was changed before our cursor
+                        if c.range.end.line < self.state.cursor.line:
+                            # the change is occurring on lines strictly above us
+                            # so we can adjust the number of lines
+                            lines_to_add = (
+                                c.text.count("\n") + c.range.start.line - c.range.end.line
+                            )
+                            self.state.cursor += (lines_to_add, 0)
+                        else:
+                            # self.cancel("someone is editing on the same line as us")
+                            pass  # temporarily disabled
+                    elif self.state.cursor in c.range:
+                        await self.cancel("someone is editing the same text as us")
+
+        self.state.document = after
+
+    async def send_result(self, result):
+        ...  # unreachable
+
+    def accepted_diff_text(self, diff):
+        result = ""
+        for op, text in diff:
+            if op == -1:  # remove
+                pass
+            elif op == 0:
+                result += text
+            elif op == 1:
+                result += text
+        return result
+
+    async def accept(self):
+        logger.info(f"{self} user accepted result")
+
+        await self.server.apply_range_edit(
+            self.state.document.uri, self.RANGE, self.accepted_diff_text(self.DIFF)
+        )
+        # if self.task.status not in ["error", "done"]:
+        #     logger.error(f"cannot accept status {self.task.status}")
+        #     return
+        # self.status = "done"
+        await self.send_progress(
+            payload="accepted",
+            payload_only=True,
+        )
+        self.state._done = True
+
+    def rejected_diff_text(self, diff):
+        result = ""
+        for op, text in diff:
+            if op == -1:  # remove
+                result += text
+            elif op == 0:
+                result += text
+            elif op == 1:
+                pass
+        return result
+
+    async def reject(self):
+        logger.info(f"{self} user rejected result")
+
+        await self.server.apply_range_edit(
+            self.state.document.uri, self.RANGE, self.rejected_diff_text(self.DIFF)
+        )
+        await self.send_progress(
+            payload="rejected",
+            payload_only=True,
+        )
+        self.state._done = True

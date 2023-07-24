@@ -4,6 +4,7 @@ from typing import Callable, TypeVar
 
 T = TypeVar("T")
 
+
 @contextlib.contextmanager
 def set_ctx(context_variable: contextvars.ContextVar[T], value: T):
     """

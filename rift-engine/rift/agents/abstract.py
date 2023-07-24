@@ -184,7 +184,9 @@ class Agent:
         Prompt the user for more information.
         """
         try:
-            response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_input", req)
+            response = await self.server.request(
+                f"morph/{self.agent_type}_{self.agent_id}_request_input", req
+            )
             return response["response"]
         except Exception as e:
             logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
@@ -202,7 +204,9 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        response = await self.server.request(f"morph/{self.agent_type}_{self.agent_id}_request_chat", req)
+        response = await self.server.request(
+            f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
+        )
         return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
@@ -232,7 +236,9 @@ class Agent:
                         "description": AGENT_REGISTRY.registry[self.agent_type].display_name,
                         "status": self.task.status,
                     },
-                    "subtasks": ([{"description": x.description, "status": x.status} for x in self.tasks]),
+                    "subtasks": (
+                        [{"description": x.description, "status": x.status} for x in self.tasks]
+                    ),
                 }
             # If unable to create tasks dictionary due to an exception, log the exception and set tasks to None
             except Exception as e:
@@ -298,24 +304,26 @@ class AgentRegistry:
     def __getitem__(self, key):
         """
         Allows access to agents in the registry using indexing ([]).
-        
+
         Parameters:
         - key (str): Key to be used to find the agent.
-        
+
         Returns:
         - get_agent method called for provided key.
         """
         return self.get_agent(key)
 
-    def register_agent(self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None) -> None:
+    def register_agent(
+        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
+    ) -> None:
         """
         Registers new agent into the registry.
-        
+
         Parameters:
         - agent (Type[Agent]): Agent to be registered.
         - agent_description (str): Description of the agent.
         - display_name (Optional[str]): Display name of the agent, defaults to None.
-        
+
         Throws:
         - ValueError: if agent.agent_type already exists in the registry.
         """
@@ -330,14 +338,14 @@ class AgentRegistry:
     def get_agent(self, agent_type: str) -> Type[Agent]:
         """
         Get the agent from registry based on agent_type provided.
-        
+
         Parameters:
         - agent_type (str): agent type for the searching agent.
 
         Returns:
         - Matching agent.
-        
-        Throws: 
+
+        Throws:
         - ValueError: if agent_type not found in the registry.
         """
         result = self.registry.get(agent_type)
@@ -349,10 +357,10 @@ class AgentRegistry:
     def get_agent_icon(self, item: AgentRegistryItem) -> ...:
         """
         Placeholder function to get the icon for a given agent. Currently returns None.
-        
+
         Parameters:
         - item (AgentRegistryItem): Item containing details of the agent.
-        
+
         Returns:
         - None
         """
@@ -361,9 +369,9 @@ class AgentRegistry:
     def list_agents(self) -> List[AgentRegistryResult]:
         """
         Lists all registered agents with their details.
-        
+
         Returns:
-        - List[AgentRegistryResult] : List of all registered agents with their details.  
+        - List[AgentRegistryResult] : List of all registered agents with their details.
         """
         return [
             AgentRegistryResult(
@@ -374,6 +382,7 @@ class AgentRegistry:
             )
             for item in self.registry.values()
         ]
+
 
 AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
 
@@ -388,7 +397,7 @@ def agent(agent_description: str, display_name: Optional[str] = None):
     - agent_description (str): A description of the agent.
     - display_name (str, optional): The display name of the agent. If not provided, None is assumed.
     """
-    
+
     def decorator(cls: Type[Agent]) -> Type[Agent]:
         AGENT_REGISTRY.register_agent(cls, agent_description, display_name)  # Registering the agent
         return cls

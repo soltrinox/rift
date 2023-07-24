@@ -138,7 +138,9 @@ class LspServer(BaseLspServer):
         with open(os.path.join(current_dir, "languages.json"), "r") as f:
             language_map = json.loads(f)
 
-        def find_matching_language(filepath: str, language_map: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
+        def find_matching_language(
+            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
+        ) -> Optional[str]:
             extension = filepath.split(".")[-1]  # Get the file extension
 
             for details in language_map["languages"]:
@@ -276,7 +278,9 @@ class LspServer(BaseLspServer):
             assert self.completions_model is not None
             return self.completions_model
         except:
-            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
             return config.create_completions()
 
     async def ensure_chat_model(self):
@@ -286,7 +290,9 @@ class LspServer(BaseLspServer):
             assert self.chat_model is not None
             return self.chat_model
         except:
-            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
             return config.create_chat()
 
     @rpc_method("morph/restart_agent")
@@ -299,7 +305,9 @@ class LspServer(BaseLspServer):
         logger.info(agent_params)
         agent_type = old_agent.agent_type
         agent_id = old_agent.agent_id
-        return await self.on_run(RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id))
+        return await self.on_run(
+            RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id)
+        )
 
     @rpc_method("morph/run")
     async def on_run(self, params: RunAgentParams):
