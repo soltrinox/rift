@@ -47,6 +47,17 @@ class AiderAgent(Agent):
 
         file_changes: List[file_diff.FileChange] = []
 
+        # Current state:
+        # - Intercept writes and commits: this should take care of the file changes
+        # - For interactions, need to intercept: 
+        #       io.confirm_ask
+        #       io.get_input
+        #       io.prompt_ask
+        #       io.tool_error
+        #       io.tool_output
+        #       io.user_input
+
+
         # This is called every time aider writes a file
         # Instead of writing, this stores the file change in a list
         def on_write(filename: str, new_content: str):
