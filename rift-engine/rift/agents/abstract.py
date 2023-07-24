@@ -289,15 +289,36 @@ class AgentRegistryResult:
 @dataclass
 class AgentRegistry:
     """
-    Track all agents in one place.
+    An organizational class made to track all agents in one central location.
     """
 
+    # Initial registry to store agents
     registry: Dict[str, Type[Agent]] = field(default_factory=dict)
 
     def __getitem__(self, key):
+        """
+        Allows access to agents in the registry using indexing ([]).
+        
+        Parameters:
+        - key (str): Key to be used to find the agent.
+        
+        Returns:
+        - get_agent method called for provided key.
+        """
         return self.get_agent(key)
 
     def register_agent(self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None) -> None:
+        """
+        Registers new agent into the registry.
+        
+        Parameters:
+        - agent (Type[Agent]): Agent to be registered.
+        - agent_description (str): Description of the agent.
+        - display_name (Optional[str]): Display name of the agent, defaults to None.
+        
+        Throws:
+        - ValueError: if agent.agent_type already exists in the registry.
+        """
         if agent.agent_type in self.registry:
             raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
         self.registry[agent.agent_type] = AgentRegistryItem(
@@ -307,17 +328,43 @@ class AgentRegistry:
         )
 
     def get_agent(self, agent_type: str) -> Type[Agent]:
+        """
+        Get the agent from registry based on agent_type provided.
+        
+        Parameters:
+        - agent_type (str): agent type for the searching agent.
+
+        Returns:
+        - Matching agent.
+        
+        Throws: 
+        - ValueError: if agent_type not found in the registry.
+        """
         result = self.registry.get(agent_type)
         if result is not None:
             return result.agent
         else:
             raise ValueError(f"Agent not found: {agent_type}")
-        return result.agent
 
     def get_agent_icon(self, item: AgentRegistryItem) -> ...:
+        """
+        Placeholder function to get the icon for a given agent. Currently returns None.
+        
+        Parameters:
+        - item (AgentRegistryItem): Item containing details of the agent.
+        
+        Returns:
+        - None
+        """
         return None  # TODO
 
     def list_agents(self) -> List[AgentRegistryResult]:
+        """
+        Lists all registered agents with their details.
+        
+        Returns:
+        - List[AgentRegistryResult] : List of all registered agents with their details.  
+        """
         return [
             AgentRegistryResult(
                 agent_type=item.agent.agent_type,
@@ -328,11 +375,20 @@ class AgentRegistry:
             for item in self.registry.values()
         ]
 
-
 AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
 
 
 def agent(agent_description: str, display_name: Optional[str] = None):
+    """
+    The agent decorator is used to bind a class of type Agent to the AgentRegistry.
+    The decorator registers the agent class with the AGENT_REGISTRY using the
+    'register_agent' method and then returns the class.
+
+    Parameters:
+    - agent_description (str): A description of the agent.
+    - display_name (str, optional): The display name of the agent. If not provided, None is assumed.
+    """
+    
     def decorator(cls: Type[Agent]) -> Type[Agent]:
         AGENT_REGISTRY.register_agent(cls, agent_description, display_name)  # Registering the agent
         return cls
