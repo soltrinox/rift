@@ -107,7 +107,7 @@ from asyncio import Lock
 response_lock = Lock()   
 
 async def _main(
-    project_path: str = "/home/matt/projects/gpt-engineer/benchmark/file_explorer",
+    project_path: str = "/Users/jwd2488/Documents/repos/rift/benchmarks",
     model: str = "gpt-4",
     temperature: float = 0.1,
     steps_config: StepsConfig = StepsConfig.DEFAULT,
@@ -194,6 +194,7 @@ class EngineerAgentState(AgentState):
     params: EngineerAgentParams
     messages: list[openai.Message]
     change_futures: Dict[str, Future] = field(default_factory=dict)
+    _done: bool = False
 
 
 
@@ -266,13 +267,13 @@ class EngineerAgent(Agent):
 
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
-        steps = STEPS["default"]
-        from concurrent import futures
-        tasks=[]
-        for step in steps:
-            tsk = AgentTask(step.__name__, None)
-            tasks.append(tsk)
-        self.set_tasks(tasks)
+        #steps = STEPS["default"]
+        #from concurrent import futures
+        # tasks=[]
+        # for step in steps:
+        #     tsk = AgentTask(step.__name__, None)
+        #     tasks.append(tsk)
+        # self.set_tasks(tasks)
         main_t = asyncio.create_task(_main())
         
 
