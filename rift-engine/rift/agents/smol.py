@@ -1,17 +1,18 @@
-import os
-import json
 import asyncio
+import json
 import logging
+import os
 import random
 from asyncio import Future
 from concurrent import futures
 from dataclasses import dataclass, field
-from typing import ClassVar, Dict, List, Optional, Any
+from typing import Any, ClassVar, Dict, List, Optional
 
 import smol_dev
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
+import rift.util.file_diff as file_diff
 from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
@@ -29,7 +30,6 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util.TextStream import TextStream
-import rift.util.file_diff as file_diff
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,7 @@ class SmolAgent(Agent):
         loop = asyncio.get_running_loop()
 
         FUTURES = dict()
+
         def stream_handler(chunk):
             try:
                 chunk = chunk.decode("utf-8")
@@ -145,6 +146,7 @@ class SmolAgent(Agent):
                 loop=loop,
             )
             FUTURES[RESPONSE] = asyncio.wrap_future(fut)
+
         async def get_plan():
             # return await asyncio.get_running_loop().run_in_executor(
             #     executor,
@@ -153,13 +155,14 @@ class SmolAgent(Agent):
             #     stream_handler=stream_handler,
             #     model="gpt-3.5-turbo",
             # )
-            return smol_dev.prompts.plan(prompt, stream_handler=stream_handler, model="gpt-3.5-turbo")
+            return smol_dev.prompts.plan(
+                prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
+            )
 
-        plan = await ((self.add_task(AgentTask(description="Generate plan", task=get_plan))).run())
-        logger.info(f"PLAN {plan=}")            
+        plan = await self.add_task(AgentTask(description="Generate plan", task=get_plan)).run()
+        logger.info(f"PLAN {plan=}")
 
         with futures.ThreadPoolExecutor(1) as executor:
-
             # await ainput("\n> Press any key to continue.\n")
             async def get_file_paths():
                 # logger.info(f"{prompt=} {plan=}")
@@ -169,9 +172,9 @@ class SmolAgent(Agent):
                     model="gpt-3.5-turbo",
                 )
 
-            file_paths = await ((self.add_task(
+            file_paths = await self.add_task(
                 AgentTask(description="Generate file paths", task=get_file_paths)
-            )).run())
+            ).run()
 
             logger.info(f"Got file paths: {json.dumps(file_paths, indent=2)}")
 
@@ -198,9 +201,7 @@ class SmolAgent(Agent):
             ) -> file_diff.FileChange:
                 # stream_handler = lambda chunk: pbar.update(n=len(chunk))
                 code_future = asyncio.ensure_future(
-                    smol_dev.generate_code(
-                        prompt, plan, file_path, model="gpt-3.5-turbo"
-                    )
+                    smol_dev.generate_code(prompt, plan, file_path, model="gpt-3.5-turbo")
                 )
                 # with tqdm.asyncio.tqdm(position=position, unit=" chars", unit_scale=True) as pbar:
                 # async with updater.lock:
@@ -238,9 +239,7 @@ class SmolAgent(Agent):
                 # t = asyncio.create_task(spinner())
                 code = await code_future
                 absolute_file_path = os.path.join(os.getcwd(), file_path)
-                file_change = file_diff.get_file_change(
-                    path=absolute_file_path, new_content=code
-                )
+                file_change = file_diff.get_file_change(path=absolute_file_path, new_content=code)
                 return file_change
 
             fs = []
@@ -260,13 +259,13 @@ class SmolAgent(Agent):
 
             await asyncio.wait(FUTURES.values())
 
-            await self.send_progress(
-                    {"response": RESPONSE, "done_streaming": True}
-            )
+            await self.send_progress({"response": RESPONSE, "done_streaming": True})
 
             file_changes = await asyncio.gather(*fs)
             workspace_edit = file_diff.edits_from_file_changes(file_changes, user_confirmation=True)
-            await self.server.apply_workspace_edit(lsp.ApplyWorkspaceEditParams(edit=workspace_edit, label="rift"))
+            await self.server.apply_workspace_edit(
+                lsp.ApplyWorkspaceEditParams(edit=workspace_edit, label="rift")
+            )
 
     async def on_change(
         self,

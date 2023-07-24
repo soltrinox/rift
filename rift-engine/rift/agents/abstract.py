@@ -138,7 +138,7 @@ class Agent:
 
             # Await to get the result of the task
             result = await asyncio.create_task(self.task.run())
-            
+
             # Send the progress of the task
             await self.send_progress()
             return result

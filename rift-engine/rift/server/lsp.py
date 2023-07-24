@@ -12,19 +12,16 @@ import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
 from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
+from rift.agents.engineer import EngineerAgent, EngineerAgentParams
 
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
-from rift.agents.engineer import EngineerAgent, EngineerAgentParams
-
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
-from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
-from dataclasses import is_dataclass
 from rift.server.agent import *
 from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 from rift.server.selection import RangeSet
@@ -341,7 +338,7 @@ class LspServer(BaseLspServer):
         elif agent_type == "code_edit":
             model = await self.ensure_completions_model()
             agent_params = ofdict(CodeEditAgentParams, agent_params)
-            agent = CodeEditAgent.create(agent_params, model=model, server=self)            
+            agent = CodeEditAgent.create(agent_params, model=model, server=self)
         # elif agent_type == "reverso":
         #     model = await self.ensure_completions_model()
         #     agent_params = ofdict(ReversoAgentParams, agent_params)
