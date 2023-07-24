@@ -80,8 +80,8 @@ interface RunCodeHelperParams {
   textDocument: TextDocumentIdentifier;
 }
 
-export class RunParams {
-  constructor(public agent_type: string) {}
+export interface RunParams {  
+  agent_type: string
 }
 
 export interface ChatAgentParams extends RunParams {
@@ -549,7 +549,7 @@ export class MorphLanguageClient
       // //   agent_type: "rift_chat",
       // //   agent_params: { position, textDocument },
       // // };
-      this.run(new RunParams("rift_chat"));
+      this.run({agent_type: "rift_chat"});
       this.refreshWebviewAgents();
     });
 
