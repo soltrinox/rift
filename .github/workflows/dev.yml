@@ -4,7 +4,7 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
-  
+
 on:
   pull_request:
     branches: [ dev ]
@@ -13,32 +13,61 @@ on:
     workflow_dispatch:
 
 jobs:
-  # rift-engine:
-  #   name:  Test & Build - Rift Engine 
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v2
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: '3.10' # adjust this
+  rift-engine:
+    # Check if the PR is not from a fork
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    name:  Test & Build - Rift Engine 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with: 
+          ref: ${{ github.head_ref }}
 
-  #     - name: Install dependencies
-  #       run: pip install -e .
-  #       working-directory: rift-engine
-  #     - name: Run ruff
-  #       run: ruff check
-  #       working-directory: rift-engine
-  #     - name: Run isort
-  #       run: isort . --check-only --diff
-  #       working-directory: rift-engine
-  #     - name: Run black
-  #       run: black . --check --diff
-  #       working-directory: rift-engine
-  #     - name: Run the program
-  #       run: python -m rift.server.core --port 7797
-  #       working-directory: rift-engine
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' # adjust this
+
+      - name: Install dependencies
+        run: pip install -e .
+        working-directory: rift-engine
+      
+      - name: Ruff
+        uses: chartboost/ruff-action@v1
+        working-directory: rift-engine
+      
+      - name: Run isort
+        uses: isort/isort-action@v1
+        working-directory: rift-engine
+      
+      - name: Run black
+        uses: psf/black@stable
+        with:
+          options: "--check --verbose --line-length 100"
+          src: "."
+          version: "~= 22.0"
+        working-directory: rift-engine
+      
+      - name: check for modified files
+        id: git-check
+        run: echo "modified=$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)" >> $GITHUB_OUTPUT
+        working-directory: rift-engine
+      
+      - name: Run the program
+        run: python -m rift.server.core --port 7797
+        working-directory: rift-engine
+      
+      - name: commit black formatting
+        if: steps.git-check.outputs.modified == 'true'
+        run: |
+          git config --global user.name "kataqatsi"
+          git config --global user.email "kataqatsi@gmail.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git commit -am "chore: format code with Black"
+          git push
+        working-directory: rift-engine
+
   vscode-extension:
     # Check if the PR is not from a fork
     if: github.event.pull_request.head.repo.full_name == github.repository
@@ -70,6 +99,7 @@ jobs:
       - name: check for modified files
         id: git-check
         run: echo "modified=$(if git diff-index --quiet HEAD --; then echo "false"; else echo "true"; fi)" >> $GITHUB_OUTPUT
+        working-directory: editors/rift-vscode-svelte
       
       - name: compile
         run: npm run compile
