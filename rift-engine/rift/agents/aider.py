@@ -65,6 +65,10 @@ class AiderAgent(Agent):
         # Instead of writing, this stores the file change in a list
         def on_write(filename: str, new_content: str):
             file_changes.append(file_diff.get_file_change(path=filename, new_content=new_content))
+            # loop.call_soon_threadsafe(lambda: event.set())
+            # yield [file_diff.get_file_change(path=filename, new_content=new_content)]
+
+            
             # logger.info(f"Intercepted Write to {filename}")
             
         # This is called when aider wants to commit after writing all the files

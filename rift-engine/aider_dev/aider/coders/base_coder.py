@@ -23,6 +23,7 @@ from rich.markdown import Markdown
 from aider import models, prompts, utils
 from aider.commands import Commands
 from aider.repomap import RepoMap
+from aider.io import InputOutput
 
 from ..dump import dump  # noqa: F401
 
@@ -125,7 +126,7 @@ class Coder:
         self.cur_messages = []
         self.done_messages = []
 
-        self.io = io
+        self.io: InputOutput = io
         self.stream = stream
 
         if not auto_commits:
