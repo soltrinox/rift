@@ -4,6 +4,7 @@ import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Optional
+from rift.agents import file_diff
 
 
 import rift.lsp.types as lsp
@@ -13,6 +14,7 @@ from rift.agents.abstract import (
     AgentRunParams,
     AgentRunResult, 
     AgentState,
+    RequestChatRequest,
     RequestInputRequest,
     RunAgentParams,
     agent,
@@ -37,6 +39,7 @@ except ImportError:
 UPDATES_QUEUE = asyncio.Queue()
 INPUT_PROMPT_QUEUE = asyncio.Queue()
 INPUT_RESPONSE_QUEUE = asyncio.Queue()
+TASK_QUEUE = asyncio.Queue()
 OUTPUT_CHAT_QUEUE = asyncio.Queue()
 SEEN = set()
 
@@ -52,25 +55,55 @@ import rift.llm.openai_types as openai
 
 logger = logging.getLogger(__name__)
 
-def __popup_input(prompt: str) -> str:
-    #sends request for popup
-    asyncio.run(INPUT_PROMPT_QUEUE.put(prompt))
-    #waits till we get a popup
-    while INPUT_RESPONSE_QUEUE.empty():
-        pass
-    #loads reponse and returns
-    resp = asyncio.run(INPUT_RESPONSE_QUEUE.get())
+async def __popup_input(prompt: str) -> str:
+    await INPUT_PROMPT_QUEUE.put(prompt)
+    while True:
+        try:
+            resp = await asyncio.wait_for(INPUT_RESPONSE_QUEUE.get(), timeout=1.0)
+            break  
+        except:
+            continue  
     return resp
 
 
-gpt_engineer.steps.input = __popup_input
+def __popup_input_wrapper(prompt: str="") -> str:
+    try: 
+        loop = asyncio.get_running_loop()
+        result_future = loop.create_future()
 
-def __popup_chat(prompt: str="NONE", end=""):
-    asyncio.run(OUTPUT_CHAT_QUEUE.put(prompt))
+        tsk = loop.create_task(__popup_input(prompt))
+        tsk.add_done_callback(
+            lambda t: result_future.set_result(t.result())
+        )
 
-gpt_engineer.ai.print = __popup_chat
-gpt_engineer.steps.print = __popup_chat
+        while not result_future.done():
+            loop.run_until_complete(asyncio.sleep(0.1))
 
+        return result_future.result()
+    except:
+        return asyncio.run(__popup_input(prompt))
+
+gpt_engineer.steps.input = __popup_input_wrapper
+
+async def __popup_chat(prompt: str="NONE", end=""):
+    await OUTPUT_CHAT_QUEUE.put(prompt)
+
+def __popup_chat_wrapper(prompt: str="NONE", end=""):
+    try:
+        loop = asyncio.get_running_loop()
+        tsk = loop.create_task(__popup_chat(prompt, end))
+        tsk.add_done_callback(
+            lambda t: print(f"Task completed with: {t.result()}")
+        )
+    except:
+        asyncio.run(__popup_chat(prompt, end))
+
+gpt_engineer.ai.print = __popup_chat_wrapper
+gpt_engineer.steps.print = __popup_chat_wrapper
+
+from asyncio import Lock
+
+response_lock = Lock()   
 
 async def _main(
     project_path: str = "/Users/jwd2488/gpt-engineer/benchmark/file_explorer",
@@ -87,10 +120,13 @@ async def _main(
         temperature=temperature,
     )
 
+
     input_path = Path(project_path).absolute()
     memory_path = input_path / "memory"
     workspace_path = input_path / "workspace"
     archive_path = input_path / "archive"
+
+    
 
     dbs = DBs(
         memory=DB(memory_path),
@@ -109,9 +145,11 @@ async def _main(
         archive(dbs)
 
     steps = STEPS[steps_config]
-
     from concurrent import futures
+ 
+    #await my_in.send_progress()
 
+    counter = 0
     with futures.ThreadPoolExecutor(1) as pool:
         for step in steps:
             await asyncio.sleep(0.1)
@@ -127,6 +165,7 @@ async def _main(
                     else:
                         SEEN.add(x[0])
             await asyncio.sleep(0.5)
+            counter += 1
 
 
 # dataclass for representing the result of the code completion agent run
@@ -135,40 +174,24 @@ class EngineerRunResult(AgentRunResult):
     ...
 
 
-# dataclass for representing the progress of the code completion agent
-@dataclass
-class EngineerProgress(AgentProgress):
-    response: Optional[str] = None
-    thoughts: Optional[str] = None
-    textDocument: Optional[lsp.TextDocumentIdentifier] = None
-    cursor: Optional[lsp.Position] = None
-    ranges: Optional[RangeSet] = None
 
-
-# dataclass for representing the parameters of the code completion agent
 @dataclass
 class EngineerAgentParams(AgentRunParams):
-    textDocument: lsp.TextDocumentIdentifier
-    position: Optional[lsp.Position]
     instructionPrompt: Optional[str] = None
 
 
 @dataclass
-class ChatProgress(
+class EngineerProgress(
     AgentProgress
 ):  # reports what tasks are active and responsible for reporting new tasks
     response: Optional[str] = None
     done_streaming: bool = False
 
-# dataclass for representing the state of the code completion agent
 @dataclass
 class EngineerAgentState(AgentState):
     model: AbstractCodeCompletionProvider
-    document: lsp.TextDocumentItem
-    cursor: lsp.Position
     params: EngineerAgentParams
     messages: list[openai.Message]
-    ranges: RangeSet = field(default_factory=RangeSet)
     change_futures: Dict[str, Future] = field(default_factory=dict)
 
 
@@ -182,16 +205,13 @@ class EngineerAgentState(AgentState):
 class EngineerAgent(Agent):
     state: EngineerAgentState
     agent_type: ClassVar[str] = "engineer"
-
+       
     @classmethod
     def create(cls, params: EngineerAgentParams, model, server):
         state = EngineerAgentState(
             model=model,
-            document=server.documents[params.textDocument.uri],
-            cursor=params.position,
-            ranges=RangeSet(),
             params=params,
-            messages=[openai.Message.assistant("Hello! What can I help you build today?")],
+            messages=[openai.Message.assistant("Hello! How can I help you today?")],
 
         )
         obj = cls(
@@ -199,42 +219,45 @@ class EngineerAgent(Agent):
             agent_id=params.agent_id,
             server=server,
         )
-        def __run_chat_thread():
+
+
+        async def __run_chat_thread(obj):
             print("Started handler thread")
-            while True:
-                while OUTPUT_CHAT_QUEUE.empty():
-                    pass
-                toSend = asyncio.run(OUTPUT_CHAT_QUEUE.get());
-                print(toSend)
-                response = ""
-                for delta in toSend:
-                    print(delta)
-                    response += delta
-                    asyncio.run( 
-                        obj.send_progress(ChatProgress(response=response))
-                        
-                    )
-                asyncio.run( obj.send_progress(ChatProgress(response=response, done_streaming=True)))
-                asyncio.run(obj.send_progress())
-
-        def __run_popup_thread():
-            while True:
-                while INPUT_PROMPT_QUEUE.empty():
-                    pass
-                prompt = asyncio.run(INPUT_PROMPT_QUEUE.get())
-                asyncio.run(obj.send_progress())
-                response = asyncio.run(obj.request_input(
-                    RequestInputRequest(
-                        msg=prompt,
-                        place_holder="Write your input here.",
-                    )
-                ))
-                print(response)
             
-                asyncio.run(INPUT_RESPONSE_QUEUE.put(response))
+            while True:
+                try:
+                    response = ""
+                    await obj.send_progress()
+                    toSend = await asyncio.wait_for(OUTPUT_CHAT_QUEUE.get(), timeout=1.0)                    
+                    for delta in toSend:
+                        response += delta
+                        async with response_lock:
+                            await obj.send_progress(EngineerProgress(response=response))
+                    await obj.send_progress(EngineerProgress(response=response, done_streaming=True))
+                
+                    async with response_lock:
+                        obj.state.messages.append(openai.Message.assistant(content=response))
+                except asyncio.TimeoutError:
+                    continue
 
-        threading.Thread(target=__run_popup_thread).start()
-        threading.Thread(target=__run_chat_thread).start()
+
+        async def __run_popup_thread(obj):
+            while True:
+                try:
+                    await obj.send_progress()
+                    prompt = await asyncio.wait_for(INPUT_PROMPT_QUEUE.get(), timeout=1.0)
+                    if prompt != "":
+                        await asyncio.wait_for(OUTPUT_CHAT_QUEUE.put(prompt), timeout=1.0)
+                    response = await obj.request_chat(RequestChatRequest(messages=obj.state.messages))
+                    async with response_lock:
+                        obj.state.messages.append(openai.Message.user(content=response))
+                    await INPUT_RESPONSE_QUEUE.put(response)
+                        
+                except asyncio.TimeoutError:
+                    continue
+
+        asyncio.create_task(__run_chat_thread(obj))
+        asyncio.create_task(__run_popup_thread(obj))
 
 
         return obj
@@ -242,232 +265,26 @@ class EngineerAgent(Agent):
 
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
-        from asyncio import Lock
-
-        response_lock = Lock()        
-        #instructionPrompt = self.state.params.instructionPrompt or (
-        #    await self.request_input(
-        #        RequestInputRequest(
-        #            msg="Describe what you want me to implement",
-        #            place_holder="Please write me a game of pong in python",
-        #        )
-        #    )
-        #)
-
-        self.server.register_change_callback(self.on_change, self.state.document.uri)
-        print("Create task")
-        response = ""
+        steps = STEPS["default"]
+        from concurrent import futures
+        tasks=[]
+        for step in steps:
+            tsk = AgentTask(step.__name__, None)
+            tasks.append(tsk)
+        self.set_tasks(tasks)
+        main_t = asyncio.create_task(_main())
         
-        await _main()
-        print("STARTED")
 
-
-
-
-
-
-        async def generate_explanation():
-            all_deltas = []
-
-            if stream.thoughts is not None:
-                async for delta in stream.thoughts:
-                    all_deltas.append(delta)
-                    await asyncio.sleep(0.01)
-
-            await self.send_progress()
-            return "".join(all_deltas)
-
-        # function to asynchronously generate the code
-        async def generate_code():
+        counter = 0
+        while (not main_t.done()) or (UPDATES_QUEUE.qsize() > 0):
+            counter += 1
             try:
-                all_deltas = []
-                async for delta in stream.code:
-                    all_deltas.append(delta)
-                    assert len(delta) > 0
-                    attempts = 10
-                    while True:
-                        if attempts <= 0:
-                            logger.error(f"too many edit attempts for '{delta}' dropped")
-                            return
-                        attempts -= 1
-                        cf = asyncio.get_running_loop().create_future()
-                        self.state.change_futures[delta] = cf
-                        x = await self.server.apply_insert_text(
-                            self.state.document.uri,
-                            self.state.cursor,
-                            delta,
-                            self.state.document.version,
-                        )
-                        if x.applied == False:
-                            logger.debug(f"edit '{delta}' failed, retrying")
-                            await asyncio.sleep(0.1)
-                            continue
-                        try:
-                            await asyncio.wait_for(cf, timeout=2)
-                            break
-                        except asyncio.TimeoutError:
-                            # [todo] this happens when an edit occured that clobbered this, try redoing.
-                            logger.error(f"timeout waiting for change '{delta}', retry the edit")
-                        finally:
-                            del self.state.change_futures[delta]
-                            pass
-                    with lsp.setdoc(self.state.document):
-                        added_range = lsp.Range.of_pos(self.state.cursor, len(delta))
-                        self.state.cursor += len(delta)
-                        self.state.ranges.add(added_range)
-                all_text = "".join(all_deltas)
-                logger.info(f"{self} finished streaming {len(all_text)} characters")
-                await self.send_progress()
-                return all_text
+                updates = await asyncio.wait_for(UPDATES_QUEUE.get(), 1.0)
+                for file_path, new_contents in updates:
+                    await self.server.apply_workspace_edit(lsp.ApplyWorkspaceEditParams(file_diff.edits_from_file_change(file_diff.get_file_change(
+                        file_path, new_contents
+                    ))))
+                
 
-            except asyncio.CancelledError as e:
-                logger.info(f"{self} cancelled: {e}")
-                await self.cancel()
-                return EngineerRunResult()
-
-            except Exception as e:
-                logger.exception("worker failed")
-                # self.status = "error"
-                return EngineerRunResult()
-
-            finally:
-                self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
-                await self.send_progress(
-                    EngineerProgress(
-                        response=None,
-                        textDocument=self.state.document,
-                        cursor=self.state.cursor,
-                        ranges=self.state.ranges,
-                    )
-                )
-
-        await self.send_progress(
-            EngineerProgress(
-                response=None,
-                textDocument=self.state.document,
-                cursor=self.state.cursor,
-                ranges=self.state.ranges,
-            )
-        )
-
-        code_task = self.add_task(AgentTask("Generate code", generate_code))
-
-        await self.send_progress(
-            EngineerProgress(
-                response=None,
-                textDocument=self.state.document,
-                cursor=self.state.cursor,
-                ranges=self.state.ranges,
-            )
-        )
-
-        explanation_task = self.add_task(AgentTask("Explain code edit", generate_explanation))
-
-        await self.send_progress(
-            EngineerProgress(
-                response=None,
-                textDocument=self.state.document,
-                cursor=self.state.cursor,
-                ranges=self.state.ranges,
-            )
-        )
-
-        await code_task.run()
-        await self.send_progress()
-
-        explanation = await explanation_task.run()
-        await self.send_progress()
-
-        await self.send_update(explanation)
-
-        return EngineerRunResult()
-
-    async def on_change(
-        self,
-        *,
-        before: lsp.TextDocumentItem,
-        after: lsp.TextDocumentItem,
-        changes: lsp.DidChangeTextDocumentParams,
-    ):
-        if self.task.status != "running":
-            return
-        """
-        [todo]
-        When a change happens:
-        1. if the change is before our 'working area', then we stop the completion request and run again.
-        2. if the change is in our 'working area', then the user is correcting something that
-        3. if the change is after our 'working area', then just keep going.
-        4. if _we_ caused the change, then just keep going.
-        """
-        assert changes.textDocument.uri == self.state.document.uri
-        self.state.document = before
-        for c in changes.contentChanges:
-            fut = self.state.change_futures.get(c.text)
-            if fut is not None:
-                # we caused this change
-                fut.set_result(None)
-            else:
-                # someone else caused this change
-                # [todo], in the below examples, we shouldn't cancel, but instead figure out what changed and restart the insertions with the new information.
-                with lsp.setdoc(self.state.document):
-                    self.state.ranges.apply_edit(c)
-                if c.range is None:
-                    await self.cancel("the whole document got replaced")
-                else:
-                    if c.range.end <= self.state.cursor:
-                        # some text was changed before our cursor
-                        if c.range.end.line < self.state.cursor.line:
-                            # the change is occurring on lines strictly above us
-                            # so we can adjust the number of lines
-                            lines_to_add = (
-                                c.text.count("\n") + c.range.start.line - c.range.end.line
-                            )
-                            self.state.cursor += (lines_to_add, 0)
-                        else:
-                            # self.cancel("someone is editing on the same line as us")
-                            pass  # temporarily disabled
-                    elif self.state.cursor in c.range:
-                        await self.cancel("someone is editing the same text as us")
-
-        self.state.document = after
-
-    async def send_result(self, result):
-        ...  # unreachable
-
-    async def accept(self):
-        logger.info(f"{self} user accepted result")
-        if self.task.status not in ["error", "done"]:
-            logger.error(f"cannot accept status {self.task.status}")
-            return
-        # self.status = "done"
-        await self.send_progress(
-            payload="accepted",
-            payload_only=True,
-        )
-
-    async def reject(self):
-        # [todo] in this case we need to revert all of the changes that we made.
-        logger.info(f"{self} user rejected result")
-        # self.status = "done"
-        with lsp.setdoc(self.state.document):
-            if self.state.ranges.is_empty:
-                logger.error("no ranges to reject")
-            else:
-                edit = lsp.TextEdit(self.state.ranges.cover(), "")
-                params = lsp.ApplyWorkspaceEditParams(
-                    edit=lsp.WorkspaceEdit(
-                        documentChanges=[
-                            lsp.TextDocumentEdit(
-                                textDocument=self.state.document.id,
-                                edits=[edit],
-                            )
-                        ]
-                    )
-                )
-                x = await self.server.apply_workspace_edit(params)
-                if not x.applied:
-                    logger.error("failed to apply rejection edit")
-            await self.send_progress(
-                payload="rejected",
-                payload_only=True,
-            )
+            except asyncio.TimeoutError:
+                continue
