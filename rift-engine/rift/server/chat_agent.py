@@ -4,13 +4,13 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar, List, Literal, Optional
 
 import rift.lsp.types as lsp
-from rift.agents.code_completion import CodeCompletionAgent
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
+from rift.agents.code_completion import CodeCompletionAgent
 from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict

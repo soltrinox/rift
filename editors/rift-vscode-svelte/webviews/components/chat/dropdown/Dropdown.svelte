@@ -7,40 +7,45 @@
 
   export let handleRunAgent: (agent_type: string) => void;
 
+
+
+
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 
-  let filteredAgents = availableAgents;
-  let activeId = availableAgents.length - 1;
+  let filteredAgents = availableAgents
+  let activeId = availableAgents.length-1;
 
   $: {
     filteredAgents = availableAgents.filter((agent) => {
-      let searchString = inputValue.substring(1).toLowerCase();
-      return (
-        agent.agent_type.toLowerCase().includes(searchString) ||
-        agent.display_name.toLowerCase().includes(searchString) ||
-        agent.agent_description.toLowerCase().includes(searchString)
-      );
-    });
-    activeId = filteredAgents.length - 1;
-  }
+    let searchString = inputValue.substring(1).toLowerCase();
+    return agent.agent_type
+        .toLowerCase()
+        .includes(searchString) || agent.display_name
+        .toLowerCase()
+        .includes(searchString)
+          || agent.agent_description
+        .toLowerCase()
+        .includes(searchString);
+    })
+    activeId = filteredAgents.length-1
+    }
 
   onMount(() => {
     //response is saved to state in ChatWebview.svelte
     vscode.postMessage({ type: "listAgents" });
   });
 
-  console.log("in dropdown: ", availableAgents);
+  console.log("in dropdown: ",availableAgents)
 
   export let inputValue: string = "";
-  if (availableAgents.length < 1) throw new Error("no available agents");
+  if(availableAgents.length < 1) throw new Error('no available agents')
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
       e.preventDefault();
       // create agent
       console.log("agent_type: " + availableAgents[activeId].agent_type);
-
-      handleRunAgent(filteredAgents[activeId].agent_type);
+      handleRunAgent(availableAgents[activeId].agent_type);
     }
     if (e.key == "ArrowDown") {
       e.preventDefault();
