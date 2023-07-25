@@ -202,6 +202,7 @@ async function code_edit_send_progress_handler(
   const editors = vscode.window.visibleTextEditors.filter(
     (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString(),
   );
+  // multiple editors can be pointing to the same resource
   for (const editor of editors) {
     console.log(`EDITOR: ${editor}`);
     // [todo] check editor is visible
@@ -292,6 +293,8 @@ export class MorphLanguageClient
     this.green = { key: "TEMP_VALUE", dispose: () => { } };
     this.context = context;
     this.webviewState.subscribe((state) => {
+      console.log('webview state:')
+      console.log(state)
       chatProvider.stateUpdate(state);
       logProvider.stateUpdate(state);
     });
@@ -700,7 +703,9 @@ export class MorphLanguageClient
         [agentId]: {
           ...state.agents[agentId],
           type: params.agent_type,
-          tasks: params.tasks,
+          tasks: {
+            ...state.agents[agentId].tasks,
+            ...params.tasks},
         },
       },
     }));
@@ -723,7 +728,10 @@ export class MorphLanguageClient
               agent_type: params.agent_type,
               isStreaming: false,
               streamingText: "",
-              tasks: params.tasks,
+              tasks: {
+                ...prevState.agents[agentId].tasks,
+                ...params.tasks
+              },
               chatHistory: [
                 ...(prevState.agents[agentId].chatHistory ?? []),
                 { role: "assistant", content: response },

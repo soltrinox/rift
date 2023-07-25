@@ -27,6 +27,8 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
   // notice: the only things being posted to the webviews are state objects, so this will be a private function
   private postMessage(endpoint: string, message: any) {
     if (!this._view) {
+      console.log('postMessage to: ', endpoint)
+      console.log('with message: ', message)
       throw new Error("No view available");
     } else {
       this._view.webview.postMessage({ type: endpoint, data: message });

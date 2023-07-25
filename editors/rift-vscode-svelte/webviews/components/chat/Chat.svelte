@@ -52,7 +52,7 @@
 
 <div
   bind:this={chatWindow}
-  class="flex items-start flex-grow flex-col overflow-y-auto"
+  class="flex items-start flex-grow flex-col overflow-y-auto "
 >
   {#if $state.agents[$state.selectedAgentId]?.inputRequest}
     <Response

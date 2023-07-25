@@ -120,7 +120,7 @@
       {#if currentAgent.agent_icon}
         {@html currentAgent.agent_icon}
       {:else}
-        <RiftSvg size="16" />
+        <RiftSvg size={16} />
       {/if}
     </div>
     <p class="text-sm font-semibold">

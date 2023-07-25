@@ -1,5 +1,4 @@
 <script lang='ts'>
-    import { stringify } from 'querystring';
     import Check from './icons/AcceptRejectCheck.svelte'
     import Close from './icons/AcceptRejectClose.svelte'
     import { state } from './stores';

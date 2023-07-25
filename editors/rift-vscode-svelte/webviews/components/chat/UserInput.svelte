@@ -5,14 +5,15 @@
   import type { WebviewState } from "../../../src/types";
   export let value: string = "";
 
-  let textarea: HTMLTextAreaElement;
+  let textarea: HTMLDivElement; //used to be a textarea
 
-  $: {
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = textarea.scrollHeight + "px";
-    }
-  }
+  // $: {
+  //   if (textarea) {
+  //     textarea.style.height = "auto";
+  //     textarea.style.height = textarea.scrollHeight + "px";
+  //   }
+  // }
+
 </script>
 
 <div class="bg-[var(--vscode-input-background)] w-full">
@@ -20,25 +21,11 @@
     <UserSvg size={12} />
     <p class="text-sm font-semibold">YOU</p>
   </div>
-  <div class="w-full text-md flex flex-row items-center mx-[16px] mb-[8px]">
-    <textarea
+  <div class="text-md flex flex-row items-center mx-[16px] mb-[8px]">
+    <div
       bind:this={textarea}
-      class="w-full block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"
-      placeholder="Type to chat or hit / for commands"
-      disabled={true}
+      >
       {value}
-      rows="1"
-    />
+    </div>
   </div>
 </div>
-
-<style>
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .hide-scrollbar {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-</style>
