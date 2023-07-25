@@ -1,7 +1,7 @@
 <script lang="ts">
-  import SendSvg from "../icons/SendSvg.svelte";
-  import { dropdownOpen, state } from "../stores";
-  import Dropdown from "./dropdown/Dropdown.svelte";
+  import SendSvg from "./icons/SendSvg.svelte";
+  import { dropdownOpen, state } from "./stores";
+  import Dropdown from "./chat/dropdown/Dropdown.svelte";
   import { tick } from "svelte";
 
   let isFocused = true;
