@@ -70,7 +70,7 @@ class SmolAgentState(AgentState):
 
 # decorator for creating the code completion agent
 @agent(
-    agent_description="Quickly generate a workspace with smol_dev",
+    agent_description="Quickly generate a workspace with smol_dev.",
     display_name="Smol Developer",
 )
 @dataclass
