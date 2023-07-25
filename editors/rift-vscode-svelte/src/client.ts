@@ -88,7 +88,7 @@ type CodeCompletionPayload = {
   negative_ranges?: vscode.Range[],
   response?: string
   textDocument?: TextDocumentIdentifier
-}
+} | "accepted" | "rejected"
 
 // FIXME add type interfaces. as of now, this is not typescript.
 async function code_completion_send_progress_handler(
@@ -115,24 +115,23 @@ async function code_completion_send_progress_handler(
     (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString(),
   );
   for (const editor of editors) {
-    console.log(`EDITOR: ${editor}`);
     // [todo] check editor is visible
     const version = editor.document.version;
-    if (params.payload) {
-      if ((params.payload as any) == "accepted" || (params.payload as any) == "rejected") {
-        throw new Error('dont think this should ever happen')
-        // agent.codeLensStatus = params.payload;
-        // agent.onStatusChangeEmitter.fire(params.payload);
-        // editor.setDecorations(GREEN, []);
-        // editor.setDecorations(RED, []);
-        // agent.onStatusChangeEmitter.fire(params.payload);
-        // // console.log("SET DECORATIONS TO NONE");
-        // // agent.morph_language_client.delete({ id: agent.id })
+
+      if (params.payload == "accepted" || params.payload == "rejected") {
+        agent.codeLensStatus = params.payload;
+        agent.onStatusChangeEmitter.fire(params.payload);
+        editor.setDecorations(GREEN, []);
+        editor.setDecorations(RED, []);
+        agent.onStatusChangeEmitter.fire(params.payload);
+        agent.morph_language_client.sendDoesShowAcceptRejectBarChange(agent.id, false)
+        // console.log("SET DECORATIONS TO NONE");
+        // agent.morph_language_client.delete({ id: agent.id })
+        continue
       }
-    }
-    if (params.payload) {
-      if (params.payload.additive_ranges) {
-        console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
+
+      if (params.payload?.additive_ranges) {
+        // console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
         editor.setDecorations(
           GREEN,
           params.payload.additive_ranges.map((r) => {
@@ -142,14 +141,12 @@ async function code_completion_send_progress_handler(
               r.end.line,
               r.end.character,
             );
-            console.log(
-              `RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`,
-            );
+            // console.log(`RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`);
             return result;
           }),
         );
       }
-      if (params.payload.negative_ranges) {
+      if (params.payload?.negative_ranges) {
         editor.setDecorations(
           RED,
           params.payload.negative_ranges.map(
@@ -163,7 +160,7 @@ async function code_completion_send_progress_handler(
           ),
         );
       }
-    }
+    
   }
 }
 
@@ -174,7 +171,7 @@ type CodeEditPayload = {
   negative_ranges?: vscode.Range[],
   ready?: boolean,
   textDocument?: TextDocumentIdentifier
-}
+} | "accepted" | "rejected"
 
 // FIXME add type interfaces. as of now, this is not typescript.
 async function code_edit_send_progress_handler(
@@ -191,7 +188,7 @@ async function code_edit_send_progress_handler(
       }
     }
   }
-  if (params.payload?.ready) {
+  if (typeof params.payload !== 'string' && params.payload?.ready) {
     agent.codeLensStatus = "done";
     agent.onStatusChangeEmitter.fire("done");
   }
@@ -209,21 +206,23 @@ async function code_edit_send_progress_handler(
     console.log(`EDITOR: ${editor}`);
     // [todo] check editor is visible
     const version = editor.document.version;
-    if (params.payload) {
 
-      if ((params.payload as any) == "accepted" || (params.payload as any) == "rejected") {
-        throw new Error('dont think this should ever happen')
-        // agent.codeLensStatus = params.payload;
-        // agent.onStatusChangeEmitter.fire(params.payload);
-        // editor.setDecorations(GREEN, []);
-        // editor.setDecorations(RED, []);
-        // agent.onStatusChangeEmitter.fire(params.payload);
-        // // console.log("SET DECORATIONS TO NONE");
-        // // agent.morph_language_client.delete({ id: agent.id })
+
+      if (params.payload == "accepted" || params.payload== "rejected") {
+        // throw new Error('dont think this should ever happen')
+        agent.codeLensStatus = params.payload;
+        agent.onStatusChangeEmitter.fire(params.payload);
+        editor.setDecorations(GREEN, []);
+        editor.setDecorations(RED, []);
+        agent.onStatusChangeEmitter.fire(params.payload);
+        agent.morph_language_client.sendDoesShowAcceptRejectBarChange(agent.id, false)
+        // console.log("SET DECORATIONS TO NONE");
+        // agent.morph_language_client.delete({ id: agent.id })
+        continue
       }
-    }
-    if (params.payload) {
-      if (params.payload.additive_ranges) {
+    
+
+      if(params.payload?.additive_ranges) {
         console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
         editor.setDecorations(
           GREEN,
@@ -241,7 +240,7 @@ async function code_edit_send_progress_handler(
           }),
         );
       }
-      if (params.payload.negative_ranges) {
+      if (params.payload?.negative_ranges) {
         editor.setDecorations(
           RED,
           params.payload.negative_ranges.map(
@@ -255,7 +254,6 @@ async function code_edit_send_progress_handler(
           ),
         );
       }
-    }
   }
 }
 
@@ -557,10 +555,7 @@ export class MorphLanguageClient
 
     this.webviewState.update((state) => ({
       ...state,
-      selectedAgentId:
-        agent.agent_type !== "code_completion"
-          ? agent_id
-          : state.selectedAgentId, //TODO handle for general cases
+      selectedAgentId: agent_id,
       agents: {
         [agent_id]: new WebviewAgent(agent_type),
         ...state.agents,
@@ -711,7 +706,12 @@ export class MorphLanguageClient
     }));
 
     if (params.payload?.done_streaming) {
-      if (!response) throw new Error(" done streaming but no response?");
+
+      if (!response){ 
+        console.log("done streaming but no repsonse:")
+        console.log(params)
+        throw new Error(" done streaming but no response?");
+      }
       this.webviewState.update((prevState) => {
         return {
           ...prevState,

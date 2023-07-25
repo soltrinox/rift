@@ -177,7 +177,7 @@ export type ChatAgentPayload =
     agent_id: string;
     agent_type: string;
     tasks: Tasks;
-    payload: T;
+    payload: T | undefined;
     
   }
 
