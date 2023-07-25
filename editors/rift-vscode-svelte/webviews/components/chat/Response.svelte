@@ -44,22 +44,14 @@
         return response.concat("\n```");
       }
     }
-    // console.log('!!!!!!1:')
-    // console.log(text)
-    const fixedCodeBlocksText = fixCodeBlocks(text)
-    // console.log('!!!!!!2:')
-    // console.log(fixedCodeBlocksText)
-    // console.log('!!!!!!2JSON:')
-    // console.log(JSON.stringify(fixedCodeBlocksText))
-    // console.log(converter.getOptions())
 
+    const fixedCodeBlocksText = fixCodeBlocks(text)
     // the following lines are directly copied from https://stackoverflow.com/questions/52031552/multiple-n-instances-are-ignored-in-showdown
-    // TODO: re-evaluate my career decisions. 
+    // TODO: re-evaluate my life decisions. 
+    // (and decision to use showdown. it appears markdown typically doesn't have consecutive \n's? but chatgpt api does or something???)
     const text2 = fixedCodeBlocksText.replace(/\n{2,}/g, m => m.replace(/\n/g, "<br/>"));
     const text3 = text2.replace(/<br\/>([^<])/g, "<br\/>\n\n$1");
     text = converter.makeHtml(text3);
-    // console.log('!!!!!!3:')
-    // console.log(text)
     return text;
   }
 
