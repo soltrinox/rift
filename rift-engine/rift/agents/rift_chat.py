@@ -59,7 +59,7 @@ class ChatAgentState(AgentState):
 
 @agent(
     agent_description="Ask questions about your code.",
-    display_name="Rift Chat",
+    display_name="Chat",
 )
 @dataclass
 class ChatAgent(Agent):

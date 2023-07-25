@@ -73,7 +73,7 @@ class CodeEditAgentState(AgentState):
 # decorator for creating the code completion agent
 @agent(
     agent_description="Generate code edit for currently selected region",
-    display_name="Rift Code Edit",
+    display_name="Code Edit",
 )
 @dataclass
 class CodeEditAgent(Agent):

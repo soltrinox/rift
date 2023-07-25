@@ -65,7 +65,7 @@ class CodeCompletionAgentState(AgentState):
 # decorator for creating the code completion agent
 @agent(
     agent_description="Generate code following an instruction to be inserted directly at your current cursor location.",
-    display_name="Rift Code Completion",
+    display_name="Code Completion",
 )
 @dataclass
 class CodeCompletionAgent(Agent):
