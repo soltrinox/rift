@@ -21,7 +21,7 @@
     on:click={() => handleRunAgent(agent.agent_type)}
   >
     <div class="flex flex-row ml-[6px]">
-      <div class="flex items-center justify-center w-[16px] h-[16px] mr-2">
+      <div class="flex items-center justify-center w-[16px] h-[16px] mr-2 scale-125">
         {#if agent.agent_icon}
           {@html agent.agent_icon}
         {:else}

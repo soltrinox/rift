@@ -111,12 +111,12 @@
   }
 </script>
 
-<div id={last ? "last" : undefined} class="w-full pr-2 py-[8px] px-[13px]">
+<div id={last ? "last" : undefined} class="w-full pr-2 p-[10px]">
   <div
     class={`flex items-center pb-[6px] ${
       value == "" && !$state.agents[$state.selectedAgentId].isStreaming ? "hidden" : ""
     }`}>
-    <div class="flex items-center justify-center h-[16px] w-[16px] mr-2">
+    <div class="flex items-center justify-center h-[16px] w-[16px] mr-2 scale-125">
       {#if currentAgent.agent_icon}
         {@html currentAgent.agent_icon}
       {:else}

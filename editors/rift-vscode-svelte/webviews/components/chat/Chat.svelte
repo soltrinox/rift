@@ -3,7 +3,6 @@
   import {  state } from "../stores";
   import UserSvg from "../icons/oldUserSvg.svelte";
   import UserInput from "./UserInput.svelte";
-  import RiftSvg from "../icons/RiftSvg.svelte";
   import Response from "./Response.svelte";
   import OmniBar from "../OmniBar.svelte";
 

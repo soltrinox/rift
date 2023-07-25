@@ -16,7 +16,8 @@
 
 </script>
 
-<div class="bg-[var(--vscode-input-background)] w-full py-[8px] px-[13px]">
+
+<div class="bg-[var(--vscode-input-background)] w-full p-[10px]">
   <div class="flex items-center pb-[6px]">
     <UserSvg classes='mr-2' />
     <p class="text-sm font-semibold">YOU</p>
