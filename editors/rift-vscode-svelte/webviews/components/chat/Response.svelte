@@ -19,13 +19,15 @@
   )[0];
 
   let responseBlock: HTMLDivElement | undefined;
-  var converter = new showdown.Converter({
+  const converterOptions: showdown.ConverterOptions = {
     omitExtraWLInCodeBlocks: true,
     simplifiedAutoLink: true,
     excludeTrailingPunctuationFromURLs: true,
     literalMidWordUnderscores: true,
     simpleLineBreaks: true,
-  });
+    openLinksInNewWindow: true
+  }
+  const converter = new showdown.Converter(converterOptions);
 
   function textToFormattedHTML(text: string) {
     function fixCodeBlocks(response: string) {
@@ -42,7 +44,17 @@
         return response.concat("\n```");
       }
     }
-    text = converter.makeHtml(fixCodeBlocks(text));
+    console.log('!!!!!!1:')
+    console.log(text)
+    const fixedCodeBlocksText = fixCodeBlocks(text)
+    console.log('!!!!!!2:')
+    console.log(fixedCodeBlocksText)
+    console.log('!!!!!!2JSON:')
+    console.log(JSON.stringify(fixedCodeBlocksText))
+    console.log(converter.getOptions())
+    text = converter.makeHtml(fixedCodeBlocksText);
+    console.log('!!!!!!3:')
+    console.log(text)
     return text;
   }
 
