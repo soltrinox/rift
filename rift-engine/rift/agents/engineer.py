@@ -230,11 +230,12 @@ class EngineerAgent(Agent):
                 try:
                     response = ""
                     await obj.send_progress()
-                    toSend = await asyncio.wait_for(OUTPUT_CHAT_QUEUE.get(), timeout=1.0)                    
-                    for delta in toSend:
-                        response += delta
-                        async with response_lock:
-                            await obj.send_progress(EngineerProgress(response=response))
+                    toSend = await asyncio.wait_for(OUTPUT_CHAT_QUEUE.get(), timeout=1.0)   
+                    if toSend != "NONE":                 
+                        for delta in toSend:
+                            response += delta
+                            async with response_lock:
+                                await obj.send_progress(EngineerProgress(response=response))
                     await obj.send_progress(EngineerProgress(response=response, done_streaming=True))
                 
                     async with response_lock:
