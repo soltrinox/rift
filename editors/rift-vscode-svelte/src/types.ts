@@ -6,7 +6,7 @@ import type {
 
 export interface Task {
   description: string;
-  status: string;
+  status: CodeLensStatus | AgentStatus;
 }
 
 export interface Tasks {
@@ -177,7 +177,10 @@ export type ChatAgentPayload =
     agent_type: string;
     tasks: Tasks;
     payload: T;
+    
   }
+
+
 
 
   export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
