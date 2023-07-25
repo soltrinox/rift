@@ -1,61 +1,60 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
-  import RiftSvg from "../icons/RiftSvg.svelte";
-  import { copySvg } from "../icons/copySvg";
-  export let value = "";
+  import { onDestroy, onMount } from "svelte"
+  import RiftSvg from "../icons/RiftSvg.svelte"
+  import { copySvg } from "../icons/copySvg"
+  export let value = ""
   // export let isNew = false;
-  import { state } from "../stores";
-  import CopySvg from "../icons/CopySvg.svelte";
-  import { SvelteComponent } from "svelte";
-  import showdown from "showdown";
-  import morphdom from "morphdom";
+  import { state } from "../stores"
+  import CopySvg from "../icons/CopySvg.svelte"
+  import { SvelteComponent } from "svelte"
+  import showdown from "showdown"
+  import morphdom from "morphdom"
 
-  export let last = false;
-  export let scrollToBottomIfNearBottom: ((...args: any) => any) | undefined =
-    undefined;
+  export let last = false
+  export let scrollToBottomIfNearBottom: ((...args: any) => any) | undefined = undefined
 
   $: currentAgent = $state.availableAgents.filter(
     (agent) => agent.agent_type === $state.agents[$state.selectedAgentId]?.type
-  )[0];
+  )[0]
 
-  let responseBlock: HTMLDivElement | undefined;
+  let responseBlock: HTMLDivElement | undefined
   const converterOptions: showdown.ConverterOptions = {
     omitExtraWLInCodeBlocks: true,
     simplifiedAutoLink: true,
     excludeTrailingPunctuationFromURLs: true,
     literalMidWordUnderscores: true,
     simpleLineBreaks: true,
-    openLinksInNewWindow: true
+    openLinksInNewWindow: true,
   }
-  const converter = new showdown.Converter(converterOptions);
+  const converter = new showdown.Converter(converterOptions)
 
   function textToFormattedHTML(text: string) {
     function fixCodeBlocks(response: string) {
       // Use a regular expression to find all occurrences of the substring in the string
-      const REGEX_CODEBLOCK = new RegExp("```", "g");
-      const matches = response.match(REGEX_CODEBLOCK);
+      const REGEX_CODEBLOCK = new RegExp("```", "g")
+      const matches = response.match(REGEX_CODEBLOCK)
 
       // Return the number of occurrences of the substring in the response, check if even
-      const count = matches ? matches.length : 0;
+      const count = matches ? matches.length : 0
       if (count % 2 === 0) {
-        return response;
+        return response
       } else {
         // else append ``` to the end to make the last code block complete
-        return response.concat("\n```");
+        return response.concat("\n```")
       }
     }
 
     const fixedCodeBlocksText = fixCodeBlocks(text)
     // the following lines are directly copied from https://stackoverflow.com/questions/52031552/multiple-n-instances-are-ignored-in-showdown
-    // TODO: re-evaluate my life decisions. 
+    // TODO: re-evaluate my life decisions.
     // (and decision to use showdown. it appears markdown typically doesn't have consecutive \n's? but chatgpt api does or something???)
-    const text2 = fixedCodeBlocksText.replace(/\n{2,}/g, m => m.replace(/\n/g, "<br/>"));
-    const text3 = text2.replace(/<br\/>([^<])/g, "<br\/>\n\n$1");
-    text = converter.makeHtml(text3);
-    return text;
+    const text2 = fixedCodeBlocksText.replace(/\n{2,}/g, (m) => m.replace(/\n/g, "<br/>"))
+    const text3 = text2.replace(/<br\/>([^<])/g, "<br/>\n\n$1")
+    text = converter.makeHtml(text3)
+    return text
   }
 
-  let something: string;
+  let something: string
   // let scrollLeftArr:{[x: number|string]: number} = {}
   // let index:number = 0
   // let scrollLeft:number = 0
@@ -66,31 +65,26 @@
   //         // scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft
   //       }
 
-  const preblockToCopyContent: string[] = [];
+  const preblockToCopyContent: string[] = []
   $: {
     const getHTML = (_responseBlock: HTMLDivElement) => {
-      const responseBlock = _responseBlock.cloneNode(true) as HTMLDivElement;
-      responseBlock.innerHTML = textToFormattedHTML(value);
-      responseBlock
-        .querySelectorAll("code")
-        .forEach((node) => node.classList.add("code"));
+      const responseBlock = _responseBlock.cloneNode(true) as HTMLDivElement
+      responseBlock.innerHTML = textToFormattedHTML(value)
+      responseBlock.querySelectorAll("code").forEach((node) => node.classList.add("code"))
       responseBlock.querySelectorAll("pre").forEach((preblock, i) => {
         // index = i
-        preblock.classList.add("p-2", "my-2", "block", "overflow-x-scroll");
+        preblock.classList.add("p-2", "my-2", "block", "overflow-x-scroll")
         //remove prev copy buttons
-        preblock
-          .querySelectorAll("#copy")
-          .forEach((copy) => copy.parentElement?.removeChild(copy));
-        const copyContent = preblock.textContent;
-        const copyButton = document.createElement("button");
-        copyButton.id = "copy";
-        copyButton.className =
-          "flex text-sm py-1 mb-1 text-[var(--vscode-panelTitle-inactiveForeground)]";
-        copyButton.appendChild(copySvg());
-        const copyCodeWords = document.createElement("p");
-        copyCodeWords.innerText = " copy";
-        copyButton.appendChild(copyCodeWords);
-        preblockToCopyContent[i] = preblock.textContent ?? "";
+        preblock.querySelectorAll("#copy").forEach((copy) => copy.parentElement?.removeChild(copy))
+        const copyContent = preblock.textContent
+        const copyButton = document.createElement("button")
+        copyButton.id = "copy"
+        copyButton.className = "flex text-sm py-1 mb-1 text-[var(--vscode-panelTitle-inactiveForeground)]"
+        copyButton.appendChild(copySvg())
+        const copyCodeWords = document.createElement("p")
+        copyCodeWords.innerText = " copy"
+        copyButton.appendChild(copyCodeWords)
+        preblockToCopyContent[i] = preblock.textContent ?? ""
         copyButton.addEventListener("click", () => {
           // navigator.clipboard.writeText(copyContent)
           // console.log('copying: ', copyContent)
@@ -98,59 +92,50 @@
           vscode.postMessage({
             type: "copyText",
             content: preblockToCopyContent[i],
-          });
-        });
-        preblock.insertBefore(copyButton, preblock.firstChild);
+          })
+        })
+        preblock.insertBefore(copyButton, preblock.firstChild)
         // if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]
         // preblock.addEventListener('scroll', handler)
-      });
-      return responseBlock;
-    };
+      })
+      return responseBlock
+    }
     if (responseBlock) {
-      const dsfa = responseBlock.innerHTML;
-      const newHTML = getHTML(responseBlock);
-      something = newHTML.innerHTML;
-      morphdom(responseBlock, newHTML);
-      responseBlock.contentEditable = "false";
-      scrollToBottomIfNearBottom?.();
+      const dsfa = responseBlock.innerHTML
+      const newHTML = getHTML(responseBlock)
+      something = newHTML.innerHTML
+      morphdom(responseBlock, newHTML)
+      responseBlock.contentEditable = "false"
+      scrollToBottomIfNearBottom?.()
     }
   }
 </script>
 
-<div id={last ? "last" : undefined} class="w-full pr-2">
+<div id={last ? "last" : undefined} class="w-full pr-2 py-[8px] px-[13px]">
   <div
-    class={`flex items-center pr-2 pl-[18px] pt-[8px] pb-[6px] ${
-      value == "" && !$state.agents[$state.selectedAgentId].isStreaming
-        ? "hidden"
-        : ""
-    }`}
-  >
-    <div class="flex items-center justify-center h-[16px] w-[16px]">
+    class={`flex items-center pb-[6px] ${
+      value == "" && !$state.agents[$state.selectedAgentId].isStreaming ? "hidden" : ""
+    }`}>
+    <div class="flex items-center justify-center h-[16px] w-[16px] mr-2">
       {#if currentAgent.agent_icon}
         {@html currentAgent.agent_icon}
       {:else}
-        <RiftSvg size={16} />
+        <RiftSvg />
       {/if}
     </div>
     <p class="text-sm font-semibold">
-      {currentAgent.display_name == ""
-        ? "RIFT"
-        : currentAgent.display_name.toUpperCase()}
+      {currentAgent.display_name.toUpperCase()}
     </p>
   </div>
   <div
-    class={`w-full text-md focus:outline-none flex flex-row px-[16px] pb-[8px] ${
-      value === "" && !$state.agents[$state.selectedAgentId].isStreaming
-        ? "hidden"
-        : ""
-    }`}
-  >
+    class={`w-full text-md focus:outline-none flex flex-row ${
+      value === "" && !$state.agents[$state.selectedAgentId].isStreaming ? "hidden" : ""
+    }`}>
     <div
       contenteditable="true"
       bind:this={responseBlock}
       bind:innerHTML={something}
       id="response"
-      class="w-full text-md focus:outline-none"
-    />
+      class="w-full text-md focus:outline-none" />
   </div>
 </div>

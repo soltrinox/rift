@@ -21,11 +21,11 @@
     on:click={() => handleRunAgent(agent.agent_type)}
   >
     <div class="flex flex-row ml-[6px]">
-      <div class="flex items-center justify-center w-[16px] h-[16px]">
+      <div class="flex items-center justify-center w-[16px] h-[16px] mr-2">
         {#if agent.agent_icon}
           {@html agent.agent_icon}
         {:else}
-          <RiftSvg size="16" />
+          <RiftSvg />
         {/if}
       </div>
 
