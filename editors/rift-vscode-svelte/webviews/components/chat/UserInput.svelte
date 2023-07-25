@@ -15,12 +15,12 @@
   }
 </script>
 
-<div class="bg-[var(--vscode-input-background)] w-full p-2">
-  <div class="flex items-center py-1">
+<div class="bg-[var(--vscode-input-background)] w-full">
+  <div class="flex items-center pr-2 pl-[18px] pt-[8px] pb-[6px]">
     <UserSvg size={12} />
-    <p class="text-sm">YOU</p>
+    <p class="text-sm font-semibold">YOU</p>
   </div>
-  <div class="w-full text-md flex flex-row items-center">
+  <div class="w-full text-md flex flex-row items-center mx-[16px] mb-[8px]">
     <textarea
       bind:this={textarea}
       class="w-full block outline-none focus:outline-none bg-transparent resize-none hide-scrollbar"

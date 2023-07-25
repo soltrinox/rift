@@ -57,7 +57,7 @@
   //         // scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft
   //       }
 
-  const preblockToCopyContent:string[] = []
+  const preblockToCopyContent: string[] = [];
   $: {
     const getHTML = (_responseBlock: HTMLDivElement) => {
       const responseBlock = _responseBlock.cloneNode(true) as HTMLDivElement;
@@ -81,12 +81,15 @@
         const copyCodeWords = document.createElement("p");
         copyCodeWords.innerText = " copy";
         copyButton.appendChild(copyCodeWords);
-        preblockToCopyContent[i] = preblock.textContent ?? ''
+        preblockToCopyContent[i] = preblock.textContent ?? "";
         copyButton.addEventListener("click", () => {
           // navigator.clipboard.writeText(copyContent)
           // console.log('copying: ', copyContent)
 
-          vscode.postMessage({ type: "copyText", content: preblockToCopyContent[i] });
+          vscode.postMessage({
+            type: "copyText",
+            content: preblockToCopyContent[i],
+          });
         });
         preblock.insertBefore(copyButton, preblock.firstChild);
         // if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]
@@ -105,27 +108,29 @@
   }
 </script>
 
-<div id={last ? "last" : undefined} class="w-full p-2">
+<div id={last ? "last" : undefined} class="w-full pr-2">
   <div
-    class={`flex items-center py-1 ${
+    class={`flex items-center pr-2 pl-[18px] pt-[8px] pb-[6px] ${
       value == "" && !$state.agents[$state.selectedAgentId].isStreaming
         ? "hidden"
         : ""
     }`}
   >
-    <div class="flex items-center justify-center h-[16px] w-[16px] mr-1">
+    <div class="flex items-center justify-center h-[16px] w-[16px]">
       {#if currentAgent.agent_icon}
         {@html currentAgent.agent_icon}
       {:else}
         <RiftSvg size="16" />
       {/if}
     </div>
-    <p class="text-sm">
-      {currentAgent.display_name == "" ? "RIFT" : currentAgent.display_name}
+    <p class="text-sm font-semibold">
+      {currentAgent.display_name == ""
+        ? "RIFT"
+        : currentAgent.display_name.toUpperCase()}
     </p>
   </div>
   <div
-    class={`w-full text-md focus:outline-none flex flex-row ${
+    class={`w-full text-md focus:outline-none flex flex-row px-[16px] pb-[8px] ${
       value === "" && !$state.agents[$state.selectedAgentId].isStreaming
         ? "hidden"
         : ""
