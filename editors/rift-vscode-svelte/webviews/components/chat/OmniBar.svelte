@@ -137,7 +137,6 @@
   };
 </script>
 
-<!-- bg-[var(--vscode-panel-background)] -->
 
 <div
   class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative"

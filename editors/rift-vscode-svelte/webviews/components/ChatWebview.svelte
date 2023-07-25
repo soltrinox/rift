@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Header from "./Header.svelte";
   import Chat from "./chat/Chat.svelte";
   import OmniBar from "./chat/OmniBar.svelte";
   vscode.postMessage({type: "refreshState"})
