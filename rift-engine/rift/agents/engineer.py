@@ -107,7 +107,7 @@ from asyncio import Lock
 response_lock = Lock()   
 
 async def _main(
-    project_path: str = "/Users/jwd2488/Documents/repos/rift/benchmarks",
+    project_path: str = "",
     model: str = "gpt-4",
     temperature: float = 0.1,
     steps_config: StepsConfig = StepsConfig.DEFAULT,
@@ -178,6 +178,7 @@ class EngineerRunResult(AgentRunResult):
 
 @dataclass
 class EngineerAgentParams(AgentRunParams):
+    textDocument: lsp.TextDocumentIdentifier
     instructionPrompt: Optional[str] = None
 
 
@@ -191,6 +192,7 @@ class EngineerProgress(
 @dataclass
 class EngineerAgentState(AgentState):
     model: AbstractCodeCompletionProvider
+    document: lsp.TextDocumentItem
     params: EngineerAgentParams
     messages: list[openai.Message]
     change_futures: Dict[str, Future] = field(default_factory=dict)
@@ -212,6 +214,7 @@ class EngineerAgent(Agent):
     def create(cls, params: EngineerAgentParams, model, server):
         state = EngineerAgentState(
             model=model,
+            document=server.documents[params.textDocument.uri],
             params=params,
             messages=[openai.Message.assistant("Hello! How can I help you today?")],
 
@@ -275,7 +278,7 @@ class EngineerAgent(Agent):
         #     tsk = AgentTask(step.__name__, None)
         #     tasks.append(tsk)
         # self.set_tasks(tasks)
-        main_t = asyncio.create_task(_main())
+        main_t = asyncio.create_task(_main(project_path=self.state.document.uri))
         
 
         counter = 0
