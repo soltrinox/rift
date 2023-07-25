@@ -117,9 +117,15 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       agentId: string
     }
 
+    interface AcceptOrRejectParams {
+      type: 'acceptOrReject',
+      agentId: string,
+      doesAccept: boolean
+    }
 
 
-    type RegisteredMessageTypes = SelectedAgentIdMessage | CopyTextMessage | RunAgentParams | ChatMessageParams | ListAgentsParams | InputRequestParams | RestartAgentParams | RefreshStateParams | SendHasNotificationChangeParams | BlurOmnibarParams | FocusOmnibarParams | CancelAgentParams | DeleteAgentParams
+
+    type RegisteredMessageTypes = SelectedAgentIdMessage | CopyTextMessage | RunAgentParams | ChatMessageParams | ListAgentsParams | InputRequestParams | RestartAgentParams | RefreshStateParams | SendHasNotificationChangeParams | BlurOmnibarParams | FocusOmnibarParams | CancelAgentParams | DeleteAgentParams | AcceptOrRejectParams
 
 
     type MessageType = RegisteredMessageTypes 
@@ -218,6 +224,14 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           this.morph_language_client.delete({id: message.agentId});
           break;
 
+        case "acceptOrReject":
+          if(message.doesAccept) {
+            vscode.commands.executeCommand('rift.accept', message.agentId)
+          } else {
+            vscode.commands.executeCommand('rift.reject', message.agentId)
+          }
+          break;
+
         default:
           console.log(
             "no case match for ",
@@ -229,7 +243,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
   }
 
   public revive(panel: vscode.WebviewView) {
-    this._view = panel;
+    this._view = panel
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
