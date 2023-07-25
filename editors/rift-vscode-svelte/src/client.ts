@@ -343,6 +343,7 @@ export class MorphLanguageClient
     return this.webviewState.value;
   }
 
+  // This code is not dead. It is called by the LSP or some shit. -- Brent it is called every time onStatusChangeEmitter is called
   // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
   public provideCodeLenses(
     document: vscode.TextDocument,
@@ -379,6 +380,7 @@ export class MorphLanguageClient
           agent.codeLensStatus === "done" ||
           agent.codeLensStatus === "error"
         ) {
+          this.sendDoesShowAcceptRejectBarChange(agent.id, true)
           const accept = new AgentStateLens(linetext.range, agent, {
             title: "Accept ✅ ",
             command: "rift.accept",
@@ -733,6 +735,10 @@ export class MorphLanguageClient
     }
   }
 
+  sendDoesShowAcceptRejectBarChange(agentId: string, doesShowAcceptRejectBar: boolean) {
+    this.webviewState.update(state => ({...state, agents: {...state.agents, [agentId]: {...state.agents[agentId], doesShowAcceptRejectBar}}}))
+  }
+
   sendHasNotificationChange(agentId: string, hasNotification: boolean) {
     if (!(agentId in this.webviewState.value.agents))
       throw new Error(`cant update nonexistent agent: ${agentId}`);
@@ -898,33 +904,3 @@ class Agent {
     throw new Error("no logic written for handle result yet");
   }
 }
-
-// class ChatAgent extends Agent {
-//   status: AgentStatus;
-//   green: vscode.TextEditorDecorationType;
-//   ranges: vscode.Range[] = [];
-//   onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
-//   onStatusChange: vscode.Event<AgentStatus>;
-//   morph_language_client: MorphLanguageClient
-
-//   constructor(
-//     morph_language_client: MorphLanguageClient,
-//     public readonly id: string,
-//     public readonly agent_type: string,
-//     public readonly position: vscode.Position,
-//     public textDocument: TextDocumentIdentifier,
-//     public params: any
-//   ) {
-//     this.morph_language_client = morph_language_client;
-//     this.id = id;
-//     this.status = "running";
-//     this.agent_type = agent_type;
-//     this.position = position;
-//     this.textDocument = textDocument;
-//     this.green = vscode.window.createTextEditorDecorationType({
-//       backgroundColor: "rgba(0,255,0,0.1)",
-//     });
-//     this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
-//     this.onStatusChange = this.onStatusChangeEmitter.event;
-//   }
-// }

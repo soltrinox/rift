@@ -58,6 +58,7 @@ export class WebviewAgent {
   // isChatAgent: boolean = false;
   isStreaming: boolean = false;
   streamingText: string = "";
+  doesShowAcceptRejectBar: boolean = false;
 
   constructor(
     type: string,
