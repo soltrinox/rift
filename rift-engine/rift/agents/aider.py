@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
 
-import aider_dev.aider.main as aider
+import aider.main as aider
 
 @dataclass
 class AiderAgentParams(ClientParams):
