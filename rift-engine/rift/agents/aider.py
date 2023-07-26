@@ -11,7 +11,10 @@ logger = logging.getLogger(__name__)
 from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
 
-import aider.main as aider
+try:
+    import aider.main as aider
+except ImportError:
+    raise Exception("`aider` not found. Try `pip install -e rift-engine[aider]` from the Rift root directory.")
 
 @dataclass
 class AiderAgentParams(ClientParams):
