@@ -239,10 +239,9 @@ class EngineerAgent(Agent):
                             response += delta
                             async with response_lock:
                                 await obj.send_progress(EngineerProgress(response=response))
-                    await obj.send_progress(EngineerProgress(response=response, done_streaming=True))
-                
-                    async with response_lock:
-                        obj.state.messages.append(openai.Message.assistant(content=response))
+                        await obj.send_progress(EngineerProgress(response=response, done_streaming=True))
+                        async with response_lock:
+                            obj.state.messages.append(openai.Message.assistant(content=response))
                 except asyncio.TimeoutError:
                     continue
 
@@ -271,8 +270,6 @@ class EngineerAgent(Agent):
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
         main_t = asyncio.create_task(_main(project_path=self.state.document))
-        
-
         counter = 0
         while (not main_t.done()) or (UPDATES_QUEUE.qsize() > 0):
             counter += 1
