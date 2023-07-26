@@ -1,12 +1,10 @@
 import functools
 import weakref
-from pydantic import BaseModel, SecretStr
 from typing import Literal, Optional
 
-from rift.llm.abstract import (
-    AbstractCodeCompletionProvider,
-    AbstractChatCompletionProvider,
-)
+from pydantic import BaseModel, SecretStr
+
+from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 
 
 class ModelConfig(BaseModel):
@@ -61,6 +59,13 @@ def create_client(
 def create_client_core(
     config: str, openai_api_key: Optional[SecretStr]
 ) -> AbstractCodeCompletionProvider:
+    """
+    The function parses the `config` string to extract the `type` and the rest of the configuration. It then checks the `type` and based on that, returns different instances of code completion providers.
+
+    For example, if the `type` is `"hf"`, it imports and returns an instance of `HuggingFaceClient` from `rift.llm.hf_client`. If the `type` is `"openai"`, it imports and returns an instance of `OpenAIClient` from `rift.llm.openai_client` with some additional keyword arguments. If the `type` is `"gpt4all"`, it imports and returns an instance of `Gpt4AllModel` from `rift.llm.gpt4all_model` with some additional settings and keyword arguments.
+
+    If the `type` is none of the above, it raises a `ValueError` with a message indicating that the model is unknown.
+    """
     assert ":" in config, f"Invalid config: {config}"
     type, rest = config.split(":", 1)
     type = type.strip()
@@ -88,7 +93,7 @@ def create_client_core(
         return OpenAIClient.parse_obj(kwargs)
 
     elif type == "gpt4all":
-        from rift.llm.gpt4all_model import Gpt4AllSettings, Gpt4AllModel
+        from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
 
         kwargs = {}
         if name:

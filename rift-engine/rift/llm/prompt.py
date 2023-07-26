@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod, abstractproperty
 from dataclasses import dataclass
-from rift.llm.openai_types import (
-    MessageRole,
-    Message,
-)
+from typing import List, Optional, Tuple
+
 from tiktoken import get_encoding
+
+from rift.llm.openai_types import Message, MessageRole
 from typing import (
     Callable,
     List,
@@ -14,8 +14,10 @@ from typing import (
 
 ENCODER = get_encoding("cl100k_base")
 
+
 def token_length(string: str) -> int:
     return len(ENCODER.encode(string))
+
 
 class Prompt(ABC):
     def __init__(self, size: int) -> None:
@@ -80,9 +82,7 @@ class SplitStringPrompt(Prompt):
             # cut tokens_rhs to the leftmost size_rhs tokens
             tokens_rhs = tokens_rhs[:size_rhs] if size_rhs > 0 else []
             combined_string = (
-                ENCODER.decode(tokens_lhs) 
-                + self.separator 
-                + ENCODER.decode(tokens_rhs)
+                ENCODER.decode(tokens_lhs) + self.separator + ENCODER.decode(tokens_rhs)
             )
             return combined_string, len(tokens_lhs) + separator_size + len(tokens_rhs)
         return None
@@ -132,7 +132,7 @@ class EitherPrompt(Prompt):
     def fit(self, max_size: int) -> Optional[Tuple[str, int]]:
         first = self.prompt1.fit(max_size)
         if first is not None:
-            return first        
+            return first
         return self.prompt2.fit(max_size)
 
     @property
@@ -173,6 +173,7 @@ def generate_list_prompts(prompt_func: Callable[[List[str]], Prompt], elements: 
 # see https://platform.openai.com/docs/guides/gpt/managing-tokens
 EXTRA_TOKENS_PER_MESSAGE = 6
 
+
 @dataclass
 class PromptMessage:
     role: MessageRole
@@ -186,6 +187,7 @@ class PromptMessage:
     def size(self) -> int:
         return self.prompt.size + EXTRA_TOKENS_PER_MESSAGE
 
+
 # Class PromptMessages represents a collection of PromptMessage objects and provides a method to fit them into a given maximum size.
 class PromptMessages:
     def __init__(self, messages: List[PromptMessage] = []) -> None:
@@ -196,7 +198,7 @@ class PromptMessages:
         self.messages.append(new_message)
 
     def fit(self, max_size: int) -> Optional[List[Message]]:
-        min_size = sum(message.min_size  for message in self.messages)
+        min_size = sum(message.min_size for message in self.messages)
         fitted_messages: List[Message] = []
         for message in self.messages:
             message_max_size = message.min_size
@@ -216,7 +218,9 @@ class PromptMessages:
     def __str__(self) -> str:
         return "\n".join(str(message) for message in self.messages)
 
+
 from unittest import TestCase
+
 
 class Tests(TestCase):
     def test_string_prompt(self):
@@ -228,48 +232,58 @@ class Tests(TestCase):
         self.assertEqual(str(prompt), "Hello, World!")
 
     def test_split_string_prompt(self):
-        prompt = SplitStringPrompt(lhs="Text Before The", rhs="This is after.", separator="<cursor>")
+        prompt = SplitStringPrompt(
+            lhs="Text Before The", rhs="This is after.", separator="<cursor>"
+        )
         self.assertEqual(prompt.fit(2), None)
         self.assertEqual(prompt.min_size, 3)
         self.assertEqual(prompt.fit(3), ("<cursor>", 3))
-        self.assertEqual(prompt.fit(4), ('<cursor>This', 4))
-        self.assertEqual(prompt.fit(5), (' The<cursor>This', 5))
-        self.assertEqual(prompt.fit(6), (' The<cursor>This is', 6))
-        self.assertEqual(prompt.fit(7), (' Before The<cursor>This is', 7))
-        self.assertEqual(prompt.fit(10), ('Text Before The<cursor>This is after.', 10))
-        self.assertEqual(prompt.fit(11), ('Text Before The<cursor>This is after.', 10))
+        self.assertEqual(prompt.fit(4), ("<cursor>This", 4))
+        self.assertEqual(prompt.fit(5), (" The<cursor>This", 5))
+        self.assertEqual(prompt.fit(6), (" The<cursor>This is", 6))
+        self.assertEqual(prompt.fit(7), (" Before The<cursor>This is", 7))
+        self.assertEqual(prompt.fit(10), ("Text Before The<cursor>This is after.", 10))
+        self.assertEqual(prompt.fit(11), ("Text Before The<cursor>This is after.", 10))
         self.assertEqual(str(prompt), "Text Before The<cursor>This is after.")
 
     def test_concat_prompt(self):
         prompt1 = StringPrompt("Hello")
         prompt2 = SplitStringPrompt(lhs="", rhs=", World!", separator="", min_size=0)
         concat_prompt = prompt1 + prompt2
-        self.assertEqual(concat_prompt.fit(1), ('Hello', 1))
-        self.assertEqual(concat_prompt.fit(2), ('Hello,', 2))
-        self.assertEqual(concat_prompt.fit(3), ('Hello, World', 3))
-        self.assertEqual(concat_prompt.fit(4), ('Hello, World!', 4))
+        self.assertEqual(concat_prompt.fit(1), ("Hello", 1))
+        self.assertEqual(concat_prompt.fit(2), ("Hello,", 2))
+        self.assertEqual(concat_prompt.fit(3), ("Hello, World", 3))
+        self.assertEqual(concat_prompt.fit(4), ("Hello, World!", 4))
         self.assertEqual(concat_prompt.min_size, 1)
         self.assertEqual(concat_prompt.size, 4)
 
         prompt2 = SplitStringPrompt(lhs="", rhs=", World!", separator="", min_size=1)
         concat_prompt = prompt1 + prompt2
         self.assertEqual(concat_prompt.fit(1), None)
-        self.assertEqual(concat_prompt.fit(2), ('Hello,', 2))
+        self.assertEqual(concat_prompt.fit(2), ("Hello,", 2))
         self.assertEqual(concat_prompt.min_size, 2)
         self.assertEqual(concat_prompt.size, 4)
 
-
     def test_concat_prompt2(self):
         prompt1 = StringPrompt("Make some comments on the following program:\n")
-        prompt2 = SplitStringPrompt(lhs="def f1(): return 1\ndef f2(): return 2\ndef f3(): return 3\n", rhs="def f4(): return 4\ndef f5(): return 5\ndef f6(): return 6\n", separator="")
+        prompt2 = SplitStringPrompt(
+            lhs="def f1(): return 1\ndef f2(): return 2\ndef f3(): return 3\n",
+            rhs="def f4(): return 4\ndef f5(): return 5\ndef f6(): return 6\n",
+            separator="",
+        )
         prompt = prompt1 + prompt2
         self.assertNotEqual(prompt.fit(prompt.min_size), None)
         self.assertEqual(prompt.fit(prompt.min_size - 1), None)
         self.assertNotEqual(prompt.fit(prompt.size - 1), prompt.fit(prompt.size))
         self.assertEqual(prompt.fit(prompt.size + 1), prompt.fit(prompt.size))
         fit = prompt.fit(prompt.min_size + 16)
-        self.assertEqual(fit, ('Make some comments on the following program:\ndef f3(): return 3\ndef f4(): return 4\n', 24))
-
+        self.assertEqual(
+            fit,
+            (
+                "Make some comments on the following program:\ndef f3(): return 3\ndef f4(): return 4\n",
+                24,
+            ),
+        )
 
     # Tests EitherPrompt's behavior of choosing the longest fitting prompt, falling back to the shorter one if necessary.
     def test_either_prompt(self):

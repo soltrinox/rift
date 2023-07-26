@@ -4,12 +4,12 @@ This file is adapted from  https://github.com/EdAyers/sss
 """
 import bisect
 import contextlib
+import functools
+import re
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from enum import Enum
-import functools
 from pathlib import Path
-import re
 from typing import Iterable, Optional, Union
 from urllib.parse import urlparse
 
@@ -17,8 +17,10 @@ try:
     from typing import TypeAlias, TypeVar
 except:
     from typing_extensions import TypeAlias, TypeVar
-from rift.util.misc import set_ctx
+
 import logging
+
+from rift.util.misc import set_ctx
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +83,7 @@ class Position:
             line, col = offset
             return replace(self, line=self.line + line, character=self.character + col)
         else:
-            raise TypeError(
-                f"unsupported operand type(s) for +: 'Position' and '{type(offset)}'"
-            )
+            raise TypeError(f"unsupported operand type(s) for +: 'Position' and '{type(offset)}'")
 
     def __sub__(self, other: "Position") -> int:
         assert isinstance(other, Position)
@@ -163,6 +163,32 @@ class Range:
 
 
 @dataclass
+class Selection(Range):
+    anchor: Position
+    active: Position
+
+    @classmethod
+    def from_coordinates(
+        cls, anchor_line: int, anchor_character: int, active_line: int, active_character: int
+    ) -> "Selection":
+        anchor = Position(anchor_line, anchor_character)
+        active = Position(active_line, active_character)
+        return cls(anchor, active)
+
+    @property
+    def is_reversed(self) -> bool:
+        return self.anchor == self.end
+
+    @property
+    def first(self) -> Position:
+        return self.anchor if not self.is_reversed else self.active
+
+    @property
+    def second(self) -> Position:
+        return self.active if not self.is_reversed else self.anchor
+
+
+@dataclass
 class TextDocumentContentChangeEvent:
     range: Optional[Range]
     text: str
@@ -187,9 +213,7 @@ class TextDocumentContentChangeEvent:
         raise ValueError("cannot map position")
 
     def map_range(self, range: "Range"):
-        return replace(
-            range, start=self.map_pos(range.start), end=self.map_pos(range.end)
-        )
+        return replace(range, start=self.map_pos(range.start), end=self.map_pos(range.end))
 
 
 SURROGATE_KEY_END = re.compile("[\ud800-\udbff]$", re.UNICODE)
@@ -229,9 +253,7 @@ class DocumentContext:
         return self.line_offsets[line_index]
 
     def get_line(self, index: int) -> str:
-        return self.text[
-            self.get_line_start_offset(index) : self.get_line_end_offset(index)
-        ]
+        return self.text[self.get_line_start_offset(index) : self.get_line_end_offset(index)]
 
     @property
     def position_encoding(self):
@@ -275,7 +297,7 @@ class DocumentContext:
     def offset_to_position(self, offset: int) -> Position:
         s = self.line_offsets
         line_idx = bisect.bisect_right(s, offset)
-        if line_idx >= self.line_count:
+        if line_idx > self.line_count:
             line_idx = self.line_count - 1
         line = self.get_line(line_idx)
         assert self.position_encoding == PositionEncodingKind.UTF16
@@ -290,9 +312,7 @@ class DocumentContext:
         try:
             char = len(subline.encode(enc))
         except UnicodeEncodeError as e:
-            logger.error(
-                f"failed to encode line, falling back to counting bytes:\n{subline}\n{e}"
-            )
+            logger.error(f"failed to encode line, falling back to counting bytes:\n{subline}\n{e}")
             char = len(subline) * 2
 
         assert char % word_length == 0
@@ -300,7 +320,9 @@ class DocumentContext:
         return Position(line=line_idx, character=char)
 
     def add_position(self, position: Position, delta_offset: int) -> Position:
-        return self.offset_to_position(self.position_to_offset(position) + delta_offset)
+        offset = self.position_to_offset(position)
+        result = self.offset_to_position(offset + delta_offset)
+        return result
 
     def range_to_offsets(self, range: Range) -> tuple[int, int]:
         return (

@@ -1,14 +1,17 @@
-from typing import List
 import asyncio
+import json
+import logging
+import random
 from contextvars import ContextVar
 from dataclasses import dataclass
-from functools import cached_property, cache
-import json
+from functools import cache, cached_property
+from threading import Lock
 from typing import (
     Any,
     AsyncGenerator,
     Awaitable,
     Coroutine,
+    List,
     Literal,
     Optional,
     Type,
@@ -16,25 +19,26 @@ from typing import (
     overload,
 )
 from urllib.parse import parse_qs, urlparse
+
 import aiohttp
 from pydantic import BaseModel, BaseSettings, SecretStr
-from rift.llm.abstract import (
-    AbstractCodeCompletionProvider,
-    AbstractChatCompletionProvider,
-    InsertCodeResult,
-    ChatResult,
-)
 
-from rift.util.TextStream import TextStream
+import rift.util.asyncgen as asg
+from rift.llm.abstract import (
+    AbstractChatCompletionProvider,
+    AbstractCodeCompletionProvider,
+    AbstractCodeEditProvider,
+    ChatResult,
+    EditCodeResult,
+    InsertCodeResult,
+)
 from rift.llm.openai_types import (
     ChatCompletionChunk,
     ChatCompletionRequest,
     ChatCompletionResponse,
     Message,
 )
-import rift.util.asyncgen as asg
-import logging
-from threading import Lock
+from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +50,7 @@ from tiktoken import get_encoding
 ENCODER = get_encoding("cl100k_base")
 ENCODER_LOCK = Lock()
 
+
 @dataclass
 class OpenAIError(Exception):
     """Error raised by calling the OpenAI API"""
@@ -56,24 +61,28 @@ class OpenAIError(Exception):
     def __str__(self):
         return self.message
 
+
 @cache
 def get_num_tokens(content: str):
     return len(ENCODER.encode(content))
+
 
 def message_size(msg: Message):
     with ENCODER_LOCK:
         length = get_num_tokens(msg.content)
         # every message follows <im_start>{role/name}\n{content}<im_end>\n
         # see https://platform.openai.com/docs/guides/gpt/managing-tokens
-        length += 6 
+        length += 6
         return length
+
 
 def messages_size(messages: List[Message]) -> int:
     return sum([len(msg.content) for msg in messages])
 
+
 def split_sizes(size1: int, size2: int, max_size: int) -> tuple[int, int]:
     """
-    Adjusts and returns the input sizes so that their sum does not exceed 
+    Adjusts and returns the input sizes so that their sum does not exceed
     a specified maximum size, ensuring a balance between the two if necessary.
     """
     if size1 + size2 <= max_size:
@@ -88,6 +97,7 @@ def split_sizes(size1: int, size2: int, max_size: int) -> tuple[int, int]:
     size2 = max(size2_bound, available2)
     return size1, size2
 
+
 def split_lists(list1: list, list2: list, max_size: int) -> tuple[list, list]:
     size1, size2 = split_sizes(len(list1), len(list2), max_size)
     return list1[-size1:], list2[:size2]
@@ -96,7 +106,7 @@ def split_lists(list1: list, list2: list, max_size: int) -> tuple[list, list]:
 """
 Contents Order in the Context:
 
-1) System Message: This includes an introduction and the current file content. 
+1) System Message: This includes an introduction and the current file content.
 2) Non-System Messages: These are the previous dialogue turns in the chat, both from the user and the system.
 3) Model's Responses Buffer: This is a reserved space for the response that the model will generate.
 
@@ -110,29 +120,33 @@ The system message size can dynamically increase beyond MAX_SYSTEM_MESSAGE_SIZE 
 """
 
 MAX_CONTEXT_SIZE = 4096  # Total token limit for GPT models
-MAX_LEN_SAMPLED_COMPLETION = 512  # Reserved tokens for model's responses
-MAX_SYSTEM_MESSAGE_SIZE = 1024 # Token limit for system message
+MAX_LEN_SAMPLED_COMPLETION = 768  # Reserved tokens for model's responses
+MAX_SYSTEM_MESSAGE_SIZE = 1024  # Token limit for system message
+
 
 def calc_max_non_system_msgs_size(system_message_size: int) -> int:
-    """ Maximum size of the non-system messages """
+    """Maximum size of the non-system messages"""
     return MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - system_message_size
 
-def calc_max_system_message_size(non_system_messages_size: int) -> int:
-    """ Maximum size of the system message """
 
-    # Calculate the maximum size for the system message. It's either the maximum defined limit 
+def calc_max_system_message_size(non_system_messages_size: int) -> int:
+    """Maximum size of the system message"""
+
+    # Calculate the maximum size for the system message. It's either the maximum defined limit
     # or the remaining tokens in the context size after accounting for model responses and non-system messages,
     # whichever is larger. This ensures that the system message can take advantage of spare space, if available.
     return max(
-            MAX_SYSTEM_MESSAGE_SIZE,
-            MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - non_system_messages_size)
+        MAX_SYSTEM_MESSAGE_SIZE,
+        MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - non_system_messages_size,
+    )
+
 
 def create_system_message(document: str) -> Message:
     """
     Create system message wiht up to MAX_SYSTEM_MESSAGE_SIZE tokens
     """
     return Message.system(
-                    f"""
+        f"""
 You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the current file to support your claims.
 
 Current file:
@@ -143,7 +157,10 @@ Current file:
 Answer the user's question."""
     )
 
-def create_system_message_truncated(document: str, max_size: int, cursor_offset: Optional[int]) -> Message:
+
+def create_system_message_truncated(
+    document: str, max_size: int, cursor_offset: Optional[int]
+) -> Message:
     """
     Create system message with up to max_size tokens
     """
@@ -160,9 +177,11 @@ def create_system_message_truncated(document: str, max_size: int, cursor_offset:
             tokens_before_cursor = ENCODER.encode(before_cursor)
             tokens_after_cursor = ENCODER.encode(after_cursor)
             (tokens_before_cursor, tokens_after_cursor) = split_lists(
-                tokens_before_cursor, tokens_after_cursor, max_size)
+                tokens_before_cursor, tokens_after_cursor, max_size
+            )
             logger.debug(
-                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor")
+                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor"
+            )
             tokens = tokens_before_cursor + tokens_after_cursor
         else:
             # if there is no cursor offset provided, simply take the last max_size tokens
@@ -173,9 +192,11 @@ def create_system_message_truncated(document: str, max_size: int, cursor_offset:
 
     return create_system_message(document)
 
+
 def truncate_messages(messages: List[Message]):
     system_message_size = message_size(messages[0])
     max_size = calc_max_non_system_msgs_size(system_message_size)
+    logger.info(f"MAX SIZE: {max_size}")
     tail_messages: List[Message] = []
     running_length = 0
     for msg in reversed(messages[1:]):
@@ -187,9 +208,7 @@ def truncate_messages(messages: List[Message]):
     return [messages[0]] + tail_messages
 
 
-class OpenAIClient(
-    BaseSettings, AbstractCodeCompletionProvider, AbstractChatCompletionProvider
-):
+class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCompletionProvider):
     api_key: SecretStr
     api_url: str = "https://api.openai.com/v1"
     default_model: Optional[str] = None
@@ -206,11 +225,7 @@ class OpenAIClient(
 
     @property
     def base_url(self) -> str:
-        return (
-            urlparse(self.api_url)
-            ._replace(path="", query="", params="", fragment="")
-            .geturl()
-        )
+        return urlparse(self.api_url)._replace(path="", query="", params="", fragment="").geturl()
 
     @property
     def url_path(self) -> str:
@@ -242,7 +257,9 @@ class OpenAIClient(
         message = f"{status_code} error from {self.base_url}: {message}"
         logging.error(message)
         if status_code == 404 and self.default_model == "gpt-4":
-            logging.info("Please double check you have access to GPT-4 API: https://openai.com/waitlist/gpt-4-api")
+            logging.info(
+                "Please double check you have access to GPT-4 API: https://openai.com/waitlist/gpt-4-api"
+            )
         raise OpenAIError(message=message, status=status_code)
 
     async def get_error_message(self, resp):
@@ -278,9 +295,7 @@ class OpenAIClient(
         stream_data_type: Type[O],
     ) -> AsyncGenerator[O, None]:
         if not getattr(params, "stream", True):
-            raise ValueError(
-                "To not use streaming please use the _post_endpoint method"
-            )
+            raise ValueError("To not use streaming please use the _post_endpoint method")
         if not isinstance(params, input_type):
             raise TypeError(f"expected {input_type}, got {type(params)}")
         payload = params.dict(exclude_none=True)
@@ -339,16 +354,18 @@ class OpenAIClient(
     ) -> Coroutine[Any, Any, ChatCompletionResponse]:
         ...
 
-    def chat_completions(
-        self, messages: List[Message], *, stream: bool = False, **kwargs
-    ) -> Any:
+    def chat_completions(self, messages: List[Message], *, stream: bool = False, **kwargs) -> Any:
+        # logger.info(f"{messages=}")
         endpoint = "/chat/completions"
         input_type = ChatCompletionRequest
         # TODO: don't hardcode
         logit_bias = {99750: -100}  # forbid repetition of the cursor sentinel
         params = ChatCompletionRequest(
-            messages=messages, stream=stream, logit_bias=logit_bias,
-            max_tokens=MAX_LEN_SAMPLED_COMPLETION, **kwargs
+            messages=messages,
+            stream=stream,
+            logit_bias=logit_bias,
+            max_tokens=MAX_LEN_SAMPLED_COMPLETION,
+            **kwargs,
         )
         if self.default_model:
             params.model = self.default_model
@@ -367,19 +384,25 @@ class OpenAIClient(
             )
 
     async def run_chat(
-        self, document: str, messages: List[Message], message: str, cursor_offset: Optional[int] = None
+        self,
+        document: Optional[str],
+        messages: List[Message],
+        message: str,
+        cursor_offset: Optional[int] = None,
     ) -> ChatResult:
         chatstream = TextStream()
-
-        non_system_messages = (
-            [Message.mk(role=msg.role, content=msg.content) for msg in messages]
-            +
-            [Message.user(content=message)]
-            )
+        non_system_messages = []
+        for msg in messages:
+            logger.debug(str(msg))
+            non_system_messages.append(Message.mk(role=msg.role, content=msg.content))
+        non_system_messages += [Message.user(content=message)]
         non_system_messages_size = messages_size(non_system_messages)
 
         max_system_msg_size = calc_max_system_message_size(non_system_messages_size)
-        system_message = create_system_message_truncated(document, max_system_msg_size, cursor_offset)
+
+        system_message = create_system_message_truncated(
+            document or "", max_system_msg_size, cursor_offset
+        )
 
         messages = [system_message] + non_system_messages
 
@@ -407,9 +430,149 @@ class OpenAIClient(
         logger.info("Created chat stream, awaiting results.")
         return ChatResult(text=chatstream)
 
-    async def insert_code(
-        self, document: str, cursor_offset: int, goal=None
-    ) -> InsertCodeResult:
+    async def edit_code(
+        self,
+        document: str,
+        cursor_offset_start: int,
+        cursor_offset_end: int,
+        goal=None,
+        latest_region: Optional[str] = None,
+    ) -> EditCodeResult:
+        # logger.info(f"[edit_code] entered {latest_region=}")
+        if goal is None:
+            goal = f"""
+            Generate code to replace the given `region`. Write a partial code snippet without imports if needed.
+            """
+
+        def create_messages(before_cursor: str, region: str, after_cursor: str) -> List[Message]:
+            return [
+                Message.system(
+                    "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
+                    "- Conciseness\n"
+                    "- DRY principle\n"
+                    "- Self-documenting code with plenty of comments\n"
+                    "- Modularity\n"
+                    "- Deduplicated code\n"
+                    "- Readable code\n"
+                    "- Abstracting things away to functions for reusability\n"
+                    "- Logical thinking\n"
+                    "\n\n"
+                    "You will be presented with a *task* and a source code file split into three parts: a *prefix*, *region*, and *suffix*. "
+                    "The task will specify a change or new code that will replace the given region.\n You will receive the source code in the following format:\n"
+                    "==== PREFIX ====\n"
+                    "${source code file before the region}\n"
+                    "==== REGION ====\n"
+                    "${region}\n"
+                    "==== SUFFIX ====\n"
+                    "{source code file after the region}\n\n"
+                    "When presented with a task, you will:\n(1) write a detailed and elegant plan to solve this task,\n(2) write your solution for it surrounded by triple backticks, and\n(3) write a 1-2 sentence summary of your solution.\n"
+                    f"Your solution will be added verbatim to replace the given region. Do *not* repeat the prefix or suffix in any way.\n"
+                    "The solution should directly replaces the given region. If the region is empty, just write something that will replace the empty string. *Do not repeat the prefix or suffix in any way*. If the region is in the middle of a function definition or class declaration, do not repeat the function signature or class declaration. Write a partial code snippet without imports if needed. Preserve indentation.\n"
+                    f"For example, if the source code looks like this:\n"
+                    "==== PREFIX ====\n"
+                    "def hello_world():\n    \n"
+                    "==== REGION ====\n"
+                    "\n"
+                    "==== SUFFIX ====\n"
+                    "if __name__ == '__main__':\n    hello_world()\n\n"
+                    "And the task is 'implement this function and return 0', then a good response would be\n"
+                    "We will implement hello world by first using the Python `print` statement and then returning the integer literal 0.\n"
+                    "```\n"
+                    "# print hello world\n"
+                    "    print('hello world!')\n"
+                    "    # return the integer 0\n"
+                    "    return 0\n"
+                    "```\n"
+                    "I added an implementation of the rest of the `hello_world` function which uses the Ptython `print` statement to print 'hello_world' before returning the integer literal 0.\n"
+                    # "" if messages is None else (
+                    #     f"\n\nFinally, here are previous messages in your interaction reflecting previously proposed changes to the region. The user's message might refer to these.\n{messages_flattened}"
+                    # )
+                ),
+                Message.assistant("Hello! How can I help you today?"),
+                Message.user(
+                    f"Please generate code completing the task which will replace the below region: {goal}\n"
+                    "==== PREFIX ====\n"
+                    f"{before_cursor}"
+                    "==== REGION ====\n"
+                    f"{latest_region or region}\n"
+                    "==== SUFFIX ====\n"
+                    f"{after_cursor}\n"
+                ),
+            ]
+
+        messages_skeleton = create_messages("", "", "")
+        max_size_document = (
+            MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
+        )
+
+        before_cursor = document[:cursor_offset_start]
+        region = document[cursor_offset_start:cursor_offset_end]
+        after_cursor = document[cursor_offset_end:]
+        if get_num_tokens(document) > max_size_document:
+            tokens_before_cursor = ENCODER.encode(before_cursor)
+            tokens_after_cursor = ENCODER.encode(after_cursor)
+            (tokens_before_cursor, tokens_after_cursor) = split_lists(
+                tokens_before_cursor, tokens_after_cursor, max_size_document
+            )
+            logger.debug(
+                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor"
+            )
+            before_cursor = ENCODER.decode(tokens_before_cursor)
+            after_cursor = ENCODER.decode(tokens_after_cursor)
+
+        messages = create_messages(
+            before_cursor=before_cursor,
+            region=region,
+            after_cursor=after_cursor,
+        )
+        # logger.info(f"{messages=}")
+
+        stream = TextStream.from_aiter(
+            asg.map(lambda c: c.text, self.chat_completions(messages, stream=True))
+        )
+
+        logger.info("constructed stream")
+        logger.info(f"{stream=}")
+        thoughtstream = TextStream()
+        codestream = TextStream()
+        planstream = TextStream()
+
+        async def worker():
+            logger.info("[edit_code:worker]")
+            try:
+                prelude, stream2 = stream.split_once("```")
+                # logger.info(f"{prelude=}")
+                async for delta in prelude:
+                    # logger.info(f"plan {delta=}")
+                    planstream.feed_data(delta)
+                planstream.feed_eof()
+                lang_tag = await stream2.readuntil("\n")
+                before, after = stream2.split_once("\n```")
+                logger.info(f"{before=}")
+                logger.info("reading codestream")
+                async for delta in before:
+                    # logger.info(f"code {delta=}")
+                    codestream.feed_data(delta)
+                codestream.feed_eof()
+                # thoughtstream.feed_data("\n")
+                logger.info("reading thoughtstream")
+                async for delta in after:
+                    thoughtstream.feed_data(delta)
+                thoughtstream.feed_eof()
+            finally:
+                planstream.feed_eof()
+                thoughtstream.feed_eof()
+                codestream.feed_eof()
+                # logger.info("FED EOF TO ALL")
+
+        t = asyncio.create_task(worker())
+        thoughtstream._feed_task = t
+        codestream._feed_task = t
+        planstream._feed_task = t
+        # logger.info("[edit_code] about to return")
+        return EditCodeResult(thoughts=thoughtstream, code=codestream, plan=planstream)
+
+    async def insert_code(self, document: str, cursor_offset: int, goal=None) -> InsertCodeResult:
         CURSOR_SENTINEL = "感"
         if goal is None:
             goal = f"""
@@ -420,11 +583,19 @@ class OpenAIClient(
             doc_text_with_cursor = before_cursor + CURSOR_SENTINEL + after_cursor
             return [
                 Message.system(
-                    f"""You are an expert software engineer and world-class systems architect with deep technical and design knowledge.
-                    When presented with a task, first write a detailed and elegant plan to solve this task and then
-                    write code to do it surrounded by triple backticks.
-                    The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}.
-                    Add comments in the code to explain your reasoning."""
+                    "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
+                    "- Conciseness\n"
+                    "- DRY principle\n"
+                    "- Self-documenting code with plenty of comments\n"
+                    "- Modularity\n"
+                    "- Deduplicated code\n"
+                    "- Readable code\n"
+                    "- Abstracting things away to functions for reusability\n"
+                    "- Logical thinking\n"
+                    "When presented with a task, first write a detailed and elegant plan to solve this task and then write code to do it surrounded by triple backticks.\n"
+                    f"The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}.\n"
+                    "Add comments in the code to explain your reasoning.\n"
+                    f"Generate code to be inserted at the cursor location, marked by {CURSOR_SENTINEL}."
                 ),
                 Message.user(
                     f"Here is the code:\n```\n{doc_text_with_cursor}\n```\n\nYour task is:\n{goal}\nInsert code at the {CURSOR_SENTINEL} which completes the task. The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}. Do not include code that is already there."
@@ -434,15 +605,19 @@ class OpenAIClient(
         before_cursor = document[:cursor_offset]
         after_cursor = document[cursor_offset:]
         messages_skeleton = create_messages("", "")
-        max_size_document = MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
+        max_size_document = (
+            MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
+        )
 
         if get_num_tokens(document) > max_size_document:
             tokens_before_cursor = ENCODER.encode(before_cursor)
             tokens_after_cursor = ENCODER.encode(after_cursor)
             (tokens_before_cursor, tokens_after_cursor) = split_lists(
-                tokens_before_cursor, tokens_after_cursor, max_size_document)
+                tokens_before_cursor, tokens_after_cursor, max_size_document
+            )
             logger.debug(
-                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor")
+                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor"
+            )
             before_cursor = ENCODER.decode(tokens_before_cursor)
             after_cursor = ENCODER.decode(tokens_after_cursor)
 
@@ -491,9 +666,7 @@ async def _main():
         Message.assistant("i won't unless if you ask nicely"),
     ]
 
-    stream = await client.run_chat(
-        "fee fi fo fum", messages=messages, message="pretty please?"
-    )
+    stream = await client.run_chat("fee fi fo fum", messages=messages, message="pretty please?")
     async for delta in stream.text:
         print(delta)
     # print("\n\n")

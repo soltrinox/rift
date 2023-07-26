@@ -2,6 +2,8 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -28,6 +30,8 @@ dependencies = [
   "transformers",
   "diff_match_patch",
   "art",
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
+  "smol_dev @ git+https://github.com/jesse-michael-han/smol_dev",
 ]
 dynamic = ["version"]
 

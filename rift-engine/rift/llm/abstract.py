@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, List
-from rift.util.TextStream import TextStream
+from typing import List, Optional
+
 from rift.llm.openai_types import Message
+from rift.util.TextStream import TextStream
 
 
 @dataclass
@@ -12,8 +13,16 @@ class InsertCodeResult:
 
 
 @dataclass
+class EditCodeResult:
+    code: TextStream
+    plan: Optional[TextStream] = field(default=None)
+    thoughts: Optional[TextStream] = field(default=None)
+
+
+@dataclass
 class ChatResult:
     text: TextStream
+
 
 class AbstractCodeCompletionProvider(ABC):
     @abstractmethod
@@ -34,10 +43,38 @@ class AbstractCodeCompletionProvider(ABC):
         pass
 
 
+class AbstractCodeEditProvider(ABC):
+    @abstractmethod
+    async def edit_code(
+        self,
+        document: str,
+        cursor_offset_start: int,
+        cursor_offset_end: int,
+        goal: Optional[str] = None,
+    ) -> EditCodeResult:
+        """Perform code completion on the given document at the given cursor offset.
+
+        Args:
+            - document: The document to perform code completion on.
+            - cursor_offset_begin: Index marking the beginning of the region being edited.
+            - cursor_offset_end: Index marking the end of the region being edited.
+            - goal: A natural language statement with the goal of the code completion. If None, then we should just perform a code completion.
+        """
+        raise NotImplementedError()
+
+    async def load(self):
+        """Do any side activities needed to load the model."""
+        pass
+
+
 class AbstractChatCompletionProvider(ABC):
     @abstractmethod
     async def run_chat(
-        self, document: str, messages: List[Message], message: str, cursor_offset: Optional[int] = None
+        self,
+        document: Optional[str],
+        messages: List[Message],
+        message: str,
+        cursor_offset: Optional[int] = None,
     ) -> ChatResult:
         """
         Process the chat messages and return the completion results.

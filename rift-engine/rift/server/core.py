@@ -5,6 +5,7 @@ import time
 from typing import Literal, Optional, Union
 
 from rift.__about__ import __version__
+from rift.agents.abstract import AGENT_REGISTRY
 from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
 from rift.server.lsp import LspServer
 
@@ -54,6 +55,7 @@ ModelType = Literal["openai", "hf", "gpt4all"]
 
 class CodeCapabilitiesServer:
     server: Optional[LspServer] = None
+
     def __init__(
         self,
         lsp_port: LspPort = 7797,
@@ -122,14 +124,14 @@ class CodeCapabilitiesServer:
         loop = asyncio.get_event_loop()
         lsp_task = await self._run_forever_fut()
         await lsp_task
-        logger.debug(f"exiting {type(self).__name__}.listen_forever")        
+        logger.debug(f"exiting {type(self).__name__}.listen_forever")
 
 
 def create_metaserver(
     port: LspPort = 7797,
     version=False,
     debug=False,
-) -> CodeCapabilitiesServer:
+) -> LspServer:
     """
     Main entry point for the rift server
     Args:
@@ -163,8 +165,8 @@ def create_metaserver(
 
 def main(
     port: LspPort = 7797,
-        version=False,
-        debug=False,
+    version=False,
+    debug=False,
 ):
     metaserver = create_metaserver(port, version, debug)
     asyncio.run(metaserver.run_forever(), debug=debug)

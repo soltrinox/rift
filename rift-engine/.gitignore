@@ -9,3 +9,5 @@ dist/
 
 *.spec
 venv
+
+change top level git ignore

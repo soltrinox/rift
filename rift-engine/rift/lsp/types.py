@@ -2,12 +2,13 @@
 Author: E.W.Ayers <contact@edayers.com>
 This file is adapted from  https://github.com/EdAyers/sss
 """
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Any, Generic, Literal, Optional, Union
+from typing import Any, Literal
+from typing import Optional
 from typing import Optional as opt
-import urllib.parse
+from typing import Union
+
 from .document import *
 
 try:
@@ -95,9 +96,7 @@ class DidChangeConfigurationClientCapabilities:
 class ClientWorkspaceCapabilities:
     applyEdit: opt[bool] = field(default=None)
     # workspaceEdit: opt[WorkspaceEditClientCapabilities] = field(default=None)
-    didChangeConfiguration: Optional[DidChangeConfigurationClientCapabilities] = field(
-        default=None
-    )
+    didChangeConfiguration: Optional[DidChangeConfigurationClientCapabilities] = field(default=None)
 
 
 @dataclass
@@ -367,9 +366,7 @@ class WorkDoneProgressEnd:
     message: Optional[str] = field(default=None)
 
 
-WorkDoneProgressValue = Union[
-    WorkDoneProgressBegin, WorkDoneProgressReport, WorkDoneProgressEnd
-]
+WorkDoneProgressValue = Union[WorkDoneProgressBegin, WorkDoneProgressReport, WorkDoneProgressEnd]
 
 ChangeAnnotationIdentifier: TypeAlias = str
 
@@ -443,9 +440,9 @@ class WorkspaceEdit:
     documentChanges: Optional[
         list[Union[TextDocumentEdit, CreateFile, RenameFile, DeleteFile]]
     ] = field(default=None)
-    changeAnnotations: Optional[
-        dict[ChangeAnnotationIdentifier, ChangeAnnotation]
-    ] = field(default=None)
+    changeAnnotations: Optional[dict[ChangeAnnotationIdentifier, ChangeAnnotation]] = field(
+        default=None
+    )
 
 
 @dataclass

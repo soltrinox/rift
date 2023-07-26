@@ -2,24 +2,26 @@
 Author: E.W.Ayers <contact@edayers.com>
 This file is adapted from  https://github.com/EdAyers/sss
 """
-from dataclasses import dataclass, replace
-import logging
-from typing import Any, Awaitable, Callable, Optional, Union
 import asyncio
+import logging
+from collections import defaultdict
+from dataclasses import replace
+from typing import Any, Callable, Optional
+
+import rift.lsp.types as lsp
 from rift.util.misc import set_ctx
+from rift.util.ofdict import ofdict
+
+from ..rpc import InitializationMode, rpc_method
+from ..rpc.extrarpc import ExtraRpc
 from .types import (
+    ApplyWorkspaceEditParams,
+    ApplyWorkspaceEditResponse,
     InitializeParams,
     InitializeResult,
     PeerInfo,
     ServerCapabilities,
-    ApplyWorkspaceEditParams,
-    ApplyWorkspaceEditResponse,
 )
-import rift.lsp.types as lsp
-from collections import defaultdict
-from ..rpc import InitializationMode, rpc_method
-from ..rpc.extrarpc import ExtraRpc
-from rift.util.ofdict import ofdict
 
 """ Implementation of an LSP server """
 
@@ -32,13 +34,14 @@ class LspServer(ExtraRpc):
     # [todo] consider using io.StringIO for the documents because they are mutating.
     documents: dict[lsp.DocumentUri, lsp.TextDocumentItem]
     change_callbacks: defaultdict[lsp.DocumentUri, set[Callable]]
-    """ set of open documents, the server will keep these synced with the client
-     editor automatically. """
+    fts: dict[str, asyncio.Future]
+    """set of open documents, the server will keep these synced with the client editor automatically."""
 
     def __init__(self, transport):
         self.change_callbacks = defaultdict(set)
         self.capabilities = ServerCapabilities()
-        self.documents = {}
+        self.documents = dict()
+        self.fts = dict()
         super().__init__(transport, init_mode=InitializationMode.ExpectInit)
 
     @rpc_method("initialize")
@@ -58,9 +61,7 @@ class LspServer(ExtraRpc):
         self, uri: lsp.DocumentUri, position: lsp.Position, text: str, version: int = 0
     ):
         assert version is not None, "version must be given, or we get no edit."
-        textDocument = lsp.TextDocumentIdentifier(
-            uri=uri, version=version
-        )  # [todo] version
+        textDocument = lsp.TextDocumentIdentifier(uri=uri, version=version)  # [todo] version
         newText = text
         pos = position
         params = lsp.ApplyWorkspaceEditParams(
@@ -71,6 +72,29 @@ class LspServer(ExtraRpc):
                         edits=[
                             lsp.TextEdit(
                                 range=lsp.Range(start=pos, end=pos),
+                                newText=newText,
+                            )
+                        ],
+                    )
+                ]
+            )
+        )
+        return await self.apply_workspace_edit(params)
+
+    async def apply_range_edit(
+        self, uri: lsp.DocumentUri, range: lsp.Range, text: str, version: int = 0
+    ):
+        assert version is not None, "version must be given, or we get no edit."
+        textDocument = lsp.TextDocumentIdentifier(uri=uri, version=version)  # [todo] version
+        newText = text
+        params = lsp.ApplyWorkspaceEditParams(
+            edit=lsp.WorkspaceEdit(
+                documentChanges=[
+                    lsp.TextDocumentEdit(
+                        textDocument=textDocument,
+                        edits=[
+                            lsp.TextEdit(
+                                range=range,
                                 newText=newText,
                             )
                         ],
@@ -95,6 +119,7 @@ class LspServer(ExtraRpc):
         item = params.textDocument
         logger.debug(f"editor opened {item.uri}")
         self.documents[item.uri] = item
+        # return {"status": "ok"}
 
     @rpc_method("textDocument/didChange")
     async def _on_did_change(self, params: lsp.DidChangeTextDocumentParams):
@@ -129,7 +154,6 @@ class LspServer(ExtraRpc):
         changes: lsp.DidChangeTextDocumentParams,
     ):
         """Override this method to handle document changes"""
-        pass
 
     @rpc_method("textDocument/didSave")
     def on_did_save(self, params: lsp.DidSaveTextDocumentParams):
