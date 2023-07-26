@@ -57,24 +57,10 @@ class AiderAgent(Agent):
         event = asyncio.Event()
         event2 = asyncio.Event()
 
-        # Current state:
-        # - Intercept writes and commits: this should take care of the file changes
-        # - For interactions, need to intercept:
-        #       io.confirm_ask
-        #       io.get_input
-        #       io.prompt_ask
-        #       io.tool_error
-        #       io.tool_output
-        #       io.user_input
-
         # This is called every time aider writes a file
         # Instead of writing, this stores the file change in a list
         def on_write(filename: str, new_content: str):
             file_changes.append(file_diff.get_file_change(path=filename, new_content=new_content))
-            # loop.call_soon_threadsafe(lambda: event.set())
-            # yield [file_diff.get_file_change(path=filename, new_content=new_content)]
-
-            # logger.info(f"Intercepted Write to {filename}")
 
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes
@@ -91,14 +77,10 @@ class AiderAgent(Agent):
 
         from concurrent import futures
 
-        # asyncio.get_running_loop().set_default_executor(futures.ThreadPoolExecutor(8))
-        # aider_fut = asyncio.to_thread(aider.main, params.args, on_write, on_commit)
         with futures.ThreadPoolExecutor(1) as pool:
             aider_fut = asyncio.get_running_loop().run_in_executor(
                 pool, aider.main, params.args, on_write, on_commit
             )
-
-            # await ainput("\n> Press any key to continue.\n")
 
             while True:
                 await event.wait()
@@ -106,8 +88,7 @@ class AiderAgent(Agent):
                 file_changes = []
                 event2.set()
                 event.clear()
-            # await aider_fut
-        # aider.main(params.args)
+            await aider_fut
 
 
 if __name__ == "__main__":
