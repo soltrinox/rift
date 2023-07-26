@@ -69,35 +69,10 @@ def edits_from_file_change(
         elif op == 1:  # add
             new_text += text
 
-    # for op, text in diff:
-    #     # count the number of lines in `text` and the number of characters in the last line
-    #     lines = text.split("\n")
-    #     last_line_chars = len(lines[-1])
-    #     line_count = len(lines) - 1  # don't count the current line
-
-    #     end_line = line + line_count
-    #     end_char = (
-    #         char + last_line_chars if line_count == 0 else last_line_chars
-    #     )  # if we moved to a new line, start at char 0
-
-    #     if op == -1:
-    #         # text was deleted
-    #         edits.append(TextEdit(Range.mk(line, char, end_line, end_char), "", annotationId=annotation_label))
-    #     elif op == 1:
-    #         # text was added
-    #         edits.append(
-    #             TextEdit(Range.mk(line, char, line, char), text, annotationId=annotation_label)
-    #         )  # new text starts at the current position
-    #     elif op == 0:
-    #         # text remains the same:
-
-    #     # update position
-    #     line = end_line
-    #     char = end_char
     lines = file_change.old_content.split("\n")
     edits = [
         TextEdit(
-            Range.mk(0, 0, len(lines), len(lines[-1])), new_text, annotationId=annotation_label
+            Range.mk(0, 0, len(lines) - 1, len(lines[-1])), new_text, annotationId=annotation_label
         )
     ]
 

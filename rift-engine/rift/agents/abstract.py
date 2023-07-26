@@ -176,7 +176,8 @@ class Agent:
         for task in self.tasks:
             if task is not None:
                 task.cancel()
-        if doesSendProgress: await self.send_progress()
+        if doesSendProgress:
+            await self.send_progress()
 
     async def request_input(self, req: RequestInputRequest) -> str:
         """
