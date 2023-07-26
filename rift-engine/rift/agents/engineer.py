@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Optional
 from rift.util import file_diff
 import os
+import re
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import (
@@ -55,6 +56,23 @@ import json
 import rift.llm.openai_types as openai
 
 logger = logging.getLogger(__name__)
+
+def __fix_windows_path(path: str) -> str:
+    """
+    Replace a windows path represented as "/c%3A"... with "c:"...
+
+    :param path: Original path
+    :return: Usable windows path, or original path if not a windows path
+    """
+    pattern = r'^/(.)%3A'
+
+    match = re.match(pattern, path)
+    
+    if match:
+        drive_letter = match.group(1)
+        return path.replace(f"/{drive_letter}%3A", f"{drive_letter}:")
+    else:
+        return path
 
 async def __popup_input(prompt: str) -> str:
     await INPUT_PROMPT_QUEUE.put(prompt)
@@ -122,7 +140,7 @@ async def _main(
     )
 
 
-    input_path = project_path.__fspath__()
+    input_path = __fix_windows_path(project_path.__fspath__())
     input_path= os.path.sep.join(input_path.split(os.path.sep)[:-1])
     memory_path = input_path +"/"+ "memory"
     workspace_path = input_path +"/"+ "workspace"
