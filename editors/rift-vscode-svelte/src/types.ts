@@ -115,7 +115,7 @@ export interface ChatAgentParams extends RunParams {
       uri: string;
       version: number;
     },
-    workspaceUri: vscode.Uri
+    workspaceFolderUri: vscode.Uri
   };
 }
 
