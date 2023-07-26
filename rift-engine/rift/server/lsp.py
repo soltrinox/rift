@@ -12,19 +12,16 @@ import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
 from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
+from rift.agents.engineer import EngineerAgent, EngineerAgentParams
 
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
-from rift.agents.engineer import EngineerAgent, EngineerAgentParams
-
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
-from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
-from dataclasses import is_dataclass
 from rift.server.agent import *
 from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 from rift.server.selection import RangeSet
@@ -138,7 +135,9 @@ class LspServer(BaseLspServer):
         with open(os.path.join(current_dir, "languages.json"), "r") as f:
             language_map = json.loads(f)
 
-        def find_matching_language(filepath: str, language_map: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
+        def find_matching_language(
+            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
+        ) -> Optional[str]:
             extension = filepath.split(".")[-1]  # Get the file extension
 
             for details in language_map["languages"]:
@@ -276,7 +275,9 @@ class LspServer(BaseLspServer):
             assert self.completions_model is not None
             return self.completions_model
         except:
-            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
             return config.create_completions()
 
     async def ensure_chat_model(self):
@@ -286,7 +287,9 @@ class LspServer(BaseLspServer):
             assert self.chat_model is not None
             return self.chat_model
         except:
-            config = ModelConfig(chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo")
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
             return config.create_chat()
 
     @rpc_method("morph/restart_agent")
@@ -299,7 +302,9 @@ class LspServer(BaseLspServer):
         logger.info(agent_params)
         agent_type = old_agent.agent_type
         agent_id = old_agent.agent_id
-        return await self.on_run(RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id))
+        return await self.on_run(
+            RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id)
+        )
 
     @rpc_method("morph/run")
     async def on_run(self, params: RunAgentParams):
@@ -344,10 +349,10 @@ class LspServer(BaseLspServer):
             agent_params = ofdict(EngineerAgentParams, agent_params)
             agent = EngineerAgent.create(agent_params, model=model, server=self)
         elif agent_type == "smol_dev":
-            model = await self.ensure_chat_model()
+            # model = await self.ensure_chat_model()
             if not is_dataclass(agent_params):
                 agent_params = ofdict(SmolAgentParams, agent_params)
-            agent = SmolAgent.create(params=agent_params, model=model, server=self)
+            agent = SmolAgent.create(params=agent_params, server=self)
         else:
             raise Exception(f"unsupported agent type={agent_type}")
 
@@ -430,7 +435,7 @@ class LspServer(BaseLspServer):
     @rpc_method("morph/delete")
     async def on_delete(self, params: AgentIdParams):
         agent: Agent = self.active_agents.pop(params.id)
-        await agent.cancel()
+        await agent.cancel('cancel bc delete',False)
         del agent
 
     @rpc_method("morph/listAgents")

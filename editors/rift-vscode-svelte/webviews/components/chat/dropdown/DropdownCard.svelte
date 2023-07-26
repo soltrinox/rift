@@ -12,7 +12,7 @@
 <!-- only disabling this because we already are handling onkeydown-->
 <div class="bg-[var(--vscode-editor-background)]">
   <div
-    class={`flex flex-col hover:cursor-pointer px-2 py-2
+    class={`flex flex-col hover:cursor-pointer pl-2 py-2
     ${
       focused
         ? "bg-[var(--vscode-editor-hoverHighlightBackground)]"
@@ -20,12 +20,12 @@
     }`}
     on:click={() => handleRunAgent(agent.agent_type)}
   >
-    <div class="flex flex-row">
-      <div class="flex items-center justify-center w-[16px] h-[16px]">
+    <div class="flex flex-row ml-[6px]">
+      <div class="flex items-center justify-center w-[16px] h-[16px] mr-2 scale-125">
         {#if agent.agent_icon}
           {@html agent.agent_icon}
         {:else}
-          <RiftSvg size="16" />
+          <RiftSvg />
         {/if}
       </div>
 
@@ -36,7 +36,7 @@
     {agent.display_name}
   </div> -->
     <div
-      class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden"
+      class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden ml-[2px]"
     >
       {agent.agent_description}
     </div>

@@ -55,10 +55,10 @@ def is_json_key(key: Any) -> TypeGuard[JsonKey]:
 def ofdict_dataclass(data_class_type: Type[T], json_like_object: JsonLike) -> T:
     """
     Converts JSON-like object passed as a parameter to the specified data class type.
-    
+
     :param data_class_type: The data class type to which the JSON-like object will be converted.
     :param json_like_object: The JSON-like object to be converted to the specified data class type.
-    
+
     :return: The data class type instance built from the JSON-like object
     """
     # Validation to ensure passed data_class_type is a dataclass
@@ -69,25 +69,28 @@ def ofdict_dataclass(data_class_type: Type[T], json_like_object: JsonLike) -> T:
 
     # Iterating over all the fields of the data class
     for field in fields(data_class_type):
-        
         # Check if the json_like_object is dictionary
         if not isinstance(json_like_object, dict):
-            raise OfDictError(f"Error while decoding dataclass {data_class_type}, expected a dict but got {json_like_object} : {type(json_like_object)}")
-        
+            raise OfDictError(
+                f"Error while decoding dataclass {data_class_type}, expected a dict but got {json_like_object} : {type(json_like_object)}"
+            )
+
         # Fetch the field name
         key = field.name
-        
+
         # Check if the key is not in the json_like_object
         if key not in json_like_object:
             # Check if key's type is optional
             if field.type is not None and is_optional(field.type):
                 value = None
             else:
-                raise OfDictError(f"Missing {field.name} on input dict. Decoding {json_like_object} to type {data_class_type}.")
+                raise OfDictError(
+                    f"Missing {field.name} on input dict. Decoding {json_like_object} to type {data_class_type}."
+                )
         else:
             value = json_like_object[key]
 
-        # Process the value if the type is defined for field       
+        # Process the value if the type is defined for field
         if field.type is not None:
             with dpath(key):
                 parsed_dict[key] = ofdict(field.type, value)

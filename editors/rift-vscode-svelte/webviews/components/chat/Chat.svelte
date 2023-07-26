@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
   import {  state } from "../stores";
-  import UserSvg from "../icons/UserSvg.svelte";
+  import UserSvg from "../icons/oldUserSvg.svelte";
   import UserInput from "./UserInput.svelte";
-  import RiftSvg from "../icons/RiftSvg.svelte";
   import Response from "./Response.svelte";
-  import OmniBar from "./OmniBar.svelte";
+  import OmniBar from "../OmniBar.svelte";
 
 
   let observer: MutationObserver;
@@ -52,7 +51,7 @@
 
 <div
   bind:this={chatWindow}
-  class="flex items-start flex-grow flex-col overflow-y-auto"
+  class="flex items-start flex-grow flex-col overflow-y-auto "
 >
   {#if $state.agents[$state.selectedAgentId]?.inputRequest}
     <Response

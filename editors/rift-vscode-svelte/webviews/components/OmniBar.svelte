@@ -1,7 +1,7 @@
 <script lang="ts">
-  import SendSvg from "../icons/SendSvg.svelte";
-  import { dropdownOpen, state } from "../stores";
-  import Dropdown from "./dropdown/Dropdown.svelte";
+  import SendSvg from "./icons/SendSvg.svelte";
+  import { dropdownOpen, state } from "./stores";
+  import Dropdown from "./chat/dropdown/Dropdown.svelte";
   import { tick } from "svelte";
 
   let isFocused = true;
@@ -106,10 +106,7 @@
       throw new Error("attempt to run unavailable agent");
     vscode.postMessage({
       type: "runAgent",
-      params: {
-        agent_type,
-        agent_params: {},
-      },
+      agent_type,
     });
 
     textarea.value = ""; //clear omnibar text
@@ -140,7 +137,6 @@
   };
 </script>
 
-<!-- bg-[var(--vscode-panel-background)] -->
 
 <div
   class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative"

@@ -1,6 +1,12 @@
+import type * as vscode from "vscode";
+import type {
+  TextDocumentIdentifier,
+} from "vscode-languageclient/node";
+
+
 export interface Task {
   description: string;
-  status: string;
+  status: CodeLensStatus | AgentStatus;
 }
 
 export interface Tasks {
@@ -8,12 +14,13 @@ export interface Tasks {
   subtasks: Task[];
 }
 
-export class ChatMessage {
-  constructor(
-    public role: "user" | "assistant",
-    public content: string,
-  ) {}
-}
+
+// export class ChatMessage {
+//   constructor(
+//     public role: "user" | "assistant",
+//     public content: string,
+//   ) {}
+// }
 
 export type InputRequest = {
   msg: string;
@@ -32,17 +39,6 @@ export type AgentRegistryItem = {
   agent_icon: string | null;
 };
 
-// this is working
-export type AgentProgress = {
-  agent_id: string;
-  agent_type: string;
-  tasks: {
-    subtasks: [{ description: string; status: string }] | [];
-    task: { description: string; status: string };
-  };
-  payload: any;
-};
-
 // export class Agent {
 //   constructor(
 //     public type: string, // aider, gpt-engineer, etc
@@ -56,13 +52,13 @@ export type AgentProgress = {
 export class WebviewAgent {
   type: string;
   hasNotification: boolean;
-  isDeleted: boolean;
   chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
   // isChatAgent: boolean = false;
   isStreaming: boolean = false;
   streamingText: string = "";
+  doesShowAcceptRejectBar: boolean = false;
 
   constructor(
     type: string,
@@ -73,7 +69,6 @@ export class WebviewAgent {
   ) {
     this.type = type;
     this.hasNotification = hasNotification ?? false;
-    this.isDeleted = false;
     this.chatHistory = chatHistory ?? [];
     this.inputRequest = inputRequest;
     this.tasks = tasks;
@@ -105,3 +100,121 @@ export const DEFAULT_STATE: WebviewState = {
     },
   ],
 };
+
+
+
+export interface RunParams {  
+  agent_type: string
+}
+
+export interface ChatAgentParams extends RunParams {
+  agent_params: {
+    position: vscode.Position;
+    selection: vscode.Selection
+    textDocument: {
+      uri: string;
+      version: number;
+    };
+  };
+}
+
+
+export interface RunChatParams {
+  message: string;
+  messages: {
+    // does not include latest message
+    role: string;
+    content: string;
+  }[];
+}
+
+
+export interface RunAgentResult {
+  id: string;
+}
+
+
+
+export type AgentStatus =
+  | "running"
+  | "done"
+  | "error"
+  | "accepted"
+  | "rejected";
+
+export type CodeLensStatus =
+  | "running"
+  | "ready"
+  | "accepted"
+  | "rejected"
+  | "error"
+  | "done";
+
+export interface RunAgentProgress {
+  id: number;
+  textDocument: TextDocumentIdentifier;
+  log?: {
+    severity: string;
+    message: string;
+  };
+  cursor?: vscode.Position;
+  /** This is the set of ranges that the agent has added so far. */
+  ranges?: vscode.Range[];
+  status: AgentStatus;
+}
+
+
+
+export type ChatAgentPayload =
+  | {
+      response?: string;
+      done_streaming?: boolean;
+    }
+  | undefined;
+
+  
+  export interface AgentProgress<T = any> {
+    agent_id: string;
+    agent_type: string;
+    tasks: Tasks;
+    payload: T | undefined;
+    
+  }
+
+
+
+
+  export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
+
+
+
+export interface AgentIdParams {
+  id: string;
+}
+
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  name?: null | string | undefined;
+};
+
+export interface AgentChatRequest {
+  messages: ChatMessage[];
+}
+
+export interface AgentInputRequest {
+  msg: string;
+  place_holder: string;
+}
+
+export interface AgentInputResponse {
+  response: string;
+}
+
+export interface AgentUpdate {
+  msg: string;
+}
+export type AgentResult = {
+  id: string;
+  type: string;
+}; //is just an ID rn

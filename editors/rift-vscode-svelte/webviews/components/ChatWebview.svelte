@@ -1,16 +1,17 @@
 <script lang="ts">
-  import Header from "./Header.svelte";
+  import AcceptRejectBar from "./AcceptRejectBar.svelte";
   import Chat from "./chat/Chat.svelte";
-  import OmniBar from "./chat/OmniBar.svelte";
+  import OmniBar from "./OmniBar.svelte";
+    import { state } from "./stores";
   vscode.postMessage({type: "refreshState"})
 
 
 </script>
 
-<!-- <svelte:window on:message={incomingMessage} /> -->
-
 <div class="h-screen flex flex-col">
-  <!-- <Header /> -->
   <Chat />
+  {#if $state.agents[$state.selectedAgentId]?.doesShowAcceptRejectBar}
+    <AcceptRejectBar/>
+  {/if}
   <OmniBar />
 </div>
