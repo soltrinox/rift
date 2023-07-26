@@ -303,15 +303,9 @@ class EngineerAgent(Agent):
                         await event.wait()
                         return True
 
-                    # ============== For debugging ==========
-                    # This should cause it to immediately mark the task as done, but it doesn't
-                    event.set()
-                    # =======================================
-
-                    _ = obj.add_task(AgentTask(task_name, __event_wait)).run()
+                    _ = asyncio.get_running_loop().create_task(obj.add_task(AgentTask(task_name, __event_wait)).run())
 
                     await obj.send_progress()
-
                 except asyncio.TimeoutError:
                     continue
 
