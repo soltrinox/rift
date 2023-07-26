@@ -43,7 +43,7 @@ gpt-engineer = [
    "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
 ]
 aider = [
-  "aider-chat @ git+https://github.com/morph-labs/aider#rift-agent",
+  "aider-chat @ git+https://github.com/morph-labs/aider#jesse/aider",
 ]
 
 [project.urls]
