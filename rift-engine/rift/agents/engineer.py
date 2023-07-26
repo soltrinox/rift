@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Dict, Optional
 from rift.util import file_diff
 import os
 import re
+import types
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import (
@@ -43,6 +44,10 @@ INPUT_PROMPT_QUEUE = asyncio.Queue()
 INPUT_RESPONSE_QUEUE = asyncio.Queue()
 TASK_QUEUE = asyncio.Queue()
 OUTPUT_CHAT_QUEUE = asyncio.Queue()
+
+STEPS_AGENT_TASKS_NAME_QUEUE = asyncio.Queue()
+STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
+
 SEEN = set()
 
 from gpt_engineer.ai import AI, fallback_model
@@ -166,8 +171,10 @@ async def _main(
 
     steps = STEPS[steps_config]
     from concurrent import futures
- 
-    #await my_in.send_progress()
+
+    # Add all steps to task list
+    for step in steps:
+        await STEPS_AGENT_TASKS_NAME_QUEUE.put(step.__name__)
 
     counter = 0
     with futures.ThreadPoolExecutor(1) as pool:
@@ -184,6 +191,10 @@ async def _main(
                         pass
                     else:
                         SEEN.add(x[0])
+            
+            # Mark this step as complete
+            event = await STEPS_AGENT_TASKS_EVENT_QUEUE.get()
+            event.set()
             await asyncio.sleep(0.5)
             counter += 1
 
@@ -278,6 +289,33 @@ class EngineerAgent(Agent):
                 except asyncio.TimeoutError:
                     continue
 
+        async def __run_create_task_thread(obj: EngineerAgent):
+            while True:
+                try:
+                    # Wait till we get the name of a new task to spawn
+                    task_name = await asyncio.wait_for(STEPS_AGENT_TASKS_NAME_QUEUE.get(), timeout=1.0)
+                    # Create an event to trigger when the task is complete
+                    event = asyncio.Event()
+                    # Put the event object on the queue so that it can be triggered
+                    await STEPS_AGENT_TASKS_EVENT_QUEUE.put(event)
+                    # Setup the function that will be waiting on the event
+                    async def __event_wait():
+                        await event.wait()
+                        return True
+
+                    # ============== For debugging ==========
+                    # This should cause it to immediately mark the task as done, but it doesn't
+                    event.set()
+                    # =======================================
+
+                    _ = obj.add_task(AgentTask(task_name, __event_wait)).run()
+
+                    await obj.send_progress()
+
+                except asyncio.TimeoutError:
+                    continue
+
+        asyncio.create_task(__run_create_task_thread(obj))
         asyncio.create_task(__run_chat_thread(obj))
         asyncio.create_task(__run_popup_thread(obj))
 
