@@ -4,7 +4,7 @@ import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Optional
-from rift.agents import file_diff
+from rift.util import file_diff
 
 
 import rift.lsp.types as lsp
@@ -122,7 +122,7 @@ async def _main(
     )
 
 
-    input_path = Path(project_path).absolute()
+    input_path = project_path.__fspath__()
     memory_path = input_path / "memory"
     workspace_path = input_path / "workspace"
     archive_path = input_path / "archive"
@@ -232,7 +232,6 @@ class EngineerAgent(Agent):
             while True:
                 try:
                     response = ""
-                    await obj.send_progress()
                     toSend = await asyncio.wait_for(OUTPUT_CHAT_QUEUE.get(), timeout=1.0)   
                     if toSend != "NONE":                 
                         for delta in toSend:
@@ -250,7 +249,6 @@ class EngineerAgent(Agent):
         async def __run_popup_thread(obj):
             while True:
                 try:
-                    await obj.send_progress()
                     prompt = await asyncio.wait_for(INPUT_PROMPT_QUEUE.get(), timeout=1.0)
                     if prompt != "":
                         await asyncio.wait_for(OUTPUT_CHAT_QUEUE.put(prompt), timeout=1.0)
@@ -271,13 +269,6 @@ class EngineerAgent(Agent):
 
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
-        #steps = STEPS["default"]
-        #from concurrent import futures
-        # tasks=[]
-        # for step in steps:
-        #     tsk = AgentTask(step.__name__, None)
-        #     tasks.append(tsk)
-        # self.set_tasks(tasks)
         main_t = asyncio.create_task(_main(project_path=self.state.document.uri))
         
 
