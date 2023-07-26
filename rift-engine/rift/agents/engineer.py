@@ -5,7 +5,7 @@ from asyncio import Future
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Optional
 from rift.util import file_diff
-
+import os
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import (
@@ -107,7 +107,7 @@ from asyncio import Lock
 response_lock = Lock()   
 
 async def _main(
-    project_path: str = "",
+    project_path: any = "",
     model: str = "gpt-4",
     temperature: float = 0.1,
     steps_config: StepsConfig = StepsConfig.DEFAULT,
@@ -123,15 +123,16 @@ async def _main(
 
 
     input_path = project_path.__fspath__()
-    memory_path = input_path / "memory"
-    workspace_path = input_path / "workspace"
-    archive_path = input_path / "archive"
+    input_path= os.path.sep.join(input_path.split(os.path.sep)[:-1])
+    memory_path = input_path +"/"+ "memory"
+    workspace_path = input_path +"/"+ "workspace"
+    archive_path = input_path +"/"+ "archive"
 
     
 
     dbs = DBs(
         memory=DB(memory_path),
-        logs=DB(memory_path / "logs"),
+        logs=DB(memory_path +"/"+ "logs"),
         input=DB(input_path),
         workspace=DB(workspace_path, in_memory_dict={}),  # in_memory_dict={}),
         preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
@@ -269,7 +270,7 @@ class EngineerAgent(Agent):
 
     async def run(self) -> AgentRunResult:  # main entry point
         await self.send_progress()
-        main_t = asyncio.create_task(_main(project_path=self.state.document.uri))
+        main_t = asyncio.create_task(_main(project_path=self.state.document))
         
 
         counter = 0
