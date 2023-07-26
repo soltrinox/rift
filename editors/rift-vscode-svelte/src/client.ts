@@ -526,13 +526,13 @@ export class MorphLanguageClient
     if (!editor) throw new Error("No active text editor found");
     const folders = vscode.workspace.workspaceFolders
     if(!folders) throw new Error('no current workspace')
-    const workspaceFolderUri = folders[0].uri
+    const workspaceFolderPath = folders[0].uri.fsPath
     let textDocument = { uri: editor.document.uri.toString(), version: 0 };
     let position = editor.selection.active;
 
     const chatAgentParams: ChatAgentParams = { // TODO this is not ChatAgentParams but all agent params...
       agent_type: params.agent_type,
-      agent_params: { selection: editor.selection, position, textDocument, workspaceFolderUri },
+      agent_params: { selection: editor.selection, position, textDocument, workspaceFolderPath },
     };
 
     const result: RunAgentResult = await this.client.sendRequest(
