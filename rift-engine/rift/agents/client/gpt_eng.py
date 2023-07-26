@@ -148,10 +148,12 @@ class GPTEngineerAgent(agent.Agent):
             counter += 1
             try:
                 updates = await asyncio.wait_for(UPDATES_QUEUE.get(), 1.0)
-                for file_path, new_contents in updates:
-                    await file_diff.get_file_change(
+                yield [
+                    file_diff.get_file_change(
                         file_path, new_contents, annotation_label=str(counter)
                     )
+                    for file_path, new_contents in updates
+                ]
             except asyncio.TimeoutError:
                 continue
 
