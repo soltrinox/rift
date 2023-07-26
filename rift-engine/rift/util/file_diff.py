@@ -84,7 +84,7 @@ def edits_from_file_change(file_change: FileChange, user_confirmation: bool = Fa
     #     line = end_line
     #     char = end_char
     lines = file_change.old_content.split("\n")
-    edits = [TextEdit(Range.mk(0,0,len(lines),len(lines[-1])), new_text, annotationId=annotation_label)]
+    edits = [TextEdit(Range.mk(0,0,len(lines),0), new_text, annotationId=annotation_label)]
 
     documentChanges = []
 

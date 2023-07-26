@@ -8,7 +8,7 @@ try:
     import gpt_engineer.chat_to_files
     import gpt_engineer.db
 except ImportError:
-    raise Exception("`gpt_engineer` not found. Try `pip install gpt-engineer`")
+    raise Exception("`gpt_engineer` not found. Try `pip install -e rift-engine[gpt-engineer]` from the Rift root directory.")
 
 UPDATES_QUEUE = asyncio.Queue()
 SEEN = set()

@@ -28,7 +28,10 @@ import types
 
 import art
 import fire
-import smol_dev
+try:
+    import smol_dev
+except ImportError:
+    raise Exception("`smol_dev` not found. Try `pip install -e rift-engine[smol-dev]` from the Rift root directory.")
 from rift.agents.cli_agent import Agent, ClientParams, launcher
 from rift.agents.util import ainput
 
