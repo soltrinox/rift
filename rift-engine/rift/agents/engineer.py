@@ -141,7 +141,7 @@ async def _main(
 
 
     input_path = __fix_windows_path(project_path.__fspath__())
-    input_path= os.path.sep.join(input_path.split(os.path.sep)[:-1])
+    input_path = os.path.sep.join(input_path.split(os.path.sep)[:-1])
     memory_path = input_path +"/"+ "memory"
     workspace_path = input_path +"/"+ "workspace"
     archive_path = input_path +"/"+ "archive"
