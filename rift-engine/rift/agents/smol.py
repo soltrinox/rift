@@ -55,8 +55,6 @@ class SmolProgress(AgentProgress):
 # dataclass for representing the parameters of the code completion agent
 @dataclass
 class SmolAgentParams(AgentRunParams):
-    textDocument: lsp.TextDocumentIdentifier
-    selection: Optional[lsp.Selection]
     instructionPrompt: Optional[str] = None
 
 
@@ -238,7 +236,9 @@ class SmolAgent(Agent):
 
                 # t = asyncio.create_task(spinner())
                 code = await code_future
-                absolute_file_path = os.path.join(os.getcwd(), file_path)
+                logger.info('folder uri:')
+                logger.info(self.state.params.workspaceFolderPath)
+                absolute_file_path = os.path.join(self.state.params.workspaceFolderPath, file_path)
                 file_change = file_diff.get_file_change(path=absolute_file_path, new_content=code)
                 return file_change
 

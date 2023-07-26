@@ -49,8 +49,6 @@ class CodeEditProgress(AgentProgress):
 # dataclass for representing the parameters of the code completion agent
 @dataclass
 class CodeEditAgentParams(AgentRunParams):
-    textDocument: lsp.TextDocumentIdentifier
-    selection: Optional[lsp.Selection]
     instructionPrompt: Optional[str] = None
 
 

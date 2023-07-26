@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
-
+import rift.lsp.types as lsp
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
@@ -48,6 +48,11 @@ AgentTaskId = str
 @dataclass
 class AgentRunParams(ABC):
     agent_id: str
+    textDocument: lsp.TextDocumentIdentifier
+    selection: Optional[lsp.Selection]
+    workspaceFolderPath: str
+    
+
 
 
 @dataclass

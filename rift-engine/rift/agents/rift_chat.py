@@ -37,7 +37,6 @@ class ChatRunResult(AgentRunResult):
 
 @dataclass
 class ChatAgentParams(AgentRunParams):
-    textDocument: lsp.TextDocumentIdentifier
     position: Optional[lsp.Position]
 
 
