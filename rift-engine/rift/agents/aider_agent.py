@@ -5,6 +5,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from typing import Any, AsyncIterable, ClassVar, Dict, List, Literal, Optional, Type
+from rift.agents.abstract import agent
 
 import rift.util.file_diff as file_diff
 
@@ -26,6 +27,10 @@ class AiderAgentParams(ClientParams):
     debug: bool = False
 
 
+@agent(
+    agent_description="AIDER DESCRIPTION GO BRRRR.",
+    display_name="Aider",
+)
 @dataclass
 class AiderAgent(Agent):
     name: ClassVar[str] = "aider"

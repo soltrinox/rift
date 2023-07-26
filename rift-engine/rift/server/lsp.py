@@ -13,6 +13,7 @@ from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, Run
 from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
 from rift.agents.engineer import EngineerAgent, EngineerAgentParams
+from rift.agents.aider_agent import AiderAgent, AiderAgentParams
 
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
@@ -353,6 +354,10 @@ class LspServer(BaseLspServer):
             if not is_dataclass(agent_params):
                 agent_params = ofdict(SmolAgentParams, agent_params)
             agent = SmolAgent.create(params=agent_params, server=self)
+        elif agent_type == "aider":
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(AiderAgentParams, agent_params)
+            agent = AiderAgent.create(params=agent_params, server=self)
         else:
             raise Exception(f"unsupported agent type={agent_type}")
 
