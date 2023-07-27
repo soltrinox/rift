@@ -163,6 +163,32 @@ class Range:
 
 
 @dataclass
+class Selection(Range):
+    anchor: Position
+    active: Position
+
+    @classmethod
+    def from_coordinates(
+        cls, anchor_line: int, anchor_character: int, active_line: int, active_character: int
+    ) -> "Selection":
+        anchor = Position(anchor_line, anchor_character)
+        active = Position(active_line, active_character)
+        return cls(anchor, active)
+
+    @property
+    def is_reversed(self) -> bool:
+        return self.anchor == self.end
+
+    @property
+    def first(self) -> Position:
+        return self.anchor if not self.is_reversed else self.active
+
+    @property
+    def second(self) -> Position:
+        return self.active if not self.is_reversed else self.anchor
+
+
+@dataclass
 class TextDocumentContentChangeEvent:
     range: Optional[Range]
     text: str
@@ -271,7 +297,7 @@ class DocumentContext:
     def offset_to_position(self, offset: int) -> Position:
         s = self.line_offsets
         line_idx = bisect.bisect_right(s, offset)
-        if line_idx >= self.line_count:
+        if line_idx > self.line_count:
             line_idx = self.line_count - 1
         line = self.get_line(line_idx)
         assert self.position_encoding == PositionEncodingKind.UTF16
@@ -294,7 +320,9 @@ class DocumentContext:
         return Position(line=line_idx, character=char)
 
     def add_position(self, position: Position, delta_offset: int) -> Position:
-        return self.offset_to_position(self.position_to_offset(position) + delta_offset)
+        offset = self.position_to_offset(position)
+        result = self.offset_to_position(offset + delta_offset)
+        return result
 
     def range_to_offsets(self, range: Range) -> tuple[int, int]:
         return (

@@ -1,0 +1,183 @@
+{
+  "name": "rift-vscode-svelte",
+  "displayName": "rift-vscode-svelte",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.54.0"
+  },
+  "enabledApiProposals": [
+    "extensionRuntime"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "keybindings": [
+      {
+        "command": "rift.run_agent",
+        "key": "ctrl+m",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "rift.focus_omnibar",
+        "key": "ctrl+k",
+        "mac": "cmd+k"
+      }
+    ],
+    "configuration": {
+      "title": "Rift",
+      "properties": {
+        "rift.openaiKey": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "OpenAI API key"
+        },
+        "rift.completionsModel": {
+          "type": "string",
+          "default": "openai:gpt-3.5-turbo",
+          "enum": [
+            "gpt4all:ggml-replit-code-v1-3b",
+            "openai:gpt-3.5-turbo",
+            "openai:gpt-4"
+          ],
+          "markdownDescription": "model to use for completions. (remember to set the OpenAI API key if using an openai:* model). You can also set your own (use the JSON settings editor), the format is `{type}:{name} [@ {path}]` where `type` is one of `gpt4all`, `openai`, or `hf` (for huggingface models), `name` is the name of the model, and `path` is an optional path to the downloaded model weights."
+        },
+        "rift.chatModel": {
+          "type": "string",
+          "default": "openai:gpt-3.5-turbo",
+          "enum": [
+            "gpt4all:ggml-mpt-7b-chat",
+            "gpt4all:ggml-gpt4all-j-v1.3-groovy",
+            "openai:gpt-3.5-turbo",
+            "openai:gpt-4"
+          ],
+          "markdownDescription": "model to use for completions. (remember to set the OpenAI API key if using an openai:* model). You can also set your own (use the JSON settings editor), the format is `{type}:{name} [@ {path}]` where `type` is one of `gpt4all`, `openai`, or `hf` (for huggingface models), `name` is the name of the model, and `path` is an optional path to the downloaded model weights."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "Rift",
+          "title": "Rift Dashboard",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "Rift": [
+        {
+          "type": "webview",
+          "id": "RiftChat",
+          "name": "Chat"
+        },
+        {
+          "type": "webview",
+          "id": "RiftLogs",
+          "name": "Rift Agents"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "RiftChat",
+        "contents": "Chat with a local code model."
+      },
+      {
+        "view": "RiftLogs",
+        "contents": "Agent logging."
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "rift.reset_chat",
+          "when": "view == RiftChat",
+          "group": "navigation"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "rift.run_agent",
+        "title": "Rift: Code Completion"
+      },
+      {
+        "command": "rift.reset_chat",
+        "title": "Reset Chat",
+        "icon": {
+          "light": "media/icons/resetLight.svg",
+          "dark": "media/icons/resetDark.svg"
+        }
+      },
+      {
+        "command": "rift.focus_omnibar",
+        "title": "Rift: Focus Omnibar"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "concurrently \"rollup -c rollup.config.js\" \"webpack --config ./build/node-extension.webpack.config.cjs\"",
+    "watch": "concurrently \"rollup -c rollup.config.js -w\" \"webpack --watch --config ./build/node-extension.webpack.config.cjs\"",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint --ext ts src",
+    "format": "prettier --write .",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.0.1",
+    "@rollup/plugin-typescript": "^8.1.0",
+    "@tsconfig/svelte": "^1.0.10",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "20.2.5",
+    "@types/showdown": "^2.0.1",
+    "@types/tcp-port-used": "^1.0.1",
+    "@types/uuid": "^9.0.2",
+    "@types/vscode": "^1.54.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.62.0",
+    "@vscode/test-electron": "^2.3.2",
+    "concurrently": "^8.2.0",
+    "eslint": "^8.41.0",
+    "eslint-import-resolver-typescript": "^3.5.5",
+    "eslint-plugin-import": "^2.27.5",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "prettier": "^3.0.0",
+    "rollup": "^2.3.4",
+    "rollup-plugin-svelte": "^6.0.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "svelte": "^3.31.0",
+    "svelte-check": "^1.1.23",
+    "svelte-preprocess": "^4.10.7",
+    "ts-loader": "^9.4.3",
+    "typescript": "^4.9.3",
+    "webpack": "^5.85.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.2.2",
+    "delay": "^6.0.0",
+    "morphdom": "^2.7.0",
+    "showdown": "^2.1.0",
+    "tcp-port-used": "^1.0.2",
+    "uuid": "^9.0.0",
+    "vscode-jsonrpc": "^8.1.0",
+    "vscode-languageclient": "^8.1.0",
+    "vscode-languageserver-protocol": "^3.17.3"
+  }
+}

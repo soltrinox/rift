@@ -1,38 +1,41 @@
 import asyncio
+import glob
+import json
 import logging
-from dataclasses import dataclass, field
-from typing import ClassVar, List, Literal, Optional
+import os
+import uuid
+from dataclasses import dataclass, field, is_dataclass
+from typing import Any, ClassVar, Dict, Iterable, List, Literal, Optional
 
+import rift.agents.rift_chat as agentchat
 import rift.lsp.types as lsp
+from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
+from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
+from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
+from rift.agents.engineer import EngineerAgent, EngineerAgentParams
+
+# from rift.agents.reverso import ReversoAgent, ReversoAgentParams
+from rift.agents.smol import SmolAgent, SmolAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
-from rift.server.helper import *
+from rift.server.agent import *
+from rift.server.chat_agent import ChatAgent, ChatAgentLogs, RunChatParams
 from rift.server.selection import RangeSet
+from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class RunChatParams:
-    message: str
-    messages: List[Message]
-    position: Optional[lsp.Position]
-    textDocument: lsp.TextDocumentIdentifier
-
-
-ChatHelperLogs = HelperLogs
-
-
-@dataclass
-class HelperProgress:
+class AgentProgress:
     id: int
     textDocument: lsp.TextDocumentIdentifier
     status: Literal["running", "done", "error"]
-    log: Optional[HelperLogs] = field(default=None)
+    log: Optional[AgentLogs] = field(default=None)
     ranges: Optional[RangeSet] = field(default=None)
     cursor: Optional[lsp.Position] = field(default=None)
 
@@ -68,122 +71,38 @@ class LspLogHandler(logging.Handler):
         t.add_done_callback(self.tasks.discard)
 
 
-class ChatHelper:
-    count: ClassVar[int] = 0
-    id: int
-    cfg: RunChatParams
-    running: bool
-    server: "LspServer"
-    change_futures: dict[str, asyncio.Future[None]]
-    cursor: Optional[lsp.Position]
-    """ The position of the cursor (where text will be inserted next). This position is changed if other edits occur above the cursor. """
-    task: Optional[asyncio.Task]
-    subtasks: set[asyncio.Task]
-
-    @property
-    def uri(self):
-        return self.cfg.textDocument.uri
-
-    def __str__(self):
-        return f"<ChatHelper {self.id}>"
-
-    def __init__(
-        self,
-        cfg: RunChatParams,
-        model: AbstractChatCompletionProvider,
-        server: "LspServer",
-    ):
-        ChatHelper.count += 1
-        self.model = model
-        self.id = Helper.count
-        self.cfg = cfg
-        self.server = server
-        self.running = False
-        self.change_futures = {}
-        self.cursor = cfg.position
-        self.document = server.documents[self.cfg.textDocument.uri]
-        self.task = None
-        self.subtasks = set()
-
-    def cancel(self, msg):
-        logger.info(f"{self} cancel run: {msg}")
-        if self.task is not None:
-            self.task.cancel(msg)
-
-    async def run(self):
-        self.task = asyncio.create_task(self.worker())
-        self.running = True
-        try:
-            return await self.task
-        except asyncio.CancelledError as e:
-            logger.info(f"{self} run task got cancelled")
-            return f"I stopped! {e}"
-        finally:
-            self.running = False
-
-    async def send_progress(
-        self,
-        response: str = "",
-        logs: Optional[ChatHelperLogs] = None,
-        done: bool = False,
-    ):
-        await self.server.send_chat_helper_progress(
-            self.id,
-            response=response,
-            log=logs,
-            done=done,
-            # textDocument=to_text_document_id(self.document),
-            # cursor=self.cursor,
-            # status="running" if self.running else "done",
-        )
-
-    async def worker(self):
-        response = ""
-        from asyncio import Lock
-
-        response_lock = Lock()
-        assert self.running
-        async with response_lock:
-            await self.send_progress(response)
-        doc_text = self.document.text
-        pos = self.cursor
-        offset = None if pos is None else self.document.position_to_offset(pos)
-
-        stream = await self.model.run_chat(doc_text, self.cfg.messages, self.cfg.message, offset)
-
-        async for delta in stream.text:
-            response += delta
-            async with response_lock:
-                await self.send_progress(response)
-        logger.info(f"{self} finished streaming response.")
-
-        self.running = False
-        async with response_lock:
-            await self.send_progress(response, done=True)
+@dataclass
+class LoadFilesResult:
+    documents: dict[lsp.DocumentUri, lsp.TextDocumentItem]
 
 
 @dataclass
-class ChatHelperProgress:
+class LoadFilesParams:
+    patterns: List[str]
+
+
+@dataclass
+class ChatAgentProgress:
     id: int
     response: str = ""
-    log: Optional[HelperLogs] = field(default=None)
+    log: Optional[AgentLogs] = field(default=None)
     done: bool = False
 
 
 @dataclass
-class RunHelperResult:
-    id: int
+class RunAgentResult:
+    id: str
 
 
 @dataclass
-class RunHelperSyncResult:
+class RunAgentSyncResult:
     id: int
     text: str
 
 
 class LspServer(BaseLspServer):
-    active_helpers: dict[int, Helper]
-    active_chat_helpers: dict[int, asyncio.Task]
+    active_agents: dict[int, Agent]
+    active_chat_agents: dict[int, asyncio.Task]
     model_config: ModelConfig
     completions_model: Optional[AbstractCodeCompletionProvider] = None
     chat_model: Optional[AbstractChatCompletionProvider] = None
@@ -195,8 +114,8 @@ class LspServer(BaseLspServer):
             openClose=True,
             change=lsp.TextDocumentSyncKind.incremental,
         )
-        self.active_helpers = {}
-        self.active_chat_helpers = {}
+        self.active_agents = {}
+        self.active_chat_agents = {}
         self._loading_task = None
         self._chat_loading_task = None
         self.logger = logging.getLogger(f"rift")
@@ -206,6 +125,59 @@ class LspServer(BaseLspServer):
     async def on_workspace_did_change_configuration(self, params: lsp.DidChangeConfigurationParams):
         logger.info("workspace/didChangeConfiguration")
         await self.get_config()
+
+    @rpc_method("morph/loadFiles")
+    def load_documents(self, params: LoadFilesParams) -> LoadFilesResult:
+        try:
+            current_dir = os.path.abspath(__file__)
+        except:
+            current_dir = os.getcwd()
+        with open(os.path.join(current_dir, "languages.json"), "r") as f:
+            language_map = json.loads(f)
+
+        def find_matching_language(
+            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
+        ) -> Optional[str]:
+            extension = filepath.split(".")[-1]  # Get the file extension
+
+            for details in language_map["languages"]:
+                if extension in details.get("extensions", []):
+                    return details["id"]
+
+            return None
+
+        def preprocess_filepaths(filepaths: List[str]) -> List[str]:
+            processed_filepaths = []
+            for filepath in filepaths:
+                processed_filepaths.append(os.path.expandvars(filepath))
+            return processed_filepaths
+
+        def join_filepaths(filepaths: List[str]) -> List[str]:
+            for filepath in filepaths:
+                yield from glob.glob(filepath, root="/" if filepath.startswith("/") else None)
+
+        for file_path in join_filepaths(preprocess_filepaths(params.patterns)):
+            with open(file_path, "r") as f:
+                text = f.read()
+            doc_item = lsp.TextDocumentItem(
+                text=text,
+                uri="file://" + os.path.join(os.getcwd(), str(file_path))
+                if not file_path.startswith("/")
+                else str(file_path),
+                languageId=find_matching_language(file_path, language_map) or "*",
+                version=1,
+            )
+            result_documents[doc_item.uri] = doc_item
+
+        result = LoadFilesResult(documents=result_documents)
+
+        self.documents.update(result.documents)
+
+        return result
+
+    @rpc_method("morph/applyWorkspaceEdit")
+    async def on_workspace_did_change_configuration(self, params: lsp.ApplyWorkspaceEditParams):
+        return await self.apply_workspace_edit(params)
 
     async def get_config(self):
         """This should be called whenever the user changes the model config settings.
@@ -236,7 +208,7 @@ class LspServer(BaseLspServer):
             return
         self.model_config = config
         logger.info(f"{self} recieved model config {config}")
-        for k, h in self.active_helpers.items():
+        for k, h in self.active_agents.items():
             h.cancel("config changed")
         self.completions_model = config.create_completions()
         self.chat_model = config.create_chat()
@@ -254,16 +226,19 @@ class LspServer(BaseLspServer):
         finally:
             self._loading_task = None
 
-    async def send_helper_progress(
+    async def send_update(self, msg: str):
+        await self.notify("morph/send_update", {"msg": msg})
+
+    async def send_agent_progress(
         self,
         id: int,
         textDocument: lsp.TextDocumentIdentifier,
-        log: Optional[HelperLogs] = None,
+        log: Optional[AgentLogs] = None,
         cursor: Optional[lsp.Position] = None,
         ranges: Optional[RangeSet] = None,
         status: Literal["running", "done", "error"] = "running",
     ):
-        progress = HelperProgress(
+        progress = AgentProgress(
             id=id,
             textDocument=textDocument,
             log=log,
@@ -273,18 +248,18 @@ class LspServer(BaseLspServer):
         )
         await self.notify("morph/progress", progress)
 
-    async def send_chat_helper_progress(
+    async def send_chat_agent_progress(
         self,
         id: int,
         response: str,
-        log: Optional[ChatHelperLogs] = None,
+        log: Optional[ChatAgentLogs] = None,
         done: bool = False,
         # textDocument: lsp.TextDocumentIdentifier,
-        # log: Optional[HelperLogs] = None,
+        # log: Optional[AgentLogs] = None,
         # cursor: Optional[lsp.Position] = None,
         # status: Literal["running", "done", "error"] = "running",
     ):
-        progress = ChatHelperProgress(
+        progress = ChatAgentProgress(
             # id=id, textDocument=textDocument, log=log, cursor=cursor, status=status
             id=id,
             response=response,
@@ -294,62 +269,194 @@ class LspServer(BaseLspServer):
         await self.notify("morph/chat_progress", progress)
 
     async def ensure_completions_model(self):
-        if self.completions_model is None:
-            await self.get_config()
-        assert self.completions_model is not None
-        return self.completions_model
+        try:
+            if self.completions_model is None:
+                await self.get_config()
+            assert self.completions_model is not None
+            return self.completions_model
+        except:
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
+            return config.create_completions()
 
     async def ensure_chat_model(self):
-        if self.chat_model is None:
-            await self.get_config()
-        assert self.chat_model is not None
-        return self.chat_model
+        try:
+            if self.chat_model is None:
+                await self.get_config()
+            assert self.chat_model is not None
+            return self.chat_model
+        except:
+            config = ModelConfig(
+                chatModel="openai:gpt-3.5-turbo", completionsModel="openai:gpt-3.5-turbo"
+            )
+            return config.create_chat()
 
-    @rpc_method("morph/run_helper")
-    async def on_run_helper(self, params: RunHelperParams):
+    @rpc_method("morph/restart_agent")
+    async def on_restart_agent(self, params: AgentIdParams) -> RunAgentResult:
+        logger.info("reset:")
+        print("test")
+        agent_id = params.id
+        old_agent = self.active_agents[agent_id]
+        agent_params = old_agent.state.params
+        logger.info(agent_params)
+        agent_type = old_agent.agent_type
+        agent_id = old_agent.agent_id
+        return await self.on_run(
+            RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id)
+        )
+
+    @rpc_method("morph/run")
+    async def on_run(self, params: RunAgentParams):
+        agent_type = params.agent_type
+        # lol
+        agent_params = params.agent_params
+        agent_id = params.agent_id or str(uuid.uuid4())[:8]
+        # agent_params.update({"agent_id": agent_id})
+        if not params.agent_id:
+            agent_params["agent_id"] = agent_id
+
+        # async def _run_agent():
+        logger = logging.getLogger(__name__)
+        logger.info(f"AGENT TYPE: {agent_type}")
+        if agent_type == "chat":
+            # prepare params for ChatAgent construction
+            model = await self.ensure_chat_model()
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(RunChatParams, agent_params)
+            agent = ChatAgent(agent_params, model=model, server=self)
+        elif agent_type == "rift_chat":
+            model = await self.ensure_chat_model()
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+            agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "code_completion":
+            model = await self.ensure_completions_model()
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+            agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "code_edit":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(CodeEditAgentParams, agent_params)
+            agent = CodeEditAgent.create(agent_params, model=model, server=self)
+        # elif agent_type == "reverso":
+        #     model = await self.ensure_completions_model()
+        #     agent_params = ofdict(ReversoAgentParams, agent_params)
+        #     agent = ReversoAgent.create(agent_params, model=model, server=self)
+
+        elif agent_type == "engineer":
+            model = await self.ensure_completions_model()
+            agent_params = ofdict(EngineerAgentParams, agent_params)
+            agent = EngineerAgent.create(agent_params, model=model, server=self)
+        elif agent_type == "smol_dev":
+            # model = await self.ensure_chat_model()
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(SmolAgentParams, agent_params)
+            agent = SmolAgent.create(params=agent_params, server=self)
+        else:
+            raise Exception(f"unsupported agent type={agent_type}")
+
+        self.active_agents[agent_id] = agent
+        # t = asyncio.Task(agent.main())
+        t = asyncio.create_task(agent.main())
+
+        def main_callback(fut):
+            if fut.exception():
+                logger.info(f"CAUGHT EXCEPTION={fut.exception()=}")
+
+        t.add_done_callback(main_callback)
+        return RunAgentResult(id=agent_id)
+        #     return t
+
+        # asyncio.create_task(_run_agent())
+        # return RunAgentResult(id=agent_id)
+
+        # async def _run_agent():
+        #     logger = logging.getLogger(__name__)
+        #     logger.info("AGENT TYPE: ", agent_type)
+        #     if agent_type == "chat":
+        #         # prepare params for ChatAgent construction
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(RunChatParams, agent_params)
+        #         agent = ChatAgent(agent_params, model=model, server=self)
+        #     elif agent_type == "rift_chat":
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+        #         agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
+        #     elif agent_type == "code_completion":
+        #         model = await self.ensure_completions_model()
+        #         agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+        #         agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        #     elif agent_type == "smol_dev":
+        #         model = await self.ensure_chat_model()
+        #         agent_params = ofdict(SmolAgentParams, agent_params)
+        #         agent = SmolAgent.create(params=agent_params, model=model, server=self)
+        #     else:
+        #         raise Exception(f"unsupported agent type={agent_type}")
+
+        #     self.active_agents[agent_id] = agent
+        #     # t = asyncio.Task(agent.main())
+        #     t = asyncio.create_task(agent.main())
+        #     return t
+
+        # asyncio.create_task(_run_agent())
+        # return RunAgentResult(id=agent_id)
+
+    @rpc_method("morph/run_agent")
+    async def on_run_agent(self, params: CodeCompletionAgentParams):
         model = await self.ensure_completions_model()
         try:
-            helper = Helper(params, model=model, server=self)
+            agent = CodeCompletionAgent(params, model=model, server=self)
         except LookupError:
             # [hack] wait a bit for textDocumentChanged notification to come in
             logger.debug("request too early: waiting for textDocumentChanged notification")
             await asyncio.sleep(3)
-            helper = Helper(params, model=model, server=self)
-        logger.debug(f"starting helper {helper.id}")
-        # helper holds a reference to worker task
-        helper.start()
-        self.active_helpers[helper.id] = helper
-        return RunHelperResult(id=helper.id)
+            agent = CodeCompletionAgent(params, model=model, server=self)
+        logger.debug(f"starting agent {agent.agent_id}")
+        # agent holds a reference to worker task
+        agent.run()
+        self.active_agents[agent.agent_id] = agent
+        return RunAgentResult(id=agent.agent_id)
 
     @rpc_method("morph/run_chat")
     async def on_run_chat(self, params: RunChatParams):
         chat = await self.ensure_chat_model()
-        chat_helper = ChatHelper(params, model=chat, server=self)
-        logger.debug(f"starting chat helper {chat_helper.id}")
-        task = asyncio.create_task(chat_helper.run())
-        self.active_chat_helpers[chat_helper.id] = task
+        chat_agent = ChatAgent(params, model=chat, server=self)
+        logger.debug(f"starting chat agent {chat_agent.id}")
+        task = asyncio.create_task(chat_agent.run())
+        self.active_chat_agents[chat_agent.id] = task
 
     @rpc_method("morph/cancel")
-    async def on_cancel(self, params: HelperIdParams):
-        helper = self.active_helpers.get(params.id)
-        if helper is not None:
-            helper.cancel()
+    async def on_cancel(self, params: AgentIdParams):
+        agent: Agent = self.active_agents.get(params.id)
+        if agent is not None:
+            await agent.cancel()
+
+    @rpc_method("morph/delete")
+    async def on_delete(self, params: AgentIdParams):
+        agent: Agent = self.active_agents.pop(params.id)
+        await agent.cancel("cancel bc delete", False)
+        del agent
+
+    @rpc_method("morph/listAgents")
+    def on_list_agents(self, _: Any) -> List[AgentRegistryResult]:
+        return AGENT_REGISTRY.list_agents()
 
     @rpc_method("morph/accept")
-    async def on_accept(self, params: HelperIdParams):
-        helper = self.active_helpers.get(params.id)
-        if helper is not None:
-            await helper.accept()
-            self.active_helpers.pop(params.id, None)
+    async def on_accept(self, params: AgentIdParams):
+        agent = self.active_agents.get(params.id)
+        if agent is not None:
+            await agent.accept()
+            self.active_agents.pop(params.id, None)
 
     @rpc_method("morph/reject")
-    async def on_reject(self, params: HelperIdParams):
-        helper = self.active_helpers.get(params.id)
-        if helper is not None:
-            await helper.reject()
-            self.active_helpers.pop(params.id, None)
+    async def on_reject(self, params: AgentIdParams):
+        agent = self.active_agents.get(params.id)
+        if agent is not None:
+            await agent.reject()
+            self.active_agents.pop(params.id, None)
         else:
-            logger.error(f"no helper with id {params.id}")
+            logger.error(f"no agent with id {params.id}")
 
     @rpc_method("hello_world")
     def on_hello(self, params):
