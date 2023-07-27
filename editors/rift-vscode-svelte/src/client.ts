@@ -19,7 +19,25 @@ import { join } from "path";
 import * as tcpPortUsed from "tcp-port-used";
 import { chatProvider, logProvider } from "./extension";
 import PubSub from "./lib/PubSub";
-import { AgentChatRequest, AgentIdParams, AgentInputRequest, AgentProgress, AgentRegistryItem, AgentResult, AgentStatus, AgentUpdate, ChatAgentParams, ChatAgentProgress, ChatMessage, CodeLensStatus, DEFAULT_STATE, RunAgentResult, RunParams, WebviewAgent, WebviewState } from "./types";
+import {
+  AgentChatRequest,
+  AgentIdParams,
+  AgentInputRequest,
+  AgentProgress,
+  AgentRegistryItem,
+  AgentResult,
+  AgentStatus,
+  AgentUpdate,
+  ChatAgentParams,
+  ChatAgentProgress,
+  ChatMessage,
+  CodeLensStatus,
+  DEFAULT_STATE,
+  RunAgentResult,
+  RunParams,
+  WebviewAgent,
+  WebviewState,
+} from "./types";
 import { Store } from "./lib/Store";
 
 let client: LanguageClient; //LanguageClient
@@ -82,13 +100,16 @@ const RED = vscode.window.createTextEditorDecorationType({
   backgroundColor: "rgba(255,0,0,0.1)",
 });
 
-type CodeCompletionPayload = {
-  additive_ranges?: vscode.Range[],
-  cursor?: vscode.Position,
-  negative_ranges?: vscode.Range[],
-  response?: string
-  textDocument?: TextDocumentIdentifier
-} | "accepted" | "rejected"
+type CodeCompletionPayload =
+  | {
+      additive_ranges?: vscode.Range[];
+      cursor?: vscode.Position;
+      negative_ranges?: vscode.Range[];
+      response?: string;
+      textDocument?: TextDocumentIdentifier;
+    }
+  | "accepted"
+  | "rejected";
 
 // FIXME add type interfaces. as of now, this is not typescript.
 async function code_completion_send_progress_handler(
@@ -96,7 +117,7 @@ async function code_completion_send_progress_handler(
   agent: Agent,
 ): Promise<void> {
   console.log(`PARAMS: ${params}`);
-  console.log(params)
+  console.log(params);
   if (params.tasks) {
     if (params.tasks.task.status) {
       if (agent.codeLensStatus !== params.tasks.task.status) {
@@ -118,60 +139,65 @@ async function code_completion_send_progress_handler(
     // [todo] check editor is visible
     const version = editor.document.version;
 
-      if (params.payload == "accepted" || params.payload == "rejected") {
-        agent.codeLensStatus = params.payload;
-        agent.onStatusChangeEmitter.fire(params.payload);
-        editor.setDecorations(GREEN, []);
-        editor.setDecorations(RED, []);
-        agent.onStatusChangeEmitter.fire(params.payload);
-        agent.morph_language_client.sendDoesShowAcceptRejectBarChange(agent.id, false)
-        // console.log("SET DECORATIONS TO NONE");
-        // agent.morph_language_client.delete({ id: agent.id })
-        continue
-      }
+    if (params.payload == "accepted" || params.payload == "rejected") {
+      agent.codeLensStatus = params.payload;
+      agent.onStatusChangeEmitter.fire(params.payload);
+      editor.setDecorations(GREEN, []);
+      editor.setDecorations(RED, []);
+      agent.onStatusChangeEmitter.fire(params.payload);
+      agent.morph_language_client.sendDoesShowAcceptRejectBarChange(
+        agent.id,
+        false,
+      );
+      // console.log("SET DECORATIONS TO NONE");
+      // agent.morph_language_client.delete({ id: agent.id })
+      continue;
+    }
 
-      if (params.payload?.additive_ranges) {
-        // console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
-        editor.setDecorations(
-          GREEN,
-          params.payload.additive_ranges.map((r) => {
-            const result = new vscode.Range(
+    if (params.payload?.additive_ranges) {
+      // console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
+      editor.setDecorations(
+        GREEN,
+        params.payload.additive_ranges.map((r) => {
+          const result = new vscode.Range(
+            r.start.line,
+            r.start.character,
+            r.end.line,
+            r.end.character,
+          );
+          // console.log(`RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`);
+          return result;
+        }),
+      );
+    }
+    if (params.payload?.negative_ranges) {
+      editor.setDecorations(
+        RED,
+        params.payload.negative_ranges.map(
+          (r) =>
+            new vscode.Range(
               r.start.line,
               r.start.character,
               r.end.line,
               r.end.character,
-            );
-            // console.log(`RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`);
-            return result;
-          }),
-        );
-      }
-      if (params.payload?.negative_ranges) {
-        editor.setDecorations(
-          RED,
-          params.payload.negative_ranges.map(
-            (r) =>
-              new vscode.Range(
-                r.start.line,
-                r.start.character,
-                r.end.line,
-                r.end.character,
-              ),
-          ),
-        );
-      }
-    
+            ),
+        ),
+      );
+    }
   }
 }
 
 // interface CodeEditProgressParams extends Agent
-type CodeEditPayload = {
-  additive_ranges?: vscode.Range[],
-  cursor?: vscode.Position,
-  negative_ranges?: vscode.Range[],
-  ready?: boolean,
-  textDocument?: TextDocumentIdentifier
-} | "accepted" | "rejected"
+type CodeEditPayload =
+  | {
+      additive_ranges?: vscode.Range[];
+      cursor?: vscode.Position;
+      negative_ranges?: vscode.Range[];
+      ready?: boolean;
+      textDocument?: TextDocumentIdentifier;
+    }
+  | "accepted"
+  | "rejected";
 
 // FIXME add type interfaces. as of now, this is not typescript.
 async function code_edit_send_progress_handler(
@@ -188,7 +214,7 @@ async function code_edit_send_progress_handler(
       }
     }
   }
-  if (typeof params.payload !== 'string' && params.payload?.ready) {
+  if (typeof params.payload !== "string" && params.payload?.ready) {
     agent.codeLensStatus = "done";
     agent.onStatusChangeEmitter.fire("done");
   }
@@ -208,53 +234,54 @@ async function code_edit_send_progress_handler(
     // [todo] check editor is visible
     const version = editor.document.version;
 
+    if (params.payload == "accepted" || params.payload == "rejected") {
+      // throw new Error('dont think this should ever happen')
+      agent.codeLensStatus = params.payload;
+      agent.onStatusChangeEmitter.fire(params.payload);
+      editor.setDecorations(GREEN, []);
+      editor.setDecorations(RED, []);
+      agent.onStatusChangeEmitter.fire(params.payload);
+      agent.morph_language_client.sendDoesShowAcceptRejectBarChange(
+        agent.id,
+        false,
+      );
+      // console.log("SET DECORATIONS TO NONE");
+      // agent.morph_language_client.delete({ id: agent.id })
+      continue;
+    }
 
-      if (params.payload == "accepted" || params.payload== "rejected") {
-        // throw new Error('dont think this should ever happen')
-        agent.codeLensStatus = params.payload;
-        agent.onStatusChangeEmitter.fire(params.payload);
-        editor.setDecorations(GREEN, []);
-        editor.setDecorations(RED, []);
-        agent.onStatusChangeEmitter.fire(params.payload);
-        agent.morph_language_client.sendDoesShowAcceptRejectBarChange(agent.id, false)
-        // console.log("SET DECORATIONS TO NONE");
-        // agent.morph_language_client.delete({ id: agent.id })
-        continue
-      }
-    
-
-      if(params.payload?.additive_ranges) {
-        console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
-        editor.setDecorations(
-          GREEN,
-          params.payload.additive_ranges.map((r) => {
-            const result = new vscode.Range(
+    if (params.payload?.additive_ranges) {
+      console.log(`ADDITIVE RANGES: ${params.payload.additive_ranges}`);
+      editor.setDecorations(
+        GREEN,
+        params.payload.additive_ranges.map((r) => {
+          const result = new vscode.Range(
+            r.start.line,
+            r.start.character,
+            r.end.line,
+            r.end.character,
+          );
+          console.log(
+            `RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`,
+          );
+          return result;
+        }),
+      );
+    }
+    if (params.payload?.negative_ranges) {
+      editor.setDecorations(
+        RED,
+        params.payload.negative_ranges.map(
+          (r) =>
+            new vscode.Range(
               r.start.line,
               r.start.character,
               r.end.line,
               r.end.character,
-            );
-            console.log(
-              `RESULT: ${r.start.line} ${r.start.character} ${r.end.line} ${r.end.character}`,
-            );
-            return result;
-          }),
-        );
-      }
-      if (params.payload?.negative_ranges) {
-        editor.setDecorations(
-          RED,
-          params.payload.negative_ranges.map(
-            (r) =>
-              new vscode.Range(
-                r.start.line,
-                r.start.character,
-                r.end.line,
-                r.end.character,
-              ),
-          ),
-        );
-      }
+            ),
+        ),
+      );
+    }
   }
 }
 
@@ -289,8 +316,8 @@ export class MorphLanguageClient
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => { } };
-    this.green = { key: "TEMP_VALUE", dispose: () => { } };
+    this.red = { key: "TEMP_VALUE", dispose: () => {} };
+    this.green = { key: "TEMP_VALUE", dispose: () => {} };
     this.context = context;
     this.webviewState.subscribe((state) => {
       // console.log('webview state:')
@@ -381,7 +408,7 @@ export class MorphLanguageClient
           agent.codeLensStatus === "done" ||
           agent.codeLensStatus === "error"
         ) {
-          this.sendDoesShowAcceptRejectBarChange(agent.id, true)
+          this.sendDoesShowAcceptRejectBarChange(agent.id, true);
           const accept = new AgentStateLens(linetext.range, agent, {
             title: "Accept ✅ ",
             command: "rift.accept",
@@ -524,15 +551,21 @@ export class MorphLanguageClient
     const editor = vscode.window.activeTextEditor;
 
     if (!editor) throw new Error("No active text editor found");
-    const folders = vscode.workspace.workspaceFolders
-    if(!folders) throw new Error('no current workspace')
-    const workspaceFolderPath = folders[0].uri.fsPath
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders) throw new Error("no current workspace");
+    const workspaceFolderPath = folders[0].uri.fsPath;
     let textDocument = { uri: editor.document.uri.toString(), version: 0 };
     let position = editor.selection.active;
 
-    const chatAgentParams: ChatAgentParams = { // TODO this is not ChatAgentParams but all agent params...
+    const chatAgentParams: ChatAgentParams = {
+      // TODO this is not ChatAgentParams but all agent params...
       agent_type: params.agent_type,
-      agent_params: { selection: editor.selection, position, textDocument, workspaceFolderPath },
+      agent_params: {
+        selection: editor.selection,
+        position,
+        textDocument,
+        workspaceFolderPath,
+      },
     };
 
     const result: RunAgentResult = await this.client.sendRequest(
@@ -610,18 +643,19 @@ export class MorphLanguageClient
 
     let response = await this.client.sendRequest("morph/delete", params);
 
-
-
     this.webviewState.update((state) => {
       const updatedAgents = { ...state.agents };
       delete updatedAgents[params.id]; // delete agent
       // update selected agent if you deleted your selected agent
-      const updatedSelectedAgentId = (params.id == state.selectedAgentId) ? Object.keys(updatedAgents)[0] : state.selectedAgentId
+      const updatedSelectedAgentId =
+        params.id == state.selectedAgentId
+          ? Object.keys(updatedAgents)[0]
+          : state.selectedAgentId;
 
       return {
         ...state,
         selectedAgentId: updatedSelectedAgentId,
-        agents: updatedAgents
+        agents: updatedAgents,
       };
     });
 
@@ -681,7 +715,7 @@ export class MorphLanguageClient
     let agentId = params.agent_id;
 
     if (!(agentId in this.webviewState.value.agents)) {
-      console.log(params)
+      console.log(params);
       throw new Error(`progress for nonexistent agent: ${agentId}`);
     }
 
@@ -709,16 +743,16 @@ export class MorphLanguageClient
           type: params.agent_type,
           tasks: {
             ...state.agents[agentId].tasks,
-            ...params.tasks},
+            ...params.tasks,
+          },
         },
       },
     }));
 
     if (params.payload?.done_streaming) {
-
-      if (!response){ 
-        console.log("done streaming but no repsonse:")
-        console.log(params)
+      if (!response) {
+        console.log("done streaming but no repsonse:");
+        console.log(params);
         throw new Error(" done streaming but no response?");
       }
       this.webviewState.update((prevState) => {
@@ -734,7 +768,7 @@ export class MorphLanguageClient
               streamingText: "",
               tasks: {
                 ...prevState.agents[agentId].tasks,
-                ...params.tasks
+                ...params.tasks,
               },
               chatHistory: [
                 ...(prevState.agents[agentId].chatHistory ?? []),
@@ -747,8 +781,17 @@ export class MorphLanguageClient
     }
   }
 
-  sendDoesShowAcceptRejectBarChange(agentId: string, doesShowAcceptRejectBar: boolean) {
-    this.webviewState.update(state => ({...state, agents: {...state.agents, [agentId]: {...state.agents[agentId], doesShowAcceptRejectBar}}}))
+  sendDoesShowAcceptRejectBarChange(
+    agentId: string,
+    doesShowAcceptRejectBar: boolean,
+  ) {
+    this.webviewState.update((state) => ({
+      ...state,
+      agents: {
+        ...state.agents,
+        [agentId]: { ...state.agents[agentId], doesShowAcceptRejectBar },
+      },
+    }));
   }
 
   sendHasNotificationChange(agentId: string, hasNotification: boolean) {
@@ -835,7 +878,6 @@ class Agent {
   }
 
   async handleInputRequest(params: AgentInputRequest) {
-
     if (!(this.id in this.morph_language_client.agents))
       throw Error("Agent does not exist");
 
@@ -893,8 +935,8 @@ class Agent {
     if (!(this.id in this.morph_language_client.agents))
       throw Error("Agent does not exist");
 
-    console.log('handle Progress:')
-    console.log(params)
+    console.log("handle Progress:");
+    console.log(params);
     this.morph_language_client.sendProgressChange(params);
 
     if (this.agent_type === "code_completion") {
@@ -902,8 +944,8 @@ class Agent {
     }
 
     if (this.agent_type === "code_edit") {
-      console.log('code edit progress')
-      console.log(params)
+      console.log("code edit progress");
+      console.log(params);
       code_edit_send_progress_handler(params, this);
     }
   }
