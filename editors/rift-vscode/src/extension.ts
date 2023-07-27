@@ -41,14 +41,24 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
+let recentlyOpenedFiles = [];
+
+vscode.workspace.onDidOpenTextDocument((document) => {
+  const filePath = document.uri.fsPath;
+  if (!recentlyOpenedFiles.includes(filePath)) {
+    recentlyOpenedFiles.push(filePath);
+    // Limit the history to the last 10 files
+    if (recentlyOpenedFiles.length > 10) {
+      recentlyOpenedFiles.shift();
+    }
+  }
+});
+
 let disposableNuke = vscode.commands.registerCommand(
   'rift.mockTypeCommandP',
   async () => {
-      const files = await vscode.workspace.findFiles('**/*');
-
-      if (files && files.length > 0) {
-          const filePaths = files.map(file => file.fsPath);
-          vscode.window.showQuickPick(filePaths).then(selectedPath => {
+      if (recentlyOpenedFiles.length > 0) {
+          vscode.window.showQuickPick(recentlyOpenedFiles).then(selectedPath => {
               if (selectedPath) {
                   // Open the selected file in a new editor
                   vscode.workspace.openTextDocument(selectedPath).then(doc => {
@@ -59,8 +69,6 @@ let disposableNuke = vscode.commands.registerCommand(
       }
   }
 );
-        }
-    );
 
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
