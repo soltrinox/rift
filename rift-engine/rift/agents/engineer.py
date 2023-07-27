@@ -1,35 +1,26 @@
 import asyncio
 import logging
-import uuid
-from asyncio import Future
-from dataclasses import dataclass, field
-from typing import Any, ClassVar, Dict, Optional
-from rift.util import file_diff
 import os
 import re
 import types
+import uuid
+from asyncio import Future
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, ClassVar, Dict, Optional
+
+import typer
 
 import rift.lsp.types as lsp
-from rift.agents.abstract import (
-    Agent,
-    AgentProgress,  # AgentTask,
-    AgentRunParams,
-    AgentRunResult, 
-    AgentState,
-    RequestChatRequest,
-    RequestInputRequest,
-    RequestChatRequest,
-    RunAgentParams,
-    agent,
-)
-import typer
-from pathlib import Path
-
+from rift.agents.abstract import AgentProgress  # AgentTask,
+from rift.agents.abstract import (Agent, AgentRunParams, AgentRunResult, AgentState,
+                                  RequestChatRequest, RequestInputRequest, RunAgentParams, agent)
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
+from rift.util import file_diff
 
 try:
     import gpt_engineer
@@ -50,14 +41,16 @@ STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
 
 SEEN = set()
 
+import json
+import threading
+
 from gpt_engineer.ai import AI, fallback_model
 from gpt_engineer.collect import collect_learnings
 from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS
 from gpt_engineer.steps import Config as StepsConfig
-import threading
-import json
+
 import rift.llm.openai_types as openai
 
 logger = logging.getLogger(__name__)

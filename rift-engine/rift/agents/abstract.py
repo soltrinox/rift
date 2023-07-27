@@ -4,6 +4,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
+
 import rift.lsp.types as lsp
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage

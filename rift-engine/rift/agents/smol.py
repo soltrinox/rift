@@ -14,16 +14,8 @@ import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 from rift.agents.abstract import AgentProgress  # AgentTask,
-from rift.agents.abstract import (
-    Agent,
-    AgentRunParams,
-    AgentRunResult,
-    AgentState,
-    RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
-    agent,
-)
+from rift.agents.abstract import (Agent, AgentRunParams, AgentRunResult, AgentState,
+                                  RequestChatRequest, RequestInputRequest, RunAgentParams, agent)
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer

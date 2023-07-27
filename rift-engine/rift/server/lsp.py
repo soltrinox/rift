@@ -13,7 +13,6 @@ from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, Run
 from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
 from rift.agents.engineer import EngineerAgent, EngineerAgentParams
-
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
