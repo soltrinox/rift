@@ -41,29 +41,24 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-      let disposableNuke = vscode.commands.registerCommand(
-        'rift.mockTypeCommandP',
-        async () => {
-            const input = await vscode.window.showInputBox({
-                prompt: 'Type a file name',
-            });
+let disposableNuke = vscode.commands.registerCommand(
+  'rift.mockTypeCommandP',
+  async () => {
+      const files = await vscode.workspace.findFiles('**/*');
 
-            if (input) {
-              console.log('input')
-            const files = await vscode.workspace.findFiles(`**/${input}`);
-
-                if (files && files.length > 0) {
-                    const filePaths = files.map(file => file.fsPath);
-                vscode.window.showQuickPick(filePaths).then(selectedPath => {
-                    if (selectedPath) {
-                        // Open the selected file in a new editor
-                        vscode.workspace.openTextDocument(selectedPath).then(doc => {
-                            vscode.window.showTextDocument(doc, { preview: false });
-                        });
-                    }
-                });
-                }
-            }
+      if (files && files.length > 0) {
+          const filePaths = files.map(file => file.fsPath);
+          vscode.window.showQuickPick(filePaths).then(selectedPath => {
+              if (selectedPath) {
+                  // Open the selected file in a new editor
+                  vscode.workspace.openTextDocument(selectedPath).then(doc => {
+                      vscode.window.showTextDocument(doc, { preview: false });
+                  });
+              }
+          });
+      }
+  }
+);
         }
     );
 
