@@ -40,6 +40,36 @@ export function activate(context: vscode.ExtensionContext) {
       webviewOptions: { retainContextWhenHidden: true },
     }),
   );
+
+      let disposableNuke = vscode.commands.registerCommand(
+        'rift.mockTypeCommandP',
+        async () => {
+            const input = await vscode.window.showInputBox({
+                prompt: 'Type a file name',
+            });
+
+            if (input) {
+              console.log('input')
+                const files = await vscode.commands.executeCommand<vscode.Uri[]>(
+                  'vscode.executeWorkspaceSymbolProvider', 
+                  input
+                );
+
+                if (files && files.length > 0) {
+                    const filePaths = files.map(file => file.fsPath);
+                vscode.window.showQuickPick(filePaths).then(selectedPath => {
+                    if (selectedPath) {
+                        // Open the selected file in a new editor
+                        vscode.workspace.openTextDocument(selectedPath).then(doc => {
+                            vscode.window.showTextDocument(doc, { preview: false });
+                        });
+                    }
+                });
+                }
+            }
+        }
+    );
+
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
 
@@ -148,6 +178,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable);
   context.subscriptions.push(disposablefocusOmnibar);
   context.subscriptions.push(morph_language_client);
+  context.subscriptions.push(disposableNuke)
+
 
   // const provider = async (document, position, context, token) => {
   //     return [
