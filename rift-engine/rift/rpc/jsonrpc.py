@@ -439,7 +439,7 @@ class RpcServer:
         req = Request(method=method, params=params)
         await self._send(req)
 
-    async def request(self, method: str, params: Optional[Any]) -> Any:
+    async def request(self, method: str, params: Optional[Any]) -> asyncio.Future[Any]:
         """Send a request to the peer and wait for a response.
 
         Args:
@@ -465,6 +465,7 @@ class RpcServer:
         self.request_counter += 1
         id = self.request_counter
         req = Request(method=method, id=id, params=params)
+        # print("REQUEST: ", req)
         fut = asyncio.get_running_loop().create_future()
         # [todo] I think the pythonic way to do this is to have this dict be a weakref, and the
         # caller is responsible for holding the request object.
