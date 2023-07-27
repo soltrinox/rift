@@ -4,29 +4,34 @@ Love Rift and want to get involved? You're in the right place!
 
 ## Table of Contents
 
-* [How to Contribute](#how-to-contribute)
-  * [Report Bugs](#report-bugs)
-  * [Suggest Features](#suggest-features)
-  * [Update Docs](#update-docs)
-  * [Write Code](#write-code)
-* [VSCode Extension Setup](#vscode-extension-setup)
-* [Architecture](#architecture)
+- [How to Contribute](#how-to-contribute)
+  - [Report Bugs](#report-bugs)
+  - [Suggest Features](#suggest-features)
+  - [Update Docs](#update-docs)
+  - [Write Code](#write-code)
+- [VSCode Extension Setup](#vscode-extension-setup)
+- [Architecture](#architecture)
 
 ## How to Contribute
 
 ### Report Bugs
+
 [Create an issue](https://github.com/morph-labs/rift/issues) for any bugs you find. Be sure to be descriptive!
 
 ### Suggest Features
+
 [Create an issue](https://github.com/morph-labs/rift/issues) for any features you'd like to see implemented.
 
 ### Update Docs
+
 TODO
 
 ### Write Code
+
 Feel free to [tackle an issue](https://github.com/morph-labs/rift/issues)
 
 ## VSCode Extension Setup
+
 TODO
 
 ## Architecture

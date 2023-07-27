@@ -1,8 +1,5 @@
 import type * as vscode from "vscode";
-import type {
-  TextDocumentIdentifier,
-} from "vscode-languageclient/node";
-
+import type { TextDocumentIdentifier } from "vscode-languageclient/node";
 
 export interface Task {
   description: string;
@@ -13,7 +10,6 @@ export interface Tasks {
   task: Task;
   subtasks: Task[];
 }
-
 
 // export class ChatMessage {
 //   constructor(
@@ -101,24 +97,21 @@ export const DEFAULT_STATE: WebviewState = {
   ],
 };
 
-
-
-export interface RunParams {  
-  agent_type: string
+export interface RunParams {
+  agent_type: string;
 }
 
 export interface ChatAgentParams extends RunParams {
   agent_params: {
     position: vscode.Position;
-    selection: vscode.Selection
+    selection: vscode.Selection;
     textDocument: {
       uri: string;
       version: number;
-    },
-    workspaceFolderPath: string
+    };
+    workspaceFolderPath: string;
   };
 }
-
 
 export interface RunChatParams {
   message: string;
@@ -129,12 +122,9 @@ export interface RunChatParams {
   }[];
 }
 
-
 export interface RunAgentResult {
   id: string;
 }
-
-
 
 export type AgentStatus =
   | "running"
@@ -164,8 +154,6 @@ export interface RunAgentProgress {
   status: AgentStatus;
 }
 
-
-
 export type ChatAgentPayload =
   | {
       response?: string;
@@ -173,21 +161,14 @@ export type ChatAgentPayload =
     }
   | undefined;
 
-  
-  export interface AgentProgress<T = any> {
-    agent_id: string;
-    agent_type: string;
-    tasks: Tasks;
-    payload: T | undefined;
-    
-  }
+export interface AgentProgress<T = any> {
+  agent_id: string;
+  agent_type: string;
+  tasks: Tasks;
+  payload: T | undefined;
+}
 
-
-
-
-  export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
-
-
+export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
 
 export interface AgentIdParams {
   id: string;
