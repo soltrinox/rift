@@ -50,10 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
 
             if (input) {
               console.log('input')
-                const files = await vscode.commands.executeCommand<vscode.Uri[]>(
-                  'vscode.executeWorkspaceSymbolProvider', 
-                  input
-                );
+            const files = await vscode.workspace.findFiles(`**/${input}`);
 
                 if (files && files.length > 0) {
                     const filePaths = files.map(file => file.fsPath);
