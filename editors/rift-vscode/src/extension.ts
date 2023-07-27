@@ -41,8 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-let recentlyOpenedFiles = [];
-
+let recentlyOpenedFiles:string[] = [];
 vscode.workspace.onDidOpenTextDocument((document) => {
   const filePath = document.uri.fsPath;
   if (!recentlyOpenedFiles.includes(filePath)) {
@@ -57,16 +56,23 @@ vscode.workspace.onDidOpenTextDocument((document) => {
 let disposableNuke = vscode.commands.registerCommand(
   'rift.mockTypeCommandP',
   async () => {
-      if (recentlyOpenedFiles.length > 0) {
-          vscode.window.showQuickPick(recentlyOpenedFiles).then(selectedPath => {
-              if (selectedPath) {
-                  // Open the selected file in a new editor
-                  vscode.workspace.openTextDocument(selectedPath).then(doc => {
-                      vscode.window.showTextDocument(doc, { preview: false });
-                  });
-              }
+    // Get all files in the workspace
+    const files = await vscode.workspace.findFiles('**/*');
+    const filePaths = files.map(file => file.fsPath);
+
+    // Add the files to the recentlyOpenedFiles array
+    recentlyOpenedFiles = [...new Set([...recentlyOpenedFiles, ...filePaths])];
+
+    if (recentlyOpenedFiles.length > 0) {
+      vscode.window.showQuickPick(recentlyOpenedFiles).then(selectedPath => {
+        if (selectedPath) {
+          // Open the selected file in a new editor
+          vscode.workspace.openTextDocument(selectedPath).then(doc => {
+            vscode.window.showTextDocument(doc, { preview: false });
           });
-      }
+        }
+      });
+    }
   }
 );
 
