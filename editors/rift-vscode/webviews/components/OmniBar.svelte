@@ -1,7 +1,7 @@
 <script lang="ts">
   import SendSvg from "./icons/SendSvg.svelte";
   import { dropdownOpen, state } from "./stores";
-  import Dropdown from "./chat/dropdown/Dropdown.svelte";
+  import SlashDropdown from "./chat/dropdown/SlashDropdown.svelte";
   import { tick } from "svelte";
 
   let isFocused = true;
@@ -166,7 +166,7 @@
     </div>
   </div>
   {#if $dropdownOpen}
-    <Dropdown {inputValue} {handleRunAgent} />
+    <SlashDropdown {inputValue} {handleRunAgent} />
   {/if}
 </div>
 
