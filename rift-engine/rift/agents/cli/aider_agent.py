@@ -9,8 +9,8 @@ from typing import Any, AsyncIterable, ClassVar, Dict, List, Literal, Optional, 
 import rift.util.file_diff as file_diff
 
 logger = logging.getLogger(__name__)
-from rift.agents.cli_agent import Agent, ClientParams, launcher
-from rift.agents.util import ainput
+from rift.agents.cli.agent import Agent, ClientParams, launcher
+from rift.agents.cli.util import ainput
 
 try:
     import aider.main as aider
@@ -43,7 +43,7 @@ class AiderAgent(Agent):
     async def run(self) -> AsyncIterable[List[file_diff.FileChange]]:
         """
         Example use:
-            python -m rift.agents.aider --port 7797 --debug False --args '["--model", "gpt-3.5-turbo", "rift/agents/aider.py"]'
+            python -m rift.agents.cli.aider --port 7797 --debug False --args '["--model", "gpt-3.5-turbo", "rift/agents/aider.py"]'
         """
         params = self.run_params
 

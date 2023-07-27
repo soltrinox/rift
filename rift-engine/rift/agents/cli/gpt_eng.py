@@ -31,7 +31,7 @@ from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS
 from gpt_engineer.steps import Config as StepsConfig
 
-import rift.agents.cli_agent as agent
+import rift.agents.cli.agent as agent
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 

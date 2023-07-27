@@ -31,7 +31,7 @@ import types
 import art
 import fire
 
-from rift.agents.util import ainput, stream_string, stream_string_ascii
+from rift.agents.cli.util import ainput, stream_string, stream_string_ascii
 
 
 @dataclass

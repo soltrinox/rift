@@ -36,8 +36,8 @@ except ImportError:
     raise Exception(
         "`smol_dev` not found. Try `pip install -e rift-engine[smol-dev]` from the Rift root directory."
     )
-from rift.agents.cli_agent import Agent, ClientParams, launcher
-from rift.agents.util import ainput
+from rift.agents.cli.agent import Agent, ClientParams, launcher
+from rift.agents.cli.util import ainput
 
 
 @dataclass
