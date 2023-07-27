@@ -1,6 +1,6 @@
 {
-  "name": "rift-vscode-svelte",
-  "displayName": "rift-vscode-svelte",
+  "name": "rift-vscode",
+  "displayName": "rift-vscode",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -144,6 +144,7 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
+    "@types/sass": "^1.45.0",
     "@types/showdown": "^2.0.1",
     "@types/tcp-port-used": "^1.0.1",
     "@types/uuid": "^9.0.2",

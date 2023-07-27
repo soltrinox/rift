@@ -6,38 +6,19 @@ from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import cache, cached_property
 from threading import Lock
-from typing import (
-    Any,
-    AsyncGenerator,
-    Awaitable,
-    Coroutine,
-    List,
-    Literal,
-    Optional,
-    Type,
-    TypeVar,
-    overload,
-)
+from typing import (Any, AsyncGenerator, Awaitable, Coroutine, List, Literal, Optional, Type,
+                    TypeVar, overload)
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
 from pydantic import BaseModel, BaseSettings, SecretStr
 
 import rift.util.asyncgen as asg
-from rift.llm.abstract import (
-    AbstractChatCompletionProvider,
-    AbstractCodeCompletionProvider,
-    AbstractCodeEditProvider,
-    ChatResult,
-    EditCodeResult,
-    InsertCodeResult,
-)
-from rift.llm.openai_types import (
-    ChatCompletionChunk,
-    ChatCompletionRequest,
-    ChatCompletionResponse,
-    Message,
-)
+from rift.llm.abstract import (AbstractChatCompletionProvider, AbstractCodeCompletionProvider,
+                               AbstractCodeEditProvider, ChatResult, EditCodeResult,
+                               InsertCodeResult)
+from rift.llm.openai_types import (ChatCompletionChunk, ChatCompletionRequest,
+                                   ChatCompletionResponse, Message)
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)

@@ -6,15 +6,8 @@ from typing import ClassVar, Dict, Optional
 
 import rift.lsp.types as lsp
 from rift.agents.abstract import AgentProgress  # AgentTask,
-from rift.agents.abstract import (
-    Agent,
-    AgentRunParams,
-    AgentRunResult,
-    AgentState,
-    RequestInputRequest,
-    RunAgentParams,
-    agent,
-)
+from rift.agents.abstract import (Agent, AgentRunParams, AgentRunResult, AgentState,
+                                  RequestInputRequest, RunAgentParams, agent)
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer

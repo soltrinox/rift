@@ -1,3 +1,4 @@
+/* eslint-disable import/no-restricted-paths */
 import * as vscode from "vscode";
 // import { MorphLanguageClient, RunChatParams } from "../client";
 // import * as client from '../client'

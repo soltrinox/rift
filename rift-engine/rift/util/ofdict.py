@@ -13,20 +13,8 @@ from datetime import datetime
 from enum import Enum
 from functools import singledispatch
 from pathlib import Path
-from typing import (
-    Any,
-    ClassVar,
-    Dict,
-    List,
-    Literal,
-    NewType,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import (Any, ClassVar, Dict, List, Literal, NewType, Optional, Type, TypeVar, Union,
+                    get_args, get_origin)
 
 from pydantic import ValidationError
 

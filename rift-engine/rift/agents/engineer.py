@@ -1,6 +1,10 @@
-import time
 import asyncio
+import functools
 import logging
+import os
+import re
+import tempfile
+import time
 import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
@@ -12,16 +16,8 @@ import typer
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 from rift.agents.abstract import AgentProgress  # AgentTask,
-from rift.agents.abstract import (
-    Agent,
-    AgentRunParams,
-    AgentRunResult,
-    AgentState,
-    RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
-    agent,
-)
+from rift.agents.abstract import (Agent, AgentRunParams, AgentRunResult, AgentState,
+                                  RequestChatRequest, RequestInputRequest, RunAgentParams, agent)
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
@@ -103,9 +99,7 @@ def _fix_windows_path(path: str) -> str:
 #     # await OUTPUT_CHAT_QUEUE.put(prompt)
 #     response_stream.feed_data(prompt)
 
-from asyncio import Lock
-
-response_lock = Lock()
+response_lock = asyncio.Lock()
 
 # dataclass for representing the result of the code completion agent run
 @dataclass
@@ -161,22 +155,29 @@ class EngineerAgent(Agent):
                 self.response_stream.feed_data(prompt)
             loop.call_soon_threadsafe(_worker)
 
-        def _popup_input_wrapper(prompt=""):
-            return "c"
-            # self.state.messages.append(openai.Message.assistant(prompt))
-            # t: asyncio.Task = loop.create_task(self.request_chat(RequestChatRequest(messages=self.state.messages)))
-            # while not t.done():
-            #     # loop.run_until_complete(asyncio.sleep(0.1))
-            #     logger.info("LOOPINg")
-            #     time.sleep(0.25)
-            # return t.result()
-        #     # result_future = loop.create_future()
-        #     # return asyncio.get_event_loop().call_soon_threadsafe()
+        def _popup_input_wrapper(prompt="", loop=None):
+            asyncio.set_event_loop(loop)
+            # print("SET EVENT LOOP")
+            self.state.messages.append(openai.Message.assistant(prompt))
+            async def request_chat():
+                async with response_lock:                
+                    await self.send_progress(EngineerProgress(response=self.RESPONSE, done_streaming=True))
+                    self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
+
+                    self.RESPONSE = ""
+                    return await self.request_chat(RequestChatRequest(messages=self.state.messages))
+
+            t = loop.create_task(request_chat())
+            while not t.done():
+                time.sleep(1)
+            return t.result()
 
         gpt_engineer.ai.print = _popup_chat_wrapper
         gpt_engineer.steps.print = _popup_chat_wrapper
-        gpt_engineer.steps.input = _popup_input_wrapper
-        self.response_stream = TextStream()
+        gpt_engineer.steps.input = functools.partial(_popup_input_wrapper, loop=loop)
+        gpt_engineer.learning.input = functools.partial(_popup_input_wrapper, loop=loop)
+        # TODO: more coverage
+        
 
         UPDATES_QUEUE = asyncio.Queue()
         INPUT_PROMPT_QUEUE = asyncio.Queue()
@@ -200,7 +201,7 @@ class EngineerAgent(Agent):
         if not os.path.exists(gpteng_path):
             os.makedirs(gpteng_path)
 
-        if prompt and not os.path.exists(os.path.join(input_path, "prompt")):
+        if prompt:
             with open(os.path.join(input_path, "prompt"), "w") as f:
                 f.write(prompt)
 
@@ -237,7 +238,7 @@ class EngineerAgent(Agent):
             step_events[i] = event
             async def _step_task(event: asyncio.Event):
                 await event.wait()
-            _ = self.add_task(AgentTask(description=step.__name__, task=_step_task, args=[event]))    
+            _ = asyncio.create_task(self.add_task(AgentTask(description=step.__name__, task=_step_task, args=[event])).run())
 
         # # Add all steps to task list
         # for step in steps:
@@ -271,24 +272,20 @@ class EngineerAgent(Agent):
                 counter += 1               
 
 
-    async def _run_chat_thread(self):
-        print("Started handler thread")
-        response = ""
-        while True:
-            try:
-                async for delta in self.response_stream:
-                    if delta != "NONE":
-                        response += delta
-                        async with response_lock:
-                            await self.send_progress(EngineerProgress(response=response))
-                    else:
-                        await self.send_progress(EngineerProgress(response=response, done_streaming=True))
+    async def _run_chat_thread(self, response_stream):
+        # logger.info("Started handler thread")
+        self.RESPONSE = ""
+        before, after = response_stream.split_once("NONE")
 
-                        async with response_lock:
-                            self.state.messages.append(openai.Message.assistant(content=response))
-            except AttributeError:
-                await asyncio.sleep(1)
-                continue
+        try:
+            async with response_lock:            
+                async for delta in before:
+                    self.RESPONSE += delta
+                    await self.send_progress(EngineerProgress(response=self.RESPONSE))
+            await asyncio.sleep(0.1)
+            await self._run_chat_thread(after)
+        except Exception as e:
+            logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
 
     @classmethod
     def create(cls, params: EngineerAgentParams, model, server):
@@ -304,52 +301,13 @@ class EngineerAgent(Agent):
             server=server,
         )
 
-                
-
-        # async def _run_popup_thread(obj):
-        #     while True:
-        #         try:
-        #             prompt = await asyncio.wait_for(INPUT_PROMPT_QUEUE.get(), timeout=1.0)
-        #             if prompt != "":
-        #                 await asyncio.wait_for(OUTPUT_CHAT_QUEUE.put(prompt), timeout=1.0)
-        #             response = await obj.request_chat(RequestChatRequest(messages=obj.state.messages))
-        #             async with response_lock:
-        #                 obj.state.messages.append(openai.Message.user(content=response))
-        #             await INPUT_RESPONSE_QUEUE.put(response)
-
-        #         except asyncio.TimeoutError:
-        #             continue
-
-        # async def _run_create_task_thread(obj: EngineerAgent):
-        #     while True:
-        #         try:
-        #             # Wait till we get the name of a new task to spawn
-        #             task_name = await asyncio.wait_for(STEPS_AGENT_TASKS_NAME_QUEUE.get(), timeout=1.0)
-        #             # Create an event to trigger when the task is complete
-        #             event = asyncio.Event()
-        #             # Put the event object on the queue so that it can be triggered
-        #             await STEPS_AGENT_TASKS_EVENT_QUEUE.put(event)
-        #             # Setup the function that will be waiting on the event
-        #             async def _event_wait():
-        #                 await event.wait()
-        #                 return True
-
-        #             _ = asyncio.get_running_loop().create_task(obj.add_task(AgentTask(task_name, _event_wait)).run())
-
-        #             await obj.send_progress()
-        #         except asyncio.TimeoutError:
-        #             continue
-
-        # asyncio.create_task(_run_create_task_thread(obj))
-        # asyncio.create_task(_run_chat_thread(obj))
-        # asyncio.create_task(_run_popup_thread(obj))
-
         return obj
 
 
     async def run(self) -> AgentRunResult:  # main entry point
+        self.response_stream = TextStream()        
         await self.send_progress()
-        asyncio.create_task(self._run_chat_thread())
+        asyncio.create_task(self._run_chat_thread(self.response_stream))
 
         async def get_prompt():
             prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))

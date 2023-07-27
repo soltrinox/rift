@@ -17,5 +17,5 @@
     // "noUnusedParameters": true,  /* Report errors on unused parameters. */
     "typeRoots": ["./node_modules/@types", "./typeDeclarations"]
   },
-  "exclude": ["node_modules", ".vscode-test", "webviews"]
+  "exclude": ["node_modules", ".vscode-test", "webviews"],
 }
