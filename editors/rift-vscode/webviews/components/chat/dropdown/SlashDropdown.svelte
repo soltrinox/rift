@@ -8,17 +8,18 @@
   export let handleRunAgent: (agent_type: string) => void;
 
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
+  export let textareaValue: string = "";
 
   let filteredAgents = availableAgents;
   let activeId = availableAgents.length - 1;
 
   $: {
     filteredAgents = availableAgents.filter((agent) => {
-      let searchString = inputValue.substring(1).toLowerCase();
+      let searchString = textareaValue.substring(1).toLowerCase();
+      console.log('search string:', searchString)
       return (
         agent.agent_type.toLowerCase().includes(searchString) ||
-        agent.display_name.toLowerCase().includes(searchString) ||
-        agent.agent_description.toLowerCase().includes(searchString)
+        agent.display_name.toLowerCase().includes(searchString)
       );
     });
     activeId = filteredAgents.length - 1;
@@ -31,7 +32,6 @@
 
   console.log("in dropdown: ", availableAgents);
 
-  export let inputValue: string = "";
   if (availableAgents.length < 1) throw new Error("no available agents");
 
   function handleKeyDown(e: KeyboardEvent) {
