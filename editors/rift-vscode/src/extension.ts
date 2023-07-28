@@ -46,7 +46,8 @@ export function activate(context: vscode.ExtensionContext) {
   let recentlyOpenedFiles:string[] = []
 vscode.workspace.onDidOpenTextDocument((document) => {
   const filePath = document.uri.fsPath
-
+  if(filePath.endsWith('.git')) return // weirdly getting both file.txt and file.txt.git on every file change
+  
   // Check if file path already exists in the recent files list
   const existingIndex = recentlyOpenedFiles.indexOf(filePath)
 
