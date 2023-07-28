@@ -11,7 +11,7 @@
 
 
 
-  let _textarea:HTMLTextAreaElement|undefined
+  let _textarea:HTMLDivElement|undefined
   let inputValue: string = "";
   let textareaValue:string = ''
 
@@ -30,6 +30,7 @@
   });
 
   function sendMessage() {
+    console.log('sending message')
     if ($state.agents[$state.selectedAgentId].isStreaming) {
       console.log("cannot send messages while ai is responding");
       return;
@@ -68,14 +69,18 @@
     //   },
     // }));
     textareaValue = "";
+    console.log('textareaValue after reset:', textareaValue);
     focus();
     resize()
   }
 
   function handleValueChange(e:Event) {
-    const target = e.target as HTMLTextAreaElement
+    const target = e.target as HTMLDivElement
     if (!target) throw new Error();
-    textareaValue = target.value
+    textareaValue = target.textContent ?? ''
+    console.log('calling replace all on ')
+
+    // textareaValue = target.value.replaceAll('red', '<span style="color: red;">red</span>');
     resize();
     if (textareaValue.trim().startsWith("/")) {
       dropdownStatus.set('slash')
@@ -84,6 +89,7 @@
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
+      console.log('handleKeydown')
       // 13 is the Enter key code
       e.preventDefault(); // Prevent default Enter key action
       if (e.shiftKey) {
@@ -138,8 +144,11 @@
   const focus = () => _textarea?.focus()
   const blur = () => _textarea?.blur()
   const addNewLine = () => {
-    if(!_textarea) return
+    console.log('addnewline called. old text are avalue')
+    console.log(textareaValue)
     textareaValue = textareaValue + "\n";
+
+    console.log('new textareavlua:', textareaValue)
     resize()
   }
   function resize() {
@@ -158,20 +167,21 @@
       isFocused ? "border-[var(--vscode-focusBorder)]" : "border-transparent"
     }`}
   >
-    <textarea
+    <div
       id="omnibar"
       class="w-full outline-none focus:outline-none bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
       placeholder={hasInput
         ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
         : "Type to chat or hit / for commands"}
-      value={textareaValue}
       bind:this={_textarea}
+      contenteditable="true"
       on:input={handleValueChange}
       on:keydown={handleKeyDown}
       on:focus={onFocus}
       on:blur={onBlur}
-      rows={1}
-    />
+    >
+    {textareaValue}
+      </div>
     <div class="justify-self-end flex">
       <button on:click={sendMessage} class="items-center flex">
         <SendSvg />
