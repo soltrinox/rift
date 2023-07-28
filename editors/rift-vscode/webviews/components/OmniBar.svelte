@@ -1,8 +1,10 @@
 <script lang="ts">
   import SendSvg from "./icons/SendSvg.svelte";
-  import { dropdownOpen, state } from "./stores";
+  import { dropdownStatus, state } from "./stores";
   import SlashDropdown from "./chat/dropdown/SlashDropdown.svelte";
   import { tick } from "svelte";
+  import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
+  import type { AtableFile } from "../../src/types"
 
   let isFocused = true;
 
@@ -80,8 +82,8 @@
     inputValue = textarea.value;
     resize(e);
     if (textarea.value.trim().startsWith("/")) {
-      dropdownOpen.set(true);
-    } else dropdownOpen.set(false);
+      dropdownStatus.set('slash')
+    } else dropdownStatus.set('none');
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -95,7 +97,7 @@
         textarea.style.height = textarea.scrollHeight + "px";
         return;
       }
-      if (!textarea.value || $dropdownOpen) return;
+      if (!textarea.value || $dropdownStatus !== 'none') return;
       sendMessage();
     }
   }
@@ -110,7 +112,7 @@
     });
 
     textarea.value = ""; //clear omnibar text
-    dropdownOpen.set(false);
+    dropdownStatus.set('none');
   }
 
   let onFocus = async (event: FocusEvent) => {
@@ -135,6 +137,12 @@
       type: "blurOmnibar",
     });
   };
+
+  function handleAddChip(file: AtableFile) {
+
+  }
+  let latestAtToEndOfTextarea = textarea?.value.slice(textarea?.value.lastIndexOf('@'))
+
 </script>
 
 
@@ -165,8 +173,10 @@
       </button>
     </div>
   </div>
-  {#if $dropdownOpen}
+  {#if $dropdownStatus == 'slash'}
     <SlashDropdown {inputValue} {handleRunAgent} />
+  {:else if  $dropdownStatus == 'at'}
+    <AtDropdown {latestAtToEndOfTextarea} {handleAddChip} />
   {/if}
 </div>
 

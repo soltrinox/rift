@@ -1,14 +1,13 @@
 <script lang="ts">
   import { state } from "../../stores";
-  import type { AgentRegistryItem, AtableFile } from "../../../../src/types";
+  import type { AtableFile } from "../../../../src/types";
   import AtDropdownCard from "./AtDropdownCard.svelte";
-  import { onMount } from "svelte";
-  import AcceptRejectBar from "../../AcceptRejectBar.svelte"
+
   
 
   // this will be the latest @ to the end of the textbox, not including already made chips. if no matches show up then the user will be able to keep typing and the dropdown won't appear.
   export let latestAtToEndOfTextarea: string = ""; 
-
+  export let handleAddChip:(file: AtableFile) => void;
 
   let atableFiles = Array.from(new Set([...$state.files.recentlyOpenedFiles, ...$state.files.nonGitIgnoredFiles]))
 
@@ -16,14 +15,7 @@
   let activeId = atableFiles.length - 1;
 
   $: {
-    // filteredAgents = availableAgents.filter((agent) => {
-    //   let searchString = inputValue.substring(1).toLowerCase();
-    //   return (
-    //     agent.agent_type.toLowerCase().includes(searchString) ||
-    //     agent.display_name.toLowerCase().includes(searchString) ||
-    //     agent.agent_description.toLowerCase().includes(searchString)
-    //   );
-    // });
+
 
 
     filteredFiles = atableFiles.filter(file => {
@@ -39,10 +31,6 @@
 
 
 
-  console.log("in dropdown: ", atableFiles);
-  function handleAddChip(file: AtableFile) {
-    console.log('implement')
-  }
 
 
   // if (atableFiles.length < 1) throw new Error("no available agents");

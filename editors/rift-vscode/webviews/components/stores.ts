@@ -18,6 +18,6 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
   return () => window.removeEventListener("message", handler);
 });
 
-export const dropdownOpen = writable(false);
+export const dropdownStatus = writable<'none'|'slash'|'at'>('none')
 // export const state = writable<WebviewState>(DEFAULT_STATE)
 // export const progressResponse = writable('')
