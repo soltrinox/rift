@@ -154,7 +154,20 @@
     if(!_textarea) throw new Error()
     _textarea.textContent = textareaValue.slice(0, -latestAtToEndOfTextarea.length)
     _textarea.appendChild(spanEl)
+    const txtNode = document.createTextNode('\xA0')
+    _textarea.appendChild(txtNode)
+
+    
+
+    const range = document.createRange()
+    const selection = window.getSelection()
+    range.setStart(txtNode, 0)
+    range.setEnd(txtNode, 0)
+
+    selection?.removeAllRanges()
+    selection?.addRange(range)
   }
+
   let latestAtToEndOfTextarea:string|undefined = undefined
   $: console.log('latestAtTOEndOfTextarea:', latestAtToEndOfTextarea)
 
