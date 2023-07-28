@@ -5,6 +5,7 @@ import { MorphLanguageClient } from "./client";
 // import { join } from 'path';
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { WebviewProvider } from "./elements/WebviewProvider";
+import { AtableFileFromFsPath } from "./util/AtableFileFunction";
 
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
@@ -41,40 +42,30 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-let recentlyOpenedFiles:string[] = [];
+  
+  let recentlyOpenedFiles:string[] = []
 vscode.workspace.onDidOpenTextDocument((document) => {
-  const filePath = document.uri.fsPath;
-  if (!recentlyOpenedFiles.includes(filePath)) {
-    recentlyOpenedFiles.push(filePath);
-    // Limit the history to the last 10 files
-    if (recentlyOpenedFiles.length > 10) {
-      recentlyOpenedFiles.shift();
-    }
+  const filePath = document.uri.fsPath
+
+  // Check if file path already exists in the recent files list
+  const existingIndex = recentlyOpenedFiles.indexOf(filePath)
+
+  // If the file is found, remove it from the current location
+  if (existingIndex > -1) {
+    recentlyOpenedFiles.splice(existingIndex, 1)
   }
-});
 
-let disposableNuke = vscode.commands.registerCommand(
-  'rift.mockTypeCommandP',
-  async () => {
-    // Get all files in the workspace
-    const files = await vscode.workspace.findFiles('**/*');
-    const filePaths = files.map(file => file.fsPath);
+  // Add the file to the end of the list (top of the stack)
+  recentlyOpenedFiles.push(filePath)
 
-    // Add the files to the recentlyOpenedFiles array
-    recentlyOpenedFiles = [...new Set([...recentlyOpenedFiles, ...filePaths])];
-
-    if (recentlyOpenedFiles.length > 0) {
-      vscode.window.showQuickPick(recentlyOpenedFiles).then(selectedPath => {
-        if (selectedPath) {
-          // Open the selected file in a new editor
-          vscode.workspace.openTextDocument(selectedPath).then(doc => {
-            vscode.window.showTextDocument(doc, { preview: false });
-          });
-        }
-      });
-    }
+  // Limit the history to the last 10 files
+  if (recentlyOpenedFiles.length > 10) {
+    recentlyOpenedFiles.shift()
   }
-);
+
+  morph_language_client.sendRecentlyOpenedFilesChange(recentlyOpenedFiles)
+})
+
 
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
@@ -184,7 +175,6 @@ let disposableNuke = vscode.commands.registerCommand(
   context.subscriptions.push(disposable);
   context.subscriptions.push(disposablefocusOmnibar);
   context.subscriptions.push(morph_language_client);
-  context.subscriptions.push(disposableNuke)
 
 
   // const provider = async (document, position, context, token) => {
@@ -196,3 +186,5 @@ let disposableNuke = vscode.commands.registerCommand(
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
+
+

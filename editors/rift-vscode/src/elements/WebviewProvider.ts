@@ -29,7 +29,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     if (!this._view) {
       console.log("postMessage to: ", endpoint);
       console.log("with message: ", message);
-      throw new Error("No view available");
+      console.error(`No view available for ${this.name}. Its possibly collapsed`)
     } else {
       this._view.webview.postMessage({ type: endpoint, data: message });
     }
@@ -157,7 +157,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
 
         // Handle 'getAgents' message
         case "listAgents":
-          this.morph_language_client.refreshWebviewAgents();
+          this.morph_language_client.refreshAvailableAgents();
           break;
         // Handle 'runAgent' message
         case "runAgent":

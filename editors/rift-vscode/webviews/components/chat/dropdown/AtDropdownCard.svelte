@@ -1,11 +1,8 @@
 <script lang="ts">
-  import { state } from "../../stores";
-  import RiftSvg from "../../icons/RiftSvg.svelte";
-  import type { AgentRegistryItem } from "../../../../src/types";
   import FileIconSvg from "../../icons/FileIconSvg.svelte"
 
   export let focused: boolean = false;
-  export let handleHitDropdownCard: (...args: any) => any;
+  export let onClick: (...args: any) => any;
   export let displayName = 'example.ts'
   export let description = '/project/server/example.ts'
 </script>
@@ -20,7 +17,7 @@
         ? "bg-[var(--vscode-editor-hoverHighlightBackground)]"
         : "bg-[var(--vscode-editor-background)]"
     }`}
-    on:click={handleHitDropdownCard}
+    on:click={onClick}
   >
     <div class="flex flex-row ml-[6px]">
         <FileIconSvg/>

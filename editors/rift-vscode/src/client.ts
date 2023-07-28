@@ -1,7 +1,7 @@
 import * as path from "path";
 import type { workspace, ExtensionContext } from "vscode";
 import * as vscode from "vscode";
-import { ChildProcessWithoutNullStreams, spawn } from "child_process";
+import ignore from "ignore"
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -39,6 +39,7 @@ import {
   WebviewState,
 } from "./types";
 import { Store } from "./lib/Store";
+import { AtableFileFromFsPath, AtableFileFromUri } from "./util/AtableFileFunction";
 
 let client: LanguageClient; //LanguageClient
 
@@ -313,7 +314,6 @@ export class MorphLanguageClient
   onDidChangeCodeLenses: vscode.Event<void>;
   agents: { [id: string]: Agent } = {};
   private webviewState = new Store<WebviewState>(DEFAULT_STATE);
-  // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
     this.red = { key: "TEMP_VALUE", dispose: () => {} };
@@ -323,8 +323,9 @@ export class MorphLanguageClient
       // console.log('webview state:')
       // console.log(state)
       chatProvider.stateUpdate(state);
-      logProvider.stateUpdate(state);
+      logProvider.stateUpdate(state);      
     });
+
 
     this.create_client().then(() => {
       this.context.subscriptions.push(
@@ -350,17 +351,15 @@ export class MorphLanguageClient
         ),
       );
 
-      // console.log("runAgent ran");
-      // const editor = vscode.window.activeTextEditor;
-      // if (!editor) throw new Error("No active text editor found");
-      // // let textDocument = { uri: editor.document.uri.toString(), version: 0 };
-      // // let position = editor.selection.active;
-      // // const params: ChatAgentParams = {
-      // //   agent_type: "rift_chat",
-      // //   agent_params: { position, textDocument },
-      // // };
+
+      // the below 3 lines populate the webview state with initial state needed for @URI chips
+      const activeUri = vscode.window.activeTextEditor?.document.uri
+      if(activeUri) this.webviewState.update(pS => ({...pS, files: {...pS.files, recentlyOpenedFiles: [AtableFileFromUri(activeUri)]}}))
+      this.refreshNonGitIgnoredFiles()
+      
+
       this.run({ agent_type: "rift_chat" });
-      this.refreshWebviewAgents();
+      this.refreshAvailableAgents();
     });
 
     this.changeLensEmitter = new vscode.EventEmitter<void>();
@@ -456,7 +455,7 @@ export class MorphLanguageClient
     logProvider.stateUpdate(this.webviewState.value);
   }
 
-  public async refreshWebviewAgents() {
+  public async refreshAvailableAgents() {
     console.log("refreshing webview agents");
     const availableAgents = await this.list_agents();
     this.webviewState.update((state) => ({ ...state, availableAgents }));
@@ -686,6 +685,48 @@ export class MorphLanguageClient
     this.restart_agent(this.webviewState.value.selectedAgentId);
   }
 
+  async refreshNonGitIgnoredFiles() {
+
+    // another day we will implement this logic. That day is not today :( which is sad bc I like coding
+
+    // async function getGlobPatternsFromGitIgnores() {
+    //   const gitignores = await vscode.workspace.findFiles("**/.gitignore")
+    //   // const ignoreMatcher = IgnoreMatcher.fromLines(await vscode.workspace.fs.readFile(gitignore[0]))
+    //   const fullGitIgnoreFolderPathToGlobArray:{[fullGitIgnorePath: string]: string[]} = {}
+    //   //TODO: make work for nested .gitignores. I think we can just do this by prepending filepaths to the globs. Not sure though
+    //   for(let gitignore of gitignores) {
+    //     const globPatterns: string[] = []
+    //     const gitignoreUint8Array = await vscode.workspace.fs.readFile(gitignore)
+    //     const gitignoreString = gitignoreUint8Array.toString()
+    //     globPatterns.push(...gitignoreString.split(/\n/).filter(pattern => (pattern.trim() === '' || pattern.trim().startsWith('#'))))
+    //     fullGitIgnoreFolderPathToGlobArray[gitignore.path] = globPatterns
+    //   }
+    //   return fullGitIgnoreFolderPathToGlobArray
+    // }
+    const time = Date.now()
+    // const gitIgnoreToGlobsMap = await getGlobPatternsFromGitIgnores()
+
+    const latency = Date.now() - time
+    console.log(`latency in regetting gitignore globs is ${latency}ms. If too high, consider adding event listeners to when the gitignores change instead of refetching them every time`)
+    
+    let allFiles = await vscode.workspace.findFiles("**/*", '**/node_modules/*') //TODO: make work for nested .gitignores. I think we can just do this by prepending filepaths to the globs. Not sure though
+    // function isPathWithin(parentPath, childPath) {
+    //   const relativePath = path.relative(parentPath, childPath)
+    //   const isWithin = !relativePath.startsWith("..") && !path.isAbsolute(relativePath)
+    //   return isWithin
+    // }
+    // for(let gitIgnoreFolder in gitIgnoreToGlobsMap) {
+    //   const ig = ignore().add(gitIgnoreToGlobsMap[gitIgnoreFolder])
+    //   const pathsOfRelaventFiles = allFiles.filter(f => isPathWithin(gitIgnoreFolder, f.path))
+
+    //   const filtered = ig.filter(allFiles.map(uri => uri.path))
+    // }
+
+    // console.log(nonIgnoredFiles)
+
+    this.webviewState.update(pS => ({...pS, files: {...pS.files, nonGitIgnoredFiles: allFiles.map(AtableFileFromUri)}}))
+  }
+
   sendChatHistoryChange(agentId: string, newChatHistory: ChatMessage[]) {
     // const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory
     console.log(`updating chat history for ${agentId}`);
@@ -821,6 +862,12 @@ export class MorphLanguageClient
 
       return { ...state, selectedAgentId: agentId };
     });
+  }
+
+  sendRecentlyOpenedFilesChange(recentlyOpenedFiles: string[]) {
+    const atableFiles = recentlyOpenedFiles.map(fspath => AtableFileFromFsPath(fspath))
+    this.webviewState.update(pS => ({...pS, files: {...pS.files, recentlyOpenedFiles: atableFiles}}))
+    this.refreshNonGitIgnoredFiles()
   }
 
   focusOmnibar() {
