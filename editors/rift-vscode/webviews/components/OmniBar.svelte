@@ -8,15 +8,12 @@
 
   let isFocused = true;
 
-  function resize(event: Event) {
-    let targetElement = event.target as HTMLElement;
-    targetElement.style.height = "auto";
-    targetElement.style.height = `${targetElement.scrollHeight}px`;
-  }
 
+
+
+  let _textarea:HTMLTextAreaElement|undefined
   let inputValue: string = "";
-
-  let textarea: HTMLTextAreaElement | undefined;
+  let textareaValue:string = ''
 
   let hasInput = false;
   state.subscribe((s) => {
@@ -27,24 +24,23 @@
     }
     isFocused = s.isFocused;
     if (isFocused) {
-      textarea?.focus();
+      focus();
     }
     hasInput = false;
   });
 
   function sendMessage() {
-    if (!textarea) throw new Error();
     if ($state.agents[$state.selectedAgentId].isStreaming) {
       console.log("cannot send messages while ai is responding");
       return;
     }
-    textarea.blur();
+    blur();
 
     console.log("chat history");
     console.log($state.agents[$state.selectedAgentId].chatHistory);
 
     let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory;
-    appendedMessages?.push({ role: "user", content: textarea.value });
+    appendedMessages?.push({ role: "user", content: textareaValue });
     console.log("appendedMessages");
     console.log(appendedMessages);
 
@@ -55,7 +51,7 @@
       agent_id: $state.selectedAgentId,
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
-      message: textarea.value,
+      message: textareaValue,
     });
 
     // clint.
@@ -71,39 +67,35 @@
     //     },
     //   },
     // }));
-    textarea.value = "";
-    textarea.focus();
-    textarea.style.height = "auto";
-    textarea.style.height = textarea.scrollHeight + "px";
+    textareaValue = "";
+    focus();
+    resize()
   }
 
-  function handleValueChange(e: Event) {
-    if (!textarea) throw new Error();
-    inputValue = textarea.value;
-    resize(e);
-    if (textarea.value.trim().startsWith("/")) {
+  function handleValueChange(e:Event) {
+    const target = e.target as HTMLTextAreaElement
+    if (!target) throw new Error();
+    textareaValue = target.value
+    resize();
+    if (textareaValue.trim().startsWith("/")) {
       dropdownStatus.set('slash')
     } else dropdownStatus.set('none');
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (!textarea) throw new Error();
     if (e.key === "Enter") {
       // 13 is the Enter key code
       e.preventDefault(); // Prevent default Enter key action
       if (e.shiftKey) {
-        textarea.value = textarea.value + "\n";
-        textarea.style.height = "auto";
-        textarea.style.height = textarea.scrollHeight + "px";
+        addNewLine()
         return;
       }
-      if (!textarea.value || $dropdownStatus !== 'none') return;
+      if (!textareaValue || $dropdownStatus !== 'none') return;
       sendMessage();
     }
   }
 
   function handleRunAgent(agent_type: string) {
-    if (!textarea) throw new Error();
     if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
       throw new Error("attempt to run unavailable agent");
     vscode.postMessage({
@@ -111,12 +103,12 @@
       agent_type,
     });
 
-    textarea.value = ""; //clear omnibar text
+    textareaValue = ""; //clear omnibar text
     dropdownStatus.set('none');
   }
 
   let onFocus = async (event: FocusEvent) => {
-    if (!textarea) throw new Error();
+    if (!_textarea) throw new Error();
     isFocused = true;
     vscode.postMessage({
       type: "sendHasNotificationChange",
@@ -126,9 +118,8 @@
     vscode.postMessage({
       type: "focusOmnibar",
     });
-    textarea.focus();
+    focus();
     await tick();
-    textarea.select();
   };
 
   let onBlur = () => {
@@ -141,8 +132,21 @@
   function handleAddChip(file: AtableFile) {
 
   }
-  let latestAtToEndOfTextarea = textarea?.value.slice(textarea?.value.lastIndexOf('@'))
+  let latestAtToEndOfTextarea = textareaValue.slice(textareaValue.lastIndexOf('@'))
 
+
+  const focus = () => _textarea?.focus()
+  const blur = () => _textarea?.blur()
+  const addNewLine = () => {
+    if(!_textarea) return
+    textareaValue = textareaValue + "\n";
+    resize()
+  }
+  function resize() {
+    if(!_textarea) return
+    _textarea.style.height = "auto";
+    _textarea.style.height = `${_textarea.scrollHeight}px`;
+  }
 </script>
 
 
@@ -156,11 +160,12 @@
   >
     <textarea
       id="omnibar"
-      bind:this={textarea}
       class="w-full outline-none focus:outline-none bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
       placeholder={hasInput
         ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
         : "Type to chat or hit / for commands"}
+      value={textareaValue}
+      bind:this={_textarea}
       on:input={handleValueChange}
       on:keydown={handleKeyDown}
       on:focus={onFocus}
