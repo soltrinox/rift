@@ -153,7 +153,12 @@
 
     // if (!_container) throw new Error()
 
-    editor?.commands.insertContent('<filechip>testing</filechip>')
+    editor?.commands.insertContent({
+      type: 'filechip',
+      
+    })
+
+
 
 
 
