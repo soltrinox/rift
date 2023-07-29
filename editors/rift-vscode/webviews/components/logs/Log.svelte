@@ -17,5 +17,8 @@
     {:else}
         <div class="ml-4 mr-2 mt-0.5"><LogRed /></div>
     {/if}
-    {subtask.description.substring(0, 40)}
+    {(
+        subtask.description.substring(0, 40).charAt(0).toUpperCase() +
+        subtask.description.substring(0, 40).slice(1).toLowerCase()
+    ).replaceAll("_", " ")}
 </div>
