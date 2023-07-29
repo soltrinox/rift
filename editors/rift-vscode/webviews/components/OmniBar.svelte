@@ -211,6 +211,7 @@
         FileChip.configure({
           HTMLAttributes: {
             class: "text-red-400",
+            contenteditable: "false"
           },
         }),
         Placeholder.configure({
