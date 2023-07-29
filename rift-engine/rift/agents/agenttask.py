@@ -58,7 +58,7 @@ class AgentTask:
             return await self._task
         except asyncio.CancelledError as e:
             self._cancelled = True
-            raise e
+            # raise e
         except Exception as e:
             self._error = e
             logger.debug(f"[AgentTask] caught error: {e}")

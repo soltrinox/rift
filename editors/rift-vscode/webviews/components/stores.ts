@@ -19,5 +19,4 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
 });
 
 export const dropdownOpen = writable(false);
-// export const state = writable<WebviewState>(DEFAULT_STATE)
-// export const progressResponse = writable('')
+
