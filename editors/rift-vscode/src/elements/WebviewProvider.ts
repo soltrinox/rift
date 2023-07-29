@@ -142,7 +142,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     // Handles messages received from the webview
     webviewView.webview.onDidReceiveMessage(async (message: MessageType) => {
       if (!this._view) throw new Error("no view");
-      console.log("WebviewProvider.ts received message: ", message);
+      // console.log("WebviewProvider.ts received message: ", message);
       switch (message.type) {
         case "selectedAgentId":
           console.log(message.type);

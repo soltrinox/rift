@@ -35,6 +35,7 @@
   if (availableAgents.length < 1) throw new Error("no available agents");
 
   function handleKeyDown(e: KeyboardEvent) {
+    e.preventDefault();
     if (e.key === "Enter") {
       e.preventDefault();
       // create agent
@@ -46,10 +47,12 @@
       e.preventDefault();
       if (activeId == availableAgents.length - 1) activeId = 0;
       else activeId++;
+      console.log('new active Id: ',activeId)
     } else if (e.key == "ArrowUp") {
       e.preventDefault();
       if (activeId == 0) activeId = availableAgents.length - 1;
       else activeId--;
+      console.log('new active Id: ',activeId)
     } else return;
   }
 </script>

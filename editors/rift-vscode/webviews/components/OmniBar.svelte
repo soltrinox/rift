@@ -10,7 +10,6 @@
   import StarterKit from "@tiptap/starter-kit"
   import { Placeholder } from "@tiptap/extension-placeholder"
   import type { Transaction } from "@tiptap/pm/state"
-  import { Node } from "@tiptap/core"
   import { FileChip } from "./FileChip"
 
   let isFocused = true
@@ -77,18 +76,22 @@
 
   function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
     editorContent = editor.getText()
+    console.log('handleValueChange: ',editorContent)
 
-    latestAtToEndOfTextarea =
-      editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
+    const shouldShowAtDropdown = () => {
+      latestAtToEndOfTextarea = editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
+      return Boolean(latestAtToEndOfTextarea)
+    }
+    
     if (editorContent.trim().startsWith("/")) {
       console.log("setting slash")
       dropdownStatus.set("slash")
-    } else if (Boolean(latestAtToEndOfTextarea)) {
+    } else if (shouldShowAtDropdown()) {
       console.log("setting at")
       dropdownStatus.set("at")
     } else {
-      console.log("setting none")
-      dropdownStatus.set("none")
+      console.log('setting none')
+      dropdownStatus.set('none')
     }
   }
 
@@ -96,12 +99,16 @@
 
   function handleKeyDown(e: KeyboardEvent) {
     console.log("handleKeydown")
+    e.preventDefault()
     if (e.key === "Enter") {
       // 13 is the Enter key code
+      console.log('preventing default')
       e.preventDefault() // Prevent default Enter key action
-      if (e.shiftKey) return
-      if (!editorContent || $dropdownStatus !== "none") return
-      sendMessage()
+      e.stopPropagation()
+      // if (e.shiftKey) return
+      // if(!editorContent) resetTextarea()
+      // if (!editorContent || $dropdownStatus == "slash" || $dropdownStatus == 'at') return
+      // sendMessage()
     }
   }
 
@@ -140,26 +147,25 @@
   }
 
   function handleAddChip(file: AtableFile) {
-    if (!latestAtToEndOfTextarea) throw new Error()
+
     console.log("handle add chip:", file.fileName)
     const spanEl = document.createElement("span")
 
-    spanEl.classList.add("text-red-400")
-    spanEl.innerText = "@" + file.fileName
-
-    // if (!_container) throw new Error()
-    const HTML = `<span class='text-red-400'>@${file.fileName}</span>`
-    if(!editor) throw new Error('')
-    console.log('editorJSON:')
+    if (!editor) throw new Error("")
+    console.log("editorJSON:")
     console.log(editor.getJSON())
-    editor.commands.insertContent('<filechip>something</filechip>')
-    console.log('editorJSONafter insert:')
-    console.log(editor.getJSON())
-    // editor.view.pasteHTML(HTML)
-    // editor.commands.setParagraph()
 
 
     
+    editor.commands.insertContent(`<span>${file.fileName}</span>`)
+    
+
+
+    // console.log('editorJSONafter insert:')
+    // console.log(editor.getJSON())
+    // editor.view.pasteHTML(HTML)
+    // editor.commands.setParagraph()
+
     // _container.textContent = textareaValue.slice(0, -latestAtToEndOfTextarea.length)
 
     // _container.appendChild(spanEl)
@@ -185,13 +191,29 @@
     editor?.commands.clearContent()
   }
 
+  function disableDefaults(event: Event) {
+    const e = event as KeyboardEvent
+    const keyCodes = ["ArrowUp", "ArrowDown", "Enter"]
+
+    if (keyCodes.includes(e.code)) {
+      event.preventDefault()
+    }
+
+   
+    //   console.log('prevente')
+  }
+
   let editor: Editor | undefined
   onMount(() => {
     editor = new Editor({
       element: _container,
       extensions: [
         StarterKit,
-        FileChip,
+        FileChip.configure({
+          HTMLAttributes: {
+            class: "text-red-400",
+          },
+        }),
         Placeholder.configure({
           emptyEditorClass: "is-editor-empty",
           placeholder: "Type to chat or hit / for commands",
@@ -199,26 +221,37 @@
       ],
       editorProps: {
         attributes: {
-          class: "outline-none focus:outline-none",
+          class: "outline-none focus:outline-none max-h-40",
         },
       },
       content: "",
       onTransaction: (props) => {
-        // console.log("onTransaction. props:", props)
+        console.log(JSON.stringify(props.transaction))
         // force re-render so `editor.isActive` works as expected
         editor = editor
       },
       onFocus,
       onBlur,
       onUpdate: handleValueChange,
+      onSelectionUpdate: (props) => {
+        console.log("onSelection update:", props)
+      },
     })
+
+    const editorRootElement = document.querySelector(".ProseMirror")
+    if (!editorRootElement) throw new Error()
+    editorRootElement.addEventListener("keydown", disableDefaults)
   })
   onDestroy(() => {
+    const editorRootElement = document.querySelector(".ProseMirror")
+    editorRootElement?.removeEventListener("keydown", disableDefaults)
     editor?.destroy()
   })
 
   let editorContent = ""
-  $: editorContent = editor?.getText() ?? ""
+  $: {editorContent = editor?.getText() ?? ""
+}
+
 </script>
 
 <div class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative">
@@ -229,9 +262,6 @@
     <div
       id="omnibar"
       class="w-full bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
-      placeholder={hasInput
-        ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
-        : "Type to chat or hit / for commands"}
       bind:this={_container}
       on:keydown={handleKeyDown} />
     <div class="justify-self-end flex">
@@ -241,10 +271,13 @@
     </div>
   </div>
   {#if $dropdownStatus == "slash"}
-    <SlashDropdown textareaValue={editorContent} {handleRunAgent} />
-  {:else if $dropdownStatus == "at"}
-    <AtDropdown {latestAtToEndOfTextarea} {handleAddChip} />
+  <SlashDropdown textareaValue={editorContent} {handleRunAgent} />
   {/if}
+  
+  {#if $dropdownStatus == "at"}
+  <AtDropdown {editorContent} {handleAddChip} />
+  {/if}
+
 </div>
 
 <style>
