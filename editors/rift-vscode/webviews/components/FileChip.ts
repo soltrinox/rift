@@ -2,15 +2,15 @@ import { mergeAttributes, Node } from "@tiptap/core"
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model"
 import { PluginKey } from "@tiptap/pm/state"
 
-export type MentionOptions = {
+export type FileChipOptions = {
   HTMLAttributes: Record<string, any>
-  renderLabel: (props: { options: MentionOptions; node: ProseMirrorNode }) => string
+  renderLabel: (props: { options: FileChipOptions; node: ProseMirrorNode }) => string
 }
 
-export const MentionPluginKey = new PluginKey("mention")
+export const FileChipPluginKey = new PluginKey("filechip")
 
-export const Mention = Node.create<MentionOptions>({
-  name: "mention",
+export const FileChip = Node.create<FileChipOptions>({
+  name: "filechip",
 
   addOptions() {
     return {
@@ -91,7 +91,7 @@ export const Mention = Node.create<MentionOptions>({
     return {
       Backspace: () =>
         this.editor.commands.command(({ tr, state }) => {
-          let isMention = false
+          let isFileChip = false
           const { selection } = state
           const { empty, anchor } = selection
 
@@ -101,14 +101,14 @@ export const Mention = Node.create<MentionOptions>({
 
           state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
             if (node.type.name === this.name) {
-              isMention = true
+              isFileChip = true
               tr.insertText("", pos, pos + node.nodeSize)
 
               return false
             }
           })
 
-          return isMention
+          return isFileChip
         }),
     }
   },
