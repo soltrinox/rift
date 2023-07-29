@@ -79,10 +79,32 @@
     editorContent = editor.getText()
     console.log("handleValueChange: ", editorContent)
 
+
     const shouldShowAtDropdown = () => {
       latestAtToEndOfTextarea =
         editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
       return Boolean(latestAtToEndOfTextarea)
+
+  let isDoubleSlashAllowed = false;
+
+  function handleValueChange(e: Event) {
+    if (!textarea) throw new Error();
+    inputValue = textarea.value;
+    resize(e);
+    
+    // Check for the case of typing two slashes.
+    if (textarea.value.trim() === "//") {
+      dropdownOpen.set(false);
+      dropdownCancelled = true;
+      if (isDoubleSlashAllowed) {
+        textarea.value = "//";
+        isDoubleSlashAllowed = false;
+      } else {
+        textarea.value = "/";
+        isDoubleSlashAllowed = true;
+      }
+      // return; // Stop execution here if two slashes were entered.
+
     }
     let newFilteredAgents:AgentRegistryItem[] = []
     if (editorContent.trim().startsWith("/")) {
