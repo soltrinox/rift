@@ -1,3 +1,4 @@
+from pathlib import Path, PurePath
 import asyncio
 import dataclasses
 import json
@@ -156,6 +157,7 @@ class Aider(agent.Agent):
 
             # logger.info("yeehaw wrapper")
             async def request_chat():
+                await asyncio.sleep(0.1)
                 await response_lock.acquire()
                 # await asyncio.sleep(1)
                 # async with response_lock:
@@ -317,7 +319,8 @@ class Aider(agent.Agent):
             else:
                 # res = prompt(question + " ", default=default)
                 # res = ...
-                res = request_chat_wrapper(question + " ", loop)
+                # print("PROMPtING")
+                res = request_chat_wrapper(question, loop)
                 # res = "yes"
 
             # print(f"got res={res}")
@@ -353,12 +356,10 @@ class Aider(agent.Agent):
                 hist = " ".join(messages)
                 hist = f"{hist.strip()}"
                 self.append_chat_history(hist, linebreak=True, blockquote=True)
-                # print("APPENDED")
 
             if not log_only:
                 messages = list(map(Text, messages))
                 style = dict(style=self.tool_output_color) if self.tool_output_color else dict()
-                # self.console.print(*messages, **style)
                 if hist:
                     send_chat_update_wrapper(hist)
                     send_chat_update_wrapper("\n")
@@ -407,6 +408,8 @@ class Aider(agent.Agent):
         ##### PATCHES
 
         params = self.run_params
+        import threading
+        file_changes_lock = threading.Lock()
         file_changes: List[file_diff.FileChange] = []
         event = asyncio.Event()
         event2 = asyncio.Event()
@@ -414,8 +417,11 @@ class Aider(agent.Agent):
         # This is called every time aider writes a file
         # Instead of writing, this stores the file change in a list
         def on_write(filename: str, new_content: str):
-            file_changes.append(file_diff.get_file_change(path=filename, new_content=new_content))
-
+            if isinstance(filename, PurePath):
+                filename = filename.__fspath__()
+            file_change = file_diff.get_file_change(path=filename, new_content=new_content)
+            # print("file change: ", file_change)
+            file_changes.append(file_change)
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes
         # loop = asyncio.get_running_loop()
@@ -435,12 +441,12 @@ class Aider(agent.Agent):
             # input_fut = loop.run_in_executor(pool, request_chat_wrapper, "yeehaw", loop)
             # print(await input_fut)
 
-            # while True:
-            await event.wait()
-            await self.apply_file_changes(file_changes)
-            file_changes = []
-            event2.set()
-            event.clear()
+            while True:
+                await event.wait()
+                await self.apply_file_changes(file_changes)
+                file_changes = []
+                event2.set()
+                event.clear()
             await aider_fut
         await self.send_update("yeehaw")
 

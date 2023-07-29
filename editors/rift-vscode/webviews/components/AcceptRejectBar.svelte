@@ -1,13 +1,18 @@
 <script lang='ts'>
-    import Check from './icons/AcceptRejectCheck.svelte'
-    import Close from './icons/AcceptRejectClose.svelte'
-    import { state } from './stores';
+    // This module handles the Accept and Reject actions in the UI.
+    import Check from './icons/AcceptRejectCheck.svelte' // Importing the Check icon component
+    import Close from './icons/AcceptRejectClose.svelte' // Importing the Close icon component
+    import { state } from './stores'; // Importing the state from the stores
 
+    // This function handles the Accept action.
     function handleAccept() {
+        // Post a message to vscode with the type of action (accept or reject), the selected agent ID, and the action (accept: true)
         vscode.postMessage({type: "acceptOrReject", agentId: $state.selectedAgentId, doesAccept: true})
     }
 
+    // This function handles the Reject action.
     function handleReject() {
+        // Post a message to vscode with the type of action (accept or reject), the selected agent ID, and the action (reject: false)
         vscode.postMessage({type: "acceptOrReject", agentId: $state.selectedAgentId, doesAccept: false})
     }
 
