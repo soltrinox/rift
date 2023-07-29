@@ -17,6 +17,38 @@ export const FileChip = Heading.extend<FileChipOptions>({
 
   inline: true,
 
+  addAttributes() {
+    return {
+      fsPath: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-fsPath"),
+        renderHTML: (attributes) => {
+          if (!attributes.fsPath) {
+            return {}
+          }
+
+          return {
+            "data-fsPath": attributes.fsPath,
+          }
+        },
+      },
+
+      name: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-name"),
+        renderHTML: (attributes) => {
+          if (!attributes.name) {
+            return {}
+          }
+
+          return {
+            "data-name": attributes.name,
+          }
+        },
+      },
+    }
+  },
+
   parseHTML(this: {
     name: string
     options: {}
@@ -32,9 +64,14 @@ export const FileChip = Heading.extend<FileChipOptions>({
     ]
   },
 
+  renderText({ node }) {
+    console.log('render text called')
+    return `uri://${node.attrs.fsPath}`
+  },
+
   renderHTML({ node, HTMLAttributes }) {
     console.log("renderHTML called. node:", node)
     console.log("HTMLAttributes: ", HTMLAttributes)
-    return ["span", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0]
+    return ["span", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), node.attrs.name]
   },
 })

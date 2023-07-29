@@ -156,7 +156,7 @@
     console.log(editor.getJSON())
 
 
-    editor.chain().insertContent(`<span>${file.fileName}</span>`).insertContent(' ').run()
+    editor.chain().insertContent(`<span data-fsPath="${file.fullPath}" data-name="${file.fileName}"></span>`).insertContent(' ').run()
     // editor.commands.selectNodeForward()	
 
 
