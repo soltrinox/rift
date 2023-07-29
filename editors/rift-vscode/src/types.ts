@@ -48,6 +48,7 @@ export type AgentRegistryItem = {
 export class WebviewAgent {
   type: string;
   hasNotification: boolean;
+  isDeleted: boolean = false;
   chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
@@ -156,9 +157,9 @@ export interface RunAgentProgress {
 
 export type ChatAgentPayload =
   | {
-      response?: string;
-      done_streaming?: boolean;
-    }
+    response?: string;
+    done_streaming?: boolean;
+  }
   | undefined;
 
 export interface AgentProgress<T = any> {

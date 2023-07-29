@@ -102,12 +102,12 @@ const RED = vscode.window.createTextEditorDecorationType({
 
 type CodeCompletionPayload =
   | {
-      additive_ranges?: vscode.Range[];
-      cursor?: vscode.Position;
-      negative_ranges?: vscode.Range[];
-      response?: string;
-      textDocument?: TextDocumentIdentifier;
-    }
+    additive_ranges?: vscode.Range[];
+    cursor?: vscode.Position;
+    negative_ranges?: vscode.Range[];
+    response?: string;
+    textDocument?: TextDocumentIdentifier;
+  }
   | "accepted"
   | "rejected";
 
@@ -190,12 +190,12 @@ async function code_completion_send_progress_handler(
 // interface CodeEditProgressParams extends Agent
 type CodeEditPayload =
   | {
-      additive_ranges?: vscode.Range[];
-      cursor?: vscode.Position;
-      negative_ranges?: vscode.Range[];
-      ready?: boolean;
-      textDocument?: TextDocumentIdentifier;
-    }
+    additive_ranges?: vscode.Range[];
+    cursor?: vscode.Position;
+    negative_ranges?: vscode.Range[];
+    ready?: boolean;
+    textDocument?: TextDocumentIdentifier;
+  }
   | "accepted"
   | "rejected";
 
@@ -316,8 +316,8 @@ export class MorphLanguageClient
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => {} };
-    this.green = { key: "TEMP_VALUE", dispose: () => {} };
+    this.red = { key: "TEMP_VALUE", dispose: () => { } };
+    this.green = { key: "TEMP_VALUE", dispose: () => { } };
     this.context = context;
     this.webviewState.subscribe((state) => {
       // console.log('webview state:')
@@ -640,12 +640,11 @@ export class MorphLanguageClient
 
   async delete(params: AgentIdParams) {
     if (!this.client) throw new Error();
-
     let response = await this.client.sendRequest("morph/delete", params);
 
     this.webviewState.update((state) => {
       const updatedAgents = { ...state.agents };
-      delete updatedAgents[params.id]; // delete agent
+      updatedAgents[params.id].isDeleted = true;
       // update selected agent if you deleted your selected agent
       const updatedSelectedAgentId =
         params.id == state.selectedAgentId

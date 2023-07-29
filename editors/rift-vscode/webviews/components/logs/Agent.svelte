@@ -47,7 +47,7 @@
     };
 
     const handleCancelAgent = (e: MouseEvent) => {
-        vscode.postMessage({ type: "cancelAgent", agentId: id  });
+        vscode.postMessage({ type: "cancelAgent", agentId: id });
     };
     const handleDeleteAgent = (e: MouseEvent) => {
         vscode.postMessage({ type: "deleteAgent", agentId: id });
@@ -127,13 +127,13 @@
                             >
                         </li>
                         <!-- cant delete the last agent bc no ui for it -->
-                        {#if (Object.keys($state.agents).length > 1)}
-                        <li class="list-item text-left">
-                            <button
-                                class="btn px-2"
-                                on:click={handleDeleteAgent}>Delete</button
-                            >
-                        </li>
+                        {#if Object.values($state.agents).filter((agent) => agent.isDeleted == false).length > 1}
+                            <li class="list-item text-left">
+                                <button
+                                    class="btn px-2"
+                                    on:click={handleDeleteAgent}>Delete</button
+                                >
+                            </li>
                         {/if}
                     </ul>
                 </div>
