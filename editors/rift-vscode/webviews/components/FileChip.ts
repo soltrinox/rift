@@ -8,7 +8,7 @@ export type FileChipOptions = {
 }
 
 export const FileChipPluginKey = new PluginKey("filechip")
-const FileChip = Node.create({
+export const FileChip = Node.create({
   name: "filechip",
 
   defaultOptions: {
@@ -22,7 +22,7 @@ const FileChip = Node.create({
   parseHTML() {
     return [
       {
-        tag: "my-custom-node",
+        tag: "filechip",
       },
     ]
   },

@@ -12,7 +12,7 @@
   import type { Transaction } from "@tiptap/pm/state"
   import { Node } from '@tiptap/core'
   import {Mention} from "@tiptap/extension-mention"
-
+  import {FileChip} from './FileChip'
   
   let isFocused = true
 
@@ -152,9 +152,8 @@
     spanEl.innerText = "@" + file.fileName
 
     // if (!_container) throw new Error()
-    editor?.commands.setNode('mention')
-    editor?.commands.setMark('mention')
-    editor?.commands.insertContent('asfddsfa')
+
+    editor?.commands.insertContent('<filechip>testing</filechip>')
 
 
 
@@ -191,6 +190,7 @@
       extensions: [
         StarterKit,
         Mention,
+        FileChip,
         Placeholder.configure({
           emptyEditorClass: "is-editor-empty",
           placeholder: "Type to chat or hit / for commands",
