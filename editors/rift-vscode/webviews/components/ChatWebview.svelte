@@ -25,4 +25,3 @@
   <!-- Display the OmniBar component. -->
   <OmniBar />
 </div>
-</div>

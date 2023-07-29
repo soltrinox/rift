@@ -82,13 +82,31 @@
   }
 
   // Define a function to handle value changes.
+  let dropdownCancelled = false;
+
   function handleValueChange(e: Event) {
     if (!textarea) throw new Error();
     inputValue = textarea.value;
     resize(e);
-    if (textarea.value.trim().startsWith("/") && !textarea.value.trim().startsWith("/ ")) {
+    
+    // Check for the case of typing two slashes.
+    if (textarea.value.trim().startsWith("//")) {
+      dropdownOpen.set(false);
+      dropdownCancelled = true;
+      textarea.value = "/";
+      // remove the "/" from the beginning of the value
+      return; // Stop execution here if two slashes were entered.
+    }
+
+    // Remainder of the function
+    if (textarea.value.trim().startsWith("/") && !textarea.value.trim().startsWith("/ ") && !dropdownCancelled) {
       dropdownOpen.set(true);
-    } else dropdownOpen.set(false);
+    } else {
+      dropdownOpen.set(false);
+      if (textarea.value.trim() === "") {
+        dropdownCancelled = false;
+      }
+    }
   }
 
   // Define a function to handle key down events.
@@ -146,37 +164,34 @@
     });
   };
 </script>
-  };
-</script>
-
 
 <div
   class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative"
->
+  >
   <!-- This is the main OmniBar component. It is a container that includes a textarea for user input and a send button.
        The textarea is where the user types their messages or commands, and the send button is used to submit these messages or commands. -->
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${
-      isFocused ? "border-[var(--vscode-focusBorder)]" : "border-transparent"
+    isFocused ? "border-[var(--vscode-focusBorder)]" : "border-transparent"
     }`}
-  >
+    >
     <!-- This is the textarea for user input. It binds several events such as input, keydown, focus, and blur to handle user interactions.
-       It also binds the 'textarea' variable declared in the script section, allowing the script to control its behavior and content. -->
+         It also binds the 'textarea' variable declared in the script section, allowing the script to control its behavior and content. -->
     <textarea
       id="omnibar"
       bind:this={textarea}
       class="w-full outline-none focus:outline-none bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
       placeholder={hasInput
-        ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
-        : "Type to chat or hit / for commands"}
+      ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
+      : "Type to chat or hit / for commands"}
       on:input={handleValueChange}
       on:keydown={handleKeyDown}
       on:focus={onFocus}
       on:blur={onBlur}
       rows={1}
-    />
+      />
     <!-- This is the send button. It is a graphical element that the user can interact with to submit their messages or commands.
-       When clicked, it triggers the 'sendMessage' function defined in the script section, which handles the message sending logic. -->
+         When clicked, it triggers the 'sendMessage' function defined in the script section, which handles the message sending logic. -->
     <div class="justify-self-end flex">
       <button on:click={sendMessage} class="items-center flex">
         <SendSvg />
