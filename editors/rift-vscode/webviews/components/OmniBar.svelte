@@ -99,16 +99,16 @@
 
   function handleKeyDown(e: KeyboardEvent) {
     console.log("handleKeydown")
-    e.preventDefault()
+
     if (e.key === "Enter") {
       // 13 is the Enter key code
       console.log('preventing default')
-      e.preventDefault() // Prevent default Enter key action
-      e.stopPropagation()
-      // if (e.shiftKey) return
-      // if(!editorContent) resetTextarea()
-      // if (!editorContent || $dropdownStatus == "slash" || $dropdownStatus == 'at') return
-      // sendMessage()
+      // e.preventDefault() // Prevent default Enter key action
+
+      if (e.shiftKey) return
+      if(!editorContent) resetTextarea()
+      if (!editorContent || $dropdownStatus == "slash" || $dropdownStatus == 'at') return
+      sendMessage()
     }
   }
 
@@ -156,9 +156,8 @@
     console.log(editor.getJSON())
 
 
-    
-    editor.commands.insertContent(`<span>${file.fileName}</span>`)
-    
+    editor.chain().insertContent(`<span>${file.fileName}</span>`).insertContent(' ').run()
+    // editor.commands.selectNodeForward()	
 
 
     // console.log('editorJSONafter insert:')
@@ -193,14 +192,14 @@
 
   function disableDefaults(event: Event) {
     const e = event as KeyboardEvent
-    const keyCodes = ["ArrowUp", "ArrowDown", "Enter"]
+    const keyCodes = ["ArrowUp", "ArrowDown"]
 
     if (keyCodes.includes(e.code)) {
       event.preventDefault()
     }
 
+    if(e.code === 'Enter' && $dropdownStatus != 'none') event.preventDefault()
    
-    //   console.log('prevente')
   }
 
   let editor: Editor | undefined
@@ -226,7 +225,6 @@
       },
       content: "",
       onTransaction: (props) => {
-        console.log(JSON.stringify(props.transaction))
         // force re-render so `editor.isActive` works as expected
         editor = editor
       },
@@ -240,11 +238,11 @@
 
     const editorRootElement = document.querySelector(".ProseMirror")
     if (!editorRootElement) throw new Error()
-    editorRootElement.addEventListener("keydown", disableDefaults)
+    editorRootElement.addEventListener("keydown", disableDefaults, true)
   })
   onDestroy(() => {
     const editorRootElement = document.querySelector(".ProseMirror")
-    editorRootElement?.removeEventListener("keydown", disableDefaults)
+    editorRootElement?.removeEventListener("keydown", disableDefaults, true)
     editor?.destroy()
   })
 

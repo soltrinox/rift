@@ -19,11 +19,11 @@
 
   
   $: {
-    console.log('editorContent:',editorContent)
+    // console.log('editorContent:',editorContent)
     latestAtToEndOfTextarea = editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
-    console.log('lateota:', latestAtToEndOfTextarea)
-    console.log('af', atableFiles)
-    console.log('files',$state.files)
+    // console.log('lateota:', latestAtToEndOfTextarea)
+    // console.log('af', atableFiles)
+    // console.log('files',$state.files) 
     filteredFiles = Array.from(new Set([...$state.files.recentlyOpenedFiles, ...$state.files.nonGitIgnoredFiles]))
       .filter((file) => {
         let searchString = latestAtToEndOfTextarea?.substring(1).toLowerCase() ?? ''
@@ -36,26 +36,25 @@
       .slice(0, 4)
 
     activeId = filteredFiles.length - 1
-    console.log('FF,',filteredFiles)
   }
 
   // if (atableFiles.length < 1) throw new Error("no available agents");
 
   function handleKeyDown(e: KeyboardEvent) {
     console.log("handleKeyDown in AtDropdown, ",filteredFiles[activeId])
-    // if (e.key === "Enter") {
-    //   e.preventDefault()
-    //   // create agent
-    //   if (!filteredFiles[activeId]) {
-    //     console.log("filteredFiles")
-    //     console.log(filteredFiles)
-    //     console.log("activeId")
-    //     console.log(activeId)
-    //     throw new Error("attempting to add a chip that is not in filtered files")
-    //   }
-    //   console.log('adding chip for', filteredFiles[activeId].fileName)
-    //   handleAddChip(filteredFiles[activeId])
-    // }
+    if (e.key === "Enter") {
+      e.preventDefault()
+      // create agent
+      if (!filteredFiles[activeId]) {
+        console.log("filteredFiles")
+        console.log(filteredFiles)
+        console.log("activeId")
+        console.log(activeId)
+        throw new Error("attempting to add a chip that is not in filtered files")
+      }
+      console.log('adding chip for', filteredFiles[activeId].fileName)
+      handleAddChip(filteredFiles[activeId])
+    }
     if (e.key == "ArrowDown") {
       // e.preventDefault()
       if (activeId == filteredFiles.length - 1) activeId = 0

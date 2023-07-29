@@ -13,6 +13,10 @@ export const FileChipPluginKey = new PluginKey("filechip")
 export const FileChip = Heading.extend<FileChipOptions>({
   name: "span",
 
+  group: "inline",
+
+  inline: true,
+
   parseHTML(this: {
     name: string
     options: {}

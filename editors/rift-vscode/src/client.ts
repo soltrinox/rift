@@ -320,8 +320,8 @@ export class MorphLanguageClient
     this.green = { key: "TEMP_VALUE", dispose: () => {} };
     this.context = context;
     this.webviewState.subscribe((state) => {
-      console.log('webview state:')
-      console.log(state)
+      // console.log('webview state:')
+      // console.log(state)
       chatProvider.stateUpdate(state);
       logProvider.stateUpdate(state);      
     });
