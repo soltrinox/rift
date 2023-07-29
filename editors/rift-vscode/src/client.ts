@@ -640,12 +640,11 @@ export class MorphLanguageClient
 
   async delete(params: AgentIdParams) {
     if (!this.client) throw new Error();
-
     let response = await this.client.sendRequest("morph/delete", params);
 
     this.webviewState.update((state) => {
       const updatedAgents = { ...state.agents };
-      delete updatedAgents[params.id]; // delete agent
+      updatedAgents[params.id].isDeleted = true;
       // update selected agent if you deleted your selected agent
       const updatedSelectedAgentId =
         params.id == state.selectedAgentId

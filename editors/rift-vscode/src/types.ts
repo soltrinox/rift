@@ -48,6 +48,7 @@ export type AgentRegistryItem = {
 export class WebviewAgent {
   type: string;
   hasNotification: boolean;
+  isDeleted: boolean = false;
   chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
   tasks?: Tasks;
