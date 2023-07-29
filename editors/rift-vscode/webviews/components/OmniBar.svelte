@@ -166,7 +166,6 @@
 
         tr.delete(docsize-latestAtToEndOfTextarea.length, docsize)
         
-
         return true
       })
       .insertContent(`<span data-fsPath="${file.fullPath}" data-name="${file.fileName}"></span>`)
