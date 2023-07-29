@@ -10,6 +10,7 @@
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 
   let filteredAgents = availableAgents;
+  let scrollableFilteredAgents = availableAgents;
   let activeId = availableAgents.length - 1;
 
   $: {
@@ -23,6 +24,8 @@
     });
     activeId = filteredAgents.length - 1;
   }
+
+  $: scrollableFilteredAgents = filteredAgents.slice(-3);
 
   onMount(() => {
     //response is saved to state in ChatWebview.svelte
@@ -44,11 +47,11 @@
     }
     if (e.key == "ArrowDown") {
       e.preventDefault();
-      if (activeId == availableAgents.length - 1) activeId = 0;
+      if (activeId == filteredAgents.length - 1) activeId = 0;
       else activeId++;
     } else if (e.key == "ArrowUp") {
       e.preventDefault();
-      if (activeId == 0) activeId = availableAgents.length - 1;
+      if (activeId == 0) activeId = filteredAgents.length - 1;
       else activeId--;
     } else return;
   }
