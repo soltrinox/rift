@@ -9,14 +9,15 @@
   import { Editor } from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
   import { Placeholder } from "@tiptap/extension-placeholder"
+  import type { Transaction } from "@tiptap/pm/state"
+  import { Node } from '@tiptap/core'
+  import {Mention} from "@tiptap/extension-mention"
 
+  
   let isFocused = true
 
-  let _textarea: HTMLDivElement | undefined
-  let inputValue: string = ""
-  let textareaValue: string = ""
+  let _container: HTMLDivElement | undefined
 
-  $: console.log("textareaValue:", textareaValue)
 
   let hasInput = false
   state.subscribe((s) => {
@@ -44,7 +45,7 @@
     console.log($state.agents[$state.selectedAgentId].chatHistory)
 
     let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory
-    appendedMessages?.push({ role: "user", content: textareaValue })
+    appendedMessages?.push({ role: "user", content: editorContent })
     console.log("appendedMessages")
     console.log(appendedMessages)
 
@@ -55,7 +56,7 @@
       agent_id: $state.selectedAgentId,
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
-      message: textareaValue,
+      message: editorContent,
     })
 
     // clint.
@@ -72,20 +73,18 @@
     //   },
     // }));
     resetTextarea()
-    console.log("textareaValue after reset:", textareaValue)
     focus()
     // resize()
   }
 
-  function handleValueChange(e: Event) {
-    const target = e.target as HTMLDivElement
-    if (!target) throw new Error()
-    textareaValue = target.textContent ?? ""
-    console.log("handleValueChange called:", textareaValue)
-    console.log("latestAtToEndOfTextarea:", latestAtToEndOfTextarea)
-    latestAtToEndOfTextarea =
-      textareaValue.lastIndexOf("@") > -1 ? textareaValue.slice(textareaValue.lastIndexOf("@")) : undefined
-    if (textareaValue.trim().startsWith("/")) {
+  function handleValueChange({editor, transaction}:{
+    editor: Editor;
+    transaction: Transaction;
+  }) {
+    editorContent = editor.getText()
+
+    latestAtToEndOfTextarea = editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
+    if (editorContent.trim().startsWith("/")) {
       console.log("setting slash")
       dropdownStatus.set("slash")
     } else if (Boolean(latestAtToEndOfTextarea)) {
@@ -104,11 +103,8 @@
     if (e.key === "Enter") {
       // 13 is the Enter key code
       e.preventDefault() // Prevent default Enter key action
-      if (e.shiftKey) {
-        addNewLine()
-        return
-      }
-      if (!textareaValue || $dropdownStatus !== "none") return
+      if (e.shiftKey) return
+      if (!editorContent || $dropdownStatus !== "none") return
       sendMessage()
     }
   }
@@ -126,8 +122,7 @@
     dropdownStatus.set("none")
   }
 
-  let onFocus = async (event: FocusEvent) => {
-    if (!_textarea) throw new Error()
+  let onFocus = async () => {
     isFocused = true
     vscode.postMessage({
       type: "sendHasNotificationChange",
@@ -152,57 +147,52 @@
     if (!latestAtToEndOfTextarea) throw new Error()
     console.log("handle add chip:", file.fileName)
     const spanEl = document.createElement("span")
+
     spanEl.classList.add("text-red-400")
     spanEl.innerText = "@" + file.fileName
-    if (!_textarea) throw new Error()
-    _textarea.textContent = textareaValue.slice(0, -latestAtToEndOfTextarea.length)
-    _textarea.appendChild(spanEl)
-    const txtNode = document.createTextNode("\xA0")
-    _textarea.appendChild(txtNode)
 
-    const range = document.createRange()
-    const selection = window.getSelection()
-    range.setStart(txtNode, 0)
-    range.setEnd(txtNode, 0)
+    // if (!_container) throw new Error()
+    editor?.commands.setNode('mention')
+    editor?.commands.insertContent('asfddsfa')
 
-    selection?.removeAllRanges()
-    selection?.addRange(range)
+
+
+    // _container.textContent = textareaValue.slice(0, -latestAtToEndOfTextarea.length)
+
+    // _container.appendChild(spanEl)
+    // const txtNode = document.createTextNode("\xA0")
+    // _container.appendChild(txtNode)
+
+    // const range = document.createRange()
+    // const selection = window.getSelection()
+    // range.setStart(txtNode, 0)
+    // range.setEnd(txtNode, 0)
+
+    // selection?.removeAllRanges()
+    // selection?.addRange(range)
   }
 
   let latestAtToEndOfTextarea: string | undefined = undefined
   $: console.log("latestAtTOEndOfTextarea:", latestAtToEndOfTextarea)
 
-  const focus = () => _textarea?.focus()
-  const blur = () => _textarea?.blur()
-  const addNewLine = () => {
-    if (!_textarea) return
-    console.log("addnewline called. old textarea value:", textareaValue)
-    // textareaValue = textareaValue + "\n";
-    _textarea.textContent = _textarea.textContent + "\n"
+  const focus = () => editor?.view.focus()
+  const blur = () => editor?.commands.blur()
 
-    console.log("newtextarea value:", textareaValue)
-    // resize()
-  }
-  // function resize() {
-  //   if(!_textarea) return
-  //   _textarea.style.height = "auto";
-  //   _textarea.style.height = `${_textarea.scrollHeight}px`;
-  // }
+
   function resetTextarea() {
-    if (!_textarea) return
-    _textarea.textContent = ""
+    editor?.commands.clearContent()
   }
 
-  let editor: Editor
+  let editor: Editor|undefined
   onMount(() => {
     editor = new Editor({
-      element: _textarea,
+      element: _container,
       extensions: [
         StarterKit,
         Placeholder.configure({
           emptyEditorClass: "is-editor-empty",
           placeholder: "Type to chat or hit / for commands",
-        }),
+        })
       ],
       editorProps: {
         attributes: {
@@ -210,12 +200,23 @@
         }
       },
       content: "",
-      onTransaction: () => {
+      onTransaction: (props) => {
+        console.log('onTransaction. props:', props)
         // force re-render so `editor.isActive` works as expected
         editor = editor
       },
+      onFocus,
+      onBlur,
+      onUpdate: handleValueChange
     })
+
   })
+  onDestroy(() => {
+    editor?.destroy()
+  })
+
+  let editorContent = ''
+  $: editorContent = editor?.getText() ?? ''
 </script>
 
 <div class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative">
@@ -229,11 +230,9 @@
       placeholder={hasInput
         ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
         : "Type to chat or hit / for commands"}
-      bind:this={_textarea}
-      on:input={handleValueChange}
+      bind:this={_container}
       on:keydown={handleKeyDown}
-      on:focus={onFocus}
-      on:blur={onBlur} />
+       />
     <div class="justify-self-end flex">
       <button on:click={sendMessage} class="items-center flex">
         <SendSvg />
@@ -241,7 +240,7 @@
     </div>
   </div>
   {#if $dropdownStatus == "slash"}
-    <SlashDropdown {textareaValue} {handleRunAgent} />
+    <SlashDropdown textareaValue={editorContent} {handleRunAgent} />
   {:else if $dropdownStatus == "at"}
     <AtDropdown {latestAtToEndOfTextarea} {handleAddChip} />
   {/if}
