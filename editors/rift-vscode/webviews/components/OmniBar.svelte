@@ -153,6 +153,7 @@
 
     // if (!_container) throw new Error()
     editor?.commands.setNode('mention')
+    editor?.commands.setMark('mention')
     editor?.commands.insertContent('asfddsfa')
 
 
@@ -189,6 +190,7 @@
       element: _container,
       extensions: [
         StarterKit,
+        Mention,
         Placeholder.configure({
           emptyEditorClass: "is-editor-empty",
           placeholder: "Type to chat or hit / for commands",

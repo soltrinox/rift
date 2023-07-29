@@ -12,15 +12,6 @@ export const FileChipPluginKey = new PluginKey("filechip")
 export const FileChip = Node.create<FileChipOptions>({
   name: "filechip",
 
-  addOptions() {
-    return {
-      HTMLAttributes: {},
-      renderLabel({ options, node }) {
-        return `${node.attrs.label ?? node.attrs.id}`
-      },
-    }
-  },
-
   group: "inline",
 
   inline: true,
@@ -73,10 +64,7 @@ export const FileChip = Node.create<FileChipOptions>({
     return [
       "span",
       mergeAttributes({ "data-type": this.name }, this.options.HTMLAttributes, HTMLAttributes),
-      this.options.renderLabel({
-        options: this.options,
-        node,
-      }),
+       node
     ]
   },
 
@@ -87,30 +75,6 @@ export const FileChip = Node.create<FileChipOptions>({
     })
   },
 
-  addKeyboardShortcuts() {
-    return {
-      Backspace: () =>
-        this.editor.commands.command(({ tr, state }) => {
-          let isFileChip = false
-          const { selection } = state
-          const { empty, anchor } = selection
-
-          if (!empty) {
-            return false
-          }
-
-          state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
-            if (node.type.name === this.name) {
-              isFileChip = true
-              tr.insertText("", pos, pos + node.nodeSize)
-
-              return false
-            }
-          })
-
-          return isFileChip
-        }),
-    }
-  },
+ 
 
 })
