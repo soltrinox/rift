@@ -10,14 +10,12 @@
   import StarterKit from "@tiptap/starter-kit"
   import { Placeholder } from "@tiptap/extension-placeholder"
   import type { Transaction } from "@tiptap/pm/state"
-  import { Node } from '@tiptap/core'
-  import {Mention} from "@tiptap/extension-mention"
-  import {FileChip} from './FileChip'
-  
+  import { Node } from "@tiptap/core"
+  import { FileChip } from "./FileChip"
+
   let isFocused = true
 
   let _container: HTMLDivElement | undefined
-
 
   let hasInput = false
   state.subscribe((s) => {
@@ -77,13 +75,11 @@
     // resize()
   }
 
-  function handleValueChange({editor, transaction}:{
-    editor: Editor;
-    transaction: Transaction;
-  }) {
+  function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
     editorContent = editor.getText()
 
-    latestAtToEndOfTextarea = editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
+    latestAtToEndOfTextarea =
+      editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
     if (editorContent.trim().startsWith("/")) {
       console.log("setting slash")
       dropdownStatus.set("slash")
@@ -152,16 +148,18 @@
     spanEl.innerText = "@" + file.fileName
 
     // if (!_container) throw new Error()
+    const HTML = `<span class='text-red-400'>@${file.fileName}</span>`
+    if(!editor) throw new Error('')
+    console.log('editorJSON:')
+    console.log(editor.getJSON())
+    editor.commands.insertContent('<filechip>something</filechip>')
+    console.log('editorJSONafter insert:')
+    console.log(editor.getJSON())
+    // editor.view.pasteHTML(HTML)
+    // editor.commands.setParagraph()
 
-    editor?.commands.insertContent({
-      type: 'filechip',
-      
-    })
 
-
-
-
-
+    
     // _container.textContent = textareaValue.slice(0, -latestAtToEndOfTextarea.length)
 
     // _container.appendChild(spanEl)
@@ -183,47 +181,44 @@
   const focus = () => editor?.view.focus()
   const blur = () => editor?.commands.blur()
 
-
   function resetTextarea() {
     editor?.commands.clearContent()
   }
 
-  let editor: Editor|undefined
+  let editor: Editor | undefined
   onMount(() => {
     editor = new Editor({
       element: _container,
       extensions: [
         StarterKit,
-        Mention,
         FileChip,
         Placeholder.configure({
           emptyEditorClass: "is-editor-empty",
           placeholder: "Type to chat or hit / for commands",
-        })
+        }),
       ],
       editorProps: {
         attributes: {
-          class: "outline-none focus:outline-none"
-        }
+          class: "outline-none focus:outline-none",
+        },
       },
       content: "",
       onTransaction: (props) => {
-        console.log('onTransaction. props:', props)
+        // console.log("onTransaction. props:", props)
         // force re-render so `editor.isActive` works as expected
         editor = editor
       },
       onFocus,
       onBlur,
-      onUpdate: handleValueChange
+      onUpdate: handleValueChange,
     })
-
   })
   onDestroy(() => {
     editor?.destroy()
   })
 
-  let editorContent = ''
-  $: editorContent = editor?.getText() ?? ''
+  let editorContent = ""
+  $: editorContent = editor?.getText() ?? ""
 </script>
 
 <div class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative">
@@ -238,8 +233,7 @@
         ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
         : "Type to chat or hit / for commands"}
       bind:this={_container}
-      on:keydown={handleKeyDown}
-       />
+      on:keydown={handleKeyDown} />
     <div class="justify-self-end flex">
       <button on:click={sendMessage} class="items-center flex">
         <SendSvg />
