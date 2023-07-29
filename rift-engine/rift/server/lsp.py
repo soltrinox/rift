@@ -435,7 +435,7 @@ class LspServer(BaseLspServer):
     async def on_cancel(self, params: AgentIdParams):
         agent: Agent = self.active_agents.get(params.id)
         if agent is not None:
-            await agent.cancel()
+            asyncio.create_task(agent.cancel())
 
     @rpc_method("morph/delete")
     async def on_delete(self, params: AgentIdParams):
