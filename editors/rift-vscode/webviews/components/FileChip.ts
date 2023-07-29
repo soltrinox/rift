@@ -28,6 +28,6 @@ const FileChip = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["my-custom-node", HTMLAttributes, 0]
+    return ["span", mergeAttributes({ class: 'text-red-400' }, HTMLAttributes), 0]
   },
 })
