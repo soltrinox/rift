@@ -5,8 +5,14 @@ from typing import Any, Dict, List, Optional, Tuple
 from diff_match_patch import diff_match_patch
 
 import rift.lsp.types as lsp
-from rift.lsp import (CreateFile, Range, TextDocumentEdit, TextDocumentIdentifier, TextEdit,
-                      WorkspaceEdit)
+from rift.lsp import (
+    CreateFile,
+    Range,
+    TextDocumentEdit,
+    TextDocumentIdentifier,
+    TextEdit,
+    WorkspaceEdit,
+)
 from rift.lsp.types import ChangeAnnotation
 
 

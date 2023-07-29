@@ -14,8 +14,16 @@ import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 from rift.agents.abstract import AgentProgress  # AgentTask,
-from rift.agents.abstract import (Agent, AgentRunParams, AgentRunResult, AgentState,
-                                  RequestChatRequest, RequestInputRequest, RunAgentParams, agent)
+from rift.agents.abstract import (
+    Agent,
+    AgentRunParams,
+    AgentRunResult,
+    AgentState,
+    RequestChatRequest,
+    RequestInputRequest,
+    RunAgentParams,
+    agent,
+)
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
@@ -228,7 +236,7 @@ class SmolAgent(Agent):
 
                 # t = asyncio.create_task(spinner())
                 code = await code_future
-                logger.info('folder uri:')
+                logger.info("folder uri:")
                 logger.info(self.state.params.workspaceFolderPath)
                 absolute_file_path = os.path.join(self.state.params.workspaceFolderPath, file_path)
                 file_change = file_diff.get_file_change(path=absolute_file_path, new_content=code)

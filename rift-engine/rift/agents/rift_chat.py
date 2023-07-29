@@ -7,11 +7,22 @@ import rift.agents.abstract as agents
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 from rift.agents.abstract import AgentProgress  # AgentTask,
-from rift.agents.abstract import (Agent, AgentRunParams, AgentRunResult, AgentState,
-                                  RequestChatRequest, RequestInputRequest, RunAgentParams, agent)
+from rift.agents.abstract import (
+    Agent,
+    AgentRunParams,
+    AgentRunResult,
+    AgentState,
+    RequestChatRequest,
+    RequestInputRequest,
+    RunAgentParams,
+    agent,
+)
 from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import (AbstractChatCompletionProvider, AbstractCodeCompletionProvider,
-                               InsertCodeResult)
+from rift.llm.abstract import (
+    AbstractChatCompletionProvider,
+    AbstractCodeCompletionProvider,
+    InsertCodeResult,
+)
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet

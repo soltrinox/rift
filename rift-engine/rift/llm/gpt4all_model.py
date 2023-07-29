@@ -7,12 +7,22 @@ from pathlib import Path
 from typing import List, Optional
 
 from gpt4all import GPT4All
-from gpt4all.pyllmodel import (LLModel, LLModelPromptContext, PromptCallback, RecalculateCallback,
-                               ResponseCallback, llmodel)
+from gpt4all.pyllmodel import (
+    LLModel,
+    LLModelPromptContext,
+    PromptCallback,
+    RecalculateCallback,
+    ResponseCallback,
+    llmodel,
+)
 from pydantic import BaseSettings, Field
 
-from rift.llm.abstract import (AbstractChatCompletionProvider, AbstractCodeCompletionProvider,
-                               ChatResult, InsertCodeResult)
+from rift.llm.abstract import (
+    AbstractChatCompletionProvider,
+    AbstractCodeCompletionProvider,
+    ChatResult,
+    InsertCodeResult,
+)
 from rift.llm.openai_types import Message
 from rift.util.TextStream import TextStream
 

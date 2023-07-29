@@ -52,12 +52,13 @@ class AgentTask:
                 if self.kwargs
                 else {}
             )
-            self._task = asyncio.create_task(self.task(*args, **kwargs))
+            self._task: asyncio.Task = asyncio.create_task(self.task(*args, **kwargs))
             if self.done_callback is not None:
                 self._task.add_done_callback(self.done_callback)
             return await self._task
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as e:
             self._cancelled = True
+            raise e
         except Exception as e:
             self._error = e
             logger.debug(f"[AgentTask] caught error: {e}")
@@ -98,7 +99,11 @@ class AgentTask:
         """
         Returns whether an error occurred in the task
         """
-        return self._error is not None
+        status = self._error is not None
+        if status:
+            logger.info(f"[AgentTask] exception={self._task.exception()}")
+            logger.info(f"[AgentTask] exception={self._error}")
+        return status
 
     @property
     def status(self):

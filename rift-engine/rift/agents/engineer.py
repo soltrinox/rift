@@ -16,8 +16,16 @@ import typer
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 from rift.agents.abstract import AgentProgress  # AgentTask,
-from rift.agents.abstract import (Agent, AgentRunParams, AgentRunResult, AgentState,
-                                  RequestChatRequest, RequestInputRequest, RunAgentParams, agent)
+from rift.agents.abstract import (
+    Agent,
+    AgentRunParams,
+    AgentRunResult,
+    AgentState,
+    RequestChatRequest,
+    RequestInputRequest,
+    RunAgentParams,
+    agent,
+)
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
@@ -50,6 +58,7 @@ import rift.llm.openai_types as openai
 
 logger = logging.getLogger(__name__)
 
+
 def _fix_windows_path(path: str) -> str:
     """
     Replace a windows path represented as "/c%3A"... with "c:"...
@@ -57,7 +66,7 @@ def _fix_windows_path(path: str) -> str:
     :param path: Original path
     :return: Usable windows path, or original path if not a windows path
     """
-    pattern = r'^/(.)%3A'
+    pattern = r"^/(.)%3A"
 
     match = re.match(pattern, path)
 
@@ -66,6 +75,7 @@ def _fix_windows_path(path: str) -> str:
         return path.replace(f"/{drive_letter}%3A", f"{drive_letter}:")
     else:
         return path
+
 
 # async def _popup_input(prompt: str) -> str:
 #     await INPUT_PROMPT_QUEUE.put(prompt)
@@ -100,6 +110,7 @@ def _fix_windows_path(path: str) -> str:
 #     response_stream.feed_data(prompt)
 
 response_lock = asyncio.Lock()
+
 
 # dataclass for representing the result of the code completion agent run
 @dataclass
@@ -148,20 +159,24 @@ class EngineerAgent(Agent):
         verbose: bool = typer.Option(False, "--verbose", "-v"),
         **kwargs,
     ) -> DBs:
+        loop = asyncio.get_event_loop()
 
-        loop = asyncio.get_event_loop()        
-        def _popup_chat_wrapper(prompt: str="NONE", end=""):
+        def _popup_chat_wrapper(prompt: str = "NONE", end=""):
             def _worker():
                 self.response_stream.feed_data(prompt)
+
             loop.call_soon_threadsafe(_worker)
 
         def _popup_input_wrapper(prompt="", loop=None):
             asyncio.set_event_loop(loop)
             # print("SET EVENT LOOP")
             self.state.messages.append(openai.Message.assistant(prompt))
+
             async def request_chat():
-                async with response_lock:                
-                    await self.send_progress(EngineerProgress(response=self.RESPONSE, done_streaming=True))
+                async with response_lock:
+                    await self.send_progress(
+                        EngineerProgress(response=self.RESPONSE, done_streaming=True)
+                    )
                     self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
 
                     self.RESPONSE = ""
@@ -177,7 +192,6 @@ class EngineerAgent(Agent):
         gpt_engineer.steps.input = functools.partial(_popup_input_wrapper, loop=loop)
         gpt_engineer.learning.input = functools.partial(_popup_input_wrapper, loop=loop)
         # TODO: more coverage
-        
 
         UPDATES_QUEUE = asyncio.Queue()
         INPUT_PROMPT_QUEUE = asyncio.Queue()
@@ -186,7 +200,7 @@ class EngineerAgent(Agent):
         OUTPUT_CHAT_QUEUE = asyncio.Queue()
 
         STEPS_AGENT_TASKS_NAME_QUEUE = asyncio.Queue()
-        STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()    
+        STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
         logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
         model = fallback_model(model)
         ai = AI(
@@ -206,7 +220,7 @@ class EngineerAgent(Agent):
                 f.write(prompt)
 
         memory_path = os.path.join(gpteng_path, "memory")
-        workspace_path = os.path.join(input_path) # pipe files directly into the workspace
+        workspace_path = os.path.join(input_path)  # pipe files directly into the workspace
         archive_path = os.path.join(gpteng_path, "archive")
 
         dbs = DBs(
@@ -228,7 +242,7 @@ class EngineerAgent(Agent):
         steps = STEPS[steps_config]
         from concurrent import futures
 
-            # Add all steps to task list
+        # Add all steps to task list
         steps = STEPS[steps_config]
         from concurrent import futures
 
@@ -236,9 +250,15 @@ class EngineerAgent(Agent):
         for i, step in enumerate(steps):
             event = asyncio.Event()
             step_events[i] = event
+
             async def _step_task(event: asyncio.Event):
                 await event.wait()
-            _ = asyncio.create_task(self.add_task(AgentTask(description=step.__name__, task=_step_task, args=[event])).run())
+
+            _ = asyncio.create_task(
+                self.add_task(
+                    AgentTask(description=step.__name__, task=_step_task, args=[event])
+                ).run()
+            )
 
         # # Add all steps to task list
         # for step in steps:
@@ -255,9 +275,17 @@ class EngineerAgent(Agent):
                 updates = [x for x in items if x[0] not in SEEN]
                 if len(updates) > 0:
                     # for file_path, new_contents in updates:
-                    await self.server.apply_workspace_edit(lsp.ApplyWorkspaceEditParams(file_diff.edits_from_file_changes([file_diff.get_file_change(
-                        file_path, new_contents
-                    ) for file_path, new_contents in updates], user_confirmation=True)))
+                    await self.server.apply_workspace_edit(
+                        lsp.ApplyWorkspaceEditParams(
+                            file_diff.edits_from_file_changes(
+                                [
+                                    file_diff.get_file_change(file_path, new_contents)
+                                    for file_path, new_contents in updates
+                                ],
+                                user_confirmation=True,
+                            )
+                        )
+                    )
                     for x in items:
                         if x[0] in SEEN:
                             pass
@@ -269,8 +297,7 @@ class EngineerAgent(Agent):
                 # event.set()
                 step_events[i].set()
                 await asyncio.sleep(0.5)
-                counter += 1               
-
+                counter += 1
 
     async def _run_chat_thread(self, response_stream):
         # logger.info("Started handler thread")
@@ -278,7 +305,7 @@ class EngineerAgent(Agent):
         before, after = response_stream.split_once("NONE")
 
         try:
-            async with response_lock:            
+            async with response_lock:
                 async for delta in before:
                     self.RESPONSE += delta
                     await self.send_progress(EngineerProgress(response=self.RESPONSE))
@@ -293,7 +320,6 @@ class EngineerAgent(Agent):
             model=model,
             params=params,
             messages=[openai.Message.assistant("What do you want to build?")],
-
         )
         obj = cls(
             state=state,
@@ -303,9 +329,8 @@ class EngineerAgent(Agent):
 
         return obj
 
-
     async def run(self) -> AgentRunResult:  # main entry point
-        self.response_stream = TextStream()        
+        self.response_stream = TextStream()
         await self.send_progress()
         asyncio.create_task(self._run_chat_thread(self.response_stream))
 
@@ -316,8 +341,10 @@ class EngineerAgent(Agent):
 
         get_prompt_task = self.add_task(AgentTask("Get prompt for workspace", get_prompt))
         prompt = await get_prompt_task.run()
-        
-        await asyncio.create_task(self._main(prompt=prompt, project_path=self.state.params.workspaceFolderPath))
+
+        await asyncio.create_task(
+            self._main(prompt=prompt, project_path=self.state.params.workspaceFolderPath)
+        )
         # counter = 0
         # while (not main_t.done()) or (UPDATES_QUEUE.qsize() > 0):
         #     counter += 1
@@ -327,7 +354,6 @@ class EngineerAgent(Agent):
         #             await self.server.apply_workspace_edit(lsp.ApplyWorkspaceEditParams(file_diff.edits_from_file_change(file_diff.get_file_change(
         #                 file_path, new_contents
         #             ))))
-
 
         #     except asyncio.TimeoutError:
         #         continue

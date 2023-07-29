@@ -14,8 +14,14 @@ from rift.util.ofdict import ofdict
 
 from ..rpc import InitializationMode, rpc_method
 from ..rpc.extrarpc import ExtraRpc
-from .types import (ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, InitializeParams,
-                    InitializeResult, PeerInfo, ServerCapabilities)
+from .types import (
+    ApplyWorkspaceEditParams,
+    ApplyWorkspaceEditResponse,
+    InitializeParams,
+    InitializeResult,
+    PeerInfo,
+    ServerCapabilities,
+)
 
 """ Implementation of an LSP server """
 

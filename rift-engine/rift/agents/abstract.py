@@ -52,8 +52,6 @@ class AgentRunParams(ABC):
     textDocument: lsp.TextDocumentIdentifier
     selection: Optional[lsp.Selection]
     workspaceFolderPath: str
-    
-
 
 
 @dataclass
@@ -143,7 +141,9 @@ class Agent:
             logger.info(f"{self} running")
 
             # Await to get the result of the task
-            result = await asyncio.create_task(self.task.run())
+            result_t = asyncio.create_task(self.task.run())
+            await self.send_progress()
+            result = await result_t
 
             # Send the progress of the task
             await self.send_progress()
@@ -231,6 +231,7 @@ class Agent:
         This function does not return a value.
         """
         # Check whether we're only sending payload or also tasks' data
+        # logging.getLogger().info(f"sending progress with payload={payload}")
         if payload_only:
             # If only payload is to be sent, set tasks to None
             tasks = None

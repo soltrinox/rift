@@ -10,9 +10,11 @@ from typing import Any, ClassVar, Dict, Iterable, List, Literal, Optional
 import rift.agents.rift_chat as agentchat
 import rift.lsp.types as lsp
 from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
+from rift.agents.aider_agent import Aider, AiderAgentParams
 from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
 from rift.agents.engineer import EngineerAgent, EngineerAgentParams
+
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
@@ -208,7 +210,7 @@ class LspServer(BaseLspServer):
         self.model_config = config
         logger.info(f"{self} recieved model config {config}")
         for k, h in self.active_agents.items():
-            h.cancel("config changed")
+            asyncio.create_task(h.cancel("config changed"))
         self.completions_model = config.create_completions()
         self.chat_model = config.create_chat()
 
@@ -352,6 +354,10 @@ class LspServer(BaseLspServer):
             if not is_dataclass(agent_params):
                 agent_params = ofdict(SmolAgentParams, agent_params)
             agent = SmolAgent.create(params=agent_params, server=self)
+        elif agent_type == "aider":
+            if not is_dataclass(agent_params):
+                agent_params = ofdict(AiderAgentParams, agent_params)
+            agent = Aider.create(params=agent_params, server=self)
         else:
             raise Exception(f"unsupported agent type={agent_type}")
 
