@@ -102,12 +102,12 @@ const RED = vscode.window.createTextEditorDecorationType({
 
 type CodeCompletionPayload =
   | {
-    additive_ranges?: vscode.Range[];
-    cursor?: vscode.Position;
-    negative_ranges?: vscode.Range[];
-    response?: string;
-    textDocument?: TextDocumentIdentifier;
-  }
+      additive_ranges?: vscode.Range[];
+      cursor?: vscode.Position;
+      negative_ranges?: vscode.Range[];
+      response?: string;
+      textDocument?: TextDocumentIdentifier;
+    }
   | "accepted"
   | "rejected";
 
@@ -190,12 +190,12 @@ async function code_completion_send_progress_handler(
 // interface CodeEditProgressParams extends Agent
 type CodeEditPayload =
   | {
-    additive_ranges?: vscode.Range[];
-    cursor?: vscode.Position;
-    negative_ranges?: vscode.Range[];
-    ready?: boolean;
-    textDocument?: TextDocumentIdentifier;
-  }
+      additive_ranges?: vscode.Range[];
+      cursor?: vscode.Position;
+      negative_ranges?: vscode.Range[];
+      ready?: boolean;
+      textDocument?: TextDocumentIdentifier;
+    }
   | "accepted"
   | "rejected";
 
@@ -316,8 +316,8 @@ export class MorphLanguageClient
   // agentStates = new Map<AgentIdentifier, any>()
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => { } };
-    this.green = { key: "TEMP_VALUE", dispose: () => { } };
+    this.red = { key: "TEMP_VALUE", dispose: () => {} };
+    this.green = { key: "TEMP_VALUE", dispose: () => {} };
     this.context = context;
     this.webviewState.subscribe((state) => {
       // console.log('webview state:')

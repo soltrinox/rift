@@ -157,9 +157,9 @@ export interface RunAgentProgress {
 
 export type ChatAgentPayload =
   | {
-    response?: string;
-    done_streaming?: boolean;
-  }
+      response?: string;
+      done_streaming?: boolean;
+    }
   | undefined;
 
 export interface AgentProgress<T = any> {
