@@ -1,12 +1,10 @@
 import { mergeAttributes, Node } from "@tiptap/core"
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model"
 import { PluginKey } from "@tiptap/pm/state"
-import Suggestion, { SuggestionOptions } from "@tiptap/suggestion"
 
 export type MentionOptions = {
   HTMLAttributes: Record<string, any>
   renderLabel: (props: { options: MentionOptions; node: ProseMirrorNode }) => string
-  suggestion: Omit<SuggestionOptions, "editor">
 }
 
 export const MentionPluginKey = new PluginKey("mention")
@@ -18,45 +16,7 @@ export const Mention = Node.create<MentionOptions>({
     return {
       HTMLAttributes: {},
       renderLabel({ options, node }) {
-        return `${options.suggestion.char}${node.attrs.label ?? node.attrs.id}`
-      },
-      suggestion: {
-        char: "@",
-        pluginKey: MentionPluginKey,
-        command: ({ editor, range, props }) => {
-          // increase range.to by one when the next node is of type "text"
-          // and starts with a space character
-          const nodeAfter = editor.view.state.selection.$to.nodeAfter
-          const overrideSpace = nodeAfter?.text?.startsWith(" ")
-
-          if (overrideSpace) {
-            range.to += 1
-          }
-
-          editor
-            .chain()
-            .focus()
-            .insertContentAt(range, [
-              {
-                type: this.name,
-                attrs: props,
-              },
-              {
-                type: "text",
-                text: " ",
-              },
-            ])
-            .run()
-
-          window.getSelection()?.collapseToEnd()
-        },
-        allow: ({ state, range }) => {
-          const $from = state.doc.resolve(range.from)
-          const type = state.schema.nodes[this.name]
-          const allow = !!$from.parent.type.contentMatch.matchType(type)
-
-          return allow
-        },
+        return `${node.attrs.label ?? node.attrs.id}`
       },
     }
   },
@@ -153,12 +113,4 @@ export const Mention = Node.create<MentionOptions>({
     }
   },
 
-  addProseMirrorPlugins() {
-    return [
-      Suggestion({
-        editor: this.editor,
-        ...this.options.suggestion,
-      }),
-    ]
-  },
 })
