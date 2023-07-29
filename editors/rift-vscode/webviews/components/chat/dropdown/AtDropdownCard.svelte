@@ -24,7 +24,7 @@
     on:click={onClick}
     on:keydown={handleKeyDown}
   >
-    <div class="flex flex-row ml-[6px]">
+    <div class="flex flex-row ml-[6px] items-center">
         <FileIconSvg/>
       {displayName}
     </div>

@@ -204,7 +204,7 @@
         FileChip.configure({
           HTMLAttributes: {
             // class: "bg-[var(--vscode-editor-background)]",
-            class: "bg-black",
+            class: "bg-black text-xs inline-flex items-center",
             contenteditable: "false",
           },
         }),
