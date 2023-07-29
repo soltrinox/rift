@@ -15,7 +15,7 @@ const FileChip = Node.create({
     // default options
   },
 
-  group: "block",
+  group: "inline",
 
   content: "inline*",
 
