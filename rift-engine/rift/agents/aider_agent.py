@@ -435,12 +435,12 @@ class Aider(agent.Agent):
             # input_fut = loop.run_in_executor(pool, request_chat_wrapper, "yeehaw", loop)
             # print(await input_fut)
 
-            while True:
-                await asyncio.wait_for(event.wait(), 2)
-                await self.apply_file_changes(file_changes)
-                file_changes = []
-                event2.set()
-                event.clear()
+            # while True:
+            await event.wait()
+            await self.apply_file_changes(file_changes)
+            file_changes = []
+            event2.set()
+            event.clear()
             await aider_fut
         await self.send_update("yeehaw")
 
