@@ -84,17 +84,24 @@
   // Define a function to handle value changes.
   let dropdownCancelled = false;
 
+  let isDoubleSlashAllowed = false;
+
   function handleValueChange(e: Event) {
     if (!textarea) throw new Error();
     inputValue = textarea.value;
     resize(e);
     
     // Check for the case of typing two slashes.
-    if (textarea.value.trim().startsWith("//")) {
+    if (textarea.value.trim() === "//") {
       dropdownOpen.set(false);
       dropdownCancelled = true;
-      textarea.value = "/";
-      // remove the "/" from the beginning of the value
+      if (isDoubleSlashAllowed) {
+        textarea.value = "//";
+        isDoubleSlashAllowed = false;
+      } else {
+        textarea.value = "/";
+        isDoubleSlashAllowed = true;
+      }
       return; // Stop execution here if two slashes were entered.
     }
 
