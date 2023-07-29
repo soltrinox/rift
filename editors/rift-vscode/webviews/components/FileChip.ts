@@ -17,6 +17,10 @@ export const FileChip = Heading.extend<FileChipOptions>({
 
   inline: true,
 
+  selectable: false,
+
+  atom: true,
+
   addAttributes() {
     return {
       fsPath: {
@@ -65,13 +69,13 @@ export const FileChip = Heading.extend<FileChipOptions>({
   },
 
   renderText({ node }) {
-    console.log('render text called')
+    console.log("render text called")
     return `uri://${node.attrs.fsPath}`
   },
 
   renderHTML({ node, HTMLAttributes }) {
     console.log("renderHTML called. node:", node)
     console.log("HTMLAttributes: ", HTMLAttributes)
-    return ["span", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), node.attrs.name]
+    return ["span", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), `@${node.attrs.name}`]
   },
 })

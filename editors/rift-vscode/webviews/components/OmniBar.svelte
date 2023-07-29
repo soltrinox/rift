@@ -6,7 +6,7 @@
   import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
   import type { AtableFile } from "../../src/types"
   import { onMount, onDestroy } from "svelte"
-  import { Editor } from "@tiptap/core"
+  import { CommandProps, Editor } from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
   import { Placeholder } from "@tiptap/extension-placeholder"
   import type { Transaction } from "@tiptap/pm/state"
@@ -76,13 +76,14 @@
 
   function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
     editorContent = editor.getText()
-    console.log('handleValueChange: ',editorContent)
+    console.log("handleValueChange: ", editorContent)
 
     const shouldShowAtDropdown = () => {
-      latestAtToEndOfTextarea = editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
+      latestAtToEndOfTextarea =
+        editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
       return Boolean(latestAtToEndOfTextarea)
     }
-    
+
     if (editorContent.trim().startsWith("/")) {
       console.log("setting slash")
       dropdownStatus.set("slash")
@@ -90,8 +91,8 @@
       console.log("setting at")
       dropdownStatus.set("at")
     } else {
-      console.log('setting none')
-      dropdownStatus.set('none')
+      console.log("setting none")
+      dropdownStatus.set("none")
     }
   }
 
@@ -102,12 +103,12 @@
 
     if (e.key === "Enter") {
       // 13 is the Enter key code
-      console.log('preventing default')
+      console.log("preventing default")
       // e.preventDefault() // Prevent default Enter key action
 
       if (e.shiftKey) return
-      if(!editorContent) resetTextarea()
-      if (!editorContent || $dropdownStatus == "slash" || $dropdownStatus == 'at') return
+      if (!editorContent) resetTextarea()
+      if (!editorContent || $dropdownStatus == "slash" || $dropdownStatus == "at") return
       sendMessage()
     }
   }
@@ -147,7 +148,6 @@
   }
 
   function handleAddChip(file: AtableFile) {
-
     console.log("handle add chip:", file.fileName)
     const spanEl = document.createElement("span")
 
@@ -155,29 +155,24 @@
     console.log("editorJSON:")
     console.log(editor.getJSON())
 
+    editor
+      .chain()
+      .command((props: CommandProps) => {
+        const { editor, tr, commands, state, dispatch } = props
 
-    editor.chain().insertContent(`<span data-fsPath="${file.fullPath}" data-name="${file.fileName}"></span>`).insertContent(' ').run()
-    // editor.commands.selectNodeForward()	
+        const docsize = state.doc.content.size - 1 // oboe :()
 
+        if(!latestAtToEndOfTextarea) throw new Error('why is this command being run if theres no latestAtToEndOfTextarea')
 
-    // console.log('editorJSONafter insert:')
-    // console.log(editor.getJSON())
-    // editor.view.pasteHTML(HTML)
-    // editor.commands.setParagraph()
+        tr.delete(docsize-latestAtToEndOfTextarea.length, docsize)
+        
 
-    // _container.textContent = textareaValue.slice(0, -latestAtToEndOfTextarea.length)
+        return true
+      })
+      .insertContent(`<span data-fsPath="${file.fullPath}" data-name="${file.fileName}"></span>`)
+      .insertContent(" ")
+      .run()
 
-    // _container.appendChild(spanEl)
-    // const txtNode = document.createTextNode("\xA0")
-    // _container.appendChild(txtNode)
-
-    // const range = document.createRange()
-    // const selection = window.getSelection()
-    // range.setStart(txtNode, 0)
-    // range.setEnd(txtNode, 0)
-
-    // selection?.removeAllRanges()
-    // selection?.addRange(range)
   }
 
   let latestAtToEndOfTextarea: string | undefined = undefined
@@ -198,8 +193,7 @@
       event.preventDefault()
     }
 
-    if(e.code === 'Enter' && $dropdownStatus != 'none') event.preventDefault()
-   
+    if (e.code === "Enter" && $dropdownStatus != "none") event.preventDefault()
   }
 
   let editor: Editor | undefined
@@ -210,8 +204,9 @@
         StarterKit,
         FileChip.configure({
           HTMLAttributes: {
-            class: "text-red-400",
-            contenteditable: "false"
+            // class: "bg-[var(--vscode-editor-background)]",
+            class: "bg-black",
+            contenteditable: "false",
           },
         }),
         Placeholder.configure({
@@ -248,9 +243,9 @@
   })
 
   let editorContent = ""
-  $: {editorContent = editor?.getText() ?? ""
-}
-
+  $: {
+    editorContent = editor?.getText() ?? ""
+  }
 </script>
 
 <div class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative">
@@ -270,13 +265,12 @@
     </div>
   </div>
   {#if $dropdownStatus == "slash"}
-  <SlashDropdown textareaValue={editorContent} {handleRunAgent} />
-  {/if}
-  
-  {#if $dropdownStatus == "at"}
-  <AtDropdown {editorContent} {handleAddChip} />
+    <SlashDropdown textareaValue={editorContent} {handleRunAgent} />
   {/if}
 
+  {#if $dropdownStatus == "at"}
+    <AtDropdown {editorContent} {handleAddChip} />
+  {/if}
 </div>
 
 <style>
