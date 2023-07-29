@@ -8,73 +8,26 @@ export type FileChipOptions = {
 }
 
 export const FileChipPluginKey = new PluginKey("filechip")
-
-export const FileChip = Node.create<FileChipOptions>({
+const FileChip = Node.create({
   name: "filechip",
 
-  group: "inline",
-
-  inline: true,
-
-  selectable: false,
-
-  atom: true,
-
-  addAttributes() {
-    return {
-      id: {
-        default: null,
-        parseHTML: (element) => element.getAttribute("data-id"),
-        renderHTML: (attributes) => {
-          if (!attributes.id) {
-            return {}
-          }
-
-          return {
-            "data-id": attributes.id,
-          }
-        },
-      },
-
-      label: {
-        default: null,
-        parseHTML: (element) => element.getAttribute("data-label"),
-        renderHTML: (attributes) => {
-          if (!attributes.label) {
-            return {}
-          }
-
-          return {
-            "data-label": attributes.label,
-          }
-        },
-      },
-    }
+  defaultOptions: {
+    // default options
   },
+
+  group: "block",
+
+  content: "inline*",
 
   parseHTML() {
     return [
       {
-        tag: `span[data-type="${this.name}"]`,
+        tag: "my-custom-node",
       },
     ]
   },
 
-  renderHTML({ node, HTMLAttributes }) {
-    return [
-      "span",
-      mergeAttributes({ "data-type": this.name }, this.options.HTMLAttributes, HTMLAttributes),
-       node
-    ]
+  renderHTML({ HTMLAttributes }) {
+    return ["my-custom-node", HTMLAttributes, 0]
   },
-
-  renderText({ node }) {
-    return this.options.renderLabel({
-      options: this.options,
-      node,
-    })
-  },
-
- 
-
 })
