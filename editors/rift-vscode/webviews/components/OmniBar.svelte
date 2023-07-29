@@ -5,6 +5,10 @@
   import { tick } from "svelte";
   import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
   import type { AtableFile } from "../../src/types"
+  import { onMount, onDestroy } from 'svelte'
+  import { Editor } from '@tiptap/core'
+  import StarterKit from '@tiptap/starter-kit'
+  import { Placeholder } from '@tiptap/extension-placeholder'
 
   let isFocused = true;
 
@@ -191,6 +195,27 @@
     if(!_textarea) return
     _textarea.textContent = ''
   }
+
+
+  let editor:Editor
+    onMount(() => {
+    editor = new Editor({
+      element: _textarea,
+      extensions: [
+        StarterKit,
+
+    Placeholder.configure({
+        emptyEditorClass: 'is-editor-empty',
+      placeholder: 'Enter some text...',
+    })
+      ],
+      content: '',
+      onTransaction: () => {
+        // force re-render so `editor.isActive` works as expected
+        editor = editor
+      },
+    })
+  })
 </script>
 
 
@@ -209,7 +234,6 @@
         ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
         : "Type to chat or hit / for commands"}
       bind:this={_textarea}
-      contenteditable="true"
       on:input={handleValueChange}
       on:keydown={handleKeyDown}
       on:focus={onFocus}
@@ -238,4 +262,12 @@
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }
+
+  :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
 </style>
