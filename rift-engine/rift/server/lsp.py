@@ -319,7 +319,7 @@ class LspServer(BaseLspServer):
 
         logger = logging.getLogger(__name__)
         agent_cls = AGENT_REGISTRY[agent_type]
-        agent = agent_cls.create(params=agent_params, server=self)
+        agent = await agent_cls.create(params=agent_params, server=self)
 
         # if agent_type == "chat":
         #     # prepare params for ChatAgent construction

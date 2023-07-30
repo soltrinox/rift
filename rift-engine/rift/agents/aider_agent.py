@@ -72,7 +72,7 @@ class Aider(agent.Agent):
 """
 
     @classmethod
-    def create(cls, params: AiderAgentParams, server):
+    async def create(cls, params: AiderAgentParams, server):
         state = AiderAgentState(
             params=params,
             messages=[],

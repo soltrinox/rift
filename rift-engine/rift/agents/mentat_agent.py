@@ -25,7 +25,7 @@ mentat
 """
 
     @classmethod
-    def create(cls, params: MentatAgentParams, server):
+    async def create(cls, params: MentatAgentParams, server):
         state = MentatAgentState(
             params=params,
             messages=[],

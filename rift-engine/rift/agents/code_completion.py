@@ -71,8 +71,8 @@ class CodeCompletionAgent(Agent):
     agent_type: ClassVar[str] = "code_completion"
 
     @classmethod
-    def create(cls, params: CodeCompletionAgentParams, server):
-        model = server.ensure_completions_model()
+    async def create(cls, params: CodeCompletionAgentParams, server):
+        model = await server.ensure_completions_model()
         state = CodeCompletionAgentState(
             model=model,
             document=server.documents[params.textDocument.uri],

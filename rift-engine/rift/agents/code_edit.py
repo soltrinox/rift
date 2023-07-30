@@ -80,8 +80,8 @@ class CodeEditAgent(Agent):
     agent_type: ClassVar[str] = "code_edit"
 
     @classmethod
-    def create(cls, params: CodeEditAgentParams, server):
-        model = self.ensure_completions_model() # TODO: not right, fix
+    async def create(cls, params: CodeEditAgentParams, server):
+        model = await server.ensure_completions_model() # TODO: not right, fix
         state = CodeEditAgentState(
             model=model,
             document=server.documents[params.textDocument.uri],
