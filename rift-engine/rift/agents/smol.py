@@ -195,9 +195,9 @@ class SmolAgent(Agent):
                 fs.append(
                     asyncio.create_task(
                         self.add_task(
-                                description=f"Generate code for {fp}",
-                                task=generate_code_for_filepath,
-                                kwargs=dict(file_path=fp, position=i),
+                            description=f"Generate code for {fp}",
+                            task=generate_code_for_filepath,
+                            kwargs=dict(file_path=fp, position=i),
                         ).run()
                     )
                 )

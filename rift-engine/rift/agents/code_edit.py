@@ -122,9 +122,7 @@ class CodeEditAgent(Agent):
                 try:
                     # get the next prompt
                     # logger.info("getting user response")
-                    get_user_response_t = self.add_task(
-                        "Get user response", get_user_response
-                    )
+                    get_user_response_t = self.add_task("Get user response", get_user_response)
                     instructionPrompt = await get_user_response_t.run()
                     documents = resolve_inline_uris(instructionPrompt, self.server)
                     self.server.register_change_callback(self.on_change, self.state.document.uri)
@@ -143,6 +141,7 @@ class CodeEditAgent(Agent):
                     )
                     logger.info("started streaming result")
                     response_stream = TextStream()
+
                     async def generate_response():
                         response = ""
                         try:
@@ -177,6 +176,7 @@ class CodeEditAgent(Agent):
 
                     logger.info("starting to iterate through text stream")
                     self.DIFF = None
+
                     async def generate_code():
                         nonlocal all_deltas
                         async for delta in edit_code_result.code:
@@ -252,6 +252,7 @@ class CodeEditAgent(Agent):
                                 except Exception as e:
                                     logger.info(f"caught {e=} retrying")
                                     fuel -= 1
+
                     await generate_code()
                     await gather_thoughts()
                     t = asyncio.create_task(cleanup())

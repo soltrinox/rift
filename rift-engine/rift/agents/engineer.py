@@ -279,8 +279,9 @@ class EngineerAgent(Agent):
             async def _step_task(event: asyncio.Event):
                 await event.wait()
 
-            _ = asyncio.create_task(self.add_task(description=step.__name__, task=_step_task, args=[event]).run())
-            
+            _ = asyncio.create_task(
+                self.add_task(description=step.__name__, task=_step_task, args=[event]).run()
+            )
 
         # # Add all steps to task list
         # for step in steps:
