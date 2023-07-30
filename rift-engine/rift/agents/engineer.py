@@ -32,7 +32,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util import file_diff
-from rift.util.context import contextual_prompt, resolve_chips
+from rift.util.context import contextual_prompt, resolve_inline_uris
 from rift.util.TextStream import TextStream
 
 try:
@@ -369,7 +369,7 @@ class EngineerAgent(Agent):
         get_prompt_task = self.add_task(AgentTask("Get prompt for workspace", get_prompt))
         prompt = await get_prompt_task.run()
 
-        documents = resolve_chips(prompt, self.server)
+        documents = resolve_inline_uris(prompt, self.server)
         prompt = contextual_prompt(prompt, documents)
 
         await asyncio.create_task(

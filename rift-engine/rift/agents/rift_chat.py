@@ -26,7 +26,7 @@ from rift.llm.abstract import (
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.context import resolve_chips
+from rift.util.context import resolve_inline_uris
 from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ class ChatAgent(Agent):
 
         async def generate_response(user_response: str):
             response = ""
-            documents: List[lsp.Document] = resolve_chips(user_response, self.server)
+            documents: List[lsp.Document] = resolve_inline_uris(user_response, self.server)
             logger.info(f"chips resolved {documents=}")
 
             doc_text = self.state.document.text

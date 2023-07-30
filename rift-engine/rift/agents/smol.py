@@ -29,7 +29,7 @@ from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.context import contextual_prompt, resolve_chips
+from rift.util.context import contextual_prompt, resolve_inline_uris
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -103,7 +103,7 @@ class SmolAgent(Agent):
         """
         await self.send_progress()
         prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
-        documents = resolve_chips(prompt, self.server)
+        documents = resolve_inline_uris(prompt, self.server)
         prompt = contextual_prompt(prompt)
         self.state.messages.append(openai.Message.user(prompt))  # update messages history
 

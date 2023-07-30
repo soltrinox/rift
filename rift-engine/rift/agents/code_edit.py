@@ -23,7 +23,7 @@ from rift.llm.abstract import AbstractCodeEditProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.context import resolve_chips
+from rift.util.context import resolve_inline_uris
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class CodeEditAgent(Agent):
                     )
                     instructionPrompt = await get_user_response_t.run()
 
-                    documents = resolve_chips(instructionPrompt, self.server)
+                    documents = resolve_inline_uris(instructionPrompt, self.server)
                     # logger.info("got user response")
 
                     # instructionPrompt = self.state.params.instructionPrompt or (
