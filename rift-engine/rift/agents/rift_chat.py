@@ -97,13 +97,12 @@ class ChatAgent(Agent):
 
         async def generate_response(user_response: str):
             response = ""
-
-            user_response = replace_chips(user_response, self.server)
+            documents = resolve_chips(user_response, self.server)
 
             doc_text = self.state.document.text
 
             stream = await self.state.model.run_chat(
-                doc_text, self.state.messages, user_response, cursor_offset=None
+                doc_text, self.state.messages, user_response, cursor_offset=None, documents=documents
             )
             async for delta in stream.text:
                 response += delta

@@ -29,7 +29,7 @@ from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.misc import replace_chips
+from rift.util.misc import resolve_chips, contextual_prompt
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -103,23 +103,10 @@ class SmolAgent(Agent):
             - generate code (in parallel)
         """
         await self.send_progress()
-        # await ainput("\n> Press any key to continue.\n")
-
-        # if params.prompt_file is None:
-        #     prompt = await ainput("\n> Prompt file not found. Please input a prompt.\n")
-        # else:
-        #     with open(params.prompt_file, "r") as f:
-        #         prompt = f.read()
-
-        # get the initial prompt
         prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
-        prompt = replace_chips(prompt, self.server)
+        documents = resolve_chips(prompt, self.server)
+        prompt = contextual_prompt(prompt)
         self.state.messages.append(openai.Message.user(prompt))  # update messages history
-
-        # logger.info("Starting smol-dev with prompt:")
-        # self.console.print(prompt, markup=True, highlight=True)
-
-        # await ainput("\n> Press any key to continue.\n")
 
         RESPONSE = ""
         loop = asyncio.get_running_loop()

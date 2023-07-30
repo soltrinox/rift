@@ -23,7 +23,7 @@ from rift.llm.abstract import AbstractCodeEditProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.misc import replace_chips
+from rift.util.misc import resolve_chips
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class CodeEditAgent(Agent):
                     )
                     instructionPrompt = await get_user_response_t.run()
 
-                    instructionPrompt = replace_chips(instructionPrompt, self.server)
+                    documents = resolve_chips(instructionPrompt, self.server)
                     # logger.info("got user response")
 
                     # instructionPrompt = self.state.params.instructionPrompt or (
@@ -155,6 +155,7 @@ class CodeEditAgent(Agent):
                         latest_region=None
                         if self.DIFF is None
                         else (self.accepted_diff_text(self.DIFF)),
+                        documents=documents,
                     )
                     logger.info("started streaming result")
                     response_stream = TextStream()

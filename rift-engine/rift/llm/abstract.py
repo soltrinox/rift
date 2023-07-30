@@ -25,6 +25,7 @@ class ChatResult:
 
 
 class AbstractCodeCompletionProvider(ABC):
+    # TODO(jesse): deprecate
     @abstractmethod
     async def insert_code(
         self, document: str, cursor_offset: int, goal: Optional[str] = None

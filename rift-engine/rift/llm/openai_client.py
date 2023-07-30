@@ -40,6 +40,8 @@ from rift.llm.openai_types import (
 )
 from rift.util.TextStream import TextStream
 
+import rift.lsp.types as lsp
+
 logger = logging.getLogger(__name__)
 
 I = TypeVar("I", bound=BaseModel)
@@ -141,88 +143,102 @@ def calc_max_system_message_size(non_system_messages_size: int) -> int:
     )
 
 
-def create_system_message(document: str) -> Message:
-    """
-    Create system message wiht up to MAX_SYSTEM_MESSAGE_SIZE tokens
-    """
-    return Message.system(
-        f"""
-You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the current file to support your claims.
+# def create_system_message(document: str) -> Message:
+#     """
+#     Create system message with up to MAX_SYSTEM_MESSAGE_SIZE tokens
+#     """
+#     return Message.system(
+#         f"""
+# You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the current file to support your claims.
 
-Current file:
-```
-{document}
-```
+# Current file:
+# ```
+# {document}
+# ```
 
-Answer the user's question."""
-    )
+# Answer the user's question."""
+#     )
 
 
-def create_system_message_mentioned(document: str, documents: List[str]) -> Message:
+def create_system_message_chat(document: str, documents: Optional[List[str]] = None) -> Message:
     """
     Create system message wiht up to MAX_SYSTEM_MESSAGE_SIZE tokens
     """
 
     message = f"""
-You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the current file to support your claims.
+You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the visible files if possible to support your claims.
 
 Current file:
 ```
 {document}
 ```"""
-    for doc in documents:
-        message += "Additional files: \n```" + doc + "```\n"
-
+    if documents:
+        message += "Additional files:\n"        
+        for doc in documents:
+            message += f"```\n{doc}\n```\n"
     message += """Answer the user's question."""
     return Message.system(message)
 
 
-def create_system_message_truncated(
-    document: str, max_size: int, cursor_offset: Optional[int], document_list: Optional[List[str]]
+def truncate_around_region(document: str, document_tokens: List[int], region_start, region_end: Optional[int] = None, max_size):
+    if region_end is None:
+        region_end = region_start
+    if region_start:
+        before_cursor: str = document[:region_start]
+        region: str = document[region_start:region_end]
+        after_cursor: str = document[region_end:]
+        tokens_before_cursor: List[int] = ENCODER.encode(before_cursor)
+        tokens_after_cursor: List[int] = ENCODER.encode(after_cursor)
+        region_tokens: List[int] = ENCODE.encode(region)
+        (tokens_before_cursor, tokens_after_cursor) = split_lists(
+            tokens_before_cursor, tokens_after_cursor, max_size
+        )
+        logger.debug(
+            f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor"
+        )
+        tokens: List[int] = tokens_before_cursor + region_tokens + tokens_after_cursor
+    else:
+        # if there is no cursor offset provided, simply take the last max_size tokens
+        tokens = document_tokens[-max_size:]
+        logger.debug(f"Truncating document to last {len(tokens)} tokens")
+    return tokens    
+
+
+def create_system_message_chat_truncated(
+        document: str, max_size: int, cursor_offset_start: Optional[int] = None, cursor_offset_end: Optional[int] = None, document_list: Optional[List[str]] = None, current_file_weight: float = 0.75
 ) -> Message:
     """
     Create system message with up to max_size tokens
     """
-
-    hardcoded_message = create_system_message("")
+    logging.getLogger().info(f"{max_size=}")
+    hardcoded_message = create_system_message_chat("")
     hardcoded_message_size = message_size(hardcoded_message)
     max_size = max_size - hardcoded_message_size
 
-    document = ENCODER.encode(document)
-    if len(document) > max_size:
-        if cursor_offset:
-            before_cursor = document[:cursor_offset]
-            after_cursor = document[cursor_offset:]
-            tokens_before_cursor = ENCODER.encode(before_cursor)
-            tokens_after_cursor = ENCODER.encode(after_cursor)
-            (tokens_before_cursor, tokens_after_cursor) = split_lists(
-                tokens_before_cursor, tokens_after_cursor, max_size
-            )
-            logger.debug(
-                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor"
-            )
-            tokens = tokens_before_cursor + tokens_after_cursor
-        else:
-            # if there is no cursor offset provided, simply take the last max_size tokens
-            tokens = document[-max_size:]
-            logger.debug(f"Truncating document to last {len(tokens)} tokens")
+    if document_list:
+        # truncate the main document as necessary
+        max_document_size = int(current_file_weight * max_size)
+    else:
+        max_document_size = max_size
 
-        max_size = max_size - len(tokens)
-        document = ENCODER.decode(tokens)
+    document_tokens = ENCODER.encode(document)
+    if len(document_tokens) > max_document_size:
+        document_tokens: List[int] = truncate_around_region(document, document_tokens, cursor_offset_start, cursor_offset_end, max_document_size)
+    truncated_document = ENCODER.decode(document_tokens)        
 
-    if document_list != []:
+    truncated_document_list = []
+    if document_list:
+        max_document_list_size = ((1.0 - current_file_weight) * max_size) // len(document_list)
         for doc in document_list:
             # TODO: Need a check for using up our limit
-            doc = ENCODER.encode(doc)
-            if len(tokens) > max_size:
-                tokens = doc[-max_size:]
+            tokens = ENCODER.encode(doc)
+            if len(tokens) > max_document_list_size:
+                tokens = doc[-max_document_list_size:]
                 logger.debug(f"Truncating document to last {len(tokens)} tokens")
-            max_size = max_size - len(tokens)
             doc = ENCODER.decode(tokens)
+            truncated_document_list.append(doc)
 
-        return create_system_message_mentioned(document, document_list)
-
-    return create_system_message(document)
+    return create_system_message_chat(truncated_document, truncated_document_list)
 
 
 def truncate_messages(messages: List[Message]):
@@ -232,11 +248,12 @@ def truncate_messages(messages: List[Message]):
     tail_messages: List[Message] = []
     running_length = 0
     for msg in reversed(messages[1:]):
+        logger.info(f"{running_length=}")
         running_length += message_size(msg)
         if running_length > max_size:
             break
         tail_messages.insert(0, msg)
-
+    logger.info(f"Tail messages: {tail_messages}")
     return [messages[0]] + tail_messages
 
 
@@ -421,7 +438,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         messages: List[Message],
         message: str,
         cursor_offset: Optional[int] = None,
-        documents: Optional[List[str]] = [],
+        documents: Optional[List[str]] = None,
     ) -> ChatResult:
         chatstream = TextStream()
         non_system_messages = []
@@ -432,9 +449,10 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         non_system_messages_size = messages_size(non_system_messages)
 
         max_system_msg_size = calc_max_system_message_size(non_system_messages_size)
+        logger.info(f"{max_system_msg_size=}")
 
-        system_message = create_system_message_truncated(
-            document or "", max_system_msg_size, cursor_offset, documents
+        system_message = create_system_message_chat_truncated(
+            document or "", max_system_msg_size, cursor_offset, cursor_offset, documents
         )
 
         messages = [system_message] + non_system_messages

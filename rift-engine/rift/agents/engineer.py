@@ -32,7 +32,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util import file_diff
-from rift.util.misc import replace_chips
+from rift.util.misc import resolve_chips, contextual_prompt
 from rift.util.TextStream import TextStream
 
 try:
@@ -199,7 +199,6 @@ class EngineerAgent(Agent):
 
             async def request_chat():
                 async with response_lock:
-                    self.RESPONSE = replace_chips(self.RESPONSE, self.server)
                     await self.send_progress(
                         EngineerProgress(response=self.RESPONSE, done_streaming=True)
                     )
@@ -364,12 +363,14 @@ class EngineerAgent(Agent):
 
         async def get_prompt():
             prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
-            prompt = replace_chips(prompt, self.server)
             self.state.messages.append(openai.Message.user(prompt))
             return prompt
 
         get_prompt_task = self.add_task(AgentTask("Get prompt for workspace", get_prompt))
         prompt = await get_prompt_task.run()
+        
+        documents = resolve_chips(prompt, self.server)
+        prompt = contextual_prompt(prompt, documents)
 
         await asyncio.create_task(
             self._main(prompt=prompt, project_path=self.state.params.workspaceFolderPath)
