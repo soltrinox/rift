@@ -79,7 +79,10 @@ export type WebviewState = {
     [id: string]: WebviewAgent;
   };
   availableAgents: AgentRegistryItem[];
-  //    logs: { role: "user" | "assistant", content: string }[]
+  files: {
+    recentlyOpenedFiles: AtableFile[]
+    nonGitIgnoredFiles: AtableFile[]
+  }
 };
 
 // the only reason this is here is because types.ts is used for shared logic between the webviews and the extension.
@@ -96,6 +99,10 @@ export const DEFAULT_STATE: WebviewState = {
       display_name: "Rift Chat",
     },
   ],
+  files: {
+    recentlyOpenedFiles: [],
+    nonGitIgnoredFiles: []
+  }
 };
 
 export interface RunParams {
@@ -201,3 +208,9 @@ export type AgentResult = {
   id: string;
   type: string;
 }; //is just an ID rn
+
+export type AtableFile = {
+  fileName: string; //example.ts
+  fullPath: string; //Users/brent/dev/project/src/example.ts
+  fromWorkspacePath: string; //project/src/example.ts
+}

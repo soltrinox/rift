@@ -121,6 +121,10 @@
       {
         "command": "rift.focus_omnibar",
         "title": "Rift: Focus Omnibar"
+      },
+      {
+        "command": "rift.mockTypeCommandP",
+        "title": "Rift: Mock Mock Mock"
       }
     ]
   },
@@ -171,8 +175,15 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@tiptap/core": "^2.0.4",
+    "@tiptap/extension-mention": "^2.0.4",
+    "@tiptap/extension-placeholder": "^2.0.4",
+    "@tiptap/pm": "^2.0.4",
+    "@tiptap/starter-kit": "^2.0.4",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "delay": "^6.0.0",
+    "gitignore-parser": "^0.0.2",
+    "ignore": "^5.2.4",
     "morphdom": "^2.7.0",
     "showdown": "^2.1.0",
     "tcp-port-used": "^1.0.2",

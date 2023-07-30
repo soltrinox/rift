@@ -1,213 +1,288 @@
 <script lang="ts">
-  // This script section of the OmniBar component handles all the logic and state management.
-  // It imports necessary components such as SendSvg and Dropdown, and state variables from the stores.
-  // It also declares and defines several functions and variables that are used to control the behavior of the OmniBar.
+  import SendSvg from "./icons/SendSvg.svelte"
+  import { dropdownStatus, filteredAgents, state } from "./stores"
+  import SlashDropdown from "./chat/dropdown/SlashDropdown.svelte"
+  import { tick } from "svelte"
+  import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
+  import type { AgentRegistryItem, AtableFile } from "../../src/types"
+  import { onMount, onDestroy } from "svelte"
+  import { CommandProps, Editor } from "@tiptap/core"
+  import StarterKit from "@tiptap/starter-kit"
+  import { Placeholder } from "@tiptap/extension-placeholder"
+  import type { Transaction } from "@tiptap/pm/state"
+  import { FileChip } from "./FileChip"
 
-  // Import the SendSvg component.
-  import SendSvg from "./icons/SendSvg.svelte";
-  // Import the dropdownOpen and state from the stores.
-  import { dropdownOpen, state } from "./stores";
-  // Import the Dropdown component.
-  import Dropdown from "./chat/dropdown/Dropdown.svelte";
-  // Import the tick function from svelte.
-  import { tick } from "svelte";
+  let isFocused = true
 
-  // Declare a variable 'isFocused' to keep track of the focus state of the OmniBar.
-  // It is initially set to true, meaning the OmniBar is focused when the component is first rendered.
-  let isFocused = true;
+  let _container: HTMLDivElement | undefined
 
-  // Define a function 'resize' to dynamically adjust the height of the OmniBar based on its content.
-  // It takes an event object as a parameter, from which it extracts the target element (the OmniBar in this case).
-  // It first sets the height of the target element to 'auto', then sets it to the scrollHeight of the element,
-  // effectively resizing the OmniBar to fit its content.
-  function resize(event: Event) {
-    let targetElement = event.target as HTMLElement;
-    targetElement.style.height = "auto";
-    targetElement.style.height = `${targetElement.scrollHeight}px`;
-  }
-
-  // Declare a variable for the input value.
-  let inputValue: string = "";
-
-  // Declare a variable for the textarea element.
-  let textarea: HTMLTextAreaElement | undefined;
-
-  // Declare a variable for whether the OmniBar has input.
-  let hasInput = false;
-  // Subscribe to the state and update the isFocused and hasInput variables based on the state.
+  let hasInput = false
   state.subscribe((s) => {
     if (s.selectedAgentId) {
       if (s.agents[s.selectedAgentId].inputRequest) {
-        hasInput = true;
+        hasInput = true
       }
     }
-    isFocused = s.isFocused;
+    isFocused = s.isFocused
     if (isFocused) {
-      textarea?.focus();
+      focus()
     }
-    hasInput = false;
-  });
+    hasInput = false
+  })
 
   // Define a function to send a message.
   function sendMessage() {
-    if (!textarea) throw new Error();
+    console.log("sending message")
     if ($state.agents[$state.selectedAgentId].isStreaming) {
-      console.log("cannot send messages while ai is responding");
-      return;
+      console.log("cannot send messages while ai is responding")
+      return
     }
-    textarea.blur();
+    blur()
 
-    console.log("chat history");
-    console.log($state.agents[$state.selectedAgentId].chatHistory);
+    console.log("chat history")
+    console.log($state.agents[$state.selectedAgentId].chatHistory)
 
-    let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory;
-    appendedMessages?.push({ role: "user", content: textarea.value });
-    console.log("appendedMessages");
-    console.log(appendedMessages);
+    let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory
+    appendedMessages?.push({ role: "user", content: editorContent })
+    console.log("appendedMessages")
+    console.log(appendedMessages)
 
-    if (!$state.agents[$state.selectedAgentId]) throw new Error();
+    if (!$state.agents[$state.selectedAgentId]) throw new Error()
 
     vscode.postMessage({
       type: "chatMessage",
       agent_id: $state.selectedAgentId,
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
-      message: textarea.value,
-    });
+      message: editorContent,
+    })
 
-    textarea.value = "";
-    textarea.focus();
-    textarea.style.height = "auto";
-    textarea.style.height = textarea.scrollHeight + "px";
+    // clint.
+    // console.log("updating state...");
+
+    // state.update((state: WebviewState) => ({
+    //   ...state,
+    //   agents: {
+    //     ...state.agents,
+    //     [state.selectedAgentId]: {
+    //       ...state.agents[state.selectedAgentId],
+    //       chatHistory: appendedMessages,
+    //     },
+    //   },
+    // }));
+    resetTextarea()
+    focus()
+    // resize()
   }
 
-  // Define a function to handle value changes.
-  let dropdownCancelled = false;
+  function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
+    editorContent = editor.getText()
+    console.log("handleValueChange: ", editorContent)
 
-  let isDoubleSlashAllowed = false;
-
-  function handleValueChange(e: Event) {
-    if (!textarea) throw new Error();
-    inputValue = textarea.value;
-    resize(e);
-    
-    // Check for the case of typing two slashes.
-    if (textarea.value.trim() === "//") {
-      dropdownOpen.set(false);
-      dropdownCancelled = true;
-      if (isDoubleSlashAllowed) {
-        textarea.value = "//";
-        isDoubleSlashAllowed = false;
-      } else {
-        textarea.value = "/";
-        isDoubleSlashAllowed = true;
-      }
-      return; // Stop execution here if two slashes were entered.
+    const shouldShowAtDropdown = () => {
+      latestAtToEndOfTextarea =
+        editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
+      return Boolean(latestAtToEndOfTextarea)
     }
+    let newFilteredAgents:AgentRegistryItem[] = []
+    if (editorContent.trim().startsWith("/")) {
+      let searchString = editorContent.substring(1).toLowerCase()
+      newFilteredAgents = $state.availableAgents.filter((agent) => {
+        return (
+          agent.agent_type.toLowerCase().includes(searchString) ||
+          agent.display_name.toLowerCase().includes(searchString)
+        )
+      })
+      filteredAgents.set(newFilteredAgents) // im not proud
+    } else filteredAgents.set([])
 
-    // Remainder of the function
-    if (textarea.value.trim().startsWith("/") && !textarea.value.trim().startsWith("/ ") && !dropdownCancelled) {
-      dropdownOpen.set(true);
+    if (editorContent.trim().startsWith("/") && newFilteredAgents.length > 0) {
+      console.log("setting slash")
+      dropdownStatus.set("slash")
+    } else if (shouldShowAtDropdown()) {
+      console.log("setting at")
+      dropdownStatus.set("at")
     } else {
-      dropdownOpen.set(false);
-      if (textarea.value.trim() === "") {
-        dropdownCancelled = false;
-      }
+      console.log("setting none")
+      dropdownStatus.set("none")
     }
   }
 
-  // Define a function to handle key down events.
+  dropdownStatus.subscribe((s) => console.log("dropdownStatus!:", s))
+
   function handleKeyDown(e: KeyboardEvent) {
-    if (!textarea) throw new Error();
+    console.log("handleKeydown")
+
     if (e.key === "Enter") {
-      e.preventDefault(); 
-      if (e.shiftKey) {
-        textarea.value = textarea.value + "\n";
-        textarea.style.height = "auto";
-        textarea.style.height = textarea.scrollHeight + "px";
-        return;
-      }
-      if (!textarea.value || $dropdownOpen) return;
-      sendMessage();
+      // 13 is the Enter key code
+      console.log("preventing default")
+      // e.preventDefault() // Prevent default Enter key action
+
+      if (e.shiftKey) return
+      if (!editorContent) resetTextarea()
+      if (!editorContent || $dropdownStatus == "slash" || $dropdownStatus == "at") return
+      sendMessage()
     }
   }
 
   // Define a function to handle running an agent.
   function handleRunAgent(agent_type: string) {
-    if (!textarea) throw new Error();
     if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
-      throw new Error("attempt to run unavailable agent");
+      throw new Error("attempt to run unavailable agent")
     vscode.postMessage({
       type: "runAgent",
       agent_type,
-    });
+    })
 
-    textarea.value = ""; 
-    dropdownOpen.set(false);
+    // textareaValue = ""; //clear omnibar text
+    resetTextarea()
+    dropdownStatus.set("none")
   }
 
-  // Define a function to handle focus events.
-  let onFocus = async (event: FocusEvent) => {
-    if (!textarea) throw new Error();
-    isFocused = true;
+  let onFocus = async () => {
+    isFocused = true
     vscode.postMessage({
       type: "sendHasNotificationChange",
       agentId: $state.selectedAgentId,
       hasNotification: false,
-    });
+    })
     vscode.postMessage({
       type: "focusOmnibar",
-    });
-    textarea.focus();
-    await tick();
-    textarea.select();
-  };
+    })
+    focus()
+    await tick()
+  }
 
   // Define a function to handle blur events.
   let onBlur = () => {
-    isFocused = false;
+    isFocused = false
     vscode.postMessage({
       type: "blurOmnibar",
-    });
-  };
+    })
+  }
+
+  function handleAddChip(file: AtableFile) {
+    console.log("handle add chip:", file.fileName)
+    const spanEl = document.createElement("span")
+
+    if (!editor) throw new Error("")
+    console.log("editorJSON:")
+    console.log(editor.getJSON())
+
+    editor
+      .chain()
+      .command((props: CommandProps) => {
+        const { editor, tr, commands, state, dispatch } = props
+
+        const docsize = state.doc.content.size - 1 // oboe :()
+
+        if (!latestAtToEndOfTextarea)
+          throw new Error("why is this command being run if theres no latestAtToEndOfTextarea")
+
+        tr.delete(docsize - latestAtToEndOfTextarea.length, docsize)
+
+        return true
+      })
+      .insertContent(`<span data-fsPath="${file.fullPath}" data-name="${file.fileName}"></span>`)
+      .insertContent(" ")
+      .run()
+  }
+
+
+  let latestAtToEndOfTextarea: string | undefined = undefined
+  $: console.log("latestAtTOEndOfTextarea:", latestAtToEndOfTextarea)
+
+  const focus = () => editor?.view.focus()
+  const blur = () => editor?.commands.blur()
+
+  function resetTextarea() {
+    editor?.commands.clearContent()
+  }
+
+  function disableDefaults(event: Event) {
+    const e = event as KeyboardEvent
+    const keyCodes = ["ArrowUp", "ArrowDown"]
+
+    if (keyCodes.includes(e.code)) {
+      event.preventDefault()
+    }
+
+    if (e.code === "Enter" && $dropdownStatus != "none") event.preventDefault()
+  }
+
+  let editor: Editor | undefined
+  onMount(() => {
+    editor = new Editor({
+      element: _container,
+      extensions: [
+        StarterKit,
+        FileChip.configure({
+          HTMLAttributes: {
+            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
+            contenteditable: "false",
+          },
+        }),
+        Placeholder.configure({
+          emptyEditorClass: "is-editor-empty",
+          placeholder: "Type to chat or hit / for commands",
+        }),
+      ],
+      editorProps: {
+        attributes: {
+          class: "outline-none focus:outline-none max-h-40 overflow-auto",
+        },
+      },
+      content: "",
+      onTransaction: (props) => {
+        // force re-render so `editor.isActive` works as expected
+        editor = editor
+      },
+      onFocus,
+      onBlur,
+      onUpdate: handleValueChange,
+      onSelectionUpdate: (props) => {
+        console.log("onSelection update:", props)
+      },
+    })
+
+    const editorRootElement = document.querySelector(".ProseMirror")
+    if (!editorRootElement) throw new Error()
+    editorRootElement.addEventListener("keydown", disableDefaults, true)
+  })
+  onDestroy(() => {
+    const editorRootElement = document.querySelector(".ProseMirror")
+    editorRootElement?.removeEventListener("keydown", disableDefaults, true)
+    editor?.destroy()
+  })
+
+  let editorContent = ""
+  $: {
+    editorContent = editor?.getText() ?? ""
+  }
 </script>
 
-<div
-  class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative"
-  >
-  <!-- This is the main OmniBar component. It is a container that includes a textarea for user input and a send button.
-       The textarea is where the user types their messages or commands, and the send button is used to submit these messages or commands. -->
+<div class="p-2 border-t border-b border-[var(--vscode-input-background)] w-full relative">
   <div
     class={`w-full text-md p-2 bg-[var(--vscode-input-background)] rounded-md flex flex-row items-center border ${
-    isFocused ? "border-[var(--vscode-focusBorder)]" : "border-transparent"
-    }`}
-    >
-    <!-- This is the textarea for user input. It binds several events such as input, keydown, focus, and blur to handle user interactions.
-         It also binds the 'textarea' variable declared in the script section, allowing the script to control its behavior and content. -->
-    <textarea
+      isFocused ? "border-[var(--vscode-focusBorder)]" : "border-transparent"
+    }`}>
+    <div
       id="omnibar"
-      bind:this={textarea}
-      class="w-full outline-none focus:outline-none bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
-      placeholder={hasInput
-      ? $state.agents[$state.selectedAgentId].inputRequest?.place_holder
-      : "Type to chat or hit / for commands"}
-      on:input={handleValueChange}
-      on:keydown={handleKeyDown}
-      on:focus={onFocus}
-      on:blur={onBlur}
-      rows={1}
-      />
-    <!-- This is the send button. It is a graphical element that the user can interact with to submit their messages or commands.
-         When clicked, it triggers the 'sendMessage' function defined in the script section, which handles the message sending logic. -->
+      class="w-full bg-transparent resize-none overflow-visible hide-scrollbar max-h-40"
+      bind:this={_container}
+      on:keydown={handleKeyDown} />
     <div class="justify-self-end flex">
       <button on:click={sendMessage} class="items-center flex">
         <SendSvg />
       </button>
     </div>
   </div>
-  <!-- If the dropdown is open, display the Dropdown component. -->
-  {#if $dropdownOpen}
-    <Dropdown {inputValue} {handleRunAgent} />
+  {#if $dropdownStatus == "slash"}
+    <SlashDropdown {handleRunAgent} />
+  {/if}
+
+  {#if $dropdownStatus == "at"}
+    <AtDropdown {editorContent} {handleAddChip} />
   {/if}
 </div>
 
@@ -221,5 +296,13 @@
   .hide-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+  }
+
+  :global(.ProseMirror p.is-editor-empty:first-child::before) {
+    color: #adb5bd;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
   }
 </style>

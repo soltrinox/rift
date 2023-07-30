@@ -8,24 +8,28 @@ import time
 import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, ClassVar, Dict, Optional
-
-import typer
+from rift.util import file_diff
+import os
+import re
+import types
 
 import rift.lsp.types as lsp
-import rift.util.file_diff as file_diff
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
+    AgentProgress,  # AgentTask,
     AgentRunParams,
-    AgentRunResult,
+    AgentRunResult, 
     AgentState,
     RequestChatRequest,
     RequestInputRequest,
+    RequestChatRequest,
     RunAgentParams,
     agent,
 )
+import typer
+from pathlib import Path
+
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
@@ -44,8 +48,10 @@ except ImportError:
 
 SEEN = set()
 
-import json
-import threading
+STEPS_AGENT_TASKS_NAME_QUEUE = asyncio.Queue()
+STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
+
+SEEN = set()
 
 from gpt_engineer.ai import AI, fallback_model
 from gpt_engineer.collect import collect_learnings
@@ -53,11 +59,28 @@ from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS
 from gpt_engineer.steps import Config as StepsConfig
-
+import threading
+import json
 import rift.llm.openai_types as openai
 
 logger = logging.getLogger(__name__)
 
+def __fix_windows_path(path: str) -> str:
+    """
+    Replace a windows path represented as "/c%3A"... with "c:"...
+
+    :param path: Original path
+    :return: Usable windows path, or original path if not a windows path
+    """
+    pattern = r'^/(.)%3A'
+
+    match = re.match(pattern, path)
+    
+    if match:
+        drive_letter = match.group(1)
+        return path.replace(f"/{drive_letter}%3A", f"{drive_letter}:")
+    else:
+        return path
 
 def _fix_windows_path(path: str) -> str:
     """
@@ -118,8 +141,10 @@ class EngineerRunResult(AgentRunResult):
     ...
 
 
+
 @dataclass
 class EngineerAgentParams(AgentRunParams):
+    textDocument: lsp.TextDocumentIdentifier
     instructionPrompt: Optional[str] = None
 
 
@@ -130,13 +155,15 @@ class EngineerProgress(
     response: Optional[str] = None
     done_streaming: bool = False
 
-
 @dataclass
 class EngineerAgentState(AgentState):
     model: AbstractCodeCompletionProvider
+    document: lsp.TextDocumentItem
     params: EngineerAgentParams
     messages: list[openai.Message]
     change_futures: Dict[str, Future] = field(default_factory=dict)
+    _done: bool = False
+
 
 
 # decorator for creating the code completion agent
@@ -318,6 +345,7 @@ class EngineerAgent(Agent):
     def create(cls, params: EngineerAgentParams, model, server):
         state = EngineerAgentState(
             model=model,
+            document=server.documents[params.textDocument.uri],
             params=params,
             messages=[openai.Message.assistant("What do you want to build?")],
         )
@@ -328,6 +356,7 @@ class EngineerAgent(Agent):
         )
 
         return obj
+    
 
     async def run(self) -> AgentRunResult:  # main entry point
         self.response_stream = TextStream()

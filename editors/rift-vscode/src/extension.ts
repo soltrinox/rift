@@ -5,6 +5,7 @@ import { MorphLanguageClient } from "./client";
 // import { join } from 'path';
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { WebviewProvider } from "./elements/WebviewProvider";
+import { AtableFileFromFsPath } from "./util/AtableFileFunction";
 
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
@@ -40,6 +41,33 @@ export function activate(context: vscode.ExtensionContext) {
       webviewOptions: { retainContextWhenHidden: true },
     }),
   );
+
+  
+  let recentlyOpenedFiles:string[] = []
+vscode.workspace.onDidOpenTextDocument((document) => {
+  const filePath = document.uri.fsPath
+  if(filePath.endsWith('.git')) return // weirdly getting both file.txt and file.txt.git on every file change
+  
+  // Check if file path already exists in the recent files list
+  const existingIndex = recentlyOpenedFiles.indexOf(filePath)
+
+  // If the file is found, remove it from the current location
+  if (existingIndex > -1) {
+    recentlyOpenedFiles.splice(existingIndex, 1)
+  }
+
+  // Add the file to the end of the list (top of the stack)
+  recentlyOpenedFiles.push(filePath)
+
+  // Limit the history to the last 10 files
+  if (recentlyOpenedFiles.length > 10) {
+    recentlyOpenedFiles.shift()
+  }
+
+  morph_language_client.sendRecentlyOpenedFilesChange(recentlyOpenedFiles)
+})
+
+
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
 
@@ -149,6 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposablefocusOmnibar);
   context.subscriptions.push(morph_language_client);
 
+
   // const provider = async (document, position, context, token) => {
   //     return [
   //         { insertText: await mlc.provideInlineCompletionItems(document, position, context, token) }
@@ -158,3 +187,5 @@ export function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
+
+
