@@ -23,22 +23,10 @@ from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
-from rift.server.agent import *
 from rift.server.selection import RangeSet
 from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class AgentProgress:
-    id: int
-    textDocument: lsp.TextDocumentIdentifier
-    status: Literal["running", "done", "error"]
-    log: Optional[AgentLogs] = field(default=None)
-    ranges: Optional[RangeSet] = field(default=None)
-    cursor: Optional[lsp.Position] = field(default=None)
-
 
 class LspLogHandler(logging.Handler):
     def __init__(self, server: "LspServer"):
@@ -82,14 +70,6 @@ class LoadFilesParams:
 
 
 @dataclass
-class ChatAgentProgress:
-    id: int
-    response: str = ""
-    log: Optional[AgentLogs] = field(default=None)
-    done: bool = False
-
-
-@dataclass
 class RunAgentResult:
     id: str
 
@@ -98,6 +78,10 @@ class RunAgentResult:
 class RunAgentSyncResult:
     id: int
     text: str
+
+@dataclass
+class AgentIdParams:
+    id: str
 
 
 class LspServer(BaseLspServer):
@@ -228,25 +212,6 @@ class LspServer(BaseLspServer):
 
     async def send_update(self, msg: str):
         await self.notify("morph/send_update", {"msg": msg})
-
-    async def send_agent_progress(
-        self,
-        id: int,
-        textDocument: lsp.TextDocumentIdentifier,
-        log: Optional[AgentLogs] = None,
-        cursor: Optional[lsp.Position] = None,
-        ranges: Optional[RangeSet] = None,
-        status: Literal["running", "done", "error"] = "running",
-    ):
-        progress = AgentProgress(
-            id=id,
-            textDocument=textDocument,
-            log=log,
-            cursor=cursor,
-            status=status,
-            ranges=ranges,
-        )
-        await self.notify("morph/progress", progress)
 
     async def ensure_completions_model(self):
         try:

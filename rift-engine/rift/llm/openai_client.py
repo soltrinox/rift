@@ -143,21 +143,59 @@ def calc_max_system_message_size(non_system_messages_size: int) -> int:
     )
 
 
-# def create_system_message(document: str) -> Message:
-#     """
-#     Create system message with up to MAX_SYSTEM_MESSAGE_SIZE tokens
-#     """
-#     return Message.system(
-#         f"""
-# You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the current file to support your claims.
-
-# Current file:
-# ```
-# {document}
-# ```
-
-# Answer the user's question."""
-#     )
+def create_system_message_edit(document: str, cursor_offset_start: int, cursor_offset_end: int, documents: Optional[List[str]] = None) -> Message:
+    def create_messages(before_cursor: str, region: str, after_cursor: str) -> List[Message]:
+        return [
+            Message.system(
+                "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
+                "- Conciseness\n"
+                "- DRY principle\n"
+                "- Self-documenting code with plenty of comments\n"
+                "- Modularity\n"
+                "- Deduplicated code\n"
+                "- Readable code\n"
+                "- Abstracting things away to functions for reusability\n"
+                "- Logical thinking\n"
+                "\n\n"
+                "You will be presented with a *task* and a source code file split into three parts: a *prefix*, *region*, and *suffix*. "
+                "The task will specify a change or new code that will replace the given region.\n You will receive the source code in the following format:\n"
+                "==== PREFIX ====\n"
+                "${source code file before the region}\n"
+                "==== REGION ====\n"
+                "${region}\n"
+                "==== SUFFIX ====\n"
+                "{source code file after the region}\n\n"
+                "When presented with a task, you will:\n(1) write a detailed and elegant plan to solve this task,\n(2) write your solution for it surrounded by triple backticks, and\n(3) write a 1-2 sentence summary of your solution.\n"
+                f"Your solution will be added verbatim to replace the given region. Do *not* repeat the prefix or suffix in any way.\n"
+                "The solution should directly replaces the given region. If the region is empty, just write something that will replace the empty string. *Do not repeat the prefix or suffix in any way*. If the region is in the middle of a function definition or class declaration, do not repeat the function signature or class declaration. Write a partial code snippet without imports if needed. Preserve indentation.\n"
+                f"For example, if the source code looks like this:\n"
+                "==== PREFIX ====\n"
+                "def hello_world():\n    \n"
+                "==== REGION ====\n"
+                "\n"
+                "==== SUFFIX ====\n"
+                "if __name__ == '__main__':\n    hello_world()\n\n"
+                "And the task is 'implement this function and return 0', then a good response would be\n"
+                "We will implement hello world by first using the Python `print` statement and then returning the integer literal 0.\n"
+                "```\n"
+                "# print hello world\n"
+                "    print('hello world!')\n"
+                "    # return the integer 0\n"
+                "    return 0\n"
+                "```\n"
+                "I added an implementation of the rest of the `hello_world` function which uses the Ptython `print` statement to print 'hello_world' before returning the integer literal 0.\n"
+            ),
+            Message.assistant("Hello! How can I help you today?"),
+            Message.user(
+                f"Please generate code completing the task which will replace the below region: {goal}\n"
+                "==== PREFIX ====\n"
+                f"{before_cursor}"
+                "==== REGION ====\n"
+                f"{latest_region or region}\n"
+                "==== SUFFIX ====\n"
+                f"{after_cursor}\n"
+            ),
+        ]
 
 
 def create_system_message_chat(document: str, documents: Optional[List[str]] = None) -> Message:
@@ -173,14 +211,14 @@ Current file:
 {document}
 ```"""
     if documents:
-        message += "Additional files:\n"        
+        message += "Additional files:\n"
         for doc in documents:
             message += f"```\n{doc}\n```\n"
     message += """Answer the user's question."""
     return Message.system(message)
 
 
-def truncate_around_region(document: str, document_tokens: List[int], region_start, region_end: Optional[int] = None, max_size):
+def truncate_around_region(document: str, document_tokens: List[int], region_start, region_end: Optional[int] = None, max_size: Optional[int] = None):
     if region_end is None:
         region_end = region_start
     if region_start:
@@ -201,11 +239,11 @@ def truncate_around_region(document: str, document_tokens: List[int], region_sta
         # if there is no cursor offset provided, simply take the last max_size tokens
         tokens = document_tokens[-max_size:]
         logger.debug(f"Truncating document to last {len(tokens)} tokens")
-    return tokens    
+    return tokens
 
 
 def create_system_message_chat_truncated(
-        document: str, max_size: int, cursor_offset_start: Optional[int] = None, cursor_offset_end: Optional[int] = None, document_list: Optional[List[str]] = None, current_file_weight: float = 0.75
+        document: str, max_size: int, cursor_offset_start: Optional[int] = None, cursor_offset_end: Optional[int] = None, document_list: Optional[List[str]] = None, current_file_weight: float = 0.5
 ) -> Message:
     """
     Create system message with up to max_size tokens
@@ -224,7 +262,7 @@ def create_system_message_chat_truncated(
     document_tokens = ENCODER.encode(document)
     if len(document_tokens) > max_document_size:
         document_tokens: List[int] = truncate_around_region(document, document_tokens, cursor_offset_start, cursor_offset_end, max_document_size)
-    truncated_document = ENCODER.decode(document_tokens)        
+    truncated_document = ENCODER.decode(document_tokens)
 
     truncated_document_list = []
     if document_list:
@@ -488,6 +526,8 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         cursor_offset_end: int,
         goal=None,
         latest_region: Optional[str] = None,
+        documents: Optional[List[lsp.Document]] = None,
+        current_file_weight: float = 0.5
     ) -> EditCodeResult:
         # logger.info(f"[edit_code] entered {latest_region=}")
         if goal is None:
@@ -495,7 +535,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             Generate code to replace the given `region`. Write a partial code snippet without imports if needed.
             """
 
-        def create_messages(before_cursor: str, region: str, after_cursor: str) -> List[Message]:
+        def create_messages(before_cursor: str, region: str, after_cursor: str, documents: Optional[List[lsp.Document]] = None) -> List[Message]:
             return [
                 Message.system(
                     "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
@@ -535,9 +575,6 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                     "    return 0\n"
                     "```\n"
                     "I added an implementation of the rest of the `hello_world` function which uses the Ptython `print` statement to print 'hello_world' before returning the integer literal 0.\n"
-                    # "" if messages is None else (
-                    #     f"\n\nFinally, here are previous messages in your interaction reflecting previously proposed changes to the region. The user's message might refer to these.\n{messages_flattened}"
-                    # )
                 ),
                 Message.assistant("Hello! How can I help you today?"),
                 Message.user(
@@ -552,13 +589,18 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             ]
 
         messages_skeleton = create_messages("", "", "")
-        max_size_document = (
+        max_size = (
             MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
         )
+
+        # rescale `max_size_document` if we need to make room for the other documents
+        max_size_document = int(max_size * (current_file_weight if documents else 1.0))
 
         before_cursor = document[:cursor_offset_start]
         region = document[cursor_offset_start:cursor_offset_end]
         after_cursor = document[cursor_offset_end:]
+
+        # calculate truncation for the ur-document
         if get_num_tokens(document) > max_size_document:
             tokens_before_cursor = ENCODER.encode(before_cursor)
             tokens_after_cursor = ENCODER.encode(after_cursor)
@@ -571,10 +613,24 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             before_cursor = ENCODER.decode(tokens_before_cursor)
             after_cursor = ENCODER.decode(tokens_after_cursor)
 
+        # calculate truncation for the other context documents, if necessary
+        truncated_documents = []
+        if documents:
+            max_document_list_size = ((1.0 - current_file_weight) * max_size) // len(document_list)
+            for doc in document_list:
+                tokens = ENCODER.encode(doc)
+                if len(tokens) > max_document_list_size:
+                    tokens = doc[:max_document_list_size]
+                    logger.debug(f"Truncating document to first {len(tokens)} tokens")
+                doc = ENCODER.decode(tokens)
+                truncated_documents.append(doc)
+
+
         messages = create_messages(
             before_cursor=before_cursor,
             region=region,
             after_cursor=after_cursor,
+            documents=truncated_documents,
         )
         # logger.info(f"{messages=}")
 
@@ -624,88 +680,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         return EditCodeResult(thoughts=thoughtstream, code=codestream, plan=planstream)
 
     async def insert_code(self, document: str, cursor_offset: int, goal=None) -> InsertCodeResult:
-        CURSOR_SENTINEL = "感"
-        if goal is None:
-            goal = f"""
-            Generate code to be inserted at the cursor location, marked by {CURSOR_SENTINEL}.
-            """
-
-        def create_messages(before_cursor: str, after_cursor: str) -> List[Message]:
-            doc_text_with_cursor = before_cursor + CURSOR_SENTINEL + after_cursor
-            return [
-                Message.system(
-                    "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
-                    "- Conciseness\n"
-                    "- DRY principle\n"
-                    "- Self-documenting code with plenty of comments\n"
-                    "- Modularity\n"
-                    "- Deduplicated code\n"
-                    "- Readable code\n"
-                    "- Abstracting things away to functions for reusability\n"
-                    "- Logical thinking\n"
-                    "When presented with a task, first write a detailed and elegant plan to solve this task and then write code to do it surrounded by triple backticks.\n"
-                    f"The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}.\n"
-                    "Add comments in the code to explain your reasoning.\n"
-                    f"Generate code to be inserted at the cursor location, marked by {CURSOR_SENTINEL}."
-                ),
-                Message.user(
-                    f"Here is the code:\n```\n{doc_text_with_cursor}\n```\n\nYour task is:\n{goal}\nInsert code at the {CURSOR_SENTINEL} which completes the task. The code will be added verbatim to the cursor location, marked by {CURSOR_SENTINEL}. Do not include code that is already there."
-                ),
-            ]
-
-        before_cursor = document[:cursor_offset]
-        after_cursor = document[cursor_offset:]
-        messages_skeleton = create_messages("", "")
-        max_size_document = (
-            MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
-        )
-
-        if get_num_tokens(document) > max_size_document:
-            tokens_before_cursor = ENCODER.encode(before_cursor)
-            tokens_after_cursor = ENCODER.encode(after_cursor)
-            (tokens_before_cursor, tokens_after_cursor) = split_lists(
-                tokens_before_cursor, tokens_after_cursor, max_size_document
-            )
-            logger.debug(
-                f"Truncating document to ({len(tokens_before_cursor)}, {len(tokens_after_cursor)}) tokens around cursor"
-            )
-            before_cursor = ENCODER.decode(tokens_before_cursor)
-            after_cursor = ENCODER.decode(tokens_after_cursor)
-
-        messages = create_messages(before_cursor, after_cursor)
-
-        stream = TextStream.from_aiter(
-            asg.map(lambda c: c.text, self.chat_completions(messages, stream=True))
-        )
-        thoughts = TextStream()
-        codestream = TextStream()
-
-        async def worker():
-            try:
-                try:
-                    prelude = await stream.readuntil("```")
-                    logger.debug(f"prelude: {prelude}")
-                    lang_tag = await stream.readuntil("\n")
-                    if lang_tag:
-                        logger.debug(f"lang_tag: {lang_tag}")
-                except EOFError:
-                    logger.error("never found a code block")
-                    return
-                before, after = stream.split_once("\n```")
-                async for delta in before:
-                    codestream.feed_data(delta)
-                codestream.feed_eof()
-                async for delta in after:
-                    thoughts.feed_data("\n")
-                    thoughts.feed_data(delta)
-            finally:
-                thoughts.feed_eof()
-                codestream.feed_eof()
-
-        t = asyncio.create_task(worker())
-        thoughts._feed_task = t
-        codestream._feed_task = t
-        return InsertCodeResult(thoughts=thoughts, code=codestream)
+        raise Exception("unreachable code")
 
 
 async def _main():

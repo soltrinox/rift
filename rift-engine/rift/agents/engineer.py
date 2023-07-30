@@ -32,7 +32,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util import file_diff
-from rift.util.misc import resolve_chips, contextual_prompt
+from rift.util.context import resolve_chips, contextual_prompt
 from rift.util.TextStream import TextStream
 
 try:

@@ -23,7 +23,7 @@ from rift.llm.abstract import AbstractCodeEditProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.misc import resolve_chips
+from rift.util.context import resolve_chips
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)

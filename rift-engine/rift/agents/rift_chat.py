@@ -26,7 +26,7 @@ from rift.llm.abstract import (
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.misc import replace_chips
+from rift.util.context import resolve_chips
 from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
