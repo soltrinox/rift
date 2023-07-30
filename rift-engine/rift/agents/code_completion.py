@@ -212,7 +212,7 @@ class CodeCompletionAgent(Agent):
             )
         )
 
-        code_task = self.add_task(AgentTask("Generate code", generate_code))
+        code_task = self.add_task("Generate code", generate_code)
 
         await self.send_progress(
             CodeCompletionProgress(
@@ -224,7 +224,7 @@ class CodeCompletionAgent(Agent):
             )
         )
 
-        explanation_task = self.add_task(AgentTask("Explain code edit", generate_explanation))
+        explanation_task = self.add_task("Explain code edit", generate_explanation)
 
         await self.send_progress(
             CodeCompletionProgress(

@@ -141,7 +141,7 @@ class SmolAgent(Agent):
                 prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
             )
 
-        plan = await self.add_task(AgentTask(description="Generate plan", task=get_plan)).run()
+        plan = await self.add_task(description="Generate plan", task=get_plan).run()
 
         with futures.ThreadPoolExecutor(1) as executor:
 
@@ -153,7 +153,7 @@ class SmolAgent(Agent):
                 )
 
             file_paths = await self.add_task(
-                AgentTask(description="Generate file paths", task=get_file_paths)
+                description="Generate file paths", task=get_file_paths
             ).run()
 
             logger.info(f"Got file paths: {json.dumps(file_paths, indent=2)}")
@@ -195,11 +195,9 @@ class SmolAgent(Agent):
                 fs.append(
                     asyncio.create_task(
                         self.add_task(
-                            AgentTask(
                                 description=f"Generate code for {fp}",
                                 task=generate_code_for_filepath,
                                 kwargs=dict(file_path=fp, position=i),
-                            )
                         ).run()
                     )
                 )

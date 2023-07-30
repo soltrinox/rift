@@ -279,11 +279,8 @@ class EngineerAgent(Agent):
             async def _step_task(event: asyncio.Event):
                 await event.wait()
 
-            _ = asyncio.create_task(
-                self.add_task(
-                    AgentTask(description=step.__name__, task=_step_task, args=[event])
-                ).run()
-            )
+            _ = asyncio.create_task(self.add_task(description=step.__name__, task=_step_task, args=[event]).run())
+            
 
         # # Add all steps to task list
         # for step in steps:
@@ -366,7 +363,7 @@ class EngineerAgent(Agent):
             self.state.messages.append(openai.Message.user(prompt))
             return prompt
 
-        get_prompt_task = self.add_task(AgentTask("Get prompt for workspace", get_prompt))
+        get_prompt_task = self.add_task("Get prompt for workspace", get_prompt)
         prompt = await get_prompt_task.run()
 
         documents = resolve_inline_uris(prompt, self.server)

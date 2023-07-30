@@ -164,10 +164,11 @@ class Agent:
     def set_tasks(self, tasks: List[AgentTask]):
         self.tasks = tasks
 
-    def add_task(self, task: AgentTask):
+    def add_task(self, *args, **kwargs):
         """
         Register a subtask.
         """
+        task = AgentTask(*args, **kwargs)
         self.tasks.append(task)
         return task
 
