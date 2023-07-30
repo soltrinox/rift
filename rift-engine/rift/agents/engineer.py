@@ -157,8 +157,6 @@ class EngineerProgress(
 
 @dataclass
 class EngineerAgentState(AgentState):
-    model: AbstractCodeCompletionProvider
-    document: lsp.TextDocumentItem
     params: EngineerAgentParams
     messages: list[openai.Message]
     change_futures: Dict[str, Future] = field(default_factory=dict)
@@ -342,10 +340,8 @@ class EngineerAgent(Agent):
             logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
 
     @classmethod
-    def create(cls, params: EngineerAgentParams, model, server):
+    def create(cls, params: EngineerAgentParams, server):
         state = EngineerAgentState(
-            model=model,
-            document=server.documents[params.textDocument.uri],
             params=params,
             messages=[openai.Message.assistant("What do you want to build?")],
         )

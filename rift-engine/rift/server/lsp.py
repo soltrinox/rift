@@ -320,46 +320,48 @@ class LspServer(BaseLspServer):
         # async def _run_agent():
         logger = logging.getLogger(__name__)
         logger.info(f"AGENT TYPE: {agent_type}")
-        if agent_type == "chat":
-            # prepare params for ChatAgent construction
-            model = await self.ensure_chat_model()
-            if not is_dataclass(agent_params):
-                agent_params = ofdict(RunChatParams, agent_params)
-            agent = ChatAgent(agent_params, model=model, server=self)
-        elif agent_type == "rift_chat":
-            model = await self.ensure_chat_model()
-            if not is_dataclass(agent_params):
-                agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
-            agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
-        elif agent_type == "code_completion":
-            model = await self.ensure_completions_model()
-            if not is_dataclass(agent_params):
-                agent_params = ofdict(CodeCompletionAgentParams, agent_params)
-            agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
-        elif agent_type == "code_edit":
-            model = await self.ensure_completions_model()
-            agent_params = ofdict(CodeEditAgentParams, agent_params)
-            agent = CodeEditAgent.create(agent_params, model=model, server=self)
-        # elif agent_type == "reverso":
+        agent_cls = AGENT_REGISTRY[agent_type]
+        agent = agent_cls.create(params=agent_params, server=self)
+        # if agent_type == "chat":
+        #     # prepare params for ChatAgent construction
+        #     model = await self.ensure_chat_model()
+        #     if not is_dataclass(agent_params):
+        #         agent_params = ofdict(RunChatParams, agent_params)
+        #     agent = ChatAgent(agent_params, model=model, server=self)
+        # elif agent_type == "rift_chat":
+        #     model = await self.ensure_chat_model()
+        #     if not is_dataclass(agent_params):
+        #         agent_params = ofdict(agentchat.ChatAgentParams, agent_params)
+        #     agent = agentchat.ChatAgent.create(agent_params, model=model, server=self)
+        # elif agent_type == "code_completion":
         #     model = await self.ensure_completions_model()
-        #     agent_params = ofdict(ReversoAgentParams, agent_params)
-        #     agent = ReversoAgent.create(agent_params, model=model, server=self)
+        #     if not is_dataclass(agent_params):
+        #         agent_params = ofdict(CodeCompletionAgentParams, agent_params)
+        #     agent = CodeCompletionAgent.create(agent_params, model=model, server=self)
+        # elif agent_type == "code_edit":
+        #     model = await self.ensure_completions_model()
+        #     agent_params = ofdict(CodeEditAgentParams, agent_params)
+        #     agent = CodeEditAgent.create(agent_params, model=model, server=self)
+        # # elif agent_type == "reverso":
+        # #     model = await self.ensure_completions_model()
+        # #     agent_params = ofdict(ReversoAgentParams, agent_params)
+        # #     agent = ReversoAgent.create(agent_params, model=model, server=self)
 
-        elif agent_type == "engineer":
-            model = await self.ensure_completions_model()
-            agent_params = ofdict(EngineerAgentParams, agent_params)
-            agent = EngineerAgent.create(agent_params, model=model, server=self)
-        elif agent_type == "smol_dev":
-            # model = await self.ensure_chat_model()
-            if not is_dataclass(agent_params):
-                agent_params = ofdict(SmolAgentParams, agent_params)
-            agent = SmolAgent.create(params=agent_params, server=self)
-        elif agent_type == "aider":
-            if not is_dataclass(agent_params):
-                agent_params = ofdict(AiderAgentParams, agent_params)
-            agent = Aider.create(params=agent_params, server=self)
-        else:
-            raise Exception(f"unsupported agent type={agent_type}")
+        # elif agent_type == "engineer":
+        #     model = await self.ensure_completions_model()
+        #     agent_params = ofdict(EngineerAgentParams, agent_params)
+        #     agent = EngineerAgent.create(agent_params, model=model, server=self)
+        # elif agent_type == "smol_dev":
+        #     # model = await self.ensure_chat_model()
+        #     if not is_dataclass(agent_params):
+        #         agent_params = ofdict(SmolAgentParams, agent_params)
+        #     agent = SmolAgent.create(params=agent_params, server=self)
+        # elif agent_type == "aider":
+        #     if not is_dataclass(agent_params):
+        #         agent_params = ofdict(AiderAgentParams, agent_params)
+        #     agent = Aider.create(params=agent_params, server=self)
+        # else:
+        #     raise Exception(f"unsupported agent type={agent_type}")
 
         self.active_agents[agent_id] = agent
         # t = asyncio.Task(agent.main())

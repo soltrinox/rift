@@ -66,7 +66,8 @@ class ChatAgent(Agent):
     agent_type: ClassVar[str] = "rift_chat"
 
     @classmethod
-    def create(cls, params: ChatAgentParams, model, server):
+    def create(cls, params: ChatAgentParams, server: BaseLspServer):
+        model = server.ensure_chat_model()
         state = ChatAgentState(
             model=model,
             messages=[openai.Message.assistant("Hello! How can I help you today?")],
