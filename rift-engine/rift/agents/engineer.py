@@ -27,6 +27,7 @@ from rift.agents.abstract import (
     RunAgentParams,
     agent,
 )
+from rift.util.misc import replace_chips
 import typer
 from pathlib import Path
 
@@ -199,6 +200,7 @@ class EngineerAgent(Agent):
 
             async def request_chat():
                 async with response_lock:
+                    self.RESPONSE = replace_chips(self.RESPONSE, self.server)
                     await self.send_progress(
                         EngineerProgress(response=self.RESPONSE, done_streaming=True)
                     )
@@ -361,6 +363,7 @@ class EngineerAgent(Agent):
 
         async def get_prompt():
             prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
+            prompt=replace_chips(prompt, self.server)
             self.state.messages.append(openai.Message.user(prompt))
             return prompt
 

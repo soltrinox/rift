@@ -158,8 +158,26 @@ Answer the user's question."""
     )
 
 
+def create_system_message_mentioned(document: str, documents: List[str]) -> Message:
+    """
+    Create system message wiht up to MAX_SYSTEM_MESSAGE_SIZE tokens
+    """
+    
+    message =    f"""
+You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the current file to support your claims.
+
+Current file:
+```
+{document}
+```"""
+    for doc in documents:
+        message += "Additional files: \n```"+doc+"```\n"
+
+    message+="""Answer the user's question."""
+    return Message.system(message)
+
 def create_system_message_truncated(
-    document: str, max_size: int, cursor_offset: Optional[int]
+    document: str, max_size: int, cursor_offset: Optional[int], document_list: Optional[List[str]]
 ) -> Message:
     """
     Create system message with up to max_size tokens
@@ -169,8 +187,8 @@ def create_system_message_truncated(
     hardcoded_message_size = message_size(hardcoded_message)
     max_size = max_size - hardcoded_message_size
 
-    doc_tokens = ENCODER.encode(document)
-    if len(doc_tokens) > max_size:
+    document = ENCODER.encode(document)
+    if len(document) > max_size:
         if cursor_offset:
             before_cursor = document[:cursor_offset]
             after_cursor = document[cursor_offset:]
@@ -185,13 +203,26 @@ def create_system_message_truncated(
             tokens = tokens_before_cursor + tokens_after_cursor
         else:
             # if there is no cursor offset provided, simply take the last max_size tokens
-            tokens = doc_tokens[-max_size:]
+            tokens = document[-max_size:]
             logger.debug(f"Truncating document to last {len(tokens)} tokens")
 
+        max_size = max_size - len(tokens)
         document = ENCODER.decode(tokens)
 
-    return create_system_message(document)
+    
+    if (document_list!=[]):
+        for doc in document_list:
+            #TODO: Need a check for using up our limit
+            doc = ENCODER.encode(doc)
+            if len(tokens) > max_size:
+                tokens = doc[-max_size:]
+                logger.debug(f"Truncating document to last {len(tokens)} tokens")
+            max_size = max_size-len(tokens)
+            doc = ENCODER.decode(tokens)
+        
+        return create_system_message_mentioned(document, document_list)
 
+    return create_system_message(document)
 
 def truncate_messages(messages: List[Message]):
     system_message_size = message_size(messages[0])
@@ -389,6 +420,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         messages: List[Message],
         message: str,
         cursor_offset: Optional[int] = None,
+        documents: Optional[List[str]] = [],
     ) -> ChatResult:
         chatstream = TextStream()
         non_system_messages = []
@@ -401,7 +433,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         max_system_msg_size = calc_max_system_message_size(non_system_messages_size)
 
         system_message = create_system_message_truncated(
-            document or "", max_system_msg_size, cursor_offset
+            document or "", max_system_msg_size, cursor_offset, documents
         )
 
         messages = [system_message] + non_system_messages

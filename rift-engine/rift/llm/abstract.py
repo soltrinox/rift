@@ -75,6 +75,7 @@ class AbstractChatCompletionProvider(ABC):
         messages: List[Message],
         message: str,
         cursor_offset: Optional[int] = None,
+        documents: Optional[List[str]] = None,
     ) -> ChatResult:
         """
         Process the chat messages and return the completion results.

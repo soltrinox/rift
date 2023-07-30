@@ -26,6 +26,7 @@ from rift.llm.abstract import (
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
+from rift.util.misc import replace_chips
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,9 @@ class ChatAgent(Agent):
 
         async def generate_response(user_response: str):
             response = ""
+
+            user_response = replace_chips(user_response, self.server)
+            
             doc_text = self.state.document.text
 
             stream = await self.state.model.run_chat(
@@ -130,6 +134,8 @@ class ChatAgent(Agent):
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
             # logger.info("got user response task future")
             user_response = await user_response_task
+
+
             async with response_lock:
                 self.state.messages.append(openai.Message.user(content=user_response))
             self.set_tasks([get_user_response_task, generate_response_task])

@@ -7,6 +7,7 @@ from asyncio import Future
 from concurrent import futures
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, List, Optional
+from rift.util.misc import replace_chips
 
 import smol_dev
 
@@ -109,6 +110,7 @@ class SmolAgent(Agent):
 
         # get the initial prompt
         prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
+        prompt = replace_chips(prompt, self.server)
         self.state.messages.append(openai.Message.user(prompt))  # update messages history
 
         # logger.info("Starting smol-dev with prompt:")

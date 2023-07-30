@@ -24,6 +24,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util.TextStream import TextStream
+from rift.util.misc import replace_chips
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,8 @@ class CodeEditAgent(Agent):
                         AgentTask("Get user response", get_user_response)
                     )
                     instructionPrompt = await get_user_response_t.run()
+
+                    instructionPrompt=replace_chips(instructionPrompt, self.server)
                     # logger.info("got user response")
 
                     # instructionPrompt = self.state.params.instructionPrompt or (
