@@ -215,7 +215,7 @@
       ],
       editorProps: {
         attributes: {
-          class: "outline-none focus:outline-none max-h-40",
+          class: "outline-none focus:outline-none max-h-40 overflow-auto",
         },
       },
       content: "",
