@@ -104,7 +104,11 @@ class ChatAgent(Agent):
 
             logger.info("running chat")
             stream = await self.state.model.run_chat(
-                doc_text, self.state.messages, user_response, cursor_offset=None, documents=documents
+                doc_text,
+                self.state.messages,
+                user_response,
+                cursor_offset=None,
+                documents=documents,
             )
             async for delta in stream.text:
                 response += delta

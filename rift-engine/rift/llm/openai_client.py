@@ -23,6 +23,7 @@ from urllib.parse import parse_qs, urlparse
 import aiohttp
 from pydantic import BaseModel, BaseSettings, SecretStr
 
+import rift.lsp.types as lsp
 import rift.util.asyncgen as asg
 from rift.llm.abstract import (
     AbstractChatCompletionProvider,
@@ -39,8 +40,6 @@ from rift.llm.openai_types import (
     Message,
 )
 from rift.util.TextStream import TextStream
-
-import rift.lsp.types as lsp
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +142,9 @@ def calc_max_system_message_size(non_system_messages_size: int) -> int:
     )
 
 
-def create_system_message_chat(document: str, documents: Optional[List[lsp.Document]] = None) -> Message:
+def create_system_message_chat(
+    document: str, documents: Optional[List[lsp.Document]] = None
+) -> Message:
     """
     Create system message wiht up to MAX_SYSTEM_MESSAGE_SIZE tokens
     """
@@ -165,7 +166,13 @@ Current file:
     return Message.system(message)
 
 
-def truncate_around_region(document: str, document_tokens: List[int], region_start, region_end: Optional[int] = None, max_size: Optional[int] = None):
+def truncate_around_region(
+    document: str,
+    document_tokens: List[int],
+    region_start,
+    region_end: Optional[int] = None,
+    max_size: Optional[int] = None,
+):
     if region_end is None:
         region_end = region_start
     if region_start:
@@ -190,7 +197,12 @@ def truncate_around_region(document: str, document_tokens: List[int], region_sta
 
 
 def create_system_message_chat_truncated(
-        document: str, max_size: int, cursor_offset_start: Optional[int] = None, cursor_offset_end: Optional[int] = None, document_list: Optional[List[lsp.Document]] = None, current_file_weight: float = 0.5
+    document: str,
+    max_size: int,
+    cursor_offset_start: Optional[int] = None,
+    cursor_offset_end: Optional[int] = None,
+    document_list: Optional[List[lsp.Document]] = None,
+    current_file_weight: float = 0.5,
 ) -> Message:
     """
     Create system message with up to max_size tokens
@@ -208,7 +220,9 @@ def create_system_message_chat_truncated(
 
     document_tokens = ENCODER.encode(document)
     if len(document_tokens) > max_document_size:
-        document_tokens: List[int] = truncate_around_region(document, document_tokens, cursor_offset_start, cursor_offset_end, max_document_size)
+        document_tokens: List[int] = truncate_around_region(
+            document, document_tokens, cursor_offset_start, cursor_offset_end, max_document_size
+        )
     truncated_document = ENCODER.decode(document_tokens)
 
     truncated_document_list = []
@@ -482,7 +496,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         goal=None,
         latest_region: Optional[str] = None,
         documents: Optional[List[lsp.Document]] = None,
-        current_file_weight: float = 0.5
+        current_file_weight: float = 0.5,
     ) -> EditCodeResult:
         # logger.info(f"[edit_code] entered {latest_region=}")
         if goal is None:
@@ -490,7 +504,12 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             Generate code to replace the given `region`. Write a partial code snippet without imports if needed.
             """
 
-        def create_messages(before_cursor: str, region: str, after_cursor: str, documents: Optional[List[lsp.Document]] = None) -> List[Message]:
+        def create_messages(
+            before_cursor: str,
+            region: str,
+            after_cursor: str,
+            documents: Optional[List[lsp.Document]] = None,
+        ) -> List[Message]:
             return [
                 Message.system(
                     "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
@@ -544,9 +563,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             ]
 
         messages_skeleton = create_messages("", "", "")
-        max_size = (
-            MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
-        )
+        max_size = MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - messages_size(messages_skeleton)
 
         # rescale `max_size_document` if we need to make room for the other documents
         max_size_document = int(max_size * (current_file_weight if documents else 1.0))
@@ -577,9 +594,10 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                 if len(tokens) > max_document_list_size:
                     tokens = tokens[:max_document_list_size]
                     logger.debug(f"Truncating document to first {len(tokens)} tokens")
-                doc = lsp.Document(uri=doc.uri, document=lsp.DocumentContext(ENCODER.decode(tokens)))
+                doc = lsp.Document(
+                    uri=doc.uri, document=lsp.DocumentContext(ENCODER.decode(tokens))
+                )
                 truncated_documents.append(doc)
-
 
         messages = create_messages(
             before_cursor=before_cursor,

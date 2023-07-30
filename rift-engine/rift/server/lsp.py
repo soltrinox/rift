@@ -28,6 +28,7 @@ from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
+
 class LspLogHandler(logging.Handler):
     def __init__(self, server: "LspServer"):
         super().__init__()
@@ -78,6 +79,7 @@ class RunAgentResult:
 class RunAgentSyncResult:
     id: int
     text: str
+
 
 @dataclass
 class AgentIdParams:

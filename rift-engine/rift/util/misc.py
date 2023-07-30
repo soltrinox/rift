@@ -1,12 +1,13 @@
 import contextlib
 import contextvars
+import logging
 import re
 from typing import Callable, TypeVar
-import logging
 
 T = TypeVar("T")
 
 logger = logging.getLogger(__name__)
+
 
 @contextlib.contextmanager
 def set_ctx(context_variable: contextvars.ContextVar[T], value: T):

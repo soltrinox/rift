@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+import rift.lsp.types as lsp
 from rift.llm.openai_types import Message
 from rift.util.TextStream import TextStream
-import rift.lsp.types as lsp
 
 
 @dataclass

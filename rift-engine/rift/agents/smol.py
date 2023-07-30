@@ -29,7 +29,7 @@ from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.context import resolve_chips, contextual_prompt
+from rift.util.context import contextual_prompt, resolve_chips
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,7 @@ class SmolAgent(Agent):
     @classmethod
     async def create(cls, params: SmolAgentParams, server):
         from rift.util.ofdict import ofdict
+
         params = ofdict(SmolAgentParams, params)
         state = SmolAgentState(
             params=params,
@@ -140,9 +141,10 @@ class SmolAgent(Agent):
                 prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
             )
 
-        plan = await self.add_task(AgentTask(description="Generate plan", task=get_plan)).run()1
+        plan = await self.add_task(AgentTask(description="Generate plan", task=get_plan)).run()
 
         with futures.ThreadPoolExecutor(1) as executor:
+
             async def get_file_paths():
                 return smol_dev.prompts.specify_file_paths(
                     prompt,
