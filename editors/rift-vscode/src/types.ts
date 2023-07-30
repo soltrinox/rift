@@ -186,6 +186,7 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   name?: null | string | undefined;
+  editorContentString?: string //there on user
 };
 
 export interface AgentChatRequest {

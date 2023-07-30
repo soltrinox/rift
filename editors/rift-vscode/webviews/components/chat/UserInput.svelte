@@ -1,18 +1,40 @@
 <script lang="ts">
-  import SendSvg from "../icons/SendSvg.svelte";
-  import { state } from "../stores";
-  import type { WebviewState } from "../../../src/types";
+  import { onMount } from "svelte"
   import UserSvg from "../icons/UserSvg.svelte"
-  export let value: string = "";
-
+  import { Editor } from "@tiptap/core"
+  import StarterKit from "@tiptap/starter-kit"
+  import { FileChip } from "../FileChip"
+  import Placeholder from "@tiptap/extension-placeholder"
+  
+  export let editorContentString: string = "";
   let textarea: HTMLDivElement; //used to be a textarea
+  let editor: Editor | undefined
+  onMount(() => {
+    editor = new Editor({
+      element: textarea,
+      extensions: [
+        StarterKit,
+        FileChip.configure({
+          HTMLAttributes: {
+            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
+            contenteditable: "false",
+          },
+        })
+      ],
+      editorProps: {
+        attributes: {
+          class: "outline-none focus:outline-none max-h-40 overflow-auto",
+        },
+      },
+      content: editorContentString,
+      onTransaction: (props) => {
+        // force re-render so `editor.isActive` works as expected
+        editor = editor
+      },
+      editable: false,
+    })
 
-  // $: {
-  //   if (textarea) {
-  //     textarea.style.height = "auto";
-  //     textarea.style.height = textarea.scrollHeight + "px";
-  //   }
-  // }
+  })
 
 </script>
 
@@ -26,7 +48,6 @@
     <div
       bind:this={textarea}
       >
-      {value}
     </div>
   </div>
 </div>

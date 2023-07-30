@@ -52,9 +52,10 @@
       type: "chatMessage",
       agent_id: $state.selectedAgentId,
       agent_type: $state.agents[$state.selectedAgentId].type,
-      messages: appendedMessages,
       message: editorContent,
+      editorContentString: editor?.getHTML()
     })
+    console.log('editorContentString for testing:', editor?.getHTML())
 
     // clint.
     // console.log("updating state...");
