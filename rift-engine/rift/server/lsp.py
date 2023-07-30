@@ -317,11 +317,10 @@ class LspServer(BaseLspServer):
         if not params.agent_id:
             agent_params["agent_id"] = agent_id
 
-        # async def _run_agent():
         logger = logging.getLogger(__name__)
-        # logger.info(f"AGENT TYPE: {agent_type}")
         agent_cls = AGENT_REGISTRY[agent_type]
         agent = agent_cls.create(params=agent_params, server=self)
+
         # if agent_type == "chat":
         #     # prepare params for ChatAgent construction
         #     model = await self.ensure_chat_model()
