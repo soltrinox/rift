@@ -10,9 +10,7 @@
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
 
   let activeId = $filteredAgents.length - 1;
-
-
-  $: console.log('activeID: ', activeId)
+  $: activeId = $filteredAgents.length -1
 
 
   onMount(() => {
