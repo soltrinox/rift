@@ -162,8 +162,8 @@ def create_system_message_mentioned(document: str, documents: List[str]) -> Mess
     """
     Create system message wiht up to MAX_SYSTEM_MESSAGE_SIZE tokens
     """
-    
-    message =    f"""
+
+    message = f"""
 You are an expert software engineer and world-class systems architect with deep technical and design knowledge. Answer the user's questions about the code as helpfully as possible, quoting verbatim from the current file to support your claims.
 
 Current file:
@@ -171,10 +171,11 @@ Current file:
 {document}
 ```"""
     for doc in documents:
-        message += "Additional files: \n```"+doc+"```\n"
+        message += "Additional files: \n```" + doc + "```\n"
 
-    message+="""Answer the user's question."""
+    message += """Answer the user's question."""
     return Message.system(message)
+
 
 def create_system_message_truncated(
     document: str, max_size: int, cursor_offset: Optional[int], document_list: Optional[List[str]]
@@ -209,25 +210,25 @@ def create_system_message_truncated(
         max_size = max_size - len(tokens)
         document = ENCODER.decode(tokens)
 
-    
-    if (document_list!=[]):
+    if document_list != []:
         for doc in document_list:
-            #TODO: Need a check for using up our limit
+            # TODO: Need a check for using up our limit
             doc = ENCODER.encode(doc)
             if len(tokens) > max_size:
                 tokens = doc[-max_size:]
                 logger.debug(f"Truncating document to last {len(tokens)} tokens")
-            max_size = max_size-len(tokens)
+            max_size = max_size - len(tokens)
             doc = ENCODER.decode(tokens)
-        
+
         return create_system_message_mentioned(document, document_list)
 
     return create_system_message(document)
 
+
 def truncate_messages(messages: List[Message]):
     system_message_size = message_size(messages[0])
     max_size = calc_max_non_system_msgs_size(system_message_size)
-    logger.info(f"MAX SIZE: {max_size}")
+    logger.info(f"{max_size=}")
     tail_messages: List[Message] = []
     running_length = 0
     for msg in reversed(messages[1:]):
@@ -459,7 +460,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
 
         t = asyncio.create_task(worker())
         chatstream._feed_task = t
-        logger.info("Created chat stream, awaiting results.")
+        # logger.info("Created chat stream, awaiting results.")
         return ChatResult(text=chatstream)
 
     async def edit_code(

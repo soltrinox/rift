@@ -1,7 +1,7 @@
 import contextlib
 import contextvars
-from typing import Callable, TypeVar
 import re
+from typing import Callable, TypeVar
 
 T = TypeVar("T")
 
@@ -10,11 +10,12 @@ def replace_chips(user_response, server):
     uri_pattern = r"uri://(.*)"
     matches = re.findall(uri_pattern, user_response)
     for match in matches:
-        match=match.replace(" ","")
-        if ("file://"+match) in server.documents:
-            user_response = user_response.replace(f"uri://{match}", "```"+server.documents[("file://"+match)].text+"```")
+        match = match.replace(" ", "")
+        if ("file://" + match) in server.documents:
+            user_response = user_response.replace(
+                f"uri://{match}", "```" + server.documents[("file://" + match)].text + "```"
+            )
     return user_response
-
 
 
 @contextlib.contextmanager

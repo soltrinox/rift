@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import ClassVar, Optional
+from typing import Any, ClassVar, Dict, Optional
 
 import rift.agents.abstract as agents
 import rift.llm.openai_types as openai
@@ -27,6 +27,7 @@ from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util.misc import replace_chips
+from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,14 @@ class ChatAgent(Agent):
     agent_type: ClassVar[str] = "rift_chat"
 
     @classmethod
-    async def create(cls, params: ChatAgentParams, server: BaseLspServer):
+    async def create(cls, params: Dict[Any, Any], server: BaseLspServer):
+        from rift.util.ofdict import ofdict
+
+        params = ofdict(Dict, params)
         model = await server.ensure_chat_model()
+
+        params = ofdict(ChatAgentParams, params)
+
         state = ChatAgentState(
             model=model,
             messages=[openai.Message.assistant("Hello! How can I help you today?")],
@@ -95,7 +102,7 @@ class ChatAgent(Agent):
             response = ""
 
             user_response = replace_chips(user_response, self.server)
-            
+
             doc_text = self.state.document.text
 
             stream = await self.state.model.run_chat(
@@ -134,7 +141,6 @@ class ChatAgent(Agent):
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
             # logger.info("got user response task future")
             user_response = await user_response_task
-
 
             async with response_lock:
                 self.state.messages.append(openai.Message.user(content=user_response))

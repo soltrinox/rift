@@ -72,6 +72,9 @@ class CodeCompletionAgent(Agent):
 
     @classmethod
     async def create(cls, params: CodeCompletionAgentParams, server):
+        from rift.util.ofdict import ofdict
+
+        params = ofdict(CodeCompletionAgentParams, params)
         model = await server.ensure_completions_model()
         state = CodeCompletionAgentState(
             model=model,

@@ -7,7 +7,6 @@ from asyncio import Future
 from concurrent import futures
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, List, Optional
-from rift.util.misc import replace_chips
 
 import smol_dev
 
@@ -30,6 +29,7 @@ from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
+from rift.util.misc import replace_chips
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,9 @@ class SmolAgent(Agent):
 
     @classmethod
     async def create(cls, params: SmolAgentParams, server):
+        from rift.util.ofdict import ofdict
+
+        params = ofdict(SmolAgentParams, params)
         state = SmolAgentState(
             params=params,
             _done=False,

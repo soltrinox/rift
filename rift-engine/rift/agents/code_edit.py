@@ -23,8 +23,8 @@ from rift.llm.abstract import AbstractCodeEditProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
-from rift.util.TextStream import TextStream
 from rift.util.misc import replace_chips
+from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,10 @@ class CodeEditAgent(Agent):
 
     @classmethod
     async def create(cls, params: CodeEditAgentParams, server):
-        model = await server.ensure_completions_model() # TODO: not right, fix
+        from rift.util.ofdict import ofdict
+
+        params = ofdict(CodeEditAgentParams, params)
+        model = await server.ensure_completions_model()  # TODO: not right, fix
         state = CodeEditAgentState(
             model=model,
             document=server.documents[params.textDocument.uri],
@@ -124,7 +127,7 @@ class CodeEditAgent(Agent):
                     )
                     instructionPrompt = await get_user_response_t.run()
 
-                    instructionPrompt=replace_chips(instructionPrompt, self.server)
+                    instructionPrompt = replace_chips(instructionPrompt, self.server)
                     # logger.info("got user response")
 
                     # instructionPrompt = self.state.params.instructionPrompt or (

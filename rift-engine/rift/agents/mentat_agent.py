@@ -1,17 +1,20 @@
 from dataclasses import dataclass
-from typing import List, Type, Optional
+from typing import List, Optional, Type
 
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
+
 
 @dataclass
 class MentatAgentParams(agent.AgentRunParams):
     ...
 
+
 @dataclass
 class MentatAgentState(agent.AgentState):
     params: MentatAgentParams
     messages: list[openai.Message]
+
 
 @agent.agent(agent_description="Request codebase-wide edits through chat", display_name="Mentat")
 @dataclass
@@ -26,6 +29,9 @@ mentat
 
     @classmethod
     async def create(cls, params: MentatAgentParams, server):
+        from rift.util.ofdict import ofdict
+
+        params = ofdict(MentatAgentParams, params)
         state = MentatAgentState(
             params=params,
             messages=[],

@@ -5,38 +5,34 @@ import os
 import re
 import tempfile
 import time
+import types
 import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, ClassVar, Dict, Optional
-from rift.util import file_diff
-import os
-import re
-import types
+
+import typer
 
 import rift.lsp.types as lsp
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentProgress,  # AgentTask,
     AgentRunParams,
-    AgentRunResult, 
+    AgentRunResult,
     AgentState,
     RequestChatRequest,
     RequestInputRequest,
-    RequestChatRequest,
     RunAgentParams,
     agent,
 )
-from rift.util.misc import replace_chips
-import typer
-from pathlib import Path
-
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util import file_diff
+from rift.util.misc import replace_chips
 from rift.util.TextStream import TextStream
 
 try:
@@ -54,17 +50,20 @@ STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
 
 SEEN = set()
 
+import json
+import threading
+
 from gpt_engineer.ai import AI, fallback_model
 from gpt_engineer.collect import collect_learnings
 from gpt_engineer.db import DB, DBs, archive
 from gpt_engineer.learning import collect_consent
 from gpt_engineer.steps import STEPS
 from gpt_engineer.steps import Config as StepsConfig
-import threading
-import json
+
 import rift.llm.openai_types as openai
 
 logger = logging.getLogger(__name__)
+
 
 def __fix_windows_path(path: str) -> str:
     """
@@ -73,15 +72,16 @@ def __fix_windows_path(path: str) -> str:
     :param path: Original path
     :return: Usable windows path, or original path if not a windows path
     """
-    pattern = r'^/(.)%3A'
+    pattern = r"^/(.)%3A"
 
     match = re.match(pattern, path)
-    
+
     if match:
         drive_letter = match.group(1)
         return path.replace(f"/{drive_letter}%3A", f"{drive_letter}:")
     else:
         return path
+
 
 def _fix_windows_path(path: str) -> str:
     """
@@ -142,7 +142,6 @@ class EngineerRunResult(AgentRunResult):
     ...
 
 
-
 @dataclass
 class EngineerAgentParams(AgentRunParams):
     textDocument: lsp.TextDocumentIdentifier
@@ -156,13 +155,13 @@ class EngineerProgress(
     response: Optional[str] = None
     done_streaming: bool = False
 
+
 @dataclass
 class EngineerAgentState(AgentState):
     params: EngineerAgentParams
     messages: list[openai.Message]
     change_futures: Dict[str, Future] = field(default_factory=dict)
     _done: bool = False
-
 
 
 # decorator for creating the code completion agent
@@ -343,6 +342,9 @@ class EngineerAgent(Agent):
 
     @classmethod
     async def create(cls, params: EngineerAgentParams, server):
+        from rift.util.ofdict import ofdict
+
+        params = ofdict(EngineerAgentParams, params)
         state = EngineerAgentState(
             params=params,
             messages=[openai.Message.assistant("What do you want to build?")],
@@ -354,7 +356,6 @@ class EngineerAgent(Agent):
         )
 
         return obj
-    
 
     async def run(self) -> AgentRunResult:  # main entry point
         self.response_stream = TextStream()
@@ -363,7 +364,7 @@ class EngineerAgent(Agent):
 
         async def get_prompt():
             prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
-            prompt=replace_chips(prompt, self.server)
+            prompt = replace_chips(prompt, self.server)
             self.state.messages.append(openai.Message.user(prompt))
             return prompt
 

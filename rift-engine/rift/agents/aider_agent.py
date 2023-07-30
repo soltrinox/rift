@@ -1,14 +1,15 @@
-from pathlib import Path, PurePath
 import asyncio
 import dataclasses
 import json
 import logging
 import time
 from dataclasses import dataclass, field
+from pathlib import Path, PurePath
 from typing import Any, AsyncIterable, ClassVar, Dict, List, Literal, Optional, Type
 
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
+from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 from rich.text import Text
@@ -73,6 +74,7 @@ class Aider(agent.Agent):
 
     @classmethod
     async def create(cls, params: AiderAgentParams, server):
+        params = ofdict(AiderAgentParams, params)
         state = AiderAgentState(
             params=params,
             messages=[],
@@ -409,6 +411,7 @@ class Aider(agent.Agent):
 
         params = self.run_params
         import threading
+
         file_changes_lock = threading.Lock()
         file_changes: List[file_diff.FileChange] = []
         event = asyncio.Event()
@@ -422,6 +425,7 @@ class Aider(agent.Agent):
             file_change = file_diff.get_file_change(path=filename, new_content=new_content)
             # print("file change: ", file_change)
             file_changes.append(file_change)
+
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes
         # loop = asyncio.get_running_loop()
