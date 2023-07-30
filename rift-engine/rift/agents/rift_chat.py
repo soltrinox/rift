@@ -97,10 +97,12 @@ class ChatAgent(Agent):
 
         async def generate_response(user_response: str):
             response = ""
-            documents = resolve_chips(user_response, self.server)
+            documents: List[lsp.Document] = resolve_chips(user_response, self.server)
+            logger.info(f"chips resolved {documents=}")
 
             doc_text = self.state.document.text
 
+            logger.info("running chat")
             stream = await self.state.model.run_chat(
                 doc_text, self.state.messages, user_response, cursor_offset=None, documents=documents
             )

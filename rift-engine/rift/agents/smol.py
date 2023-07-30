@@ -150,7 +150,7 @@ class SmolAgent(Agent):
             )
 
         plan = await self.add_task(AgentTask(description="Generate plan", task=get_plan)).run()
-        logger.info(f"PLAN {plan=}")
+        # logger.info(f"PLAN {plan=}")
 
         with futures.ThreadPoolExecutor(1) as executor:
             # await ainput("\n> Press any key to continue.\n")

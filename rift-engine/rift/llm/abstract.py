@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from rift.llm.openai_types import Message
 from rift.util.TextStream import TextStream
+import rift.lsp.types as lsp
 
 
 @dataclass
@@ -52,6 +53,7 @@ class AbstractCodeEditProvider(ABC):
         cursor_offset_start: int,
         cursor_offset_end: int,
         goal: Optional[str] = None,
+        documents: Optional[List[lsp.Document]] = None,
     ) -> EditCodeResult:
         """Perform code completion on the given document at the given cursor offset.
 
@@ -76,7 +78,7 @@ class AbstractChatCompletionProvider(ABC):
         messages: List[Message],
         message: str,
         cursor_offset: Optional[int] = None,
-        documents: Optional[List[str]] = None,
+        documents: Optional[List[lsp.Document]] = None,
     ) -> ChatResult:
         """
         Process the chat messages and return the completion results.

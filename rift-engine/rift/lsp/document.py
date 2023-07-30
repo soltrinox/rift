@@ -223,6 +223,9 @@ SURROGATE_KEY_END = re.compile("[\ud800-\udbff]$", re.UNICODE)
 class DocumentContext:
     text: str
 
+    def __str__(self):
+        return text
+
     @property
     def line_count(self):
         """One plus the number of newlines in the document."""

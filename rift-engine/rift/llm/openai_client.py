@@ -143,62 +143,7 @@ def calc_max_system_message_size(non_system_messages_size: int) -> int:
     )
 
 
-def create_system_message_edit(document: str, cursor_offset_start: int, cursor_offset_end: int, documents: Optional[List[str]] = None) -> Message:
-    def create_messages(before_cursor: str, region: str, after_cursor: str) -> List[Message]:
-        return [
-            Message.system(
-                "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
-                "- Conciseness\n"
-                "- DRY principle\n"
-                "- Self-documenting code with plenty of comments\n"
-                "- Modularity\n"
-                "- Deduplicated code\n"
-                "- Readable code\n"
-                "- Abstracting things away to functions for reusability\n"
-                "- Logical thinking\n"
-                "\n\n"
-                "You will be presented with a *task* and a source code file split into three parts: a *prefix*, *region*, and *suffix*. "
-                "The task will specify a change or new code that will replace the given region.\n You will receive the source code in the following format:\n"
-                "==== PREFIX ====\n"
-                "${source code file before the region}\n"
-                "==== REGION ====\n"
-                "${region}\n"
-                "==== SUFFIX ====\n"
-                "{source code file after the region}\n\n"
-                "When presented with a task, you will:\n(1) write a detailed and elegant plan to solve this task,\n(2) write your solution for it surrounded by triple backticks, and\n(3) write a 1-2 sentence summary of your solution.\n"
-                f"Your solution will be added verbatim to replace the given region. Do *not* repeat the prefix or suffix in any way.\n"
-                "The solution should directly replaces the given region. If the region is empty, just write something that will replace the empty string. *Do not repeat the prefix or suffix in any way*. If the region is in the middle of a function definition or class declaration, do not repeat the function signature or class declaration. Write a partial code snippet without imports if needed. Preserve indentation.\n"
-                f"For example, if the source code looks like this:\n"
-                "==== PREFIX ====\n"
-                "def hello_world():\n    \n"
-                "==== REGION ====\n"
-                "\n"
-                "==== SUFFIX ====\n"
-                "if __name__ == '__main__':\n    hello_world()\n\n"
-                "And the task is 'implement this function and return 0', then a good response would be\n"
-                "We will implement hello world by first using the Python `print` statement and then returning the integer literal 0.\n"
-                "```\n"
-                "# print hello world\n"
-                "    print('hello world!')\n"
-                "    # return the integer 0\n"
-                "    return 0\n"
-                "```\n"
-                "I added an implementation of the rest of the `hello_world` function which uses the Ptython `print` statement to print 'hello_world' before returning the integer literal 0.\n"
-            ),
-            Message.assistant("Hello! How can I help you today?"),
-            Message.user(
-                f"Please generate code completing the task which will replace the below region: {goal}\n"
-                "==== PREFIX ====\n"
-                f"{before_cursor}"
-                "==== REGION ====\n"
-                f"{latest_region or region}\n"
-                "==== SUFFIX ====\n"
-                f"{after_cursor}\n"
-            ),
-        ]
-
-
-def create_system_message_chat(document: str, documents: Optional[List[str]] = None) -> Message:
+def create_system_message_chat(document: str, documents: Optional[List[lsp.Document]] = None) -> Message:
     """
     Create system message wiht up to MAX_SYSTEM_MESSAGE_SIZE tokens
     """
@@ -210,11 +155,13 @@ Current file:
 ```
 {document}
 ```"""
+    # logger.info(f"[create_system_message_chat] {documents=}")
     if documents:
         message += "Additional files:\n"
         for doc in documents:
-            message += f"```\n{doc}\n```\n"
+            message += f"```\n{doc.document.text}\n```\n"
     message += """Answer the user's question."""
+    # logger.info(f"{message=}")
     return Message.system(message)
 
 
@@ -243,12 +190,12 @@ def truncate_around_region(document: str, document_tokens: List[int], region_sta
 
 
 def create_system_message_chat_truncated(
-        document: str, max_size: int, cursor_offset_start: Optional[int] = None, cursor_offset_end: Optional[int] = None, document_list: Optional[List[str]] = None, current_file_weight: float = 0.5
+        document: str, max_size: int, cursor_offset_start: Optional[int] = None, cursor_offset_end: Optional[int] = None, document_list: Optional[List[lsp.Document]] = None, current_file_weight: float = 0.5
 ) -> Message:
     """
     Create system message with up to max_size tokens
     """
-    logging.getLogger().info(f"{max_size=}")
+    # logging.getLogger().info(f"{max_size=}")
     hardcoded_message = create_system_message_chat("")
     hardcoded_message_size = message_size(hardcoded_message)
     max_size = max_size - hardcoded_message_size
@@ -265,16 +212,24 @@ def create_system_message_chat_truncated(
     truncated_document = ENCODER.decode(document_tokens)
 
     truncated_document_list = []
+    logger.info(f"document list = {document_list}")
     if document_list:
         max_document_list_size = ((1.0 - current_file_weight) * max_size) // len(document_list)
         for doc in document_list:
+            logger.info("PROCESSING DOC")
             # TODO: Need a check for using up our limit
-            tokens = ENCODER.encode(doc)
+            document_contents = doc.document.text
+            # logger.info(f"{document_contents=}")
+            tokens = ENCODER.encode(document_contents)
+            logger.info("got tokens")
             if len(tokens) > max_document_list_size:
-                tokens = doc[-max_document_list_size:]
-                logger.debug(f"Truncating document to last {len(tokens)} tokens")
-            doc = ENCODER.decode(tokens)
-            truncated_document_list.append(doc)
+                tokens = tokens[:max_document_list_size]
+                logger.info("truncated tokens")
+                logger.debug(f"Truncating document to first {len(tokens)} tokens")
+            logger.info("creating new doc")
+            new_doc = lsp.Document(doc.uri, document=lsp.DocumentContext(ENCODER.decode(tokens)))
+            logger.info("created new doc")
+            truncated_document_list.append(new_doc)
 
     return create_system_message_chat(truncated_document, truncated_document_list)
 
@@ -282,16 +237,15 @@ def create_system_message_chat_truncated(
 def truncate_messages(messages: List[Message]):
     system_message_size = message_size(messages[0])
     max_size = calc_max_non_system_msgs_size(system_message_size)
-    logger.info(f"{max_size=}")
+    # logger.info(f"{max_size=}")
     tail_messages: List[Message] = []
     running_length = 0
     for msg in reversed(messages[1:]):
-        logger.info(f"{running_length=}")
+        # logger.info(f"{running_length=}")
         running_length += message_size(msg)
         if running_length > max_size:
             break
         tail_messages.insert(0, msg)
-    logger.info(f"Tail messages: {tail_messages}")
     return [messages[0]] + tail_messages
 
 
@@ -476,7 +430,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         messages: List[Message],
         message: str,
         cursor_offset: Optional[int] = None,
-        documents: Optional[List[str]] = None,
+        documents: Optional[List[lsp.Document]] = None,
     ) -> ChatResult:
         chatstream = TextStream()
         non_system_messages = []
@@ -487,8 +441,9 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         non_system_messages_size = messages_size(non_system_messages)
 
         max_system_msg_size = calc_max_system_message_size(non_system_messages_size)
-        logger.info(f"{max_system_msg_size=}")
+        # logger.info(f"{max_system_msg_size=}")
 
+        # logger.info(f"{documents=}")
         system_message = create_system_message_chat_truncated(
             document or "", max_system_msg_size, cursor_offset, cursor_offset, documents
         )
@@ -617,12 +572,12 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         truncated_documents = []
         if documents:
             max_document_list_size = ((1.0 - current_file_weight) * max_size) // len(document_list)
-            for doc in document_list:
-                tokens = ENCODER.encode(doc)
+            for doc in documents:
+                tokens = ENCODER.encode(doc.document.text)
                 if len(tokens) > max_document_list_size:
-                    tokens = doc[:max_document_list_size]
+                    tokens = tokens[:max_document_list_size]
                     logger.debug(f"Truncating document to first {len(tokens)} tokens")
-                doc = ENCODER.decode(tokens)
+                doc = lsp.Document(uri=doc.uri, document=lsp.DocumentContext(ENCODER.decode(tokens)))
                 truncated_documents.append(doc)
 
 
@@ -639,7 +594,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         )
 
         logger.info("constructed stream")
-        logger.info(f"{stream=}")
+        # logger.info(f"{stream=}")
         thoughtstream = TextStream()
         codestream = TextStream()
         planstream = TextStream()
@@ -655,7 +610,7 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                 planstream.feed_eof()
                 lang_tag = await stream2.readuntil("\n")
                 before, after = stream2.split_once("\n```")
-                logger.info(f"{before=}")
+                # logger.info(f"{before=}")
                 logger.info("reading codestream")
                 async for delta in before:
                     # logger.info(f"code {delta=}")
