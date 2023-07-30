@@ -30,7 +30,6 @@
     hasInput = false
   })
 
-  // Define a function to send a message.
   function sendMessage() {
     console.log("sending message")
     if ($state.agents[$state.selectedAgentId].isStreaming) {
@@ -79,32 +78,10 @@
     editorContent = editor.getText()
     console.log("handleValueChange: ", editorContent)
 
-
     const shouldShowAtDropdown = () => {
       latestAtToEndOfTextarea =
         editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
       return Boolean(latestAtToEndOfTextarea)
-
-  let isDoubleSlashAllowed = false;
-
-  function handleValueChange(e: Event) {
-    if (!textarea) throw new Error();
-    inputValue = textarea.value;
-    resize(e);
-    
-    // Check for the case of typing two slashes.
-    if (textarea.value.trim() === "//") {
-      dropdownOpen.set(false);
-      dropdownCancelled = true;
-      if (isDoubleSlashAllowed) {
-        textarea.value = "//";
-        isDoubleSlashAllowed = false;
-      } else {
-        textarea.value = "/";
-        isDoubleSlashAllowed = true;
-      }
-      // return; // Stop execution here if two slashes were entered.
-
     }
     let newFilteredAgents:AgentRegistryItem[] = []
     if (editorContent.trim().startsWith("/")) {
@@ -147,7 +124,6 @@
     }
   }
 
-  // Define a function to handle running an agent.
   function handleRunAgent(agent_type: string) {
     if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
       throw new Error("attempt to run unavailable agent")
@@ -175,7 +151,6 @@
     await tick()
   }
 
-  // Define a function to handle blur events.
   let onBlur = () => {
     isFocused = false
     vscode.postMessage({
@@ -309,8 +284,6 @@
 </div>
 
 <style>
-  /* This style hides the scrollbar for the textarea. */
-
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
