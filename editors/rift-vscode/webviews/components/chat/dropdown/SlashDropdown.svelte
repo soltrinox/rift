@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { state } from "../../stores";
+  import { state, filteredAgents } from "../../stores";
   import type { AgentRegistryItem } from "../../../../src/types";
   import SlashDropdownCard from "./SlashDropdownCard.svelte";
   import { onMount } from "svelte";
@@ -8,22 +8,11 @@
   export let handleRunAgent: (agent_type: string) => void;
 
   let availableAgents: AgentRegistryItem[] = $state.availableAgents;
-  export let textareaValue: string = "";
 
-  let filteredAgents = availableAgents;
-  let activeId = availableAgents.length - 1;
+  let activeId = $filteredAgents.length - 1;
 
-  $: {
-    filteredAgents = availableAgents.filter((agent) => {
-      let searchString = textareaValue.substring(1).toLowerCase();
-      console.log('search string:', searchString)
-      return (
-        agent.agent_type.toLowerCase().includes(searchString) ||
-        agent.display_name.toLowerCase().includes(searchString)
-      );
-    });
-    activeId = filteredAgents.length - 1;
-  }
+
+  $: console.log('activeID: ', activeId)
 
   onMount(() => {
     //response is saved to state in ChatWebview.svelte
@@ -38,18 +27,20 @@
     if (e.key === "Enter") {
       e.preventDefault();
       // create agent
-      console.log("agent_type: " + availableAgents[activeId].agent_type);
+      console.log('fa:', $filteredAgents)
+      console.log('activeId:', activeId)
+      console.log("agent_type: " + $filteredAgents[activeId].agent_type);
 
-      handleRunAgent(filteredAgents[activeId].agent_type);
+      handleRunAgent($filteredAgents[activeId].agent_type);
     }
     if (e.key == "ArrowDown") {
       e.preventDefault();
-      if (activeId == availableAgents.length - 1) activeId = 0;
+      if (activeId == $filteredAgents.length - 1) activeId = 0;
       else activeId++;
       console.log('new active Id: ',activeId)
     } else if (e.key == "ArrowUp") {
       e.preventDefault();
-      if (activeId == 0) activeId = availableAgents.length - 1;
+      if (activeId == 0) activeId = $filteredAgents.length - 1;
       else activeId--;
       console.log('new active Id: ',activeId)
     } else return;
@@ -61,7 +52,7 @@
 <div
   class="absolute bottom-full left-0 px-2 w-full z-20 drop-shadow-[0_-4px_16px_0px_rgba(0,0,0,0.36)]"
 >
-  {#each filteredAgents.reverse() as agent, index}
+  {#each $filteredAgents.reverse() as agent, index}
     <SlashDropdownCard {agent} focused={index === activeId} {handleRunAgent} />
   {/each}
 </div>

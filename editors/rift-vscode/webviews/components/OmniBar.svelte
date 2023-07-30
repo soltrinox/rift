@@ -1,10 +1,10 @@
 <script lang="ts">
   import SendSvg from "./icons/SendSvg.svelte"
-  import { dropdownStatus, state } from "./stores"
+  import { dropdownStatus, filteredAgents, state } from "./stores"
   import SlashDropdown from "./chat/dropdown/SlashDropdown.svelte"
   import { tick } from "svelte"
   import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
-  import type { AtableFile } from "../../src/types"
+  import type { AgentRegistryItem, AtableFile } from "../../src/types"
   import { onMount, onDestroy } from "svelte"
   import { CommandProps, Editor } from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
@@ -83,8 +83,19 @@
         editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
       return Boolean(latestAtToEndOfTextarea)
     }
-
+    let newFilteredAgents:AgentRegistryItem[] = []
     if (editorContent.trim().startsWith("/")) {
+      let searchString = editorContent.substring(1).toLowerCase()
+      newFilteredAgents = $state.availableAgents.filter((agent) => {
+        return (
+          agent.agent_type.toLowerCase().includes(searchString) ||
+          agent.display_name.toLowerCase().includes(searchString)
+        )
+      })
+      filteredAgents.set(newFilteredAgents) // im not proud
+    } else filteredAgents.set([])
+
+    if (editorContent.trim().startsWith("/") && newFilteredAgents.length > 0) {
       console.log("setting slash")
       dropdownStatus.set("slash")
     } else if (shouldShowAtDropdown()) {
@@ -162,17 +173,18 @@
 
         const docsize = state.doc.content.size - 1 // oboe :()
 
-        if(!latestAtToEndOfTextarea) throw new Error('why is this command being run if theres no latestAtToEndOfTextarea')
+        if (!latestAtToEndOfTextarea)
+          throw new Error("why is this command being run if theres no latestAtToEndOfTextarea")
 
-        tr.delete(docsize-latestAtToEndOfTextarea.length, docsize)
-        
+        tr.delete(docsize - latestAtToEndOfTextarea.length, docsize)
+
         return true
       })
       .insertContent(`<span data-fsPath="${file.fullPath}" data-name="${file.fileName}"></span>`)
       .insertContent(" ")
       .run()
-
   }
+
 
   let latestAtToEndOfTextarea: string | undefined = undefined
   $: console.log("latestAtTOEndOfTextarea:", latestAtToEndOfTextarea)
@@ -263,7 +275,7 @@
     </div>
   </div>
   {#if $dropdownStatus == "slash"}
-    <SlashDropdown textareaValue={editorContent} {handleRunAgent} />
+    <SlashDropdown {handleRunAgent} />
   {/if}
 
   {#if $dropdownStatus == "at"}

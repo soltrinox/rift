@@ -1,5 +1,5 @@
 import { readable, writable } from "svelte/store";
-import { DEFAULT_STATE } from "../../src/types";
+import { AgentRegistryItem, DEFAULT_STATE } from "../../src/types";
 import type { WebviewState } from "../../src/types";
 
 export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
@@ -19,5 +19,6 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
 });
 
 export const dropdownStatus = writable<'slash'|'at'|'none'>('none')
+export const filteredAgents = writable<AgentRegistryItem[]>([])
 // export const state = writable<WebviewState>(DEFAULT_STATE)
 // export const progressResponse = writable('')
