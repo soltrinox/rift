@@ -69,9 +69,6 @@ class ChatAgent(Agent):
 
     @classmethod
     async def create(cls, params: Dict[Any, Any], server: BaseLspServer):
-        from rift.util.ofdict import ofdict
-
-        params = ofdict(Dict, params)
         model = await server.ensure_chat_model()
 
         params = ofdict(ChatAgentParams, params)
