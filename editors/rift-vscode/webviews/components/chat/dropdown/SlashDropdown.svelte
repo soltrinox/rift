@@ -35,7 +35,6 @@
   if (availableAgents.length < 1) throw new Error("no available agents");
 
   function handleKeyDown(e: KeyboardEvent) {
-    e.preventDefault();
     if (e.key === "Enter") {
       e.preventDefault();
       // create agent

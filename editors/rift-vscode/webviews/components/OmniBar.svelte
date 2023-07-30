@@ -203,8 +203,7 @@
         StarterKit,
         FileChip.configure({
           HTMLAttributes: {
-            // class: "bg-[var(--vscode-editor-background)]",
-            class: "bg-black text-xs inline-flex items-center",
+            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
             contenteditable: "false",
           },
         }),
