@@ -67,7 +67,6 @@ class SmolAgentState(AgentState):
     messages: List[openai.Message] = field(default_factory=list)
 
 
-# decorator for creating the code completion agent
 @agent(
     agent_description="Quickly generate a workspace with smol_dev.",
     display_name="Smol Developer",
@@ -80,7 +79,6 @@ class SmolAgent(Agent):
     @classmethod
     async def create(cls, params: SmolAgentParams, server):
         from rift.util.ofdict import ofdict
-
         params = ofdict(SmolAgentParams, params)
         state = SmolAgentState(
             params=params,
@@ -97,10 +95,10 @@ class SmolAgent(Agent):
     async def run(self) -> AgentRunResult:
         """
         run through smol dev chat loop:
-            - get prompt from user via chat
-            - generate plan
-            - generate file structure
-            - generate code (in parallel)
+          - get prompt from user via chat
+          - generate plan
+          - generate file structure
+          - generate code (in parallel)
         """
         await self.send_progress()
         prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
@@ -138,24 +136,14 @@ class SmolAgent(Agent):
             FUTURES[RESPONSE] = asyncio.wrap_future(fut)
 
         async def get_plan():
-            # return await asyncio.get_running_loop().run_in_executor(
-            #     executor,
-            #     smol_dev.prompts.plan,
-            #     prompt,
-            #     stream_handler=stream_handler,
-            #     model="gpt-3.5-turbo",
-            # )
             return smol_dev.prompts.plan(
                 prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
             )
 
-        plan = await self.add_task(AgentTask(description="Generate plan", task=get_plan)).run()
-        # logger.info(f"PLAN {plan=}")
+        plan = await self.add_task(AgentTask(description="Generate plan", task=get_plan)).run()1
 
         with futures.ThreadPoolExecutor(1) as executor:
-            # await ainput("\n> Press any key to continue.\n")
             async def get_file_paths():
-                # logger.info(f"{prompt=} {plan=}")
                 return smol_dev.prompts.specify_file_paths(
                     prompt,
                     plan,
@@ -189,44 +177,10 @@ class SmolAgent(Agent):
             async def generate_code_for_filepath(
                 file_path: str, position: int
             ) -> file_diff.FileChange:
-                # stream_handler = lambda chunk: pbar.update(n=len(chunk))
                 code_future = asyncio.ensure_future(
                     smol_dev.generate_code(prompt, plan, file_path, model="gpt-3.5-turbo")
                 )
-                # with tqdm.asyncio.tqdm(position=position, unit=" chars", unit_scale=True) as pbar:
-                # async with updater.lock:
-                #     updater.pbars[position] = pbar
-                #     updater.dones[position] = False
                 done = False
-                # waiter = asyncio.get_running_loop().create_future()
-
-                # def cb(fut):
-                #     waiter.cancel()
-
-                # code_future.add_done_callback(cb)
-
-                # async def spinner():
-                #     spinner_index: int = 0
-                #     steps = ["[⢿]", "[⣻]", "[⣽]", "[⣾]", "[⣷]", "[⣯]", "[⣟]", "[⡿]"]
-                #     while True:
-                #         c = steps[spinner_index % len(steps)]
-                #         pbar.set_description(f"{c} Generating code for {file_path}")
-                #         async with updater.lock:
-                #             updater.update()
-                #         spinner_index += 1
-                #         await asyncio.sleep(0.05)
-                #         if waiter.done():
-                #             # pbar.display(f"[✔️] Generated code for {file_path}")
-                #             async with updater.lock:
-                #                 updater.dones[position] = True
-                #                 updater.messages[
-                #                     position
-                #                 ] = f"[✔️] Generated code for {file_path}"
-                #                 pbar.set_description(f"[✔️] Generated code for {file_path}")
-                #                 updater.update()
-                #             return
-
-                # t = asyncio.create_task(spinner())
                 code = await code_future
                 logger.info("folder uri:")
                 logger.info(self.state.params.workspaceFolderPath)
@@ -259,113 +213,5 @@ class SmolAgent(Agent):
                 lsp.ApplyWorkspaceEditParams(edit=workspace_edit, label="rift")
             )
 
-    async def on_change(
-        self,
-        *,
-        before: lsp.TextDocumentItem,
-        after: lsp.TextDocumentItem,
-        changes: lsp.DidChangeTextDocumentParams,
-    ):
-        if self.task.status != "running":
-            return
-        """
-        [todo]
-        When a change happens:
-        1. if the change is before our 'working area', then we stop the completion request and run again.
-        2. if the change is in our 'working area', then the user is correcting something that
-        3. if the change is after our 'working area', then just keep going.
-        4. if _we_ caused the change, then just keep going.
-        """
-        assert changes.textDocument.uri == self.state.document.uri
-        self.state.document = before
-        for c in changes.contentChanges:
-            # logger.info(f"contentChange: {c=}")
-            # fut = self.state.change_futures.get(c.text)
-            fut = None
-            for span, vfut in self.state.change_futures.items():
-                if c.text in span:
-                    fut = vfut
-
-            if fut is not None:
-                # we caused this change
-                try:
-                    fut.set_result(None)
-                except:
-                    pass
-            else:
-                # someone else caused this change
-                # [todo], in the below examples, we shouldn't cancel, but instead figure out what changed and restart the insertions with the new information.
-                with lsp.setdoc(self.state.document):
-                    self.state.additive_ranges.apply_edit(c)
-                if c.range is None:
-                    await self.cancel("the whole document got replaced")
-                else:
-                    if c.range.end <= self.state.cursor:
-                        # some text was changed before our cursor
-                        if c.range.end.line < self.state.cursor.line:
-                            # the change is occurring on lines strictly above us
-                            # so we can adjust the number of lines
-                            lines_to_add = (
-                                c.text.count("\n") + c.range.start.line - c.range.end.line
-                            )
-                            self.state.cursor += (lines_to_add, 0)
-                        else:
-                            # self.cancel("someone is editing on the same line as us")
-                            pass  # temporarily disabled
-                    elif self.state.cursor in c.range:
-                        await self.cancel("someone is editing the same text as us")
-
-        self.state.document = after
-
     async def send_result(self, result):
         ...  # unreachable
-
-    def accepted_diff_text(self, diff):
-        result = ""
-        for op, text in diff:
-            if op == -1:  # remove
-                pass
-            elif op == 0:
-                result += text
-            elif op == 1:
-                result += text
-        return result
-
-    async def accept(self):
-        logger.info(f"{self} user accepted result")
-
-        await self.server.apply_range_edit(
-            self.state.document.uri, self.RANGE, self.accepted_diff_text(self.DIFF)
-        )
-        # if self.task.status not in ["error", "done"]:
-        #     logger.error(f"cannot_ accept status {self.task.status}")
-        #     return
-        # self.status = "done"
-        await self.send_progress(
-            payload="accepted",
-            payload_only=True,
-        )
-        self.state._done = True
-
-    def rejected_diff_text(self, diff):
-        result = ""
-        for op, text in diff:
-            if op == -1:  # remove
-                result += text
-            elif op == 0:
-                result += text
-            elif op == 1:
-                pass
-        return result
-
-    async def reject(self):
-        logger.info(f"{self} user rejected result")
-
-        await self.server.apply_range_edit(
-            self.state.document.uri, self.RANGE, self.rejected_diff_text(self.DIFF)
-        )
-        await self.send_progress(
-            payload="rejected",
-            payload_only=True,
-        )
-        self.state._done = True
