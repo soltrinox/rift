@@ -60,7 +60,7 @@
   {:else}
     {#each $state.agents[$state.selectedAgentId]?.chatHistory ?? [] as item}
       {#if item.role == "user"}
-        <UserInput value={item.content} />
+        <UserInput editorContentString={item.editorContentString} />
       {:else}
         <Response value={item.content} />
       {/if}

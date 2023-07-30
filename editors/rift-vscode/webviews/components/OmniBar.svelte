@@ -42,7 +42,7 @@
     console.log($state.agents[$state.selectedAgentId].chatHistory)
 
     let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory
-    appendedMessages?.push({ role: "user", content: editorContent })
+    appendedMessages?.push({ role: "user", content: editorContent, editorContentString: editor?.getHTML() })
     console.log("appendedMessages")
     console.log(appendedMessages)
 
@@ -54,7 +54,9 @@
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
       message: editorContent,
+      editorContentString: editor?.getHTML()
     })
+    console.log('editorContentString for testing:', editor?.getHTML())
 
     // clint.
     // console.log("updating state...");
