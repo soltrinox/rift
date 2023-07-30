@@ -319,7 +319,7 @@ class LspServer(BaseLspServer):
 
         # async def _run_agent():
         logger = logging.getLogger(__name__)
-        logger.info(f"AGENT TYPE: {agent_type}")
+        # logger.info(f"AGENT TYPE: {agent_type}")
         agent_cls = AGENT_REGISTRY[agent_type]
         agent = agent_cls.create(params=agent_params, server=self)
         # if agent_type == "chat":

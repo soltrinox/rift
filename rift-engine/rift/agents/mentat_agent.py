@@ -21,7 +21,7 @@ class Mentat(agent.Agent):
     splash: Optional[
         str
     ] = """
-yeehaw
+mentat
 """
 
     @classmethod
@@ -105,18 +105,26 @@ yeehaw
         user_input_manager = UserInputManager(config)
         code_file_manager = CodeFileManager(paths, user_input_manager, config)
 
-        # Enter a loop where we continuously take user input, get model responses, and apply changes based on user feedback
+        # We set a flag that signals when we need a user request.
         need_user_request = True
+        # We start an infinite loop, continually getting user input, modeling responses, and implementing changes.
         while True:
+            # If we need a user request, we acquire one.
             if need_user_request:
+                # We call a function to collect user input.
                 user_response = user_input_manager.collect_user_input()
+                # We add the user's input to our conversation object.
                 conv.add_user_message(user_response)
+            # We generate a model response and corresponding code changes based on the current state of the conversation and code files.
             explanation, code_changes = conv.get_model_response(code_file_manager, config)
+            # We inform the user if their files seem incorrect based on the proposed code changes.
             warn_user_wrong_files(code_file_manager, code_changes)
 
+            # If there are code changes, we prompt the user for feedback.
             if code_changes:
                 need_user_request = get_user_feedback_on_changes(
                     config, conv, user_input_manager, code_file_manager, code_changes
                 )
             else:
+                # If there are no code changes, we flag that we need a new user request.
                 need_user_request = True
