@@ -62,7 +62,7 @@ export class WebviewAgent {
     hasNotification?: boolean,
     chatHistory?: ChatMessage[],
     inputRequest?: InputRequest | null,
-    tasks?: Tasks,
+    tasks?: Tasks
   ) {
     this.type = type;
     this.hasNotification = hasNotification ?? false;
@@ -80,9 +80,9 @@ export type WebviewState = {
   };
   availableAgents: AgentRegistryItem[];
   files: {
-    recentlyOpenedFiles: AtableFile[]
-    nonGitIgnoredFiles: AtableFile[]
-  }
+    recentlyOpenedFiles: AtableFile[];
+    nonGitIgnoredFiles: AtableFile[];
+  };
 };
 
 // the only reason this is here is because types.ts is used for shared logic between the webviews and the extension.
@@ -101,8 +101,8 @@ export const DEFAULT_STATE: WebviewState = {
   ],
   files: {
     recentlyOpenedFiles: [],
-    nonGitIgnoredFiles: []
-  }
+    nonGitIgnoredFiles: [],
+  },
 };
 
 export interface RunParams {
@@ -186,7 +186,7 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   name?: null | string | undefined;
-  editorContentString?: string //there on user
+  editorContentString?: string; //there on user
 };
 
 export interface AgentChatRequest {
@@ -214,4 +214,4 @@ export type AtableFile = {
   fileName: string; //example.ts
   fullPath: string; //Users/brent/dev/project/src/example.ts
   fromWorkspacePath: string; //project/src/example.ts
-}
+};

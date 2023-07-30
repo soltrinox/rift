@@ -17,56 +17,54 @@ export function activate(context: vscode.ExtensionContext) {
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(
-    vscode.languages.registerCodeLensProvider("*", morph_language_client),
+    vscode.languages.registerCodeLensProvider("*", morph_language_client)
   );
 
   chatProvider = new WebviewProvider(
     "Chat",
     context.extensionUri,
-    morph_language_client,
+    morph_language_client
   );
   logProvider = new WebviewProvider(
     "Logs",
     context.extensionUri,
-    morph_language_client,
+    morph_language_client
   );
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, {
       webviewOptions: { retainContextWhenHidden: true },
-    }),
+    })
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, {
       webviewOptions: { retainContextWhenHidden: true },
-    }),
+    })
   );
 
-  
-  let recentlyOpenedFiles:string[] = []
-vscode.workspace.onDidOpenTextDocument((document) => {
-  const filePath = document.uri.fsPath
-  if(filePath.endsWith('.git')) return // weirdly getting both file.txt and file.txt.git on every file change
-  
-  // Check if file path already exists in the recent files list
-  const existingIndex = recentlyOpenedFiles.indexOf(filePath)
+  let recentlyOpenedFiles: string[] = [];
+  vscode.workspace.onDidOpenTextDocument((document) => {
+    const filePath = document.uri.fsPath;
+    if (filePath.endsWith(".git")) return; // weirdly getting both file.txt and file.txt.git on every file change
 
-  // If the file is found, remove it from the current location
-  if (existingIndex > -1) {
-    recentlyOpenedFiles.splice(existingIndex, 1)
-  }
+    // Check if file path already exists in the recent files list
+    const existingIndex = recentlyOpenedFiles.indexOf(filePath);
 
-  // Add the file to the end of the list (top of the stack)
-  recentlyOpenedFiles.push(filePath)
+    // If the file is found, remove it from the current location
+    if (existingIndex > -1) {
+      recentlyOpenedFiles.splice(existingIndex, 1);
+    }
 
-  // Limit the history to the last 10 files
-  if (recentlyOpenedFiles.length > 10) {
-    recentlyOpenedFiles.shift()
-  }
+    // Add the file to the end of the list (top of the stack)
+    recentlyOpenedFiles.push(filePath);
 
-  morph_language_client.sendRecentlyOpenedFilesChange(recentlyOpenedFiles)
-})
+    // Limit the history to the last 10 files
+    if (recentlyOpenedFiles.length > 10) {
+      recentlyOpenedFiles.shift();
+    }
 
+    morph_language_client.sendRecentlyOpenedFilesChange(recentlyOpenedFiles);
+  });
 
   // const infoview = new Infoview(context)
   // context.subscriptions.push(infoview)
@@ -152,7 +150,7 @@ vscode.workspace.onDidOpenTextDocument((document) => {
       const r = await morph_language_client.run({
         agent_type: "code_completion",
       });
-    },
+    }
   );
   let disposablefocusOmnibar = vscode.commands.registerCommand(
     "rift.focus_omnibar",
@@ -161,13 +159,13 @@ vscode.workspace.onDidOpenTextDocument((document) => {
       vscode.commands.executeCommand("RiftChat.focus");
 
       morph_language_client.focusOmnibar();
-    },
+    }
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("rift.reset_chat", () => {
       morph_language_client.restartActiveAgent();
-    }),
+    })
   );
 
   // context.subscriptions.push(
@@ -176,7 +174,6 @@ vscode.workspace.onDidOpenTextDocument((document) => {
   context.subscriptions.push(disposable);
   context.subscriptions.push(disposablefocusOmnibar);
   context.subscriptions.push(morph_language_client);
-
 
   // const provider = async (document, position, context, token) => {
   //     return [
@@ -187,5 +184,3 @@ vscode.workspace.onDidOpenTextDocument((document) => {
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
-
-
