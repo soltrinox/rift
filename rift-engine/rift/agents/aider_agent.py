@@ -105,7 +105,7 @@ class Aider(agent.Agent):
                     self.RESPONSE += delta
                     await self.send_progress({"response": self.RESPONSE})
                     # logger.info("sent progress")
-            await asyncio.sleep(0.1)
+            # await asyncio.sleep(0.1)
 
             # await self.send_progress({"response": self.RESPONSE, "done_streaming": True})
 
@@ -159,7 +159,7 @@ class Aider(agent.Agent):
 
             # logger.info("yeehaw wrapper")
             async def request_chat():
-                await asyncio.sleep(0.1)
+                # await asyncio.sleep(0.1)
                 await response_lock.acquire()
                 # await asyncio.sleep(1)
                 # async with response_lock:
