@@ -1,6 +1,7 @@
 {
-  "name": "rift-vscode",
-  "displayName": "rift-vscode",
+  "name": "rift",
+  "publisher": "morph",
+  "displayName": "rift",
   "description": "",
   "version": "0.0.1",
   "engines": {
