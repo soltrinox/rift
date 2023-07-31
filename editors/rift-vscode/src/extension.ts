@@ -17,29 +17,29 @@ export function activate(context: vscode.ExtensionContext) {
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(
-    vscode.languages.registerCodeLensProvider("*", morph_language_client)
+    vscode.languages.registerCodeLensProvider("*", morph_language_client),
   );
 
   chatProvider = new WebviewProvider(
     "Chat",
     context.extensionUri,
-    morph_language_client
+    morph_language_client,
   );
   logProvider = new WebviewProvider(
     "Logs",
     context.extensionUri,
-    morph_language_client
+    morph_language_client,
   );
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, {
       webviewOptions: { retainContextWhenHidden: true },
-    })
+    }),
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, {
       webviewOptions: { retainContextWhenHidden: true },
-    })
+    }),
   );
 
   let recentlyOpenedFiles: string[] = [];
@@ -150,7 +150,7 @@ export function activate(context: vscode.ExtensionContext) {
       const r = await morph_language_client.run({
         agent_type: "code_completion",
       });
-    }
+    },
   );
   let disposablefocusOmnibar = vscode.commands.registerCommand(
     "rift.focus_omnibar",
@@ -159,13 +159,13 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.executeCommand("RiftChat.focus");
 
       morph_language_client.focusOmnibar();
-    }
+    },
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("rift.reset_chat", () => {
       morph_language_client.restartActiveAgent();
-    })
+    }),
   );
 
   // context.subscriptions.push(

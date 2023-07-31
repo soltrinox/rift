@@ -18,7 +18,7 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
   return () => window.removeEventListener("message", handler);
 });
 
-export const dropdownStatus = writable<'slash'|'at'|'none'>('none')
-export const filteredAgents = writable<AgentRegistryItem[]>([])
+export const dropdownStatus = writable<"slash" | "at" | "none">("none");
+export const filteredAgents = writable<AgentRegistryItem[]>([]);
 // export const state = writable<WebviewState>(DEFAULT_STATE)
 // export const progressResponse = writable('')

@@ -30,7 +30,9 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     if (!this._view) {
       console.log("postMessage to: ", endpoint);
       console.log("with message: ", message);
-      console.error(`No view available for ${this.name}. Its possibly collapsed`)
+      console.error(
+        `No view available for ${this.name}. Its possibly collapsed`,
+      );
     } else {
       this._view.webview.postMessage({ type: endpoint, data: message });
     }
@@ -79,7 +81,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       agent_id: string;
       messages: ChatMessage[];
       message: string;
-      editorContentString: string
+      editorContentString: string;
     }
     interface InputRequestParams {
       type: "inputRequest";

@@ -62,7 +62,7 @@ export class WebviewAgent {
     hasNotification?: boolean,
     chatHistory?: ChatMessage[],
     inputRequest?: InputRequest | null,
-    tasks?: Tasks
+    tasks?: Tasks,
   ) {
     this.type = type;
     this.hasNotification = hasNotification ?? false;
