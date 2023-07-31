@@ -35,7 +35,7 @@ dynamic = ["version"]
 hf = [
   "torch",
 ]
-smol-dev = [
+smol_dev = [
   "smol_dev @ git+https://www.github.com/jesse-michael-han/smol_dev",
 ]
 gpt-engineer = [
