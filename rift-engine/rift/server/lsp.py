@@ -257,6 +257,8 @@ class LspServer(BaseLspServer):
     async def on_run(self, params: RunAgentParams):
         agent_type = params.agent_type
         # lol
+
+        # TODO: grab the params_cls and do of_dict(params_cls, agent_params)
         agent_params = params.agent_params
         agent_id = params.agent_id or str(uuid.uuid4())[:8]
         if not params.agent_id:
