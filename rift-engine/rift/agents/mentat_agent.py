@@ -54,10 +54,6 @@ mentat
         )
 
     async def run(self) -> MentatRunResult:
-        """
-        Example use:
-            python -m rift.agents.cli.mentat --port 7797 --debug False --args '["--model", "gpt-3.5-turbo", "rift/agents/mentat.py"]'
-        """
         self.RESPONSE = ""
         response_stream = TextStream()
 

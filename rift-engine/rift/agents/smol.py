@@ -8,8 +8,6 @@ from concurrent import futures
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, List, Optional
 
-import smol_dev
-
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
@@ -78,6 +76,10 @@ class SmolAgent(Agent):
 
     @classmethod
     async def create(cls, params: SmolAgentParams, server):
+        try:
+            import smol_dev
+        except ImportError:
+            raise Exception(f"`smol_dev` not found. Try `pip install -e 'rift-engine[smol_dev]' from the repository root directory.`")
         from rift.util.ofdict import ofdict
 
         params = ofdict(SmolAgentParams, params)

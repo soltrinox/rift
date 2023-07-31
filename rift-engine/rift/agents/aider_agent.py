@@ -1,3 +1,15 @@
+try:
+    import aider
+    import aider.coders
+    import aider.coders.base_coder
+    import aider.io
+    import aider.main
+    from aider.coders.base_coder import ExhaustedContextWindow
+except ImportError:
+    raise Exception(
+        "`aider` not found. Try `pip install -e 'rift-engine[aider]'` from the Rift root directory."
+    )        
+
 import asyncio
 import dataclasses
 import json
@@ -14,45 +26,35 @@ from rift.util.ofdict import ofdict
 logger = logging.getLogger(__name__)
 from rich.text import Text
 
-# from rift.agents.cli.agent import Agent, ClientParams, launcher
-# from rift.agents.cli.util import ainput
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
 from rift.util.TextStream import TextStream
-
-try:
-    import aider
-    import aider.coders
-    import aider.coders.base_coder
-    import aider.io
-    import aider.main
-    from aider.coders.base_coder import ExhaustedContextWindow
-except ImportError:
-    raise Exception(
-        "`aider` not found. Try `pip install -e rift-engine[aider]` from the Rift root directory."
-    )
-
-from prompt_toolkit.shortcuts import CompleteStyle, PromptSession, prompt
 
 response_lock = asyncio.Lock()
 
 
 @dataclass
 class AiderRunResult(agent.AgentRunResult):
-    ...
-
+    """
+    A data class representing the results of an Aider agent run.
+    This class extends from the base class `AgentRunResult` defined in the `rift.agents.abstract` module.
+    """
 
 @dataclass
 class AiderAgentParams(agent.AgentRunParams):
-    # args: List[str] = field(default_factory=list)
-    # debug: bool = False
-    # def __post_init__(self):
-    #     self.args = []
-    ...
-
+    """
+    A data class that holds parameters for running an Aider agent.
+    This class extends from the base class `AgentRunParams` defined in the `rift.agents.abstract` module.
+    """
 
 @dataclass
 class AiderAgentState(agent.AgentState):
+    """
+    A data class that holds the state of an Aider agent.
+    It has the following attributes:
+    - params (AiderAgentParams) : The parameters associated with the Aider agent.
+    - messages (List[openai.Message]) : A list of messages communicated with the openai API during the agent's run.
+    """
     params: AiderAgentParams
     messages: list[openai.Message]
 
@@ -74,6 +76,12 @@ class Aider(agent.Agent):
 
     @classmethod
     async def create(cls, params: AiderAgentParams, server):
+        """
+        Class method to create an instance of the Aider class.
+        :param params: Parameters for the Aider agent.
+        :param server: The server where the Aider agent is running.
+        :return: An instance of the Aider class.
+        """
         params = ofdict(AiderAgentParams, params)
         state = AiderAgentState(
             params=params,
@@ -87,6 +95,11 @@ class Aider(agent.Agent):
         return obj
 
     async def apply_file_changes(self, updates) -> lsp.ApplyWorkspaceEditResponse:
+        """
+        Apply file changes to the workspace.
+        :param updates: The updates to be applied.
+        :return: The response from applying the workspace edit.
+        """
         return await self.server.apply_workspace_edit(
             lsp.ApplyWorkspaceEditParams(
                 file_diff.edits_from_file_changes(
@@ -97,47 +110,35 @@ class Aider(agent.Agent):
         )
 
     async def _run_chat_thread(self, response_stream):
-        # logger.info("Started handler thread")
+        """
+        Run the chat thread for the Aider agent.
+        :param response_stream: The stream of responses from the chat.
+        """
+
         before, after = response_stream.split_once("NONE")
         try:
             async with response_lock:
                 async for delta in before:
                     self.RESPONSE += delta
                     await self.send_progress({"response": self.RESPONSE})
-                    # logger.info("sent progress")
-            # await asyncio.sleep(0.1)
-
-            # await self.send_progress({"response": self.RESPONSE, "done_streaming": True})
-
-            # logger.info("sent done")
-            self.RESPONSE = ""
+            await asyncio.sleep(0.1)
             await self._run_chat_thread(after)
         except Exception as e:
             logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
 
     async def run(self) -> AiderRunResult:
         """
-        Example use:
-            python -m rift.agents.cli.aider --port 7797 --debug False --args '["--model", "gpt-3.5-turbo", "rift/agents/aider.py"]'
+        Run the Aider agent.
+        :return: The result of running the Aider agent.
         """
+        await self.send_progress()
         self.RESPONSE = ""
-        # await self.send_progress()
+
         response_stream = TextStream()
 
         run_chat_thread_task = asyncio.create_task(self._run_chat_thread(response_stream))
 
         loop = asyncio.get_running_loop()
-
-        def send_chat_update(prompt: str):
-            def _worker():
-                response_stream.feed_data(prompt)
-                response_stream.feed_data("NONE")
-
-            loop.call_soon_threadsafe(_worker)
-
-        # send_chat_update("YEEHAW")
-
-        # logger.info("YEEHAW")
 
         def send_chat_update_wrapper(prompt: str = "NONE", end=""):
             def _worker():
@@ -146,34 +147,18 @@ class Aider(agent.Agent):
             loop.call_soon_threadsafe(_worker)
 
         def request_chat_wrapper(prompt: Optional[str] = None, loop=None):
-            # logger.info("YEHLLO")
             send_chat_update_wrapper()
             asyncio.set_event_loop(loop)
-            # print(f"inside request chat wrapper prompt={prompt} loop={loop}")
-            # logger.info("yeehaw in wrapper")
-            # if loop is not None:
-            #     asyncio.set_event_loop(loop)
-            #     print("SET EVENT LOOP")
-            # if prompt is not None:
-            #     self.state.messages.append(openai.Message.assistant(prompt))
-
-            # logger.info("yeehaw wrapper")
             async def request_chat():
-                # await asyncio.sleep(0.1)
                 await response_lock.acquire()
-                # await asyncio.sleep(1)
-                # async with response_lock:
-                # logger.info("yeehaw")
                 await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
-                # logger.info("sent streaming done")
+                # logger.info(f"{self.RESPONSE=}")
                 self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
                 self.RESPONSE = ""
-
                 if prompt is not None:
-                    # self.RESPONSE += prompt
                     self.state.messages.append(openai.Message.assistant(content=prompt))
+                # logger.info(f"MESSAGE HISTORY BEFORE REQUESTING: {self.state.messages}")
 
-                # logger.info("sending chat request")
                 resp = await self.request_chat(
                     agent.RequestChatRequest(messages=self.state.messages)
                 )
@@ -182,15 +167,13 @@ class Aider(agent.Agent):
                 return resp
 
             # logger.info("[request_chat_wrapper] creating task")
-            t = loop.create_task(request_chat())
+            t = asyncio.run_coroutine_threadsafe(request_chat(), loop)
             # logger.info("[request_chat_wrapper] created task")
             while not t.done():
                 # print("sleeping")
                 time.sleep(1)
             return t.result()
 
-        # # - For interactions, need to intercept:
-        # #       io.confirm_ask
         def confirm_ask(self, question, default="y"):
             # print(f"[confirm_ask] question={question}")
             self.num_user_asks += 1
@@ -200,8 +183,6 @@ class Aider(agent.Agent):
             elif self.yes is False:
                 res = "no"
             else:
-                # time.sleep(5)
-                # print("firing request")
                 res = request_chat_wrapper(str(question) + " (y/n)", loop=loop)
                 # res = "yes"
 
@@ -220,73 +201,26 @@ class Aider(agent.Agent):
 
         def get_input(self, root, rel_fnames, addable_rel_fnames, commands):
             try:
-                # if self.pretty:
-                #     # style = dict(style=self.user_input_color) if self.user_input_color else dict()
-                #     # self.console.rule(**style)
-                # else:
-                #     # print()
-                #     pass
 
                 rel_fnames = list(rel_fnames)
-                # show = f"[aider {' '.join(rel_fnames)}] >"
                 show = None
                 if len(rel_fnames) > 0:
                     show = "[aider] Current context:\n" + "\n".join(rel_fnames)
-                # show = ("Current context:" + "\n".join(rel_fnames) + "\n" if len(rel_fnames) > 0 else "\n") + "Awaiting input."
-                # show =
-                # if len(show) > 10:
-                #     show += "\n"
-                # show += "[aider] > "
 
                 inp = ""
                 multiline_input = False
 
-                # if self.user_input_color:
-                #     style = Style.from_dict(
-                #         {
-                #             "": self.user_input_color,
-                #             "pygments.literal.string": f"bold italic {self.user_input_color}",
-                #         }
-                #     )
-                # else:
-                #     style = None
-
                 while True:
-                    # completer_instance = AutoCompleter(
-                    #     root, rel_fnames, addable_rel_fnames, commands, self.encoding
-                    # )
                     if multiline_input:
                         show = ". "
 
                     session_kwargs = {
                         "message": show,
-                        # "completer": completer_instance,
                         "reserve_space_for_menu": 4,
-                        # "complete_style": CompleteStyle.MULTI_COLUMN,
                         "input": self.input,
                         "output": self.output,
-                        # "lexer": PygmentsLexer(MarkdownLexer),
                     }
-                    # if style:
-                    #     session_kwargs["style"] = style
-
-                    # if self.input_history_file is not None:
-                    #     session_kwargs["history"] = FileHistory(self.input_history_file)
-
-                    # kb = KeyBindings()
-
-                    # @kb.add("escape", "c-m", eager=True)
-                    # def _(event):
-                    #     event.current_buffer.insert_text("\n")
-
-                    # # TODO: fire chat handler here
-                    # session = PromptSession(key_bindings=kb, **session_kwargs)
-                    # line = session.prompt()
-
-                    # print(f"show={show}")
                     line = request_chat_wrapper(show, loop)
-                    # print(f"line={line}")
-                    # line = "hello"
 
                     if line and line[0] == "{" and not multiline_input:
                         multiline_input = True
@@ -301,14 +235,12 @@ class Aider(agent.Agent):
                         inp = line
                         break
 
-                # print()
                 self.user_input(inp)
                 return inp
             except Exception as e:
                 print(f"EXCEPTION={e}")
                 raise e
 
-        #       io.get_input
         aider.io.InputOutput.get_input = get_input
 
         def prompt_ask(self, question, default=None):
@@ -319,13 +251,7 @@ class Aider(agent.Agent):
             elif self.yes is False:
                 res = "no"
             else:
-                # res = prompt(question + " ", default=default)
-                # res = ...
-                # print("PROMPtING")
                 res = request_chat_wrapper(question, loop)
-                # res = "yes"
-
-            # print(f"got res={res}")
 
             hist = f"{question.strip()} {res.strip()}"
             self.append_chat_history(hist, linebreak=True, blockquote=True)
@@ -345,11 +271,9 @@ class Aider(agent.Agent):
 
             message = Text(message)
             style = dict(style=self.tool_error_color) if self.tool_error_color else dict()
-            # self.console.print(message, **style)
             send_chat_update_wrapper(str(message))
             send_chat_update_wrapper("\n")
 
-        #       io.tool_error
         aider.io.InputOutput.tool_error = tool_error
 
         def tool_output(self, *messages, log_only=False):
@@ -368,13 +292,7 @@ class Aider(agent.Agent):
 
         aider.io.InputOutput.tool_output = tool_output
 
-        # logger.info("attempting imports")
-        # import aider.coders
-        # # print("ok")
-        # import aider.coders.base_coder
-        # # print("ok")
-        # from aider.coders.base_coder import ExhautedcontextWindow
-        # # print("ok")
+
         def show_send_output_stream(self, completion, silent):
             for chunk in completion:
                 if chunk.choices[0].finish_reason == "length":
@@ -382,7 +300,7 @@ class Aider(agent.Agent):
 
                 try:
                     func = chunk.choices[0].delta.function_call
-                    # dump(func)
+
                     for k, v in func.items():
                         if k in self.partial_response_function_call:
                             self.partial_response_function_call[k] += v
@@ -401,8 +319,7 @@ class Aider(agent.Agent):
                 if silent:
                     continue
 
-                # sys.stdout.write(text)
-                # sys.stdout.flush()
+
                 send_chat_update_wrapper(text)
 
         aider.coders.base_coder.Coder.show_send_output_stream = show_send_output_stream
@@ -423,12 +340,10 @@ class Aider(agent.Agent):
             if isinstance(filename, PurePath):
                 filename = filename.__fspath__()
             file_change = file_diff.get_file_change(path=filename, new_content=new_content)
-            # print("file change: ", file_change)
             file_changes.append(file_change)
 
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes
-        # loop = asyncio.get_running_loop()
 
         def on_commit():
             loop.call_soon_threadsafe(lambda: event.set())
@@ -441,19 +356,25 @@ class Aider(agent.Agent):
         from concurrent import futures
 
         with futures.ThreadPoolExecutor(1) as pool:
+            # async def _aider_main():
+            #     return loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit)
+            # aider_fut = self.add_task("Start Aider loop", _aider_main).run()
             aider_fut = loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit)
-            # input_fut = loop.run_in_executor(pool, request_chat_wrapper, "yeehaw", loop)
-            # print(await input_fut)
+            logger.info("launched aider in thread")
 
             while True:
-                await event.wait()
-                await self.apply_file_changes(file_changes)
-                file_changes = []
+                while True:
+                    try:
+                        await asyncio.wait_for(event.wait(), 1)
+                        break
+                    except asyncio.TimeoutError:
+                        if self.task.cancelled:
+                            raise asyncio.CancelledError
+                        continue
+                if len(file_changes) > 0:
+                    await self.apply_file_changes(file_changes)
+                    file_changes = []
                 event2.set()
                 event.clear()
             await aider_fut
-        await self.send_update("yeehaw")
-
-
-# if __name__ == "__main__":
-# launcher(Aider, AiderAgentParams)
+        await self.send_update("Aider finished")

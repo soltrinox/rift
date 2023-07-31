@@ -142,6 +142,16 @@ def calc_max_system_message_size(non_system_messages_size: int) -> int:
     )
 
 
+def format_visible_files(documents: Optional[List[lsp.Document]] = None) -> str:
+    if documents is None:
+        return ""
+    message = ""
+    message += "Visible files:\n"
+    for doc in documents:
+        message += f"```\n{doc.document.text}\n```\n"
+    return message
+
+
 def create_system_message_chat(
     document: str, documents: Optional[List[lsp.Document]] = None
 ) -> Message:
@@ -510,6 +520,18 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
             after_cursor: str,
             documents: Optional[List[lsp.Document]] = None,
         ) -> List[Message]:
+            user_message = (
+                f"Please generate code completing the task which will replace the below region: {goal}\n"
+                "==== PREFIX ====\n"
+                f"{before_cursor}"
+                "==== REGION ====\n"
+                f"{latest_region or region}\n"
+                "==== SUFFIX ====\n"
+                f"{after_cursor}\n"
+            )
+            user_message = format_visible_files(documents) + user_message
+            logger.info("USER MESSAGE: ", user_message)
+
             return [
                 Message.system(
                     "You are a brilliant coder and an expert software engineer and world-class systems architect with deep technical and design knowledge. You value:\n"
@@ -548,18 +570,10 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                     "    # return the integer 0\n"
                     "    return 0\n"
                     "```\n"
-                    "I added an implementation of the rest of the `hello_world` function which uses the Ptython `print` statement to print 'hello_world' before returning the integer literal 0.\n"
+                    "I added an implementation of the rest of the `hello_world` function which uses the Python `print` statement to print 'hello_world' before returning the integer literal 0.\n"
                 ),
                 Message.assistant("Hello! How can I help you today?"),
-                Message.user(
-                    f"Please generate code completing the task which will replace the below region: {goal}\n"
-                    "==== PREFIX ====\n"
-                    f"{before_cursor}"
-                    "==== REGION ====\n"
-                    f"{latest_region or region}\n"
-                    "==== SUFFIX ====\n"
-                    f"{after_cursor}\n"
-                ),
+                Message.user(user_message),
             ]
 
         messages_skeleton = create_messages("", "", "")

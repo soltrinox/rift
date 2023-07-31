@@ -9,11 +9,7 @@ from typing import Any, ClassVar, Dict, Iterable, List, Literal, Optional
 
 import rift.agents.rift_chat as agentchat
 import rift.lsp.types as lsp
-from rift.agents.abstract import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
-from rift.agents.aider_agent import Aider, AiderAgentParams
-from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
-from rift.agents.code_edit import CodeEditAgent, CodeEditAgentParams
-from rift.agents.engineer import EngineerAgent, EngineerAgentParams
+from rift.agents import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
 
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.agents.smol import SmolAgent, SmolAgentParams
@@ -278,21 +274,21 @@ class LspServer(BaseLspServer):
         t.add_done_callback(main_callback)
         return RunAgentResult(id=agent_id)
 
-    @rpc_method("morph/run_agent")
-    async def on_run_agent(self, params: CodeCompletionAgentParams):
-        model = await self.ensure_completions_model()
-        try:
-            agent = CodeCompletionAgent(params, model=model, server=self)
-        except LookupError:
-            # [hack] wait a bit for textDocumentChanged notification to come in
-            logger.debug("request too early: waiting for textDocumentChanged notification")
-            await asyncio.sleep(3)
-            agent = CodeCompletionAgent(params, model=model, server=self)
-        logger.debug(f"starting agent {agent.agent_id}")
-        # agent holds a reference to worker task
-        agent.run()
-        self.active_agents[agent.agent_id] = agent
-        return RunAgentResult(id=agent.agent_id)
+    # @rpc_method("morph/run_agent")
+    # async def on_run_agent(self, params: CodeCompletionAgentParams):
+    #     model = await self.ensure_completions_model()
+    #     try:
+    #         agent = CodeCompletionAgent(params, model=model, server=self)
+    #     except LookupError:
+    #         # [hack] wait a bit for textDocumentChanged notification to come in
+    #         logger.debug("request too early: waiting for textDocumentChanged notification")
+    #         await asyncio.sleep(3)
+    #         agent = CodeCompletionAgent(params, model=model, server=self)
+    #     logger.debug(f"starting agent {agent.agent_id}")
+    #     # agent holds a reference to worker task
+    #     agent.run()
+    #     self.active_agents[agent.agent_id] = agent
+    #     return RunAgentResult(id=agent.agent_id)
 
     @rpc_method("morph/cancel")
     async def on_cancel(self, params: AgentIdParams):

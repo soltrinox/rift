@@ -209,6 +209,7 @@ class Agent:
             f"morph/{self.agent_type}_{self.agent_id}_send_update",
             {"msg": f"[{self.agent_type}] {msg}"},
         )
+        await self.send_progress()
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""

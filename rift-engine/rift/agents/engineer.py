@@ -35,14 +35,6 @@ from rift.util import file_diff
 from rift.util.context import contextual_prompt, resolve_inline_uris
 from rift.util.TextStream import TextStream
 
-try:
-    import gpt_engineer
-    import gpt_engineer.chat_to_files
-    import gpt_engineer.db
-
-except ImportError:
-    raise Exception("`gpt_engineer` not found. Try `pip install gpt-engineer`")
-
 SEEN = set()
 
 STEPS_AGENT_TASKS_NAME_QUEUE = asyncio.Queue()
@@ -52,13 +44,6 @@ SEEN = set()
 
 import json
 import threading
-
-from gpt_engineer.ai import AI, fallback_model
-from gpt_engineer.collect import collect_learnings
-from gpt_engineer.db import DB, DBs, archive
-from gpt_engineer.learning import collect_consent
-from gpt_engineer.steps import STEPS
-from gpt_engineer.steps import Config as StepsConfig
 
 import rift.llm.openai_types as openai
 
@@ -180,10 +165,10 @@ class EngineerAgent(Agent):
         project_path: str = "",
         model: str = "gpt-4",
         temperature: float = 0.1,
-        steps_config: StepsConfig = StepsConfig.DEFAULT,
+        steps_config: Any = None,
         verbose: bool = typer.Option(False, "--verbose", "-v"),
         **kwargs,
-    ) -> DBs:
+    ):
         loop = asyncio.get_event_loop()
 
         def _popup_chat_wrapper(prompt: str = "NONE", end=""):
@@ -256,6 +241,8 @@ class EngineerAgent(Agent):
             preprompts=DB(Path(gpt_engineer.__file__).parent / "preprompts"),
             archive=DB(archive_path),
         )
+
+        steps_config = StepsConfig.DEFAULT
 
         # if steps_config not in [
         #     StepsConfig.EXECUTE_ONLY,
@@ -339,6 +326,22 @@ class EngineerAgent(Agent):
 
     @classmethod
     async def create(cls, params: EngineerAgentParams, server):
+
+        try:
+            import gpt_engineer
+            import gpt_engineer.chat_to_files
+            import gpt_engineer.db
+            from gpt_engineer.ai import AI, fallback_model
+            from gpt_engineer.collect import collect_learnings
+            from gpt_engineer.db import DB, DBs, archive
+            from gpt_engineer.learning import collect_consent
+            from gpt_engineer.steps import STEPS
+            from gpt_engineer.steps import Config as StepsConfig    
+
+        except ImportError:
+            raise Exception("`gpt_engineer` not found. Try `pip install -e 'rift-engine[gpt-engineer]' from the repository root directory.")
+
+
         from rift.util.ofdict import ofdict
 
         params = ofdict(EngineerAgentParams, params)
