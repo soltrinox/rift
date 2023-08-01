@@ -25,12 +25,13 @@ import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 from rift.util.ofdict import ofdict
 
-logger = logging.getLogger(__name__)
 from rich.text import Text
 
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
 from rift.util.TextStream import TextStream
+
+logger = logging.getLogger(__name__)
 
 response_lock = asyncio.Lock()
 
@@ -149,9 +150,10 @@ class Aider(agent.Agent):
             loop.call_soon_threadsafe(_worker)
 
         def request_chat_wrapper(prompt: Optional[str] = None):
-            print("firing request chat wrapper")
             async def request_chat():
+                logger.info("acquiring response lock")
                 await response_lock.acquire()
+                logger.info("acquired response lock")                
                 await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
                 # logger.info(f"{self.RESPONSE=}")
                 self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
@@ -173,7 +175,6 @@ class Aider(agent.Agent):
             t = asyncio.run_coroutine_threadsafe(request_chat(), loop)
             futures.wait([t])
             result = t.result()
-            print(f"RESULT {result=}")
             return result
 
         def confirm_ask(self, question, default="y"):
@@ -356,21 +357,19 @@ class Aider(agent.Agent):
                 break
 
         with futures.ThreadPoolExecutor(1) as pool:
-            # async def _aider_main():
-            #     return loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit)
-            # aider_fut = self.add_task("Start Aider loop", _aider_main).run()
             aider_fut = loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit)
-            logger.info("launched aider in thread")
+            logger.info("Aider thread running")
 
             while True:
-                while True:
-                    try:
-                        await asyncio.wait_for(event.wait(), 1)
-                        break
-                    except asyncio.TimeoutError:
-                        if self.task.cancelled:
-                            raise asyncio.CancelledError
-                        continue
+                await event.wait()
+                # while True:
+                #     try:
+                #         await asyncio.wait_for(event.wait(), 1)
+                #         break
+                #     except asyncio.TimeoutError:
+                #         if self.task.cancelled:
+                #             raise asyncio.CancelledError
+                #         continue
                 if len(file_changes) > 0:
                     await self.apply_file_changes(file_changes)
                     file_changes = []
