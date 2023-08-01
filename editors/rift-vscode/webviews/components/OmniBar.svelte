@@ -34,16 +34,14 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
         dropdownStatus.set("at") 
         filteredFiles.set(props.items.map(file => ({...file, onEnter: () => {
           console.log('onEnter called :D')
-          // @ts-ignore -- Brent this is just some annoying type error, and I'm not changing the name of the property on the Atable file type, and I'm not rewriting the entire class for this, so ts-ignore it is.
-          props.command({id: file.fileName})}}))) // add the enter command to the files
+          props.command(file)}}))) // add the enter command to the files
         },
         
         onUpdate(props) {
           dropdownStatus.set("at") 
           filteredFiles.set(props.items.map(file => ({...file, onEnter: () => {
           console.log('onEnter called :D')
-          // @ts-ignore -- see above comment for explanation
-          props.command({id: file.fileName})}})))
+          props.command(file)}})))
       },
 
       onKeyDown(props) {
@@ -286,6 +284,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
             class: "my-custom-class",
           },
           renderLabel({ options, node }) {
+            console.log('renderlabel')
             return `${options.suggestion.char}${node.attrs.label ?? node.attrs.id}`
           },
           suggestion
