@@ -78,14 +78,15 @@ export const FileChip = Mention.extend<FileChipOptions>({
     return {
       fileName: {
         default: null,
-        parseHTML: (element) => element.getAttribute("data-fileName"),
+        parseHTML: (element) => element.getAttribute("data-filename"),
         renderHTML: (attributes) => {
+            console.log('renderHTML function for fileName')
           if (!attributes.fileName) {
             return {}
           }
 
           return {
-            "data-fileName": attributes.fileName,
+            "data-filename": attributes.fileName,
           }
         },
       },
@@ -146,13 +147,16 @@ export const FileChip = Mention.extend<FileChipOptions>({
         span.setAttribute(attribute, attributesMap[attribute])
     }
     span.append(createFileSvg())
-    span.append(document.createTextNode(`${node.attrs.name}`))
+    span.append(document.createTextNode(`${node.attrs.fileName}`))
+
+    console.log('rendering HTML:', span)
     return span
 
     // would prefer to use the nice prosemirror syntax, but prosemirror starts crying whenever you use SVG's (because capitalize attributes (I know ( stupid right we should fork prosemirror)))
   },
 
   renderText({ node }) {
+    console.log('rendering text', node)
     return `[uri](${node.attrs.fsPath})`
   },
 
