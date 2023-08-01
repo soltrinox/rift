@@ -277,6 +277,8 @@ class Aider(agent.Agent):
         aider.io.InputOutput.tool_error = tool_error
 
         def tool_output(self, *messages, log_only=False):
+            if not messages:
+                send_chat_update_wrapper("NONE")
             hist = None
             if messages:
                 hist = " ".join(messages)
