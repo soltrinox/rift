@@ -2,22 +2,21 @@
 This module provides a minimal implementation of the Agent API defined in rift.agents.abstract.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, ClassVar
+from dataclasses import dataclass
+from typing import Optional, ClassVar, Any
 
 import rift.llm.openai_types as openai
-from rift.agents.abstract import Agent, AgentRunParams, AgentState, RequestChatRequest, agent
+from rift.agents.abstract import Agent, AgentState, RequestChatRequest, AgentParams
 from rift.lsp.types import TextDocumentIdentifier
-from rift.util.ofdict import ofdict
 
 
-@dataclass
-class TestAgentParams(AgentRunParams):
+@dataclass(frozen=True)
+class TestAgentParams(AgentParams):
     textDocument: TextDocumentIdentifier
     instructionPrompt: Optional[str] = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class TestAgentState(AgentState):
     params: TestAgentParams
     messages: list[openai.Message]
@@ -37,7 +36,7 @@ class TestAgent(Agent):
     It is used for testing purposes.
     """
 
-    state: TestAgentState
+    state: Optional[TestAgentState] = None
     agent_type: str = "test_agent"
     params_cls: ClassVar[Any] = TestAgentParams
 

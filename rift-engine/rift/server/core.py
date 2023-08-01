@@ -5,7 +5,6 @@ import time
 from typing import Literal, Optional, Union
 
 from rift.__about__ import __version__
-from rift.agents.abstract import AGENT_REGISTRY
 from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
 from rift.server.lsp import LspServer
 

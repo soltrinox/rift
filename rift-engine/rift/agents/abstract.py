@@ -65,7 +65,7 @@ class AgentParams(BaseModel):
     position: Optional[lsp.Position]
     workspaceFolderPath: Optional[str]
 
-@dataclass
+@dataclass(frozen=True)
 class AgentProgress:
     agent_type: Optional[str] = None
     agent_id: Optional[str] = None
@@ -73,7 +73,7 @@ class AgentProgress:
     payload: Optional[Any] = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class AgentRunResult(ABC):
     """
     Abstract base class for AgentRunResult

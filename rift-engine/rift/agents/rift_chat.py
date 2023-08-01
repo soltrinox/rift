@@ -25,7 +25,7 @@ from rift.util.context import resolve_inline_uris
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ChatRunResult(AgentRunResult):
     ...
 

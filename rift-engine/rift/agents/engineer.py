@@ -7,7 +7,7 @@ import time
 from asyncio import Future
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar, Dict, Optional
+from typing import ClassVar, Dict, Optional, Any
 
 import typer
 
