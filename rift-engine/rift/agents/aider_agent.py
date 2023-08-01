@@ -389,5 +389,8 @@ class Aider(agent.Agent):
                     file_changes = []
                 event2.set()
                 event.clear()
-            # await aider_fut
+            try:
+                await aider_fut
+            except:
+                pass
         await self.send_update("Aider finished")
