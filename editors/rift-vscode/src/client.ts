@@ -1,5 +1,5 @@
-import {join} from "path";
-import type {ExtensionContext, TextEditor} from "vscode";
+import { join } from "path";
+import type { ExtensionContext, TextEditor } from "vscode";
 import * as vscode from "vscode";
 import {
   Executable,
@@ -14,7 +14,7 @@ import {
 } from "vscode-languageclient/node";
 import * as net from "net";
 import * as tcpPortUsed from "tcp-port-used";
-import {chatProvider, logProvider} from "./extension";
+import { chatProvider, logProvider } from "./extension";
 import PubSub from "./lib/PubSub";
 import {
   AgentChatRequest,
@@ -35,8 +35,11 @@ import {
   WebviewAgent,
   WebviewState,
 } from "./types";
-import {Store} from "./lib/Store";
-import {AtableFileFromFsPath, AtableFileFromUri,} from "./util/AtableFileFunction";
+import { Store } from "./lib/Store";
+import {
+  AtableFileFromFsPath,
+  AtableFileFromUri,
+} from "./util/AtableFileFunction";
 
 let client: LanguageClient; //LanguageClient
 
@@ -100,12 +103,12 @@ const RED = vscode.window.createTextEditorDecorationType({
 
 type CodeCompletionPayload =
   | {
-    additive_ranges?: vscode.Range[];
-    cursor?: vscode.Position;
-    negative_ranges?: vscode.Range[];
-    response?: string;
-    textDocument?: TextDocumentIdentifier;
-  }
+      additive_ranges?: vscode.Range[];
+      cursor?: vscode.Position;
+      negative_ranges?: vscode.Range[];
+      response?: string;
+      textDocument?: TextDocumentIdentifier;
+    }
   | "accepted"
   | "rejected";
 
@@ -188,12 +191,12 @@ async function code_completion_send_progress_handler(
 // interface CodeEditProgressParams extends Agent
 type CodeEditPayload =
   | {
-    additive_ranges?: vscode.Range[];
-    cursor?: vscode.Position;
-    negative_ranges?: vscode.Range[];
-    ready?: boolean;
-    textDocument?: TextDocumentIdentifier;
-  }
+      additive_ranges?: vscode.Range[];
+      cursor?: vscode.Position;
+      negative_ranges?: vscode.Range[];
+      ready?: boolean;
+      textDocument?: TextDocumentIdentifier;
+    }
   | "accepted"
   | "rejected";
 
@@ -313,8 +316,8 @@ export class MorphLanguageClient
   private webviewState = new Store<WebviewState>(DEFAULT_STATE);
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => { } };
-    this.green = { key: "TEMP_VALUE", dispose: () => { } };
+    this.red = { key: "TEMP_VALUE", dispose: () => {} };
+    this.green = { key: "TEMP_VALUE", dispose: () => {} };
     this.context = context;
     this.webviewState.subscribe((state) => {
       // console.log('webview state:')
@@ -553,10 +556,10 @@ export class MorphLanguageClient
     const folders = vscode.workspace.workspaceFolders;
     if (!folders) throw new Error("no current workspace");
     const workspaceFolderPath = folders[0].uri.fsPath;
-    let document = editor?.document
-    let textDocument: OptionalTextDocument = null
+    let document = editor?.document;
+    let textDocument: OptionalTextDocument = null;
     if (document != undefined) {
-      textDocument = {uri: document.uri.toString(), version: 0};
+      textDocument = { uri: document.uri.toString(), version: 0 };
     }
     let position = editor?.selection?.active ?? null;
 
@@ -571,7 +574,7 @@ export class MorphLanguageClient
 
     const result: RunAgentResult = await this.client.sendRequest(
       "morph/create_agent",
-      agentParams // when do we need to pass in position / text document vs not? passing it in with every call now.
+      agentParams, // when do we need to pass in position / text document vs not? passing it in with every call now.
     );
     console.log("run agent result");
     console.log(result);

@@ -1,5 +1,5 @@
 import type * as vscode from "vscode";
-import type {TextDocumentIdentifier} from "vscode-languageclient/node";
+import type { TextDocumentIdentifier } from "vscode-languageclient/node";
 
 export interface Task {
   description: string;
@@ -108,16 +108,15 @@ export const DEFAULT_STATE: WebviewState = {
 export type OptionalTextDocument = {
   uri: string;
   version: number;
-} | null
-
+} | null;
 
 export interface AgentParams {
   agent_type: string;
-  agent_id: string | null
-  position: vscode.Position | null
-  selection: vscode.Selection | null
-  textDocument: OptionalTextDocument
-  workspaceFolderPath: string | null
+  agent_id: string | null;
+  position: vscode.Position | null;
+  selection: vscode.Selection | null;
+  textDocument: OptionalTextDocument;
+  workspaceFolderPath: string | null;
 }
 
 export interface RunChatParams {
@@ -163,9 +162,9 @@ export interface RunAgentProgress {
 
 export type ChatAgentPayload =
   | {
-    response?: string;
-    done_streaming?: boolean;
-  }
+      response?: string;
+      done_streaming?: boolean;
+    }
   | undefined;
 
 export interface AgentProgress<T = any> {
