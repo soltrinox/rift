@@ -1,33 +1,26 @@
 import asyncio
 import logging
+from asyncio import Lock
 from dataclasses import dataclass
-from typing import Any, ClassVar, Dict, Optional
+from typing import ClassVar, Optional, List, Any
 
-import rift.agents.abstract as agents
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
     agent,
 )
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import (
     AbstractChatCompletionProvider,
-    AbstractCodeCompletionProvider,
-    InsertCodeResult,
 )
 from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
-from rift.server.selection import RangeSet
 from rift.util.context import resolve_inline_uris
-from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +31,7 @@ class ChatRunResult(AgentRunResult):
 
 
 @dataclass
-class RiftChatAgentParams(AgentRunParams):
+class RiftChatAgentParams(AgentParams):
     ...
 
 
@@ -51,7 +44,12 @@ class ChatProgress(
 
 
 @dataclass
-class ChatAgentState(AgentState):
+class RiftChatAgentParams(AgentParams):
+    ...
+
+
+@dataclass
+class RiftChatAgentState(AgentState):
     model: AbstractChatCompletionProvider
     messages: list[openai.Message]
     document: lsp.TextDocumentItem
@@ -63,19 +61,22 @@ class ChatAgentState(AgentState):
     display_name="Chat",
 )
 @dataclass
-class ChatAgent(Agent):
-    state: ChatAgentState
+class RiftChatAgent(Agent):
+    state: Optional[RiftChatAgentState] = None
     agent_type: ClassVar[str] = "rift_chat"
     params_cls: ClassVar[Any] = RiftChatAgentParams
 
     @classmethod
-    async def create(cls, params: Dict[Any, Any], server: BaseLspServer):
+    async def create(cls, params: AgentParams, server: BaseLspServer):
         model = await server.ensure_chat_model()
-
-        state = ChatAgentState(
+        if params.textDocument is None:
+            document = None
+        else:
+            document = server.documents[params.textDocument.uri]
+        state = RiftChatAgentState(
             model=model,
             messages=[openai.Message.assistant("Hello! How can I help you today?")],
-            document=server.documents[params.textDocument.uri],
+            document=document,
             params=params,
         )
         obj = cls(
@@ -86,8 +87,6 @@ class ChatAgent(Agent):
         return obj
 
     async def run(self) -> AgentRunResult:
-        from asyncio import Lock
-
         response_lock = Lock()
 
         async def get_user_response() -> str:
@@ -140,7 +139,7 @@ class ChatAgent(Agent):
             await self.send_progress()
             user_response_task = asyncio.create_task(get_user_response_task.run())
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
-            # logger.info("got user response task future")
+
             user_response = await user_response_task
 
             async with response_lock:

@@ -9,11 +9,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
+from pydantic import BaseModel
+
 import rift.lsp.types as lsp
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
-from rift.lsp import rpc_method
 
 logger = logging.getLogger(__name__)
 
@@ -56,19 +57,13 @@ AgentTaskId = str
 
 
 @dataclass
-class AgentRunParams(ABC):
+class AgentParams:
+    agent_type: str
     agent_id: str
     textDocument: lsp.TextDocumentIdentifier
-    selection: Optional[lsp.Selection]
+    selection: lsp.Selection
+    position: lsp.Position
     workspaceFolderPath: str
-
-
-@dataclass
-class RunAgentParams:
-    agent_type: str
-    agent_params: Any
-    agent_id: Optional[str]
-
 
 @dataclass
 class AgentProgress:
@@ -91,7 +86,7 @@ class AgentState(ABC):
     Abstract base class for AgentState. Always contains a copy of the params used to create the Agent.
     """
 
-    params: AgentRunParams
+    params: AgentParams
 
 
 @dataclass
@@ -112,18 +107,18 @@ class Agent:
     agent_id: Optional[str] = None
     tasks: List[AgentTask] = field(default_factory=list)
     task: Optional[AgentTask] = None
-    params_cls: ClassVar[Any] = AgentRunParams
+    params_cls: Type[AgentParams] = AgentParams
 
-    def get_display(self):
-        """Get agent display information"""
-        return self.agent_type, self.description
+    # def get_display(self):
+    #     """Get agent display information"""
+    #     return self.agent_type, self.description
 
     def __str__(self):
         """Get string representation of the agent"""
         return f"<{self.agent_type}> {self.agent_id}"
 
     @classmethod
-    async def create(cls, params: RunAgentParams, server: BaseLspServer, *args, **kwargs):
+    async def create(cls, params: Type[AgentParams], server: BaseLspServer):
         """
         Factory function which is responsible for constructing the agent's state.
         """
@@ -296,7 +291,7 @@ class AgentRegistryItem:
 
     def __post_init__(self):
         if self.display_name is None:
-            self.display_name = self.agent_type
+            self.display_name = self.agent.agent_type
 
 
 @dataclass
@@ -318,7 +313,7 @@ class AgentRegistry:
     """
 
     # Initial registry to store agents
-    registry: Dict[str, Type[Agent]] = field(default_factory=dict)
+    registry: Dict[str, AgentRegistryItem] = field(default_factory=dict)
 
     def __getitem__(self, key):
         """
@@ -333,7 +328,7 @@ class AgentRegistry:
         return self.get_agent(key)
 
     def register_agent(
-        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
+            self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
     ) -> None:
         """
         Registers new agent into the registry.
@@ -367,7 +362,7 @@ class AgentRegistry:
         Throws:
         - ValueError: if agent_type not found in the registry.
         """
-        result = self.registry.get(agent_type)
+        result: AgentRegistryItem | None = self.registry.get(agent_type)
         if result is not None:
             return result.agent
         else:

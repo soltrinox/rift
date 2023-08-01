@@ -2,8 +2,6 @@ import asyncio
 import json
 import logging
 import os
-import random
-from asyncio import Future
 from concurrent import futures
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, List, Optional
@@ -11,24 +9,17 @@ from typing import Any, ClassVar, Dict, List, Optional
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
     agent,
 )
-from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
-from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.server.selection import RangeSet
 from rift.util.context import contextual_prompt, resolve_inline_uris
-from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +44,7 @@ class SmolProgress(AgentProgress):
 
 # dataclass for representing the parameters of the code completion agent
 @dataclass
-class SmolAgentParams(AgentRunParams):
+class SmolAgentParams(AgentParams):
     instructionPrompt: Optional[str] = None
 
 
@@ -83,6 +74,7 @@ class SmolAgent(Agent):
             raise Exception(
                 f"`smol_dev` not found. Try `pip install -e 'rift-engine[smol_dev]' from the repository root directory.`"
             )
+
         state = SmolAgentState(
             params=params,
             _done=False,

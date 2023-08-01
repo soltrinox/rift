@@ -1,30 +1,24 @@
 import asyncio
 import logging
-import random
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import ClassVar, Dict, Optional, Any
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
     agent,
 )
-from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeEditProvider, InsertCodeResult
-from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
+from rift.agents.abstract import AgentProgress  # AgentTask,
+from rift.llm.abstract import AbstractCodeEditProvider
 from rift.server.selection import RangeSet
-from rift.util.context import resolve_inline_uris
 from rift.util.TextStream import TextStream
+from rift.util.context import resolve_inline_uris
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +43,8 @@ class CodeEditProgress(AgentProgress):
 
 # dataclass for representing the parameters of the code completion agent
 @dataclass
-class CodeEditAgentParams(AgentRunParams):
+class CodeEditAgentParams(AgentParams):
     ...
-
 
 # dataclass for representing the state of the code completion agent
 @dataclass
@@ -82,6 +75,7 @@ class CodeEditAgent(Agent):
 
     @classmethod
     async def create(cls, params: CodeEditAgentParams, server):
+        logger.info(f"{params=}")
         model = await server.ensure_completions_model()  # TODO: not right, fix
         state = CodeEditAgentState(
             model=model,
@@ -111,7 +105,7 @@ class CodeEditAgent(Agent):
 
             await self.send_progress()
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
-            logger.info(f"{self.RANGE=}")
+            # logger.info(f"{self.RANGE=}")
             with lsp.setdoc(self.state.document):
                 urtext = self.state.document.text
                 uroffset_start = self.state.document.position_to_offset(self.state.selection.first)

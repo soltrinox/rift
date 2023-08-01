@@ -1,48 +1,42 @@
-import * as path from "path";
-import type { workspace, ExtensionContext } from "vscode";
+import {join} from "path";
+import type {ExtensionContext, TextEditor} from "vscode";
 import * as vscode from "vscode";
-import ignore from "ignore";
 import {
+  Executable,
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
-  Executable,
-  TransportKind,
-  StreamInfo,
-  TextDocumentPositionParams,
-  NotificationType,
-  TextDocumentIdentifier,
   State,
+  StreamInfo,
+  TextDocumentIdentifier,
+  TextDocumentPositionParams,
+  TransportKind,
 } from "vscode-languageclient/node";
 import * as net from "net";
-import { join } from "path";
 import * as tcpPortUsed from "tcp-port-used";
-import { chatProvider, logProvider } from "./extension";
+import {chatProvider, logProvider} from "./extension";
 import PubSub from "./lib/PubSub";
 import {
   AgentChatRequest,
   AgentIdParams,
   AgentInputRequest,
+  AgentParams,
   AgentProgress,
   AgentRegistryItem,
   AgentResult,
   AgentStatus,
   AgentUpdate,
-  ChatAgentParams,
   ChatAgentProgress,
   ChatMessage,
   CodeLensStatus,
   DEFAULT_STATE,
+  OptionalTextDocument,
   RunAgentResult,
-  RunParams,
   WebviewAgent,
   WebviewState,
 } from "./types";
-import { Store } from "./lib/Store";
-import {
-  AtableFileFromFsPath,
-  AtableFileFromUri,
-} from "./util/AtableFileFunction";
+import {Store} from "./lib/Store";
+import {AtableFileFromFsPath, AtableFileFromUri,} from "./util/AtableFileFunction";
 
 let client: LanguageClient; //LanguageClient
 
@@ -106,12 +100,12 @@ const RED = vscode.window.createTextEditorDecorationType({
 
 type CodeCompletionPayload =
   | {
-      additive_ranges?: vscode.Range[];
-      cursor?: vscode.Position;
-      negative_ranges?: vscode.Range[];
-      response?: string;
-      textDocument?: TextDocumentIdentifier;
-    }
+    additive_ranges?: vscode.Range[];
+    cursor?: vscode.Position;
+    negative_ranges?: vscode.Range[];
+    response?: string;
+    textDocument?: TextDocumentIdentifier;
+  }
   | "accepted"
   | "rejected";
 
@@ -194,12 +188,12 @@ async function code_completion_send_progress_handler(
 // interface CodeEditProgressParams extends Agent
 type CodeEditPayload =
   | {
-      additive_ranges?: vscode.Range[];
-      cursor?: vscode.Position;
-      negative_ranges?: vscode.Range[];
-      ready?: boolean;
-      textDocument?: TextDocumentIdentifier;
-    }
+    additive_ranges?: vscode.Range[];
+    cursor?: vscode.Position;
+    negative_ranges?: vscode.Range[];
+    ready?: boolean;
+    textDocument?: TextDocumentIdentifier;
+  }
   | "accepted"
   | "rejected";
 
@@ -319,8 +313,8 @@ export class MorphLanguageClient
   private webviewState = new Store<WebviewState>(DEFAULT_STATE);
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => {} };
-    this.green = { key: "TEMP_VALUE", dispose: () => {} };
+    this.red = { key: "TEMP_VALUE", dispose: () => { } };
+    this.green = { key: "TEMP_VALUE", dispose: () => { } };
     this.context = context;
     this.webviewState.subscribe((state) => {
       // console.log('webview state:')
@@ -365,7 +359,7 @@ export class MorphLanguageClient
         }));
       this.refreshNonGitIgnoredFiles();
 
-      this.run({ agent_type: "rift_chat" });
+      this.create("rift_chat");
       this.refreshAvailableAgents();
     });
 
@@ -551,37 +545,37 @@ export class MorphLanguageClient
   //   return "starting...";
   // }
 
-  async run(params: RunParams) {
+  async create(agent_type: string) {
     if (!this.client) throw new Error();
 
-    const editor = vscode.window.activeTextEditor;
+    const editor: TextEditor | undefined = vscode.window.activeTextEditor;
 
-    if (!editor) throw new Error("No active text editor found");
     const folders = vscode.workspace.workspaceFolders;
     if (!folders) throw new Error("no current workspace");
     const workspaceFolderPath = folders[0].uri.fsPath;
-    let textDocument = { uri: editor.document.uri.toString(), version: 0 };
-    let position = editor.selection.active;
+    let document = editor?.document
+    let textDocument: OptionalTextDocument = null
+    if (document != undefined) {
+      textDocument = {uri: document.uri.toString(), version: 0};
+    }
+    let position = editor?.selection?.active ?? null;
 
-    const chatAgentParams: ChatAgentParams = {
-      // TODO this is not ChatAgentParams but all agent params...
-      agent_type: params.agent_type,
-      agent_params: {
-        selection: editor.selection,
-        position,
-        textDocument,
-        workspaceFolderPath,
-      },
+    const agentParams: AgentParams = {
+      agent_type: agent_type,
+      agent_id: "", // agent ID has not been assigned yet
+      selection: editor?.selection ?? null,
+      position,
+      textDocument,
+      workspaceFolderPath,
     };
 
     const result: RunAgentResult = await this.client.sendRequest(
-      "morph/run",
-      chatAgentParams, // when do we need to pass in position / text document vs not? passing it in with every call now.
+      "morph/create_agent",
+      agentParams // when do we need to pass in position / text document vs not? passing it in with every call now.
     );
     console.log("run agent result");
     console.log(result);
     const agent_id = result.id;
-    const agent_type = params.agent_type;
 
     // const editor = vscode.window.activeTextEditor;
     if (!editor) throw new Error("No active text editor");
@@ -592,11 +586,10 @@ export class MorphLanguageClient
 
     const agent = new Agent(
       this,
-      result.id,
+      agent_id,
       agent_type,
       editor.selection,
       textDocument,
-      params,
     );
 
     this.webviewState.update((state) => ({
@@ -609,7 +602,7 @@ export class MorphLanguageClient
     }));
 
     agent.onStatusChange((e) => this.changeLensEmitter.fire());
-    this.agents[result.id] = agent;
+    this.agents[agent_id] = agent;
     console.log(`REGISTERED NEW AGENT of type ${agent_type}`);
     this.changeLensEmitter.fire();
 
@@ -935,8 +928,7 @@ class Agent {
     public readonly id: string,
     public readonly agent_type: string,
     public readonly selection: vscode.Selection,
-    public textDocument: TextDocumentIdentifier,
-    public params: any,
+    public textDocument: OptionalTextDocument,
   ) {
     this.morph_language_client = morph_language_client;
     this.id = id;

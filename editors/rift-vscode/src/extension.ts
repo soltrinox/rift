@@ -1,11 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { MorphLanguageClient } from "./client";
+import {MorphLanguageClient} from "./client";
 // import { join } from 'path';
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
-import { WebviewProvider } from "./elements/WebviewProvider";
-import { AtableFileFromFsPath } from "./util/AtableFileFunction";
+import {WebviewProvider} from "./elements/WebviewProvider";
 
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
@@ -147,9 +146,9 @@ export function activate(context: vscode.ExtensionContext) {
       //     }
       // }
 
-      const r = await morph_language_client.run({
-        agent_type: "code_completion",
-      });
+      const r = await morph_language_client.create(
+        "code_completion"
+      );
     },
   );
   let disposablefocusOmnibar = vscode.commands.registerCommand(
