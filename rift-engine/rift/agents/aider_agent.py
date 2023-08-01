@@ -361,12 +361,22 @@ class Aider(agent.Agent):
                     continue
                 break
 
+        aider_finished = False
+        def done_cb(fut):
+            nonlocal aider_finished
+            aider_finished = True
+            event.set()
+        logger.info("HELLO!")
+
         with futures.ThreadPoolExecutor(1) as pool:
             aider_fut = loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit)
+            aider_fut.add_done_callback(done_cb)
             logger.info("Aider thread running")
 
             while True:
                 await event.wait()
+                if aider_finished:
+                    break
                 # while True:
                 #     try:
                 #         await asyncio.wait_for(event.wait(), 1)
