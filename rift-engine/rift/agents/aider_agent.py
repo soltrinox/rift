@@ -1,3 +1,4 @@
+import re
 from concurrent import futures
 try:
     import aider
@@ -149,7 +150,6 @@ class Aider(agent.Agent):
 
         def request_chat_wrapper(prompt: Optional[str] = None):
             send_chat_update_wrapper()
-            asyncio.set_event_loop(loop)
             async def request_chat():
                 await response_lock.acquire()
                 await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
@@ -163,6 +163,9 @@ class Aider(agent.Agent):
                 resp = await self.request_chat(
                     agent.RequestChatRequest(messages=self.state.messages)
                 )
+                logger.info(f"pre {resp=}")
+                resp = re.sub(r'uri://(\S+)', r'`\1`', resp)
+                logger.info(f"post {resp=}")                
                 self.state.messages.append(openai.Message.user(content=resp))
                 response_lock.release()
                 return resp
