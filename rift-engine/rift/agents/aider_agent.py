@@ -36,18 +36,12 @@ response_lock = asyncio.Lock()
 
 @dataclass
 class AiderRunResult(agent.AgentRunResult):
-    """
-    A data class representing the results of an Aider agent run.
-    This class extends from the base class `AgentRunResult` defined in the `rift.agents.abstract` module.
-    """
+    ...
 
 
 @dataclass
 class AiderAgentParams(agent.AgentParams):
-    """
-    A data class that holds parameters for running an Aider agent.
-    This class extends from the base class `AgentRunParams` defined in the `rift.agents.abstract` module.
-    """
+    ...
 
 
 @dataclass

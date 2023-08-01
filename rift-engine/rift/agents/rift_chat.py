@@ -31,7 +31,7 @@ class ChatRunResult(AgentRunResult):
 
 
 @dataclass
-class RiftChatAgentParams(AgentRunParams):
+class RiftChatAgentParams(AgentParams):
     ...
 
 
