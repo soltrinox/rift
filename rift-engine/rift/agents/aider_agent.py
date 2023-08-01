@@ -149,8 +149,7 @@ class Aider(agent.Agent):
             loop.call_soon_threadsafe(_worker)
 
         def request_chat_wrapper(prompt: Optional[str] = None):
-            logger.info("firing request chat wrapper")
-            send_chat_update_wrapper()
+            print("firing request chat wrapper")
             async def request_chat():
                 await response_lock.acquire()
                 await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
@@ -173,7 +172,9 @@ class Aider(agent.Agent):
 
             t = asyncio.run_coroutine_threadsafe(request_chat(), loop)
             futures.wait([t])
-            return t.result()
+            result = t.result()
+            print(f"RESULT {result=}")
+            return result
 
         def confirm_ask(self, question, default="y"):
             # print(f"[confirm_ask] question={question}")
