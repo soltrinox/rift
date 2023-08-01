@@ -368,7 +368,7 @@ class Aider(agent.Agent):
             event.set()
 
         with futures.ThreadPoolExecutor(1) as pool:
-            aider_fut = loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit)
+            aider_fut = loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit, None, None, self.state.params.workspaceFolderPath)
             aider_fut.add_done_callback(done_cb)
             logger.info("Running aider thread")
 
