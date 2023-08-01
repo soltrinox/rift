@@ -169,7 +169,9 @@ class Aider(agent.Agent):
                 )
                 logger.info(f"pre {resp=}")
                 resp = re.sub(r'uri://(\S+)', r'`\1`', resp)
-                logger.info(f"post {resp=}")
+                logger.info(f"post {resp=} {self.state.params.workspaceFolderPath=}")
+                if resp.startswith(self.state.params.workspaceFolderPath):
+                    resp = resp[len(self.state.params.workspaceFolderPath):]
                 self.state.messages.append(openai.Message.user(content=resp))
                 response_lock.release()
                 return resp
