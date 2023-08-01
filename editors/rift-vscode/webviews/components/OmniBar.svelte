@@ -9,8 +9,8 @@
   import StarterKit from "@tiptap/starter-kit"
   import { Placeholder } from "@tiptap/extension-placeholder"
   import type { Transaction } from "@tiptap/pm/state"
-  import { Mention } from "@tiptap/extension-mention"
   import type { SuggestionOptions } from "@tiptap/suggestion"
+  import { FileChip } from "./FileChip"
 
 
 const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
@@ -281,7 +281,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       element: _container,
       extensions: [
         StarterKit,
-        Mention.configure({
+        FileChip.configure({
           HTMLAttributes: {
             class: "my-custom-class",
           },
