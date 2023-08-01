@@ -6,15 +6,25 @@ import Suggestion, { SuggestionOptions } from "@tiptap/suggestion"
 
 export const MentionPluginKey = new PluginKey("filechip")
 
-export const FileChip = Mention.extend<MentionOptions>({
+// type MentionOptions = {
+//   HTMLAttributes: Record<string, any>
+//   renderLabel: (props: { options: MentionOptions; node: ProseMirrorNode }) => string
+//   suggestion: Omit<SuggestionOptions, "editor">
+// }
+
+
+//derived from mention Options
+type FileChipOptions = {
+    HTMLAttributes: Record<string, any>
+    suggestion: Omit<SuggestionOptions, "editor">
+}
+
+export const FileChip = Mention.extend<FileChipOptions>({
   name: "filechip",
 
   addOptions() {
     return {
       HTMLAttributes: {},
-      renderLabel({ options, node }) {
-        return `${options.suggestion.char}${node.attrs.fileName}`
-      },
       suggestion: {
         char: "@",
         pluginKey: MentionPluginKey,
@@ -79,20 +89,6 @@ export const FileChip = Mention.extend<MentionOptions>({
           }
         },
       },
-
-      label: {
-        default: null,
-        parseHTML: (element) => element.getAttribute("data-label"),
-        renderHTML: (attributes) => {
-          if (!attributes.label) {
-            return {}
-          }
-
-          return {
-            "data-label": attributes.label,
-          }
-        },
-      },
     }
   },
 
@@ -108,18 +104,12 @@ export const FileChip = Mention.extend<MentionOptions>({
     return [
       "span",
       mergeAttributes({ "data-type": this.name }, this.options.HTMLAttributes, HTMLAttributes),
-      this.options.renderLabel({
-        options: this.options,
-        node,
-      }),
+      `${this.options.suggestion.char}${node.attrs.fileName}`,
     ]
   },
 
   renderText({ node }) {
-    return this.options.renderLabel({
-      options: this.options,
-      node,
-    })
+    return `${this.options.suggestion.char}${node.attrs.fileName}`
   },
 
   addKeyboardShortcuts() {

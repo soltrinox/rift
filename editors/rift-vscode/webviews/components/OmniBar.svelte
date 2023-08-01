@@ -283,10 +283,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
           HTMLAttributes: {
             class: "my-custom-class",
           },
-          renderLabel({ options, node }) {
-            console.log('renderlabel')
-            return `${options.suggestion.char}${node.attrs.label ?? node.attrs.id}`
-          },
           suggestion
         }),
         Placeholder.configure({
