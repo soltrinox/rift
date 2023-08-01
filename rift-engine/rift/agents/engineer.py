@@ -141,7 +141,7 @@ class EngineerAgentState(AgentState):
     agent_description="Specify what you want it to build, the AI asks for clarification, and then builds it.",
     display_name="GPT Engineer",
 )
-@dataclass(frozen=True)
+@dataclass
 class EngineerAgent(Agent):
     state: EngineerAgentState
     agent_type: ClassVar[str] = "engineer"

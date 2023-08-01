@@ -1,21 +1,18 @@
 import asyncio
-import glob
-import json
 import logging
-import os
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import rift.lsp.types as lsp
 from rift.agents import AGENT_REGISTRY, Agent, AgentRegistryResult, AgentParams
-from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
+from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
@@ -103,54 +100,54 @@ class LspServer(BaseLspServer):
         logger.info("workspace/didChangeConfiguration")
         await self.get_config()
 
-    @rpc_method("morph/loadFiles")
-    def load_documents(self, params: LoadFilesParams) -> LoadFilesResult:
-        try:
-            current_dir = os.path.abspath(__file__)
-        except:
-            current_dir = os.getcwd()
-        with open(os.path.join(current_dir, "languages.json"), "r") as f:
-            language_map = json.loads(f)
-
-        def find_matching_language(
-                filepath: str, language_map: Dict[str, List[Dict[str, str]]]
-        ) -> Optional[str]:
-            extension = filepath.split(".")[-1]  # Get the file extension
-
-            for details in language_map["languages"]:
-                if extension in details.get("extensions", []):
-                    return details["id"]
-
-            return None
-
-        def preprocess_filepaths(filepaths: List[str]) -> List[str]:
-            processed_filepaths = []
-            for filepath in filepaths:
-                processed_filepaths.append(os.path.expandvars(filepath))
-            return processed_filepaths
-
-        def join_filepaths(filepaths: List[str]) -> List[str]:
-            for filepath in filepaths:
-                yield from glob.glob(filepath, root="/" if filepath.startswith("/") else None)
-
-        for file_path in join_filepaths(preprocess_filepaths(params.patterns)):
-            with open(file_path, "r") as f:
-                text = f.read()
-            doc_item = lsp.TextDocumentItem(
-                text=text,
-                uri="file://" + os.path.join(os.getcwd(), str(file_path))
-                if not file_path.startswith("/")
-                else str(file_path),
-                languageId=find_matching_language(file_path, language_map) or "*",
-                version=1,
-            )
-            result_documents[doc_item.uri] = doc_item
-
-        result = LoadFilesResult(documents=result_documents)
-
-        self.documents.update(result.documents)
-
-        return result
+    # @rpc_method("morph/loadFiles")
+    # def load_documents(self, params: LoadFilesParams) -> LoadFilesResult:
+    #     try:
+    #         current_dir = os.path.abspath(__file__)
+    #     except:
+    #         current_dir = os.getcwd()
+    #     with open(os.path.join(current_dir, "languages.json"), "r") as f:
+    #         language_map = json.loads(f)
+    #
+    #     def find_matching_language(
+    #         filepath: str, language_map: Dict[str, List[Dict[str, str]]]
+    #     ) -> Optional[str]:
+    #         extension = filepath.split(".")[-1]  # Get the file extension
+    #
+    #         for details in language_map["languages"]:
+    #             if extension in details.get("extensions", []):
+    #                 return details["id"]
+    #
+    #         return None
+    #
+    #     def preprocess_filepaths(filepaths: List[str]) -> List[str]:
+    #         processed_filepaths = []
+    #         for filepath in filepaths:
+    #             processed_filepaths.append(os.path.expandvars(filepath))
+    #         return processed_filepaths
+    #
+    #     def join_filepaths(filepaths: List[str]) -> List[str]:
+    #         for filepath in filepaths:
+    #             yield from glob.glob(filepath, root="/" if filepath.startswith("/") else None)
+    #
+    #     for file_path in join_filepaths(preprocess_filepaths(params.patterns)):
+    #         with open(file_path, "r") as f:
+    #             text = f.read()
+    #         doc_item = lsp.TextDocumentItem(
+    #             text=text,
+    #             uri="file://" + os.path.join(os.getcwd(), str(file_path))
+    #             if not file_path.startswith("/")
+    #             else str(file_path),
+    #             languageId=find_matching_language(file_path, language_map) or "*",
+    #             version=1,
+    #         )
+    #         result_documents[doc_item.uri] = doc_item
+    #
+    #     result = LoadFilesResult(documents=result_documents)
+    #
+    #     self.documents.update(result.documents)
+    #
+    #     return result
 
     @rpc_method("morph/applyWorkspaceEdit")
     async def on_workspace_did_change_configuration(self, params: lsp.ApplyWorkspaceEditParams):
@@ -245,21 +242,17 @@ class LspServer(BaseLspServer):
                         selection=old_params.selection, workspaceFolderPath=old_params.workspaceFolderPath)
         )
 
-    @rpc_method("morph/create_agent")
-    async def on_create(self, params: AgentParams):
-        agent_type = params.agent_type
-        agent_id = params.agent_id or str(uuid.uuid4())[:8]
-
-        # TODO: grab the params_cls and do of_dict(params_cls, agent_params)
-        # agent_params = params.agent_params
-        # if not params.agent_id:
-        #     agent_params.agent_id = agent_id
+    @rpc_method("morph/create_agent") # TODO: CHANGE FROM ANY AFTER WE RIP OUT THE JSONRPC LIB AND REPLACE IT WITH A REAL ONE
+    async def on_create(self, params_with_no_id_treated_as_a_shitty_dict: Any):
+        agent_type = params_with_no_id_treated_as_a_shitty_dict['agent_type']
+        agent_id = str(uuid.uuid4())[:8]
+        params_with_no_id_treated_as_a_shitty_dict['agent_id'] = agent_id
 
         logger = logging.getLogger(__name__)
         agent_cls = AGENT_REGISTRY[agent_type]
-        # logger.info(f"{agent_cls.params_cls=}\n\n{agent_params=}")
-        # agent_params = ofdict(agent_cls.params_cls, agent_params)
-        agent = await agent_cls.create(params=params, server=self)
+
+        params_with_id = ofdict(agent_cls.params_cls, params_with_no_id_treated_as_a_shitty_dict)
+        agent = await agent_cls.create(params=params_with_id, server=self)
 
         self.active_agents[agent_id] = agent
         t = asyncio.create_task(agent.main())

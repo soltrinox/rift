@@ -1,5 +1,5 @@
 import {join} from "path";
-import type {ExtensionContext} from "vscode";
+import type {ExtensionContext, TextEditor} from "vscode";
 import * as vscode from "vscode";
 import {
   Executable,
@@ -30,6 +30,7 @@ import {
   ChatMessage,
   CodeLensStatus,
   DEFAULT_STATE,
+  OptionalTextDocument,
   RunAgentResult,
   WebviewAgent,
   WebviewState,
@@ -547,19 +548,22 @@ export class MorphLanguageClient
   async create(agent_type: string) {
     if (!this.client) throw new Error();
 
-    const editor = vscode.window.activeTextEditor;
+    const editor: TextEditor | undefined = vscode.window.activeTextEditor;
 
-    if (!editor) throw new Error("No active text editor found");
     const folders = vscode.workspace.workspaceFolders;
     if (!folders) throw new Error("no current workspace");
     const workspaceFolderPath = folders[0].uri.fsPath;
-    let textDocument = { uri: editor.document.uri.toString(), version: 0 };
-    let position = editor.selection.active;
+    let document = editor?.document
+    let textDocument: OptionalTextDocument = null
+    if (document != undefined) {
+      textDocument = {uri: document.uri.toString(), version: 0};
+    }
+    let position = editor?.selection?.active ?? null;
 
     const agentParams: AgentParams = {
       agent_type: agent_type,
       agent_id: "", // agent ID has not been assigned yet
-      selection: editor.selection,
+      selection: editor?.selection ?? null,
       position,
       textDocument,
       workspaceFolderPath,
@@ -924,7 +928,7 @@ class Agent {
     public readonly id: string,
     public readonly agent_type: string,
     public readonly selection: vscode.Selection,
-    public textDocument: TextDocumentIdentifier,
+    public textDocument: OptionalTextDocument,
   ) {
     this.morph_language_client = morph_language_client;
     this.id = id;

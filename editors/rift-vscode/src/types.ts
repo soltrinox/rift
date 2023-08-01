@@ -105,16 +105,19 @@ export const DEFAULT_STATE: WebviewState = {
   },
 };
 
+export type OptionalTextDocument = {
+  uri: string;
+  version: number;
+} | null
+
+
 export interface AgentParams {
   agent_type: string;
   agent_id: string | null
-  position: vscode.Position
-  selection: vscode.Selection
-  textDocument: {
-    uri: string;
-    version: number;
-  };
-  workspaceFolderPath: string
+  position: vscode.Position | null
+  selection: vscode.Selection | null
+  textDocument: OptionalTextDocument
+  workspaceFolderPath: string | null
 }
 
 export interface RunChatParams {

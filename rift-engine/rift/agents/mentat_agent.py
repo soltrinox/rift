@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import Optional, Type, ClassVar
 
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
@@ -17,9 +17,9 @@ class MentatAgentState(agent.AgentState):
 
 
 @agent.agent(agent_description="Request codebase-wide edits through chat", display_name="Mentat")
-@dataclass(frozen=True)
+@dataclass
 class Mentat(agent.Agent):
-    agent_type: str = "mentat"
+    agent_type: ClassVar[str] = "mentat"
     run_params: Type[MentatAgentParams] = MentatAgentParams
     splash: Optional[
         str

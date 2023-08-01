@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from asyncio import Lock
 from dataclasses import dataclass
-from typing import ClassVar, Optional
+from typing import ClassVar, Optional, List
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
@@ -24,7 +25,7 @@ from rift.util.context import resolve_inline_uris
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass
 class ChatRunResult(AgentRunResult):
     ...
 
@@ -43,7 +44,7 @@ class ChatProgress(
 
 
 @dataclass(frozen=True)
-class ChatAgentState(AgentState):
+class RiftChatAgentState(AgentState):
     model: AbstractChatCompletionProvider
     messages: list[openai.Message]
     document: lsp.TextDocumentItem
@@ -54,20 +55,23 @@ class ChatAgentState(AgentState):
     agent_description="Ask questions about your code.",
     display_name="Chat",
 )
-@dataclass(frozen=True)
-class ChatAgent(Agent):
-    state: ChatAgentState
+@dataclass
+class RiftChatAgent(Agent):
+    state: RiftChatAgentState
     agent_type: ClassVar[str] = "rift_chat"
     params_cls: ClassVar[Any] = RiftChatAgentParams
 
     @classmethod
     async def create(cls, params: AgentParams, server: BaseLspServer):
         model = await server.ensure_chat_model()
-
-        state = ChatAgentState(
+        if params.textDocument is None:
+            document = None
+        else:
+            document = server.documents[params.textDocument["uri"]]
+        state = RiftChatAgentState(
             model=model,
             messages=[openai.Message.assistant("Hello! How can I help you today?")],
-            document=server.documents[params.textDocument.uri],
+            document=document,
             params=params,
         )
         obj = cls(
@@ -78,8 +82,6 @@ class ChatAgent(Agent):
         return obj
 
     async def run(self) -> AgentRunResult:
-        from asyncio import Lock
-
         response_lock = Lock()
 
         async def get_user_response() -> str:
@@ -116,8 +118,10 @@ class ChatAgent(Agent):
         old_generate_response_task = AgentTask("Generate response", generate_response_dummy)
         self.set_tasks([get_user_response_task, old_generate_response_task])
         await old_generate_response_task.run()
+        logger.info("YEEHAW 1")
         while True:
             get_user_response_task = AgentTask("Get user response", get_user_response)
+            logger.info("CREATED USER RESPONSE TASK")
             # logger.info("created get_user_response_task")
             sentinel_f = asyncio.get_running_loop().create_future()
 
@@ -131,8 +135,10 @@ class ChatAgent(Agent):
             self.set_tasks([get_user_response_task, old_generate_response_task])
             await self.send_progress()
             user_response_task = asyncio.create_task(get_user_response_task.run())
+            logger.info("CREATED GET USER RESPONSE TASK")
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
-            # logger.info("got user response task future")
+            logger.info("got user response task future")
+
             user_response = await user_response_task
 
             async with response_lock:

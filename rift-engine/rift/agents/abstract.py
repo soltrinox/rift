@@ -64,9 +64,8 @@ class AgentParams(BaseModel):
     selection: Optional[lsp.Selection]
     position: Optional[lsp.Position]
     workspaceFolderPath: Optional[str]
-    # agent_id: Optional[str] = None
 
-@dataclass(frozen=True)
+@dataclass
 class AgentProgress:
     agent_type: Optional[str] = None
     agent_id: Optional[str] = None
@@ -74,7 +73,7 @@ class AgentProgress:
     payload: Optional[Any] = None
 
 
-@dataclass(frozen=True)
+@dataclass
 class AgentRunResult(ABC):
     """
     Abstract base class for AgentRunResult
@@ -90,7 +89,7 @@ class AgentState(ABC):
     params: AgentParams
 
 
-@dataclass(frozen=True)
+@dataclass
 class Agent:
     """
     Agent is the base class for all agents.
@@ -110,9 +109,9 @@ class Agent:
     task: Optional[AgentTask] = None
     params_cls: Type[AgentParams] = AgentParams
 
-    def get_display(self):
-        """Get agent display information"""
-        return self.agent_type, self.description
+    # def get_display(self):
+    #     """Get agent display information"""
+    #     return self.agent_type, self.description
 
     def __str__(self):
         """Get string representation of the agent"""
@@ -218,9 +217,12 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
+        logger.info("XXXXXXXXX\nFIRING REQUEST CHAT")
         response = await self.server.request(
             f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
         )
+
+        logger.info(f"AHOY GOT ME A RESPONSE {response=}")
         return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
@@ -280,7 +282,7 @@ class Agent:
         ...
 
 
-@dataclass(frozen=True)
+@dataclass
 class AgentRegistryItem:
     """
     Stored in the registry by the @agent decorator, created upon Rift initialization.
@@ -292,7 +294,7 @@ class AgentRegistryItem:
 
     def __post_init__(self):
         if self.display_name is None:
-            self.display_name = self.agent_type
+            self.display_name = self.agent.agent_type
 
 
 @dataclass(frozen=True)
@@ -314,7 +316,7 @@ class AgentRegistry:
     """
 
     # Initial registry to store agents
-    registry: Dict[str, Type[Agent]] = field(default_factory=dict)
+    registry: Dict[str, AgentRegistryItem] = field(default_factory=dict)
 
     def __getitem__(self, key):
         """
@@ -363,7 +365,7 @@ class AgentRegistry:
         Throws:
         - ValueError: if agent_type not found in the registry.
         """
-        result = self.registry.get(agent_type)
+        result: AgentRegistryItem | None = self.registry.get(agent_type)
         if result is not None:
             return result.agent
         else:

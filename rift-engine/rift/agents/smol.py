@@ -9,7 +9,6 @@ from typing import Any, ClassVar, Dict, List, Optional
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
     AgentParams,
@@ -18,6 +17,7 @@ from rift.agents.abstract import (
     RequestChatRequest,
     agent,
 )
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.server.selection import RangeSet
 from rift.util.context import contextual_prompt, resolve_inline_uris
 
@@ -60,7 +60,7 @@ class SmolAgentState(AgentState):
     agent_description="Quickly generate a workspace with smol_dev.",
     display_name="Smol Developer",
 )
-@dataclass(frozen=True)
+@dataclass
 class SmolAgent(Agent):
     state: SmolAgentState
     agent_type: ClassVar[str] = "smol_dev"

@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass(frozen=True)
+@dataclass
 class CodeCompletionRunResult(AgentRunResult):
     ...
 
 
 # dataclass for representing the progress of the code completion agent
-@dataclass(frozen=True)
+@dataclass
 class CodeCompletionProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
@@ -61,7 +61,7 @@ class CodeCompletionAgentState(AgentState):
     agent_description="Generate code following an instruction to be inserted directly at your current cursor location.",
     display_name="Code Completion",
 )
-@dataclass(frozen=True)
+@dataclass
 class CodeCompletionAgent(Agent):
     state: CodeCompletionAgentState
     agent_type: ClassVar[str] = "code_completion"
@@ -71,7 +71,7 @@ class CodeCompletionAgent(Agent):
         model = await server.ensure_completions_model()
         state = CodeCompletionAgentState(
             model=model,
-            document=server.documents[params.textDocument.uri],
+            document=server.documents[params.textDocument['uri']],
             active_range=lsp.Range(params.selection.start, params.selection.end),
             cursor=params.selection.first,  # begin at the start of the selection
             additive_ranges=RangeSet(),

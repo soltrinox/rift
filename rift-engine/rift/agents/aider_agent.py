@@ -18,7 +18,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import PurePath
-from typing import List, Optional, Type
+from typing import List, Optional, ClassVar
 
 from rich.text import Text
 
@@ -63,9 +63,9 @@ class AiderAgentState(agent.AgentState):
 
 
 @agent.agent(agent_description="Request codebase-wide edits through chat", display_name="Aider")
-@dataclass(frozen=True)
+@dataclass
 class Aider(agent.Agent):
-    agent_type: str = "aider"
+    agent_type: ClassVar[str] = "aider"
     params_cls: ClassVar[Any] = AiderAgentParams
 
     @classmethod

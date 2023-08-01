@@ -67,7 +67,7 @@ class CodeEditAgentState(AgentState):
     agent_description="Generate code edit for currently selected region.",
     display_name="Code Edit",
 )
-@dataclass(frozen=True)
+@dataclass
 class CodeEditAgent(Agent):
     state: CodeEditAgentState
     agent_type: ClassVar[str] = "code_edit"
@@ -78,7 +78,7 @@ class CodeEditAgent(Agent):
         model = await server.ensure_completions_model()  # TODO: not right, fix
         state = CodeEditAgentState(
             model=model,
-            document=server.documents[params.textDocument.uri],
+            document=server.documents[params.textDocument['uri']],
             active_range=lsp.Range(params.selection.start, params.selection.end),
             cursor=params.selection.second,  # begin at the start of the selection
             additive_ranges=RangeSet(),
