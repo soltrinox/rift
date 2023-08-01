@@ -168,10 +168,8 @@ class Aider(agent.Agent):
                     agent.RequestChatRequest(messages=self.state.messages)
                 )
                 logger.info(f"pre {resp=}")
-                resp = re.sub(r'uri://(\S+)', r'`\1`', resp)
+                resp = re.sub(f'uri://{self.state.params.workspaceFolderPath}'r'(\S+)', r'`\1`', resp)
                 logger.info(f"post {resp=} {self.state.params.workspaceFolderPath=}")
-                if resp.startswith(self.state.params.workspaceFolderPath):
-                    resp = resp[len(self.state.params.workspaceFolderPath):]
                 self.state.messages.append(openai.Message.user(content=resp))
                 response_lock.release()
                 return resp
