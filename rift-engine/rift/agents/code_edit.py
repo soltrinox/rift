@@ -50,7 +50,7 @@ class CodeEditProgress(AgentProgress):
 # dataclass for representing the parameters of the code completion agent
 @dataclass
 class CodeEditAgentParams(AgentRunParams):
-    instructionPrompt: Optional[str] = None
+    ...
 
 
 # dataclass for representing the state of the code completion agent
@@ -111,6 +111,7 @@ class CodeEditAgent(Agent):
 
             await self.send_progress()
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
+            logger.info(f"{self.RANGE=}")
             with lsp.setdoc(self.state.document):
                 urtext = self.state.document.text
                 uroffset_start = self.state.document.position_to_offset(self.state.selection.first)

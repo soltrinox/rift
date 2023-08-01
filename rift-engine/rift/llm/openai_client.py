@@ -529,7 +529,6 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
                 f"{after_cursor}\n"
             )
             user_message = format_visible_files(documents) + user_message
-            logger.info("USER MESSAGE: ", user_message)
 
             return [
                 Message.system(
