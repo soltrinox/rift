@@ -80,13 +80,25 @@ export const FileChip = Node.create<FileChipOptions>({
         default: null,
         parseHTML: (element) => element.getAttribute("data-filename"),
         renderHTML: (attributes) => {
-            console.log('renderHTML function for fileName')
           if (!attributes.fileName) {
             return {}
           }
 
           return {
             "data-filename": attributes.fileName,
+          }
+        },
+      },
+      fullPath: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-fullpath"),
+        renderHTML: (attributes) => {
+          if (!attributes.fullPath) {
+            return {}
+          }
+
+          return {
+            "data-fullpath": attributes.fullPath,
           }
         },
       },
@@ -142,23 +154,23 @@ export const FileChip = Node.create<FileChipOptions>({
       return svg
     }
     const span = document.createElement("span")
-    const attributesMap = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)
-    for (let attribute in attributesMap) {
-        span.setAttribute(attribute, attributesMap[attribute])
-    }
-    span.classList.add('bg-[var(--vscode-editor-background)]', 'text-xs', 'inline-flex', 'items-center', 'h-[1.5rem]')
+    // const attributesMap = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)
+    // for (let attribute in attributesMap) {
+    //     span.setAttribute(attribute, attributesMap[attribute])
+    // }
+
+    span.classList.add("bg-[var(--vscode-editor-background)]", "text-xs", "inline-flex", "items-center", "h-[1.5rem]")
+
     span.append(createFileSvg())
     span.append(document.createTextNode(`${node.attrs.fileName}`))
 
-    console.log('rendering HTML:', span)
     return span
 
     // would prefer to use the nice prosemirror syntax, but prosemirror starts crying whenever you use SVG's (because capitalize attributes (I know ( stupid right we should fork prosemirror)))
   },
 
   renderText({ node }) {
-    console.log('rendering text', node)
-    return `[uri](${node.attrs.fsPath})`
+    return `[uri](${node.attrs.fullPath})`
   },
 
   addKeyboardShortcuts() {

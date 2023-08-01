@@ -753,8 +753,8 @@ export class MorphLanguageClient
     if(this.webviewState.value.agents[agentId].chatHistory.length == newChatHistory.length) {
       return
     }
-    
-    console.error('discrepancy between server agent chat history and client agent chathistory. taking server as truth')
+
+    if(this.webviewState.value.agents[agentId].chatHistory.length > 0) console.error('discrepancy between server agent chat history and client agent chathistory. taking server as truth')
     this.webviewState.update((state) => {
       if (!(agentId in state.agents))
         throw new Error("changing chatHistory for nonexistent agent");

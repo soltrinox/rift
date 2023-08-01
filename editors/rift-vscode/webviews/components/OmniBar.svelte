@@ -284,7 +284,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
         StarterKit,
         FileChip.configure({
           HTMLAttributes: {
-            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
+            // class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
           },
           suggestion
         }),
