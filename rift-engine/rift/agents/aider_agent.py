@@ -149,6 +149,7 @@ class Aider(agent.Agent):
             loop.call_soon_threadsafe(_worker)
 
         def request_chat_wrapper(prompt: Optional[str] = None):
+            logger.info("firing request chat wrapper")
             send_chat_update_wrapper()
             async def request_chat():
                 await response_lock.acquire()
