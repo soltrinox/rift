@@ -366,12 +366,11 @@ class Aider(agent.Agent):
             nonlocal aider_finished
             aider_finished = True
             event.set()
-        logger.info("HELLO!")
 
         with futures.ThreadPoolExecutor(1) as pool:
             aider_fut = loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit)
             aider_fut.add_done_callback(done_cb)
-            logger.info("Aider thread running")
+            logger.info("Running aider thread")
 
             while True:
                 await event.wait()
@@ -390,5 +389,5 @@ class Aider(agent.Agent):
                     file_changes = []
                 event2.set()
                 event.clear()
-            await aider_fut
+            # await aider_fut
         await self.send_update("Aider finished")
