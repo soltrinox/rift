@@ -10,13 +10,13 @@ import rift.llm.openai_types as openai
 from rift.util.ofdict import ofdict
 
 @dataclass
-class DummyAgentParams(AgentRunParams):
+class TestAgentParams(AgentRunParams):
     textDocument: TextDocumentIdentifier
     instructionPrompt: Optional[str] = None
 
 @dataclass
-class DummyAgentState(AgentState):
-    params: DummyAgentParams
+class TestAgentState(AgentState):
+    params: TestAgentParams
     messages: list[openai.Message]
 
 """uncomment this to register the agent and access it from the Rift extension"""
@@ -31,7 +31,7 @@ class TestAgent(Agent):
     TestAgent is a minimal implementation of the Agent API.
     It is used for testing purposes.
     """
-    state: DummyAgentState
+    state: TestAgentState
     agent_type = "TestAgent"
 
     async def run(self):
@@ -56,12 +56,12 @@ class TestAgent(Agent):
             self.state.messages.append(openai.Message.assistant("test"))
 
     @classmethod
-    async def create(cls, params: DummyAgentParams, server):
-        # Convert the parameters to a DummyAgentParams object
-        params = ofdict(DummyAgentParams, params)
+    async def create(cls, params: TestAgentParams, server):
+        # Convert the parameters to a TestAgentParams object
+        params = ofdict(TestAgentParams, params)
         
         # Create the initial state
-        state = DummyAgentState(
+        state = TestAgentState(
             params=params,
             messages=[openai.Message.assistant("test")],
         )
