@@ -18,7 +18,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import PurePath
-from typing import List, Optional, ClassVar
+from typing import List, Optional, ClassVar, Any
 
 from rich.text import Text
 

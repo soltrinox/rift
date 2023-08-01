@@ -2,7 +2,7 @@ import asyncio
 import logging
 from asyncio import Lock
 from dataclasses import dataclass
-from typing import ClassVar, Optional, List
+from typing import ClassVar, Optional, List, Any
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
@@ -44,6 +44,11 @@ class ChatProgress(
 
 
 @dataclass(frozen=True)
+class RiftChatAgentParams(AgentParams):
+    ...
+
+
+@dataclass(frozen=True)
 class RiftChatAgentState(AgentState):
     model: AbstractChatCompletionProvider
     messages: list[openai.Message]
@@ -57,7 +62,7 @@ class RiftChatAgentState(AgentState):
 )
 @dataclass
 class RiftChatAgent(Agent):
-    state: RiftChatAgentState
+    state: Optional[RiftChatAgentState] = None
     agent_type: ClassVar[str] = "rift_chat"
     params_cls: ClassVar[Any] = RiftChatAgentParams
 

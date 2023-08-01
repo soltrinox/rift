@@ -79,8 +79,8 @@ class CodeEditAgent(Agent):
         state = CodeEditAgentState(
             model=model,
             document=server.documents[params.textDocument['uri']],
-            active_range=lsp.Range(params.selection.start, params.selection.end),
-            cursor=params.selection.second,  # begin at the start of the selection
+            active_range=lsp.Range(params.selection['start'], params.selection['end']),
+            cursor=params.selection['second'],  # begin at the start of the selection
             additive_ranges=RangeSet(),
             params=params,
             selection=params.selection,
