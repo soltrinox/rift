@@ -240,7 +240,6 @@ def create_system_message_chat_truncated(
     if document_list:
         max_document_list_size = ((1.0 - current_file_weight) * max_size) // len(document_list)
         for doc in document_list:
-            logger.info("PROCESSING DOC")
             # TODO: Need a check for using up our limit
             document_contents = doc.document.text
             # logger.info(f"{document_contents=}")
