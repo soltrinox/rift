@@ -79,7 +79,6 @@ class Aider(agent.Agent):
         :param server: The server where the Aider agent is running.
         :return: An instance of the Aider class.
         """
-        params = ofdict(AiderAgentParams, params)
         state = AiderAgentState(
             params=params,
             messages=[],

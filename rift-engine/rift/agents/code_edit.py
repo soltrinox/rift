@@ -82,9 +82,6 @@ class CodeEditAgent(Agent):
 
     @classmethod
     async def create(cls, params: CodeEditAgentParams, server):
-        from rift.util.ofdict import ofdict
-
-        params = ofdict(CodeEditAgentParams, params)
         model = await server.ensure_completions_model()  # TODO: not right, fix
         state = CodeEditAgentState(
             model=model,

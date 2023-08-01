@@ -343,9 +343,6 @@ class EngineerAgent(Agent):
                 "`gpt_engineer` not found. Try `pip install -e 'rift-engine[gpt-engineer]' from the repository root directory."
             )
 
-        from rift.util.ofdict import ofdict
-
-        params = ofdict(EngineerAgentParams, params)
         state = EngineerAgentState(
             params=params,
             messages=[openai.Message.assistant("What do you want to build?")],

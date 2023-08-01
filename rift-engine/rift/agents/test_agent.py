@@ -67,7 +67,6 @@ class TestAgent(Agent):
     @classmethod
     async def create(cls, params: TestAgentParams, server):
         # Convert the parameters to a TestAgentParams object
-        params = ofdict(TestAgentParams, params)
 
         # Create the initial state
         state = TestAgentState(

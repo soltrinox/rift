@@ -29,9 +29,6 @@ mentat
 
     @classmethod
     async def create(cls, params: MentatAgentParams, server):
-        from rift.util.ofdict import ofdict
-
-        params = ofdict(MentatAgentParams, params)
         state = MentatAgentState(
             params=params,
             messages=[],

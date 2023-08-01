@@ -72,8 +72,6 @@ class ChatAgent(Agent):
     async def create(cls, params: Dict[Any, Any], server: BaseLspServer):
         model = await server.ensure_chat_model()
 
-        params = ofdict(ChatAgentParams, params)
-
         state = ChatAgentState(
             model=model,
             messages=[openai.Message.assistant("Hello! How can I help you today?")],
