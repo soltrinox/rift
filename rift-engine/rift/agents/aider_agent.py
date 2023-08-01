@@ -167,9 +167,9 @@ class Aider(agent.Agent):
                 resp = await self.request_chat(
                     agent.RequestChatRequest(messages=self.state.messages)
                 )
-                # logger.info(f"pre {resp=}")
+                logger.info(f"pre {resp=}")
                 resp = re.sub(r'uri://(\S+)', r'`\1`', resp)
-                # logger.info(f"post {resp=}")
+                logger.info(f"post {resp=}")
                 self.state.messages.append(openai.Message.user(content=resp))
                 response_lock.release()
                 return resp
@@ -292,7 +292,7 @@ class Aider(agent.Agent):
                 messages = list(map(Text, messages))
                 style = dict(style=self.tool_output_color) if self.tool_output_color else dict()
                 if hist:
-                    print(f"{hist=}")
+                    # print(f"{hist=}")
                     send_chat_update_wrapper(hist + "\n")
 
         aider.io.InputOutput.tool_output = tool_output
