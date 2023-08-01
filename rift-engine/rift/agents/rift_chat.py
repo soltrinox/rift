@@ -118,10 +118,8 @@ class RiftChatAgent(Agent):
         old_generate_response_task = AgentTask("Generate response", generate_response_dummy)
         self.set_tasks([get_user_response_task, old_generate_response_task])
         await old_generate_response_task.run()
-        logger.info("YEEHAW 1")
         while True:
             get_user_response_task = AgentTask("Get user response", get_user_response)
-            logger.info("CREATED USER RESPONSE TASK")
             # logger.info("created get_user_response_task")
             sentinel_f = asyncio.get_running_loop().create_future()
 
@@ -135,9 +133,7 @@ class RiftChatAgent(Agent):
             self.set_tasks([get_user_response_task, old_generate_response_task])
             await self.send_progress()
             user_response_task = asyncio.create_task(get_user_response_task.run())
-            logger.info("CREATED GET USER RESPONSE TASK")
             user_response_task.add_done_callback(lambda f: sentinel_f.set_result(f.result()))
-            logger.info("got user response task future")
 
             user_response = await user_response_task
 

@@ -6,7 +6,6 @@ from typing import Any, List, Optional
 
 import rift.lsp.types as lsp
 from rift.agents import AGENT_REGISTRY, Agent, AgentRegistryResult, AgentParams
-# from rift.agents.reverso import ReversoAgent, ReversoAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.lsp import LspServer as BaseLspServer
@@ -76,7 +75,6 @@ class AgentIdParams:
 
 class LspServer(BaseLspServer):
     active_agents: dict[str, Agent]
-    active_chat_agents: dict[str, asyncio.Task]
     model_config: ModelConfig
     completions_model: Optional[AbstractCodeCompletionProvider] = None
     chat_model: Optional[AbstractChatCompletionProvider] = None
@@ -89,7 +87,6 @@ class LspServer(BaseLspServer):
             change=lsp.TextDocumentSyncKind.incremental,
         )
         self.active_agents = {}
-        self.active_chat_agents = {}
         self._loading_task = None
         self._chat_loading_task = None
         self.logger = logging.getLogger(f"rift")
