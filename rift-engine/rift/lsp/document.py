@@ -13,8 +13,6 @@ from pathlib import Path
 from typing import Iterable, Optional, Union
 from urllib.parse import urlparse
 
-from pydantic import BaseModel
-
 try:
     from typing import TypeAlias, TypeVar
 except:
@@ -66,7 +64,7 @@ def cumsum(iterable):
         yield total
 
 
-@dataclass(frozen=True)
+@dataclass
 class Position:
     line: int
     character: int
@@ -107,7 +105,7 @@ class Position:
         return hash((self.line, self.character))
 
 
-@dataclass(frozen=True)
+@dataclass
 class Range:
     start: Position
     end: Position
@@ -164,7 +162,7 @@ class Range:
         return Range(self.start + offset, self.end + offset)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Selection(Range):
     anchor: Position
     active: Position
@@ -190,7 +188,7 @@ class Selection(Range):
         return self.active if not self.is_reversed else self.anchor
 
 
-@dataclass(frozen=True)
+@dataclass
 class TextDocumentContentChangeEvent:
     range: Optional[Range]
     text: str
@@ -221,7 +219,7 @@ class TextDocumentContentChangeEvent:
 SURROGATE_KEY_END = re.compile("[\ud800-\udbff]$", re.UNICODE)
 
 
-@dataclass(frozen=True)
+@dataclass
 class DocumentContext:
     text: str
 
@@ -345,8 +343,8 @@ def path_of_uri(uri: DocumentUri):
     return Path(x.path)
 
 
-@dataclass(frozen=True)
-class TextDocumentIdentifier(BaseModel):
+@dataclass
+class TextDocumentIdentifier:
     """
     References:
     - https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentIdentifier
@@ -365,7 +363,7 @@ class TextDocumentIdentifier(BaseModel):
         return str(path_of_uri(self.uri))
 
 
-@dataclass(frozen=True)
+@dataclass
 class TextDocumentItem(DocumentContext):
     uri: DocumentUri
     languageId: str

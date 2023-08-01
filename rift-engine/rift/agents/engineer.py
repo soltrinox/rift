@@ -111,24 +111,24 @@ response_lock = asyncio.Lock()
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass(frozen=True)
+@dataclass
 class EngineerRunResult(AgentRunResult):
     ...
 
 
-@dataclass(frozen=True)
+@dataclass
 class EngineerAgentParams(AgentParams):
     instructionPrompt: Optional[str] = None
 
 
-@dataclass(frozen=True)
+@dataclass
 class EngineerProgress(
     AgentProgress
 ):  # reports what tasks are active and responsible for reporting new tasks
     response: Optional[str] = None
     done_streaming: bool = False
 
-@dataclass(frozen=True)
+@dataclass
 class EngineerAgentState(AgentState):
     params: EngineerAgentParams
     messages: list[openai.Message]

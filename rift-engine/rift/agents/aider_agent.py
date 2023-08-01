@@ -1,4 +1,5 @@
 import re
+from typing import Any
 from concurrent import futures
 
 try:
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 response_lock = asyncio.Lock()
 
 
-@dataclass(frozen=True)
+@dataclass
 class AiderRunResult(agent.AgentRunResult):
     """
     A data class representing the results of an Aider agent run.
@@ -41,7 +42,7 @@ class AiderRunResult(agent.AgentRunResult):
     """
 
 
-@dataclass(frozen=True)
+@dataclass
 class AiderAgentParams(agent.AgentParams):
     """
     A data class that holds parameters for running an Aider agent.
@@ -49,7 +50,7 @@ class AiderAgentParams(agent.AgentParams):
     """
 
 
-@dataclass(frozen=True)
+@dataclass
 class AiderAgentState(agent.AgentState):
     """
     A data class that holds the state of an Aider agent.

@@ -29,7 +29,7 @@ def resolve_inline_uris(user_response, server) -> List[lsp.Document]:
     uri_pattern = r"uri://(.*)"
     matches = re.findall(uri_pattern, user_response)
     result = []
-    logger.info(f"{list(server.documents.keys())=}")
+    # logger.info(f"{list(server.documents.keys())=}")
     for match in matches:
         match = match.replace(" ", "")
         lsp_uri = "file://" + match

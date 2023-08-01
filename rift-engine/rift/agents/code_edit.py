@@ -24,13 +24,13 @@ logger = logging.getLogger(__name__)
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass(frozen=True)
+@dataclass
 class CodeEditRunResult(AgentRunResult):
     ...
 
 
 # dataclass for representing the progress of the code completion agent
-@dataclass(frozen=True)
+@dataclass
 class CodeEditProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
@@ -42,12 +42,12 @@ class CodeEditProgress(AgentProgress):
 
 
 # dataclass for representing the parameters of the code completion agent
-@dataclass(frozen=True)
+@dataclass
 class CodeEditAgentParams(AgentParams):
     ...
 
 # dataclass for representing the state of the code completion agent
-@dataclass(frozen=True)
+@dataclass
 class CodeEditAgentState(AgentState):
     model: AbstractCodeEditProvider
     document: lsp.TextDocumentItem
@@ -75,12 +75,13 @@ class CodeEditAgent(Agent):
 
     @classmethod
     async def create(cls, params: CodeEditAgentParams, server):
+        logger.info(f"{params=}")
         model = await server.ensure_completions_model()  # TODO: not right, fix
         state = CodeEditAgentState(
             model=model,
-            document=server.documents[params.textDocument['uri']],
-            active_range=lsp.Range(params.selection['start'], params.selection['end']),
-            cursor=params.selection['second'],  # begin at the start of the selection
+            document=server.documents[params.textDocument.uri],
+            active_range=lsp.Range(params.selection.start, params.selection.end),
+            cursor=params.selection.second,  # begin at the start of the selection
             additive_ranges=RangeSet(),
             params=params,
             selection=params.selection,
@@ -104,7 +105,7 @@ class CodeEditAgent(Agent):
 
             await self.send_progress()
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
-            logger.info(f"{self.RANGE=}")
+            # logger.info(f"{self.RANGE=}")
             with lsp.setdoc(self.state.document):
                 urtext = self.state.document.text
                 uroffset_start = self.state.document.position_to_offset(self.state.selection.first)

@@ -32,23 +32,23 @@ class Status(Enum):
     rejected = "rejected"
 
 
-@dataclass(frozen=True)
+@dataclass
 class RequestInputRequest:
     msg: str
     place_holder: str = ""
 
 
-@dataclass(frozen=True)
+@dataclass
 class RequestInputResponse:
     response: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class RequestChatRequest:
     messages: List[ChatMessage]
 
 
-@dataclass(frozen=True)
+@dataclass
 class RequestChatResponse:
     message: ChatMessage  # TODO make this richer
 
@@ -56,16 +56,16 @@ class RequestChatResponse:
 AgentTaskId = str
 
 
-@dataclass(frozen=True)
-class AgentParams(BaseModel):
+@dataclass
+class AgentParams:
     agent_type: str
     agent_id: str
-    textDocument: Optional[lsp.TextDocumentIdentifier]
-    selection: Optional[lsp.Selection]
-    position: Optional[lsp.Position]
-    workspaceFolderPath: Optional[str]
+    textDocument: lsp.TextDocumentIdentifier
+    selection: lsp.Selection
+    position: lsp.Position
+    workspaceFolderPath: str
 
-@dataclass(frozen=True)
+@dataclass
 class AgentProgress:
     agent_type: Optional[str] = None
     agent_id: Optional[str] = None
@@ -73,14 +73,14 @@ class AgentProgress:
     payload: Optional[Any] = None
 
 
-@dataclass(frozen=True)
+@dataclass
 class AgentRunResult(ABC):
     """
     Abstract base class for AgentRunResult
     """
 
 
-@dataclass(frozen=True)
+@dataclass
 class AgentState(ABC):
     """
     Abstract base class for AgentState. Always contains a copy of the params used to create the Agent.
@@ -217,12 +217,9 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        logger.info("XXXXXXXXX\nFIRING REQUEST CHAT")
         response = await self.server.request(
             f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
         )
-
-        logger.info(f"AHOY GOT ME A RESPONSE {response=}")
         return response["message"]
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
@@ -297,7 +294,7 @@ class AgentRegistryItem:
             self.display_name = self.agent.agent_type
 
 
-@dataclass(frozen=True)
+@dataclass
 class AgentRegistryResult:
     """
     To be returned as part of a list of available agent workflows to the language server client.
@@ -309,7 +306,7 @@ class AgentRegistryResult:
     agent_icon: Optional[str] = None  # svg icon information
 
 
-@dataclass(frozen=True)
+@dataclass
 class AgentRegistry:
     """
     AgentRegistry is an organizational class that is used to track all agents in one central location.

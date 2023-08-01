@@ -5,12 +5,12 @@ import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
 
 
-@dataclass(frozen=True)
+@dataclass
 class MentatAgentParams(agent.AgentParams):
     ...
 
 
-@dataclass(frozen=True)
+@dataclass
 class MentatAgentState(agent.AgentState):
     params: MentatAgentParams
     messages: list[openai.Message]

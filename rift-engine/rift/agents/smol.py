@@ -25,13 +25,13 @@ logger = logging.getLogger(__name__)
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass(frozen=True)
+@dataclass
 class SmolRunResult(AgentRunResult):
     ...
 
 
 # dataclass for representing the progress of the code completion agent
-@dataclass(frozen=True)
+@dataclass
 class SmolProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
@@ -43,13 +43,13 @@ class SmolProgress(AgentProgress):
 
 
 # dataclass for representing the parameters of the code completion agent
-@dataclass(frozen=True)
+@dataclass
 class SmolAgentParams(AgentParams):
     instructionPrompt: Optional[str] = None
 
 
 # dataclass for representing the state of the code completion agent
-@dataclass(frozen=True)
+@dataclass
 class SmolAgentState(AgentState):
     params: SmolAgentParams
     _done: bool = False
@@ -154,7 +154,7 @@ class SmolAgent(Agent):
 
             file_changes = []
 
-            @dataclass(frozen=True)
+            @dataclass
             class PBarUpdater:
                 pbars: Dict[int, Any] = field(default_factory=dict)
                 dones: Dict[int, Any] = field(default_factory=dict)

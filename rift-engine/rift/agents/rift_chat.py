@@ -25,7 +25,7 @@ from rift.util.context import resolve_inline_uris
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass
 class ChatRunResult(AgentRunResult):
     ...
 
@@ -43,12 +43,12 @@ class ChatProgress(
     done_streaming: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass
 class RiftChatAgentParams(AgentParams):
     ...
 
 
-@dataclass(frozen=True)
+@dataclass
 class RiftChatAgentState(AgentState):
     model: AbstractChatCompletionProvider
     messages: list[openai.Message]
@@ -72,7 +72,7 @@ class RiftChatAgent(Agent):
         if params.textDocument is None:
             document = None
         else:
-            document = server.documents[params.textDocument["uri"]]
+            document = server.documents[params.textDocument.uri]
         state = RiftChatAgentState(
             model=model,
             messages=[openai.Message.assistant("Hello! How can I help you today?")],

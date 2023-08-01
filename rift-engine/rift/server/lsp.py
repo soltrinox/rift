@@ -248,6 +248,7 @@ class LspServer(BaseLspServer):
         logger = logging.getLogger(__name__)
         agent_cls = AGENT_REGISTRY[agent_type]
 
+        logger.info(f"[on_create] {agent_cls.params_cls=}")
         params_with_id = ofdict(agent_cls.params_cls, params_with_no_id_treated_as_a_shitty_dict)
         agent = await agent_cls.create(params=params_with_id, server=self)
 

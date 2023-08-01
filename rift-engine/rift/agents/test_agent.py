@@ -10,13 +10,13 @@ from rift.agents.abstract import Agent, AgentState, RequestChatRequest, AgentPar
 from rift.lsp.types import TextDocumentIdentifier
 
 
-@dataclass(frozen=True)
+@dataclass
 class TestAgentParams(AgentParams):
     textDocument: TextDocumentIdentifier
     instructionPrompt: Optional[str] = None
 
 
-@dataclass(frozen=True)
+@dataclass
 class TestAgentState(AgentState):
     params: TestAgentParams
     messages: list[openai.Message]
