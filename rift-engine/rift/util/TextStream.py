@@ -187,7 +187,10 @@ class TextStream:
                     before.feed_eof()
                     return
                 if len(self._buffer) > len(sep):
+                    # if any(self._buffer.endswith(sep[:k]) for k in range(1, len(sep))):
                     before.feed_data(self.pop(-len(sep)))
+                    # else:
+                    #     before.feed_data(self.pop_all())
                 await self._wait_for_data("split_once()")
 
         before_task = self._loop.create_task(before_worker())

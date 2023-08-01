@@ -118,7 +118,7 @@ class Aider(agent.Agent):
         :param response_stream: The stream of responses from the chat.
         """
 
-        before, after = response_stream.split_once("NONE")
+        before, after = response_stream.split_once("感")
         try:
             async with response_lock:
                 async for delta in before:
@@ -143,7 +143,7 @@ class Aider(agent.Agent):
 
         loop = asyncio.get_running_loop()
 
-        def send_chat_update_wrapper(prompt: str = "NONE", end=""):
+        def send_chat_update_wrapper(prompt: str = "NONE", end="", eof=False):
             def _worker():
                 response_stream.feed_data(prompt)
 
@@ -151,9 +151,11 @@ class Aider(agent.Agent):
 
         def request_chat_wrapper(prompt: Optional[str] = None):
             async def request_chat():
-                logger.info("acquiring response lock")
+                # logger.info("acquiring response lock")
+                response_stream.feed_data("感")
+                await asyncio.sleep(0.1)
                 await response_lock.acquire()
-                logger.info("acquired response lock")                
+                # logger.info("acquired response lock")                
                 await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
                 # logger.info(f"{self.RESPONSE=}")
                 self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
@@ -165,9 +167,9 @@ class Aider(agent.Agent):
                 resp = await self.request_chat(
                     agent.RequestChatRequest(messages=self.state.messages)
                 )
-                logger.info(f"pre {resp=}")
+                # logger.info(f"pre {resp=}")
                 resp = re.sub(r'uri://(\S+)', r'`\1`', resp)
-                logger.info(f"post {resp=}")
+                # logger.info(f"post {resp=}")
                 self.state.messages.append(openai.Message.user(content=resp))
                 response_lock.release()
                 return resp
@@ -290,8 +292,8 @@ class Aider(agent.Agent):
                 messages = list(map(Text, messages))
                 style = dict(style=self.tool_output_color) if self.tool_output_color else dict()
                 if hist:
-                    send_chat_update_wrapper(hist)
-                    send_chat_update_wrapper("\n")
+                    print(f"{hist=}")
+                    send_chat_update_wrapper(hist + "\n")
 
         aider.io.InputOutput.tool_output = tool_output
 
