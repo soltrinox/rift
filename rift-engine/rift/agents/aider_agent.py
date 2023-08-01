@@ -393,4 +393,6 @@ class Aider(agent.Agent):
                 await aider_fut
             except:
                 pass
+            finally:
+                await self.send_progress()
         await self.send_update("Aider finished")
