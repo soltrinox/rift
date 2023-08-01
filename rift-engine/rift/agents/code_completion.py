@@ -5,33 +5,29 @@ from dataclasses import dataclass, field
 from typing import ClassVar, Dict, Optional
 
 import rift.lsp.types as lsp
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestInputRequest,
-    RunAgentParams,
     agent,
 )
-from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
-from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
+from rift.agents.abstract import AgentProgress  # AgentTask,
+from rift.llm.abstract import AbstractCodeCompletionProvider
 from rift.server.selection import RangeSet
 
 logger = logging.getLogger(__name__)
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass
+@dataclass(frozen=True)
 class CodeCompletionRunResult(AgentRunResult):
     ...
 
 
 # dataclass for representing the progress of the code completion agent
-@dataclass
+@dataclass(frozen=True)
 class CodeCompletionProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
@@ -42,13 +38,13 @@ class CodeCompletionProgress(AgentProgress):
 
 
 # dataclass for representing the parameters of the code completion agent
-@dataclass
-class CodeCompletionAgentParams(AgentRunParams):
+@dataclass(frozen=True)
+class CodeCompletionAgentParams(AgentParams):
     instructionPrompt: Optional[str] = None
 
 
 # dataclass for representing the state of the code completion agent
-@dataclass
+@dataclass(frozen=True)
 class CodeCompletionAgentState(AgentState):
     model: AbstractCodeCompletionProvider
     document: lsp.TextDocumentItem
@@ -65,7 +61,7 @@ class CodeCompletionAgentState(AgentState):
     agent_description="Generate code following an instruction to be inserted directly at your current cursor location.",
     display_name="Code Completion",
 )
-@dataclass
+@dataclass(frozen=True)
 class CodeCompletionAgent(Agent):
     state: CodeCompletionAgentState
     agent_type: ClassVar[str] = "code_completion"

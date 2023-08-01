@@ -5,7 +5,6 @@ This file is adapted from  https://github.com/EdAyers/sss
 import inspect
 import json
 import logging
-from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import fields, is_dataclass
@@ -16,10 +15,7 @@ from pathlib import Path
 from typing import (
     Any,
     ClassVar,
-    Dict,
-    List,
     Literal,
-    NewType,
     Optional,
     Type,
     TypeVar,
@@ -31,7 +27,6 @@ from typing import (
 from pydantic import ValidationError
 
 from rift.util.misc import map_ctx
-
 from .dispatch import classdispatch
 from .type_util import as_list, as_newtype, as_optional, as_set, is_optional
 
@@ -139,6 +134,12 @@ def ofdict(A: Type[T], a: JsonLike) -> T:
 
     [todo] I am hoping to retire this in favour of Pydantic.
     """
+    # try:
+    #     return A(**a)
+    # except ValidationError as e:
+    #     print(e.errors())
+    #     raise e
+
     if isinstance(A, str):
         raise TypeError(
             f"please make sure your class {A} is referred using types and not string-escaped types"

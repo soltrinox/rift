@@ -1,16 +1,15 @@
 <script lang="ts">
   import SendSvg from "./icons/SendSvg.svelte"
-  import { dropdownStatus, filteredAgents, state } from "./stores"
+  import {dropdownStatus, filteredAgents, state} from "./stores"
   import SlashDropdown from "./chat/dropdown/SlashDropdown.svelte"
-  import { tick } from "svelte"
+  import {onDestroy, onMount, tick} from "svelte"
   import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
-  import type { AgentRegistryItem, AtableFile } from "../../src/types"
-  import { onMount, onDestroy } from "svelte"
-  import { CommandProps, Editor } from "@tiptap/core"
+  import type {AgentRegistryItem, AtableFile} from "../../src/types"
+  import {CommandProps, Editor} from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
-  import { Placeholder } from "@tiptap/extension-placeholder"
-  import type { Transaction } from "@tiptap/pm/state"
-  import { FileChip } from "./FileChip"
+  import {Placeholder} from "@tiptap/extension-placeholder"
+  import type {Transaction} from "@tiptap/pm/state"
+  import {FileChip} from "./FileChip"
 
   let isFocused = true
 
@@ -130,7 +129,7 @@
     if (!$state.availableAgents.map((x) => x.agent_type).includes(agent_type))
       throw new Error("attempt to run unavailable agent")
     vscode.postMessage({
-      type: "runAgent",
+      type: "createAgent",
       agent_type,
     })
 

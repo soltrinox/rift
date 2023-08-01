@@ -10,17 +10,15 @@ try:
     from aider.coders.base_coder import ExhaustedContextWindow
 except ImportError:
     raise Exception(
-        "`aider` not found. Try `pip install -e 'rift-engine[aider]'` from the Rift root directory."
+        "`aider` not found. Try `pip install -e \"rift-engine[aider]\"` from the Rift root directory."
     )
 
 import asyncio
-import dataclasses
-import json
 import logging
 import time
-from dataclasses import dataclass, field
-from pathlib import Path, PurePath
-from typing import Any, AsyncIterable, ClassVar, Dict, List, Literal, Optional, Type
+from dataclasses import dataclass
+from pathlib import PurePath
+from typing import List, Optional, Type
 
 from rich.text import Text
 
@@ -28,7 +26,6 @@ import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
-from rift.util.ofdict import ofdict
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -36,7 +33,7 @@ logger = logging.getLogger(__name__)
 response_lock = asyncio.Lock()
 
 
-@dataclass
+@dataclass(frozen=True)
 class AiderRunResult(agent.AgentRunResult):
     """
     A data class representing the results of an Aider agent run.
@@ -44,15 +41,15 @@ class AiderRunResult(agent.AgentRunResult):
     """
 
 
-@dataclass
-class AiderAgentParams(agent.AgentRunParams):
+@dataclass(frozen=True)
+class AiderAgentParams(agent.AgentParams):
     """
     A data class that holds parameters for running an Aider agent.
     This class extends from the base class `AgentRunParams` defined in the `rift.agents.abstract` module.
     """
 
 
-@dataclass
+@dataclass(frozen=True)
 class AiderAgentState(agent.AgentState):
     """
     A data class that holds the state of an Aider agent.
@@ -66,7 +63,7 @@ class AiderAgentState(agent.AgentState):
 
 
 @agent.agent(agent_description="Request codebase-wide edits through chat", display_name="Aider")
-@dataclass
+@dataclass(frozen=True)
 class Aider(agent.Agent):
     agent_type: str = "aider"
     params_cls: ClassVar[Any] = AiderAgentParams

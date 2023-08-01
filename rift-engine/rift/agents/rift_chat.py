@@ -1,38 +1,30 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Any, ClassVar, Dict, Optional
+from typing import ClassVar, Optional
 
-import rift.agents.abstract as agents
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
     agent,
 )
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import (
     AbstractChatCompletionProvider,
-    AbstractCodeCompletionProvider,
-    InsertCodeResult,
 )
 from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
-from rift.server.selection import RangeSet
 from rift.util.context import resolve_inline_uris
-from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ChatRunResult(AgentRunResult):
     ...
 
@@ -50,7 +42,7 @@ class ChatProgress(
     done_streaming: bool = False
 
 
-@dataclass
+@dataclass(frozen=True)
 class ChatAgentState(AgentState):
     model: AbstractChatCompletionProvider
     messages: list[openai.Message]
@@ -62,14 +54,14 @@ class ChatAgentState(AgentState):
     agent_description="Ask questions about your code.",
     display_name="Chat",
 )
-@dataclass
+@dataclass(frozen=True)
 class ChatAgent(Agent):
     state: ChatAgentState
     agent_type: ClassVar[str] = "rift_chat"
     params_cls: ClassVar[Any] = RiftChatAgentParams
 
     @classmethod
-    async def create(cls, params: Dict[Any, Any], server: BaseLspServer):
+    async def create(cls, params: AgentParams, server: BaseLspServer):
         model = await server.ensure_chat_model()
 
         state = ChatAgentState(

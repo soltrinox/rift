@@ -4,23 +4,18 @@ import json
 import logging
 import os
 import uuid
-from dataclasses import dataclass, field, is_dataclass
-from typing import Any, ClassVar, Dict, Iterable, List, Literal, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
-import rift.agents.rift_chat as agentchat
 import rift.lsp.types as lsp
-from rift.agents import AGENT_REGISTRY, Agent, AgentRegistryResult, RunAgentParams
-
+from rift.agents import AGENT_REGISTRY, Agent, AgentRegistryResult, AgentParams
+from rift.agents.code_completion import CodeCompletionAgent, CodeCompletionAgentParams
 # from rift.agents.reverso import ReversoAgent, ReversoAgentParams
-from rift.agents.smol import SmolAgent, SmolAgentParams
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
-from rift.llm.openai_types import Message
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
-from rift.server.selection import RangeSet
-from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +62,7 @@ class LoadFilesParams:
 
 
 @dataclass
-class RunAgentResult:
+class CreateAgentResult:
     id: str
 
 
@@ -83,8 +78,8 @@ class AgentIdParams:
 
 
 class LspServer(BaseLspServer):
-    active_agents: dict[int, Agent]
-    active_chat_agents: dict[int, asyncio.Task]
+    active_agents: dict[str, Agent]
+    active_chat_agents: dict[str, asyncio.Task]
     model_config: ModelConfig
     completions_model: Optional[AbstractCodeCompletionProvider] = None
     chat_model: Optional[AbstractChatCompletionProvider] = None
@@ -118,7 +113,7 @@ class LspServer(BaseLspServer):
             language_map = json.loads(f)
 
         def find_matching_language(
-            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
+                filepath: str, language_map: Dict[str, List[Dict[str, str]]]
         ) -> Optional[str]:
             extension = filepath.split(".")[-1]  # Get the file extension
 
@@ -236,35 +231,35 @@ class LspServer(BaseLspServer):
             return config.create_chat()
 
     @rpc_method("morph/restart_agent")
-    async def on_restart_agent(self, params: AgentIdParams) -> RunAgentResult:
+    async def on_restart_agent(self, params: AgentIdParams) -> CreateAgentResult:
         logger.info("reset:")
         print("test")
         agent_id = params.id
         old_agent = self.active_agents[agent_id]
-        agent_params = old_agent.state.params
-        logger.info(agent_params)
+        old_params = old_agent.state.params
+        logger.info(old_agent.state.params)
         agent_type = old_agent.agent_type
         agent_id = old_agent.agent_id
-        return await self.on_run(
-            RunAgentParams(agent_type=agent_type, agent_params=agent_params, agent_id=agent_id)
+        return await self.on_create(
+            AgentParams(agent_type=agent_type, agent_id=agent_id, textDocument=old_params.textDocument,
+                        selection=old_params.selection, workspaceFolderPath=old_params.workspaceFolderPath)
         )
 
-    @rpc_method("morph/run")
-    async def on_run(self, params: RunAgentParams):
+    @rpc_method("morph/create_agent")
+    async def on_create(self, params: AgentParams):
         agent_type = params.agent_type
-        # lol
+        agent_id = params.agent_id or str(uuid.uuid4())[:8]
 
         # TODO: grab the params_cls and do of_dict(params_cls, agent_params)
-        agent_params = params.agent_params
-        agent_id = params.agent_id or str(uuid.uuid4())[:8]
-        if not params.agent_id:
-            agent_params["agent_id"] = agent_id
+        # agent_params = params.agent_params
+        # if not params.agent_id:
+        #     agent_params.agent_id = agent_id
 
         logger = logging.getLogger(__name__)
         agent_cls = AGENT_REGISTRY[agent_type]
-        logger.info(f"{agent_cls.params_cls=}\n\n{agent_params=}")
-        agent_params = ofdict(agent_cls.params_cls, agent_params)
-        agent = await agent_cls.create(params=agent_params, server=self)
+        # logger.info(f"{agent_cls.params_cls=}\n\n{agent_params=}")
+        # agent_params = ofdict(agent_cls.params_cls, agent_params)
+        agent = await agent_cls.create(params=params, server=self)
 
         self.active_agents[agent_id] = agent
         t = asyncio.create_task(agent.main())
@@ -274,7 +269,7 @@ class LspServer(BaseLspServer):
                 logger.info(f"[on_run] caught exception={fut.exception()=}")
 
         t.add_done_callback(main_callback)
-        return RunAgentResult(id=agent_id)
+        return CreateAgentResult(id=agent_id)
 
     # @rpc_method("morph/run_agent")
     # async def on_run_agent(self, params: CodeCompletionAgentParams):
@@ -290,7 +285,7 @@ class LspServer(BaseLspServer):
     #     # agent holds a reference to worker task
     #     agent.run()
     #     self.active_agents[agent.agent_id] = agent
-    #     return RunAgentResult(id=agent.agent_id)
+    #     return CreateAgentResult(id=agent.agent_id)
 
     @rpc_method("morph/cancel")
     async def on_cancel(self, params: AgentIdParams):

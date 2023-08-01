@@ -2,8 +2,6 @@ import asyncio
 import json
 import logging
 import os
-import random
-from asyncio import Future
 from concurrent import futures
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, List, Optional
@@ -14,33 +12,26 @@ import rift.util.file_diff as file_diff
 from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
     agent,
 )
-from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
-from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
 from rift.server.selection import RangeSet
 from rift.util.context import contextual_prompt, resolve_inline_uris
-from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass
+@dataclass(frozen=True)
 class SmolRunResult(AgentRunResult):
     ...
 
 
 # dataclass for representing the progress of the code completion agent
-@dataclass
+@dataclass(frozen=True)
 class SmolProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
@@ -52,13 +43,13 @@ class SmolProgress(AgentProgress):
 
 
 # dataclass for representing the parameters of the code completion agent
-@dataclass
-class SmolAgentParams(AgentRunParams):
+@dataclass(frozen=True)
+class SmolAgentParams(AgentParams):
     instructionPrompt: Optional[str] = None
 
 
 # dataclass for representing the state of the code completion agent
-@dataclass
+@dataclass(frozen=True)
 class SmolAgentState(AgentState):
     params: SmolAgentParams
     _done: bool = False
@@ -69,7 +60,7 @@ class SmolAgentState(AgentState):
     agent_description="Quickly generate a workspace with smol_dev.",
     display_name="Smol Developer",
 )
-@dataclass
+@dataclass(frozen=True)
 class SmolAgent(Agent):
     state: SmolAgentState
     agent_type: ClassVar[str] = "smol_dev"
@@ -83,6 +74,7 @@ class SmolAgent(Agent):
             raise Exception(
                 f"`smol_dev` not found. Try `pip install -e 'rift-engine[smol_dev]' from the repository root directory.`"
             )
+
         state = SmolAgentState(
             params=params,
             _done=False,
@@ -162,7 +154,7 @@ class SmolAgent(Agent):
 
             file_changes = []
 
-            @dataclass
+            @dataclass(frozen=True)
             class PBarUpdater:
                 pbars: Dict[int, Any] = field(default_factory=dict)
                 dones: Dict[int, Any] = field(default_factory=dict)

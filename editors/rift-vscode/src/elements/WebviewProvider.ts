@@ -2,10 +2,10 @@
 import * as vscode from "vscode";
 // import { MorphLanguageClient, RunChatParams } from "../client";
 // import * as client from '../client'
-import { getNonce } from "../getNonce";
+import {getNonce} from "../getNonce";
 import PubSub from "../lib/PubSub";
-import type { MorphLanguageClient } from "../client";
-import { ChatMessage, WebviewState } from "../types";
+import type {MorphLanguageClient} from "../client";
+import {ChatMessage, WebviewState} from "../types";
 
 // Provides a webview view that allows users to chat and interact with the extension.
 export class WebviewProvider implements vscode.WebviewViewProvider {
@@ -70,12 +70,12 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       content: string;
     }
 
-    interface RunAgentParams {
-      type: "runAgent";
+    interface CreateAgentMessage {
+      type: "createAgent";
       agent_type: string;
     }
 
-    interface ChatMessageParams {
+    interface ChatMessageMessage {
       type: "chatMessage";
       agent_type: string;
       agent_id: string;
@@ -83,45 +83,45 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       message: string;
       editorContentString: string;
     }
-    interface InputRequestParams {
+    interface InputRequestMessage {
       type: "inputRequest";
       agent_type: string;
       agent_id: string;
     }
 
-    interface ListAgentsParams {
+    interface ListAgentsMessage {
       type: "listAgents";
     }
-    interface RefreshStateParams {
+    interface RefreshStateMessage {
       type: "refreshState";
     }
-    interface FocusOmnibarParams {
+    interface FocusOmnibarMessage {
       type: "focusOmnibar";
     }
-    interface BlurOmnibarParams {
+    interface BlurOmnibarMessage {
       type: "blurOmnibar";
     }
 
-    interface RestartAgentParams {
+    interface RestartAgentMessage {
       type: "restartAgent";
       agentId: string;
     }
-    interface SendHasNotificationChangeParams {
+    interface SendHasNotificationChangeMessage {
       type: "sendHasNotificationChange";
       agentId: string;
       hasNotification: boolean;
     }
 
-    interface CancelAgentParams {
+    interface CancelAgentMessage {
       type: "cancelAgent";
       agentId: string;
     }
-    interface DeleteAgentParams {
+    interface DeleteAgentMessage {
       type: "deleteAgent";
       agentId: string;
     }
 
-    interface AcceptOrRejectParams {
+    interface AcceptOrRejectMessage {
       type: "acceptOrReject";
       agentId: string;
       doesAccept: boolean;
@@ -130,18 +130,18 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     type RegisteredMessageTypes =
       | SelectedAgentIdMessage
       | CopyTextMessage
-      | RunAgentParams
-      | ChatMessageParams
-      | ListAgentsParams
-      | InputRequestParams
-      | RestartAgentParams
-      | RefreshStateParams
-      | SendHasNotificationChangeParams
-      | BlurOmnibarParams
-      | FocusOmnibarParams
-      | CancelAgentParams
-      | DeleteAgentParams
-      | AcceptOrRejectParams;
+      | CreateAgentMessage
+      | ChatMessageMessage
+      | ListAgentsMessage
+      | InputRequestMessage
+      | RestartAgentMessage
+      | RefreshStateMessage
+      | SendHasNotificationChangeMessage
+      | BlurOmnibarMessage
+      | FocusOmnibarMessage
+      | CancelAgentMessage
+      | DeleteAgentMessage
+      | AcceptOrRejectMessage;
 
     type MessageType = RegisteredMessageTypes;
     // Handles messages received from the webview
@@ -164,16 +164,13 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
         case "listAgents":
           this.morph_language_client.refreshAvailableAgents();
           break;
-        // Handle 'runAgent' message
-        case "runAgent":
+        // Handle 'createAgent' message
+        case "createAgent":
           // console.log("Getting list of available agents")
           // let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
-          console.log("runAgent ran");
+          console.log("createAgent ran");
 
-          const runAgentParams = {
-            agent_type: message.agent_type,
-          };
-          await this.morph_language_client.run(runAgentParams);
+          await this.morph_language_client.create(message.agent_type);
           break;
 
         case "chatMessage": {

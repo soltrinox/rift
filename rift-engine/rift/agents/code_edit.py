@@ -1,42 +1,36 @@
 import asyncio
 import logging
-import random
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import ClassVar, Dict, Optional, Any
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
     agent,
 )
-from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeEditProvider, InsertCodeResult
-from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
+from rift.agents.abstract import AgentProgress  # AgentTask,
+from rift.llm.abstract import AbstractCodeEditProvider
 from rift.server.selection import RangeSet
-from rift.util.context import resolve_inline_uris
 from rift.util.TextStream import TextStream
+from rift.util.context import resolve_inline_uris
 
 logger = logging.getLogger(__name__)
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass
+@dataclass(frozen=True)
 class CodeEditRunResult(AgentRunResult):
     ...
 
 
 # dataclass for representing the progress of the code completion agent
-@dataclass
+@dataclass(frozen=True)
 class CodeEditProgress(AgentProgress):
     response: Optional[str] = None
     thoughts: Optional[str] = None
@@ -48,13 +42,12 @@ class CodeEditProgress(AgentProgress):
 
 
 # dataclass for representing the parameters of the code completion agent
-@dataclass
-class CodeEditAgentParams(AgentRunParams):
+@dataclass(frozen=True)
+class CodeEditAgentParams(AgentParams):
     ...
 
-
 # dataclass for representing the state of the code completion agent
-@dataclass
+@dataclass(frozen=True)
 class CodeEditAgentState(AgentState):
     model: AbstractCodeEditProvider
     document: lsp.TextDocumentItem
@@ -74,7 +67,7 @@ class CodeEditAgentState(AgentState):
     agent_description="Generate code edit for currently selected region.",
     display_name="Code Edit",
 )
-@dataclass
+@dataclass(frozen=True)
 class CodeEditAgent(Agent):
     state: CodeEditAgentState
     agent_type: ClassVar[str] = "code_edit"

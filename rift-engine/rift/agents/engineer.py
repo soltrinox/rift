@@ -3,37 +3,27 @@ import functools
 import logging
 import os
 import re
-import tempfile
 import time
-import types
-import uuid
 from asyncio import Future
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar, Dict, Optional
+from typing import ClassVar, Dict, Optional
 
 import typer
 
 import rift.lsp.types as lsp
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    AgentRunParams,
+    AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    RequestInputRequest,
-    RunAgentParams,
     agent,
 )
-from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import AbstractCodeCompletionProvider, InsertCodeResult
-from rift.lsp import LspServer as BaseLspServer
-from rift.lsp.document import TextDocumentItem
-from rift.server.selection import RangeSet
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.util import file_diff
-from rift.util.context import contextual_prompt, resolve_inline_uris
 from rift.util.TextStream import TextStream
+from rift.util.context import contextual_prompt, resolve_inline_uris
 
 SEEN = set()
 
@@ -43,7 +33,6 @@ STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
 SEEN = set()
 
 import json
-import threading
 
 import rift.llm.openai_types as openai
 
@@ -122,26 +111,24 @@ response_lock = asyncio.Lock()
 
 
 # dataclass for representing the result of the code completion agent run
-@dataclass
+@dataclass(frozen=True)
 class EngineerRunResult(AgentRunResult):
     ...
 
 
-@dataclass
-class EngineerAgentParams(AgentRunParams):
-    textDocument: lsp.TextDocumentIdentifier
+@dataclass(frozen=True)
+class EngineerAgentParams(AgentParams):
     instructionPrompt: Optional[str] = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class EngineerProgress(
     AgentProgress
 ):  # reports what tasks are active and responsible for reporting new tasks
     response: Optional[str] = None
     done_streaming: bool = False
 
-
-@dataclass
+@dataclass(frozen=True)
 class EngineerAgentState(AgentState):
     params: EngineerAgentParams
     messages: list[openai.Message]
@@ -154,7 +141,7 @@ class EngineerAgentState(AgentState):
     agent_description="Specify what you want it to build, the AI asks for clarification, and then builds it.",
     display_name="GPT Engineer",
 )
-@dataclass
+@dataclass(frozen=True)
 class EngineerAgent(Agent):
     state: EngineerAgentState
     agent_type: ClassVar[str] = "engineer"
@@ -253,7 +240,6 @@ class EngineerAgent(Agent):
         #     archive(dbs)
 
         steps = STEPS[steps_config]
-        from concurrent import futures
 
         # Add all steps to task list
         steps = STEPS[steps_config]
@@ -340,7 +326,7 @@ class EngineerAgent(Agent):
 
         except ImportError:
             raise Exception(
-                "`gpt_engineer` not found. Try `pip install -e 'rift-engine[gpt-engineer]' from the repository root directory."
+                "`gpt_engineer` not found. Try `pip install -e \"rift-engine[gpt-engineer]\"` from the repository root directory."
             )
 
         state = EngineerAgentState(

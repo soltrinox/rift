@@ -9,11 +9,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
+from pydantic import BaseModel
+
 import rift.lsp.types as lsp
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
-from rift.lsp import rpc_method
 
 logger = logging.getLogger(__name__)
 
@@ -31,23 +32,23 @@ class Status(Enum):
     rejected = "rejected"
 
 
-@dataclass
+@dataclass(frozen=True)
 class RequestInputRequest:
     msg: str
     place_holder: str = ""
 
 
-@dataclass
+@dataclass(frozen=True)
 class RequestInputResponse:
     response: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class RequestChatRequest:
     messages: List[ChatMessage]
 
 
-@dataclass
+@dataclass(frozen=True)
 class RequestChatResponse:
     message: ChatMessage  # TODO make this richer
 
@@ -55,22 +56,17 @@ class RequestChatResponse:
 AgentTaskId = str
 
 
-@dataclass
-class AgentRunParams(ABC):
-    agent_id: str
-    textDocument: lsp.TextDocumentIdentifier
-    selection: Optional[lsp.Selection]
-    workspaceFolderPath: str
-
-
-@dataclass
-class RunAgentParams:
+@dataclass(frozen=True)
+class AgentParams(BaseModel):
     agent_type: str
-    agent_params: Any
-    agent_id: Optional[str]
+    agent_id: str
+    textDocument: Optional[lsp.TextDocumentIdentifier]
+    selection: Optional[lsp.Selection]
+    position: Optional[lsp.Position]
+    workspaceFolderPath: Optional[str]
+    # agent_id: Optional[str] = None
 
-
-@dataclass
+@dataclass(frozen=True)
 class AgentProgress:
     agent_type: Optional[str] = None
     agent_id: Optional[str] = None
@@ -78,23 +74,23 @@ class AgentProgress:
     payload: Optional[Any] = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class AgentRunResult(ABC):
     """
     Abstract base class for AgentRunResult
     """
 
 
-@dataclass
+@dataclass(frozen=True)
 class AgentState(ABC):
     """
     Abstract base class for AgentState. Always contains a copy of the params used to create the Agent.
     """
 
-    params: AgentRunParams
+    params: AgentParams
 
 
-@dataclass
+@dataclass(frozen=True)
 class Agent:
     """
     Agent is the base class for all agents.
@@ -112,7 +108,7 @@ class Agent:
     agent_id: Optional[str] = None
     tasks: List[AgentTask] = field(default_factory=list)
     task: Optional[AgentTask] = None
-    params_cls: ClassVar[Any] = AgentRunParams
+    params_cls: Type[AgentParams] = AgentParams
 
     def get_display(self):
         """Get agent display information"""
@@ -123,7 +119,7 @@ class Agent:
         return f"<{self.agent_type}> {self.agent_id}"
 
     @classmethod
-    async def create(cls, params: RunAgentParams, server: BaseLspServer, *args, **kwargs):
+    async def create(cls, params: Type[AgentParams], server: BaseLspServer):
         """
         Factory function which is responsible for constructing the agent's state.
         """
@@ -284,7 +280,7 @@ class Agent:
         ...
 
 
-@dataclass
+@dataclass(frozen=True)
 class AgentRegistryItem:
     """
     Stored in the registry by the @agent decorator, created upon Rift initialization.
@@ -299,7 +295,7 @@ class AgentRegistryItem:
             self.display_name = self.agent_type
 
 
-@dataclass
+@dataclass(frozen=True)
 class AgentRegistryResult:
     """
     To be returned as part of a list of available agent workflows to the language server client.
@@ -311,7 +307,7 @@ class AgentRegistryResult:
     agent_icon: Optional[str] = None  # svg icon information
 
 
-@dataclass
+@dataclass(frozen=True)
 class AgentRegistry:
     """
     AgentRegistry is an organizational class that is used to track all agents in one central location.
@@ -333,7 +329,7 @@ class AgentRegistry:
         return self.get_agent(key)
 
     def register_agent(
-        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
+            self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
     ) -> None:
         """
         Registers new agent into the registry.
