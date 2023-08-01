@@ -38,8 +38,8 @@ class ChatRunResult(AgentRunResult):
 
 
 @dataclass
-class ChatAgentParams(AgentRunParams):
-    position: Optional[lsp.Position]
+class RiftChatAgentParams(AgentRunParams):
+    ...
 
 
 @dataclass
@@ -55,7 +55,7 @@ class ChatAgentState(AgentState):
     model: AbstractChatCompletionProvider
     messages: list[openai.Message]
     document: lsp.TextDocumentItem
-    params: ChatAgentParams
+    params: RiftChatAgentParams
 
 
 @agent(
@@ -66,7 +66,7 @@ class ChatAgentState(AgentState):
 class ChatAgent(Agent):
     state: ChatAgentState
     agent_type: ClassVar[str] = "rift_chat"
-    params_cls: ClassVar[Any] = ChatAgentParams
+    params_cls: ClassVar[Any] = RiftChatAgentParams
 
     @classmethod
     async def create(cls, params: Dict[Any, Any], server: BaseLspServer):
