@@ -239,17 +239,17 @@ class LspServer(BaseLspServer):
                         selection=old_params.selection, workspaceFolderPath=old_params.workspaceFolderPath)
         )
 
-    @rpc_method("morph/create_agent") # TODO: CHANGE FROM ANY AFTER WE RIP OUT THE JSONRPC LIB AND REPLACE IT WITH A REAL ONE
-    async def on_create(self, params_with_no_id_treated_as_a_shitty_dict: Any):
-        agent_type = params_with_no_id_treated_as_a_shitty_dict['agent_type']
+    @rpc_method("morph/create_agent")
+    async def on_create(self, params_as_dict: Any):
+        agent_type = params_as_dict['agent_type']
         agent_id = str(uuid.uuid4())[:8]
-        params_with_no_id_treated_as_a_shitty_dict['agent_id'] = agent_id
+        params_as_dict['agent_id'] = agent_id
 
         logger = logging.getLogger(__name__)
         agent_cls = AGENT_REGISTRY[agent_type]
 
         logger.info(f"[on_create] {agent_cls.params_cls=}")
-        params_with_id = ofdict(agent_cls.params_cls, params_with_no_id_treated_as_a_shitty_dict)
+        params_with_id = ofdict(agent_cls.params_cls, params_as_dict)
         agent = await agent_cls.create(params=params_with_id, server=self)
 
         self.active_agents[agent_id] = agent
@@ -261,22 +261,6 @@ class LspServer(BaseLspServer):
 
         t.add_done_callback(main_callback)
         return CreateAgentResult(id=agent_id)
-
-    # @rpc_method("morph/run_agent")
-    # async def on_run_agent(self, params: CodeCompletionAgentParams):
-    #     model = await self.ensure_completions_model()
-    #     try:
-    #         agent = CodeCompletionAgent(params, model=model, server=self)
-    #     except LookupError:
-    #         # [hack] wait a bit for textDocumentChanged notification to come in
-    #         logger.debug("request too early: waiting for textDocumentChanged notification")
-    #         await asyncio.sleep(3)
-    #         agent = CodeCompletionAgent(params, model=model, server=self)
-    #     logger.debug(f"starting agent {agent.agent_id}")
-    #     # agent holds a reference to worker task
-    #     agent.run()
-    #     self.active_agents[agent.agent_id] = agent
-    #     return CreateAgentResult(id=agent.agent_id)
 
     @rpc_method("morph/cancel")
     async def on_cancel(self, params: AgentIdParams):
@@ -309,8 +293,3 @@ class LspServer(BaseLspServer):
             self.active_agents.pop(params.id, None)
         else:
             logger.error(f"no agent with id {params.id}")
-
-    @rpc_method("hello_world")
-    def on_hello(self, params):
-        logger.debug("hello world")
-        return "hello world"
