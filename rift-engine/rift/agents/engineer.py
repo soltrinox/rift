@@ -326,7 +326,6 @@ class EngineerAgent(Agent):
 
     @classmethod
     async def create(cls, params: EngineerAgentParams, server):
-
         try:
             import gpt_engineer
             import gpt_engineer.chat_to_files
@@ -336,11 +335,12 @@ class EngineerAgent(Agent):
             from gpt_engineer.db import DB, DBs, archive
             from gpt_engineer.learning import collect_consent
             from gpt_engineer.steps import STEPS
-            from gpt_engineer.steps import Config as StepsConfig    
+            from gpt_engineer.steps import Config as StepsConfig
 
         except ImportError:
-            raise Exception("`gpt_engineer` not found. Try `pip install -e 'rift-engine[gpt-engineer]' from the repository root directory.")
-
+            raise Exception(
+                "`gpt_engineer` not found. Try `pip install -e 'rift-engine[gpt-engineer]' from the repository root directory."
+            )
 
         from rift.util.ofdict import ofdict
 

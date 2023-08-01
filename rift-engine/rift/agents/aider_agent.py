@@ -1,5 +1,6 @@
 import re
 from concurrent import futures
+
 try:
     import aider
     import aider.coders
@@ -21,14 +22,13 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 from typing import Any, AsyncIterable, ClassVar, Dict, List, Literal, Optional, Type
 
-import rift.lsp.types as lsp
-import rift.util.file_diff as file_diff
-from rift.util.ofdict import ofdict
-
 from rich.text import Text
 
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
+import rift.lsp.types as lsp
+import rift.util.file_diff as file_diff
+from rift.util.ofdict import ofdict
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -43,12 +43,14 @@ class AiderRunResult(agent.AgentRunResult):
     This class extends from the base class `AgentRunResult` defined in the `rift.agents.abstract` module.
     """
 
+
 @dataclass
 class AiderAgentParams(agent.AgentRunParams):
     """
     A data class that holds parameters for running an Aider agent.
     This class extends from the base class `AgentRunParams` defined in the `rift.agents.abstract` module.
     """
+
 
 @dataclass
 class AiderAgentState(agent.AgentState):
@@ -58,6 +60,7 @@ class AiderAgentState(agent.AgentState):
     - params (AiderAgentParams) : The parameters associated with the Aider agent.
     - messages (List[openai.Message]) : A list of messages communicated with the openai API during the agent's run.
     """
+
     params: AiderAgentParams
     messages: list[openai.Message]
 
@@ -155,7 +158,7 @@ class Aider(agent.Agent):
                 response_stream.feed_data("感")
                 await asyncio.sleep(0.1)
                 await response_lock.acquire()
-                # logger.info("acquired response lock")                
+                # logger.info("acquired response lock")
                 await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
                 # logger.info(f"{self.RESPONSE=}")
                 self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
@@ -168,7 +171,9 @@ class Aider(agent.Agent):
                     agent.RequestChatRequest(messages=self.state.messages)
                 )
                 try:
-                    resp = re.sub(f'uri://{self.state.params.workspaceFolderPath}/'r'(\S+)', r'`\1`', resp)
+                    resp = re.sub(
+                        f"uri://{self.state.params.workspaceFolderPath}/" r"(\S+)", r"`\1`", resp
+                    )
                 except:
                     pass
                 self.state.messages.append(openai.Message.user(content=resp))
@@ -207,7 +212,6 @@ class Aider(agent.Agent):
 
         def get_input(self, root, rel_fnames, addable_rel_fnames, commands):
             try:
-
                 rel_fnames = list(rel_fnames)
                 show = None
                 if len(rel_fnames) > 0:
@@ -298,7 +302,6 @@ class Aider(agent.Agent):
 
         aider.io.InputOutput.tool_output = tool_output
 
-
         def show_send_output_stream(self, completion, silent):
             for chunk in completion:
                 if chunk.choices[0].finish_reason == "length":
@@ -324,7 +327,6 @@ class Aider(agent.Agent):
 
                 if silent:
                     continue
-
 
                 send_chat_update_wrapper(text)
 
