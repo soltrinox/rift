@@ -147,7 +147,7 @@ class Aider(agent.Agent):
 
             loop.call_soon_threadsafe(_worker)
 
-        def request_chat_wrapper(prompt: Optional[str] = None, loop=None):
+        def request_chat_wrapper(prompt: Optional[str] = None):
             send_chat_update_wrapper()
             asyncio.set_event_loop(loop)
             async def request_chat():
@@ -180,7 +180,7 @@ class Aider(agent.Agent):
             elif self.yes is False:
                 res = "no"
             else:
-                res = request_chat_wrapper(str(question) + " (y/n)", loop=loop)
+                res = request_chat_wrapper(str(question) + " (y/n)")
                 # res = "yes"
 
             hist = f"{question.strip()} {res.strip()}"
@@ -217,7 +217,7 @@ class Aider(agent.Agent):
                         "input": self.input,
                         "output": self.output,
                     }
-                    line = request_chat_wrapper(show, loop)
+                    line = request_chat_wrapper(show)
 
                     if line and line[0] == "{" and not multiline_input:
                         multiline_input = True
@@ -248,7 +248,7 @@ class Aider(agent.Agent):
             elif self.yes is False:
                 res = "no"
             else:
-                res = request_chat_wrapper(question, loop)
+                res = request_chat_wrapper(question)
 
             hist = f"{question.strip()} {res.strip()}"
             self.append_chat_history(hist, linebreak=True, blockquote=True)
