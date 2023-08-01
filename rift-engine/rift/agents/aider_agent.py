@@ -1,3 +1,4 @@
+from concurrent import futures
 try:
     import aider
     import aider.coders
@@ -8,7 +9,7 @@ try:
 except ImportError:
     raise Exception(
         "`aider` not found. Try `pip install -e 'rift-engine[aider]'` from the Rift root directory."
-    )        
+    )
 
 import asyncio
 import dataclasses
@@ -166,12 +167,8 @@ class Aider(agent.Agent):
                 response_lock.release()
                 return resp
 
-            # logger.info("[request_chat_wrapper] creating task")
             t = asyncio.run_coroutine_threadsafe(request_chat(), loop)
-            # logger.info("[request_chat_wrapper] created task")
-            while not t.done():
-                # print("sleeping")
-                time.sleep(1)
+            futures.wait([t])
             return t.result()
 
         def confirm_ask(self, question, default="y"):
@@ -352,8 +349,6 @@ class Aider(agent.Agent):
                     time.sleep(0.25)
                     continue
                 break
-
-        from concurrent import futures
 
         with futures.ThreadPoolExecutor(1) as pool:
             # async def _aider_main():
