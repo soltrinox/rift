@@ -19,7 +19,7 @@ type FileChipOptions = {
     suggestion: Omit<SuggestionOptions, "editor">
 }
 
-export const FileChip = Mention.extend<FileChipOptions>({
+export const FileChip = Node.create<FileChipOptions>({
   name: "filechip",
 
   addOptions() {
@@ -146,6 +146,7 @@ export const FileChip = Mention.extend<FileChipOptions>({
     for (let attribute in attributesMap) {
         span.setAttribute(attribute, attributesMap[attribute])
     }
+    span.classList.add('inline-flex')
     span.append(createFileSvg())
     span.append(document.createTextNode(`${node.attrs.fileName}`))
 
