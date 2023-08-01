@@ -3,7 +3,7 @@ This module provides a minimal implementation of the Agent API defined in rift.a
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, ClassVar
 
 import rift.llm.openai_types as openai
 from rift.agents.abstract import Agent, AgentRunParams, AgentState, RequestChatRequest, agent
@@ -38,7 +38,8 @@ class TestAgent(Agent):
     """
 
     state: TestAgentState
-    agent_type = "TestAgent"
+    agent_type: str = "test_agent"
+    params_cls: ClassVar[Any] = TestAgentParams
 
     async def run(self):
         # Send an initial update

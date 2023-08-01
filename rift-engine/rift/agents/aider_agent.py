@@ -69,16 +69,7 @@ class AiderAgentState(agent.AgentState):
 @dataclass
 class Aider(agent.Agent):
     agent_type: str = "aider"
-    run_params: Type[AiderAgentParams] = AiderAgentParams
-    splash: Optional[
-        str
-    ] = """
-   __    ____  ____  ____  ____
-  /__\  (_  _)(  _ \( ___)(  _ \\
- /(__)\  _)(_  )(_) ))__)  )   /
-(__)(__)(____)(____/(____)(_)\_)
-
-"""
+    params_cls: ClassVar[Any] = AiderAgentParams
 
     @classmethod
     async def create(cls, params: AiderAgentParams, server):
@@ -333,8 +324,6 @@ class Aider(agent.Agent):
         aider.coders.base_coder.Coder.show_send_output_stream = show_send_output_stream
 
         ##### PATCHES
-
-        params = self.run_params
         import threading
 
         file_changes_lock = threading.Lock()

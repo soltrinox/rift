@@ -158,6 +158,7 @@ class EngineerAgentState(AgentState):
 class EngineerAgent(Agent):
     state: EngineerAgentState
     agent_type: ClassVar[str] = "engineer"
+    params_cls: ClassVar[Any] = EngineerAgentParams
 
     async def _main(
         self,

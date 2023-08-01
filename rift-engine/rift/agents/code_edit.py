@@ -3,7 +3,7 @@ import logging
 import random
 from asyncio import Future
 from dataclasses import dataclass, field
-from typing import ClassVar, Dict, Optional
+from typing import ClassVar, Dict, Optional, Any
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
@@ -78,6 +78,7 @@ class CodeEditAgentState(AgentState):
 class CodeEditAgent(Agent):
     state: CodeEditAgentState
     agent_type: ClassVar[str] = "code_edit"
+    params_cls: ClassVar[Any] = CodeEditAgentParams
 
     @classmethod
     async def create(cls, params: CodeEditAgentParams, server):

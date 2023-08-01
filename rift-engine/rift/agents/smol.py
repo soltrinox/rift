@@ -73,6 +73,7 @@ class SmolAgentState(AgentState):
 class SmolAgent(Agent):
     state: SmolAgentState
     agent_type: ClassVar[str] = "smol_dev"
+    params_cls: ClassVar[Any] = SmolAgentParams
 
     @classmethod
     async def create(cls, params: SmolAgentParams, server):

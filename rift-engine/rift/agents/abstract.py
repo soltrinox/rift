@@ -112,7 +112,7 @@ class Agent:
     agent_id: Optional[str] = None
     tasks: List[AgentTask] = field(default_factory=list)
     task: Optional[AgentTask] = None
-    params_cls: Type[AgentRunParams] = AgentRunParams
+    params_cls: ClassVar[Any] = AgentRunParams
 
     def get_display(self):
         """Get agent display information"""

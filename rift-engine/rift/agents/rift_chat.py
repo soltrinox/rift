@@ -66,6 +66,7 @@ class ChatAgentState(AgentState):
 class ChatAgent(Agent):
     state: ChatAgentState
     agent_type: ClassVar[str] = "rift_chat"
+    params_cls: ClassVar[Any] = ChatAgentParams
 
     @classmethod
     async def create(cls, params: Dict[Any, Any], server: BaseLspServer):
