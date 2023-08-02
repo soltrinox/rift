@@ -47,6 +47,7 @@
     observer.disconnect();
   });
 
+state.subscribe(s => console.log('new state: ', s))
 </script>
 
 <div

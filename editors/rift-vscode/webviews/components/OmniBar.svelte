@@ -105,7 +105,10 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
     console.log($state.agents[$state.selectedAgentId].chatHistory)
 
     let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory
-    appendedMessages?.push({ role: "user", content: editorContent, editorContentString: editor?.getHTML() })
+    if(!editor) throw new Error("no editor in sendMEssage() function in OmniBar.svelte")
+    const HTML = editor.getHTML()
+
+    appendedMessages.push({ role: "user", content: editorContent, editorContentString: HTML })
     console.log("appendedMessages")
     console.log(appendedMessages)
 
@@ -117,9 +120,9 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
       message: editorContent,
-      editorContentString: editor?.getHTML(),
+      editorContentString: HTML,
     })
-    console.log("editorContentString for testing:", editor?.getHTML())
+    console.log("editorContentString for testing:", HTML)
 
     // clint.
     // console.log("updating state...");
@@ -281,7 +284,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
         StarterKit,
         FileChip.configure({
           HTMLAttributes: {
-            class: "my-custom-class",
+            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
           },
           suggestion
         }),

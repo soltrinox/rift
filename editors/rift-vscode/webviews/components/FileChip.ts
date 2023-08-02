@@ -146,7 +146,7 @@ export const FileChip = Node.create<FileChipOptions>({
     for (let attribute in attributesMap) {
         span.setAttribute(attribute, attributesMap[attribute])
     }
-    span.classList.add('inline-flex')
+    span.classList.add('bg-[var(--vscode-editor-background)]', 'text-xs', 'inline-flex', 'items-center', 'h-[1.5rem]')
     span.append(createFileSvg())
     span.append(document.createTextNode(`${node.attrs.fileName}`))
 

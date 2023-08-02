@@ -182,11 +182,17 @@ export interface AgentIdParams {
 }
 
 export type ChatMessage = {
-  role: "user" | "assistant";
+  role: "assistant";
   content: string;
   name?: null | string | undefined;
-  editorContentString?: string; //there on user
-};
+} | ChatMessageUser
+
+export type ChatMessageUser = {
+  role: "user"
+  content: string
+  name?: null | string | undefined;
+  editorContentString: string //there on user
+}
 
 export interface AgentChatRequest {
   messages: ChatMessage[];
