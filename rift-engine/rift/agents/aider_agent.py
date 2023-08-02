@@ -14,7 +14,9 @@ except ImportError:
         '`aider` not found. Try `pip install -e "rift-engine[aider]"` from the Rift root directory.'
     )
 
-if aider.__version__ != "0.9.1-morph":
+try:
+    aider.__author__
+except AttributeError:
     raise Exception(
         'Wrong version of `aider` installed. Please try `pip install -e "rift-engine[aider]" --force-reinstall` from the Rift root directory.'
     )
