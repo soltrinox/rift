@@ -56,6 +56,7 @@ export class WebviewAgent {
   isStreaming: boolean = false;
   streamingText: string = "";
   doesShowAcceptRejectBar: boolean = false;
+  status: CodeLensStatus = "running";
 
   constructor(
     type: string,

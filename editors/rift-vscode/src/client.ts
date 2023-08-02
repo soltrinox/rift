@@ -896,6 +896,10 @@ export class MorphLanguageClient
     this.refreshNonGitIgnoredFiles();
   }
 
+  sendAgentStatusChange(agentId: string, status: CodeLensStatus) {
+    this.webviewState.update(state => ({...state, agents: {...state.agents, [agentId]: {...state.agents[agentId], status}}}))
+  }
+
   focusOmnibar() {
     this.webviewState.update((state) => {
       return {
@@ -947,6 +951,9 @@ class Agent {
     });
     this.onStatusChangeEmitter = new vscode.EventEmitter<CodeLensStatus>();
     this.onStatusChange = this.onStatusChangeEmitter.event;
+    this.onStatusChange((status: CodeLensStatus) => {
+      this.morph_language_client.sendAgentStatusChange(this.id, status)
+    })
   }
 
   async handleInputRequest(params: AgentInputRequest) {

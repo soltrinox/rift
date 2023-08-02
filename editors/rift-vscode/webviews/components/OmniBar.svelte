@@ -88,8 +88,12 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
   function sendMessage() {
     console.log("sending message")
+    if($state.agents[$state.selectedAgentId].status === 'done' || $state.agents[$state.selectedAgentId].status === 'error') {
+      console.log('cannot send message while agent has done or error status')
+      return
+    }
     if ($state.agents[$state.selectedAgentId].isStreaming) {
-      console.log("cannot send messages while ai is responding")
+      console.log("cannot send messages while agent is responding")
       return
     }
 
