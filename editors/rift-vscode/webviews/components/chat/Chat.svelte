@@ -61,7 +61,7 @@ state.subscribe(s => console.log('new state: ', s))
   {:else}
     {#each $state.agents[$state.selectedAgentId]?.chatHistory ?? [] as item}
       {#if item.role == "user"}
-        <UserInput editorContentString={item.editorContentString} />
+        <UserInput value={item.content} />
       {:else}
         <Response value={item.content} />
       {/if}

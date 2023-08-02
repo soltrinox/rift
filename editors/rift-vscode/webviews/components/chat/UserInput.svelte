@@ -6,40 +6,48 @@
   import Placeholder from "@tiptap/extension-placeholder"
   import { FileChip } from "../FileChip"
   
-  export let editorContentString: string = "";
 
-  // export let message:string 
+  export let value:string 
 
   // TODO Pass in message and add parsing function???
 
 
   let textarea: HTMLDivElement; //used to be a textarea
-  // let editor: Editor | undefined
+  let editor: Editor | undefined
   
-  // let editor: Editor | undefined
 
-  // onMount(() => {
+/// "random text here [uri](path/to/example.ts) something else here"
+// returns "random text here <span type="filechip" data-fullpath="path/to/example.ts" data-filename="example.ts"></span> something else here"
+  function parseProseMirrorHTMLfromMessageContent(message:string) {
+
+  }
+  
+  const editorContent = parseProseMirrorHTMLfromMessageContent(value)
+  console.log('editorContent: ', editorContent)
+
+  onMount(() => {
 
 
-//     editor = new Editor({
-//       element: textarea,
-//       extensions: [
-//         StarterKit,
-//         FileChip,
-//       ],
-//       editable: false,
-//       editorProps: {
-//         attributes: {
-//           class: "outline-none focus:outline-none max-h-40 overflow-auto",
-//         },
-//       },
-//       content: `<span data-type="filechip" data-name="example.ts" data-fullpath="path/to/example.ts"></span>`,
-//       onTransaction: (props) => {
-//         // force re-render so `editor.isActive` works as expected
-//         editor = editor
-//       },
-//     })
-//   })
+    editor = new Editor({
+      element: textarea,
+      extensions: [
+        StarterKit,
+        FileChip,
+      ],
+      editable: false,
+      editorProps: {
+        attributes: {
+          class: "outline-none focus:outline-none max-h-40 overflow-auto",
+        },
+      },
+      // content: `<span data-type="filechip" data-name="example.ts" data-fullpath="path/to/example.ts"></span>`,
+      content: editorContent,
+      onTransaction: (props) => {
+        // force re-render so `editor.isActive` works as expected
+        editor = editor
+      },
+    })
+  })
 
 </script>
 
@@ -51,7 +59,7 @@
   </div>
   <div class="text-md flex flex-row items-center">
     <div
-      bind:innerHTML={editorContentString}
+      bind:this={textarea}
       contenteditable="false"
       >
     </div>
