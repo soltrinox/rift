@@ -9,9 +9,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
-from pydantic import BaseModel
-
 import rift.lsp.types as lsp
+from pydantic import BaseModel
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
@@ -125,43 +124,6 @@ class Agent:
         """
         ...
 
-    async def main(self):
-        """
-        The main method called by the LSP server to handle method `morph/run`.
-
-        This method:
-            - Creates a task to be run
-            - Logs the status of the running task
-            - Awaits the result of the running task
-            - Sends progress of the task
-            - Handles cancellation and exception situations
-
-        Raises:
-            asyncio.CancelledError: If the task being run was cancelled.
-        """
-        # Create a task to run with assigned description and run method
-        self.task = AgentTask(description=self.agent_type, task=self.run)
-
-        try:
-            # Log the status of the running task
-            logger.info(f"{self} running")
-
-            # Await to get the result of the task
-            result_t = asyncio.create_task(self.task.run())
-            result_t.add_done_callback(lambda fut: asyncio.run_coroutine_threadsafe(self.send_update("finished"), loop=asyncio.get_running_loop()))
-            await self.send_progress()
-            result = await result_t
-
-            # Send the progress of the task
-            await self.send_progress()
-            return result
-        except asyncio.CancelledError as e:
-            # Log information if task is cancelled
-            logger.info(f"{self} cancelled: {e}")
-
-            # Call the cancel method if a CancelledError exception happens
-            await self.cancel()
-
     async def run(self) -> AgentRunResult:
         """
         Run the agent.
@@ -175,11 +137,29 @@ class Agent:
         """
         Register a subtask.
         """
+        # Capture the current loop context
+        try:
+            loop = asyncio.get_running_loop()
+            
+            # On completion of the task we call the callable object done_cb with the provided arguments
+            # done_cb tries to send_progress() using the captured loop context irrespective of where it's called from.
+            def done_cb(*args):
+                asyncio.run_coroutine_threadsafe(self.send_progress(), loop=loop)
+            kwargs["done_callback"] = done_cb
+        # Pass if loop context doesn't exist(not running any asynchronous code)
+        except:
+            pass
+
+        # Create AgentTask using provided arguments
         task = AgentTask(*args, **kwargs)
+
+        # Append the created task in the task list
         self.tasks.append(task)
+
+        # Return the created task
         return task
 
-    async def cancel(self, msg: Optional[str] = None, doesSendProgress=True):
+    async def cancel(self, msg: Optional[str] = None, send_progress=True):
         """
         Cancel all tasks and update progress. Assumes that `Agent.main()` has been called and that the main task has been created.
         """
@@ -190,22 +170,30 @@ class Agent:
         for task in self.tasks:
             if task is not None:
                 task.cancel()
-        if doesSendProgress:
+        if send_progress:
             await self.send_progress()
+
+    async def done(self):
+        for task in self.tasks:
+            if task is not None:
+                task.cancel()
+                task._done = True
+        await self.send_progress()
 
     async def request_input(self, req: RequestInputRequest) -> str:
         """
         Prompt the user for more information.
         """
         try:
+            # request user responses/data from server
             response = await self.server.request(
                 f"morph/{self.agent_type}_{self.agent_id}_request_input", req
             )
             return response["response"]
-        except Exception as e:
-            logger.info(f"Caught exception in `request_input`, cancelling Agent.run(): {e}")
-            await self.cancel()
-            raise asyncio.CancelledError
+        except Exception as e:# return the response from the user
+            return response["response"]
+        # exception handling block
+
 
     async def send_update(self, msg: str):
         """
@@ -219,10 +207,14 @@ class Agent:
 
     async def request_chat(self, req: RequestChatRequest) -> str:
         """Send chat request"""
-        response = await self.server.request(
-            f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
-        )
-        return response["message"]
+        try:
+            response = await self.server.request(
+                f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
+            )
+            return response["message"]
+        except Exception as exception:
+            logger.info(f"[request_chat] failed, caught {exception=}")
+            raise exception
 
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
         """
@@ -276,9 +268,47 @@ class Agent:
         # Notify the server about the agent's progress
         await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_progress", progress)
 
-    async def send_result(self) -> ...:
-        """Send agent result"""
-        ...
+    async def main(self):
+        """
+        The main method called by the LSP server to handle method `morph/run`.
+
+        This method:
+            - Creates a task to be run
+            - Logs the status of the running task
+            - Awaits the result of the running task
+            - Sends progress of the task
+            - Handles cancellation and exception situations
+
+        Raises:
+            asyncio.CancelledError: If the task being run was cancelled.
+        """
+        # Create a task to run with assigned description and run method
+        self.task = AgentTask(description=self.agent_type, task=self.run)
+
+        try:
+            # Log the status of the running task
+            logger.info(f"{self} running")
+
+            # Await to get the result of the task
+            result_t = asyncio.create_task(self.task.run())
+            result_t.add_done_callback(
+                lambda fut: asyncio.run_coroutine_threadsafe(
+                    self.send_update("finished"), loop=asyncio.get_running_loop()
+                )
+            )
+            await self.send_progress()
+            result = await result_t
+            # Send the progress of the task
+            await self.send_progress()
+            await self.done()
+            await self.send_progress()
+            return result
+        except asyncio.CancelledError as e:
+            # Log information if task is cancelled
+            logger.info(f"{self} cancelled: {e}")
+
+            # Call the cancel method if a CancelledError exception happens
+            await self.cancel()        
 
 
 @dataclass

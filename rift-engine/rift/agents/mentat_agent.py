@@ -1,25 +1,25 @@
+import asyncio
+import logging
 import re
-from concurrent import futures
 import time
+from concurrent import futures
 from dataclasses import dataclass, field
 from typing import ClassVar, Optional, Type
-import asyncio
-
-import logging
 
 logger = logging.getLogger(__name__)
 
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
-import rift.util.file_diff as file_diff
 import rift.lsp.types as lsp
-from rift.util.TextStream import TextStream
-from mentat.config_manager import ConfigManager
-from mentat.llm_api import CostTracker
-from mentat.conversation import Conversation
+import rift.util.file_diff as file_diff
 from mentat.app import get_user_feedback_on_changes, warn_user_wrong_files
 from mentat.code_file_manager import CodeFileManager
+from mentat.config_manager import ConfigManager
+from mentat.conversation import Conversation
+from mentat.llm_api import CostTracker
 from mentat.user_input_manager import UserInputManager
+from rift.util.TextStream import TextStream
+
 
 @dataclass
 class MentatAgentParams(agent.AgentParams):
@@ -32,6 +32,7 @@ class MentatAgentState(agent.AgentState):
     messages: list[openai.Message]
     response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _response_buffer: str = ""
+
 
 @dataclass
 class MentatRunResult(agent.AgentRunResult):
@@ -83,7 +84,7 @@ class Mentat(agent.Agent):
             await asyncio.sleep(0.1)
             await self._run_chat_thread(after)
         except Exception as e:
-            logger.info(f"[_run_chat_thread] caught exception={e}, exiting")    
+            logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
 
     async def run(self) -> MentatRunResult:
         response_stream = TextStream()
@@ -141,8 +142,10 @@ class Mentat(agent.Agent):
         cost_tracker = CostTracker()
         conv = Conversation(config, cost_tracker)
         user_input_manager = UserInputManager(config)
+
         def compute_paths():
             return []  # TODO
+
         paths = compute_paths()
         code_file_manager = CodeFileManager(paths, user_input_manager, config)
 
@@ -169,4 +172,3 @@ class Mentat(agent.Agent):
             else:
                 # If there are no code changes, we flag that we need a new user request.
                 need_user_request = True
-                

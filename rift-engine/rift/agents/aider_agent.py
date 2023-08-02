@@ -28,15 +28,15 @@ from dataclasses import dataclass, field
 from pathlib import PurePath
 from typing import Any, ClassVar, List, Optional
 
-from rich.text import Text
-
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
+from rich.text import Text
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class AiderRunResult(agent.AgentRunResult):
@@ -134,10 +134,10 @@ class Aider(agent.Agent):
         loop = asyncio.get_running_loop()
 
         def send_chat_update_wrapper(prompt: str = "感", end="", eof=False):
-            def _worker():
+            async def _worker():
                 response_stream.feed_data(prompt)
 
-            loop.call_soon_threadsafe(_worker)
+            asyncio.run_coroutine_threadsafe(_worker(), loop=loop)
 
         def request_chat_wrapper(prompt: Optional[str] = None):
             async def request_chat():
@@ -177,7 +177,7 @@ class Aider(agent.Agent):
             result = t.result()
             return result
 
-        ##### PATCHES        
+        ##### PATCHES
 
         def confirm_ask(self, question, default="y"):
             # print(f"[confirm_ask] question={question}")
@@ -316,17 +316,14 @@ class Aider(agent.Agent):
                     text = chunk.choices[0].delta.content
                     if text:
                         self.partial_response_content += text
+                        send_chat_update_wrapper(text)
                 except AttributeError:
                     pass
 
                 if silent:
                     continue
 
-                send_chat_update_wrapper(text)
-
         aider.coders.base_coder.Coder.show_send_output_stream = show_send_output_stream
-
-        import threading
 
         file_changes: List[file_diff.FileChange] = []
         event = asyncio.Event()
@@ -344,7 +341,8 @@ class Aider(agent.Agent):
         # This is where the user should accept/reject the changes
 
         def on_commit():
-            loop.call_soon_threadsafe(lambda: event.set())
+            # loop.call_soon_threadsafe(lambda: event.set())
+            asyncio.run_coroutine_threadsafe(asyncio.coroutine(lambda: event.set())(), loop=loop)
             while True:
                 if not event2.is_set():
                     time.sleep(0.25)
@@ -358,40 +356,34 @@ class Aider(agent.Agent):
             aider_finished = True
             event.set()
 
-        with futures.ThreadPoolExecutor(1) as pool:
-            aider_fut = loop.run_in_executor(
-                pool,
-                aider.main.main,
-                [],
-                on_write,
-                on_commit,
-                None,
-                None,
-                self.state.params.workspaceFolderPath,
-            )
-            aider_fut.add_done_callback(done_cb)
-            logger.info("Running aider thread")
-
-            while True:
-                await event.wait()
-                if aider_finished:
-                    break
-                # while True:
-                #     try:
-                #         await asyncio.wait_for(event.wait(), 1)
-                #         break
-                #     except asyncio.TimeoutError:
-                #         if self.task.cancelled:
-                #             raise asyncio.CancelledError
-                #         continue
-                if len(file_changes) > 0:
-                    await self.apply_file_changes(file_changes)
-                    file_changes = []
-                event2.set()
-                event.clear()
         try:
-            await aider_fut
-        except:
-            pass
+            with futures.ThreadPoolExecutor(1) as pool:
+                async def run_aider():
+                    aider_fut = loop.run_in_executor(
+                        pool,
+                        aider.main.main,
+                        [],
+                        on_write,
+                        on_commit,
+                        None,
+                        None,
+                        self.state.params.workspaceFolderPath,
+                    )
+                    aider_fut.add_done_callback(done_cb)
+                    logger.info("Running aider thread")
+                    return await aider_fut
+                asyncio.create_task(run_aider())
+
+                while True:
+                    await event.wait()
+                    if aider_finished:
+                        break
+                    if len(file_changes) > 0:
+                        await self.apply_file_changes(file_changes)
+                        file_changes = []
+                    event2.set()
+                    event.clear()
+        except Exception as e:
+            logger.info(f"[Aider] caught exception {e=}")
         finally:
             await self.send_progress()

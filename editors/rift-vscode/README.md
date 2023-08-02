@@ -42,3 +42,18 @@ This requires a working Python (>=3.9) installation. 2. Access the chat interfac
 ## Development
 
 See [here](https://github.com/morph-labs/rift/blob/main/editors/rift-vscode/CONTRIBUTING.md) for instructions on how to develop this extension.
+
+## Project Structure
+
+The `rift-vscode` project is structured as follows:
+
+- `src/`: This directory contains the TypeScript source code for the extension.
+  - `client.ts`: This is the main entry point for the extension. It sets up the connection to the Rift language server and handles communication between VSCode and the server.
+  - `elements/`: This directory contains custom web components used in the extension's UI.
+    - `WebviewProvider.svelte`: This Svelte component is responsible for rendering the webview UI for the extension. It communicates with the VSCode API to send and receive messages from the extension.
+    - `Chat.svelte`: This Svelte component renders the chat interface for interacting with the Rift language server.
+    - `CodeEditor.svelte`: This Svelte component renders a code editor within the webview. It uses the Monaco Editor library to provide a rich code editing experience.
+- `media/`: This directory contains static assets such as images and stylesheets.
+- `test/`: This directory contains tests for the extension.
+- `package.json`: This file defines the extension's dependencies and scripts.
+- `tsconfig.json`: This file configures the TypeScript compiler for the project.

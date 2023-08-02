@@ -149,10 +149,13 @@ async function code_edit_send_progress_handler(
   //   }
   // }
   console.log(`URI: ${agent?.textDocument?.uri?.toString()}`);
-  const editors = vscode.window.visibleTextEditors.filter(
+    const editors: TextEditor[] = vscode.window.visibleTextEditors.filter(
     (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString(),
-  );
-  // multiple editors can be pointing to the same resource
+    );
+
+    if (editors.length === 0) {return};
+    // multiple editors can be pointing to the same resource
+  
   for (const editor of editors) {
     console.log(`EDITOR: ${editor}`);
     // [todo] check editor is visible

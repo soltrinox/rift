@@ -28,6 +28,7 @@ class AgentTask:
     _running: bool = False
     _error: Optional[Exception] = None
     _cancelled: bool = False
+    _done: bool = False
 
     async def run(self):
         """
@@ -69,6 +70,8 @@ class AgentTask:
         """
         Cancels the task
         """
+        if self.done:
+            return
         if self._task:
             return self._task.cancel()
         self._cancelled = True
@@ -82,6 +85,8 @@ class AgentTask:
         """
         Returns whether the task is done
         """
+        if self._done:
+            return True
         if self._task:
             return self._task.done()
         else:

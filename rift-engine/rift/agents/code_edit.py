@@ -32,6 +32,7 @@ class CodeEditRunResult(AgentRunResult):
 # dataclass for representing the progress of the code completion agent
 @dataclass
 class CodeEditProgress(AgentProgress):
+
     response: Optional[str] = None
     thoughts: Optional[str] = None
     textDocument: Optional[lsp.TextDocumentIdentifier] = None
@@ -50,6 +51,7 @@ class CodeEditAgentParams(AgentParams):
 # dataclass for representing the state of the code completion agent
 @dataclass
 class CodeEditAgentState(AgentState):
+    
     model: AbstractCodeEditProvider
     document: lsp.TextDocumentItem
     active_range: lsp.Range
@@ -102,7 +104,8 @@ class CodeEditAgent(Agent):
             self.RANGE = None
 
             async def get_user_response() -> str:
-                return await self.request_chat(RequestChatRequest(messages=self.state.messages))
+                request_chat_task = asyncio.create_task(self.request_chat(RequestChatRequest(messages=self.state.messages)))
+                return await request_chat_task
 
             await self.send_progress()
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
@@ -114,10 +117,15 @@ class CodeEditAgent(Agent):
 
             while True:
                 try:
-                    # get the next prompt
-                    # logger.info("getting user response")
                     get_user_response_t = self.add_task("Get user response", get_user_response)
-                    instructionPrompt = await get_user_response_t.run()
+                    instructionPrompt_task = asyncio.create_task(get_user_response_t.run())
+                    await self.send_progress() # TODO: move this into the agenttask
+                    while not instructionPrompt_task.done():
+                        await asyncio.sleep(0.25)
+                        if self.state._done:
+                            return CodeEditRunResult()
+                    instructionPrompt = await instructionPrompt_task
+                        
                     documents = resolve_inline_uris(instructionPrompt, self.server)
                     self.server.register_change_callback(self.on_change, self.state.document.uri)
                     from diff_match_patch import diff_match_patch

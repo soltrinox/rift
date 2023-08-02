@@ -19,6 +19,7 @@ from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractChatCompletionProvider
 from rift.lsp import LspServer as BaseLspServer
 from rift.util.context import resolve_inline_uris
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,7 @@ class RiftChatAgent(Agent):
 
     @classmethod
     async def create(cls, params: AgentParams, server: BaseLspServer):
+        # logger.info(f"RiftChatAgent.create {params=}")
         model = await server.ensure_chat_model()
         if params.textDocument is None:
             document = None
@@ -88,13 +90,16 @@ class RiftChatAgent(Agent):
         response_lock = Lock()
 
         async def get_user_response() -> str:
-            logger.info("getting user response")
-            return await self.request_chat(RequestChatRequest(messages=self.state.messages))
+            # logger.info(f"getting user response for {self.state.messages=}")
+            result = await self.request_chat(RequestChatRequest(messages=self.state.messages))
+            # logger.info(f"got response {result=}")
+            return result
 
         async def generate_response(user_response: str):
+            # logger.info(f"generating response for {user_response=}")
             response = ""
             documents: List[lsp.Document] = resolve_inline_uris(user_response, self.server)
-            logger.info(f"chips resolved {documents=}")
+            logger.info(f"resolved document uris {documents=}")
 
             doc_text = self.state.document.text
 

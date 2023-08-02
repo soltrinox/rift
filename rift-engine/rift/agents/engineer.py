@@ -9,9 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Dict, Optional
 
-import typer
-
 import rift.lsp.types as lsp
+import typer
 from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
@@ -75,38 +74,6 @@ def _fix_windows_path(path: str) -> str:
         return path
 
 
-# async def _popup_input(prompt: str) -> str:
-#     await INPUT_PROMPT_QUEUE.put(prompt)
-#     while True:
-#         try:
-#             resp = await asyncio.wait_for(INPUT_RESPONSE_QUEUE.get(), timeout=1.0)
-#             break
-#         except:
-#             continue
-#     return resp
-
-
-# def _popup_input_wrapper(prompt: str="") -> str:
-#     try:
-#         loop = asyncio.get_running_loop()
-#         result_future = loop.create_future()
-
-#         tsk = loop.create_task(_popup_input(prompt))
-#         tsk.add_done_callback(
-#             lambda t: result_future.set_result(t.result())
-#         )
-
-#         while not result_future.done():
-#             loop.run_until_complete(asyncio.sleep(0.1))
-
-#         return result_future.result()
-#     except:
-#         return asyncio.run(_popup_input(prompt))
-
-# async def _popup_chat(prompt: str="NONE", end=""):
-#     # await OUTPUT_CHAT_QUEUE.put(prompt)
-#     response_stream.feed_data(prompt)
-
 response_lock = asyncio.Lock()
 
 
@@ -158,13 +125,40 @@ class EngineerAgent(Agent):
         verbose: bool = typer.Option(False, "--verbose", "-v"),
         **kwargs,
     ):
+        """
+        Main function for the EngineerAgent. It initializes the AI model and starts the engineering process.
+
+        :param prompt: The initial prompt for the AI.
+        :param project_path: The path to the project directory.
+        :param model: The AI model to use.
+        :param temperature: The temperature for the AI model's output.
+        :param steps_config: The configuration for the engineering steps.
+        :param verbose: Whether to output verbose logs.
+        :param kwargs: Additional parameters.
+        """
         loop = asyncio.get_event_loop()
 
-        def _popup_chat_wrapper(prompt: str = "NONE", end=""):
-            def _worker():
-                self.response_stream.feed_data(prompt)
+        try:
+            import gpt_engineer
+            import gpt_engineer.chat_to_files
+            import gpt_engineer.db
+            from gpt_engineer.ai import AI, fallback_model
+            from gpt_engineer.collect import collect_learnings
+            from gpt_engineer.db import DB, DBs, archive
+            from gpt_engineer.learning import collect_consent
+            from gpt_engineer.steps import STEPS
+            from gpt_engineer.steps import Config as StepsConfig
 
-            loop.call_soon_threadsafe(_worker)
+        except ImportError:
+            raise Exception(
+                '`gpt_engineer` not found. Try `pip install -e "rift-engine[gpt-engineer]"` from the repository root directory.'
+            )
+
+        def _popup_chat_wrapper(prompt: str = "NONE", end=""):
+            async def _worker():
+                await self.response_stream.feed_data(prompt)
+
+            asyncio.run_coroutine_threadsafe(_worker(), loop)
 
         def _popup_input_wrapper(prompt="", loop=None):
             asyncio.set_event_loop(loop)
@@ -191,15 +185,6 @@ class EngineerAgent(Agent):
         gpt_engineer.steps.input = functools.partial(_popup_input_wrapper, loop=loop)
         gpt_engineer.learning.input = functools.partial(_popup_input_wrapper, loop=loop)
         # TODO: more coverage
-
-        UPDATES_QUEUE = asyncio.Queue()
-        INPUT_PROMPT_QUEUE = asyncio.Queue()
-        INPUT_RESPONSE_QUEUE = asyncio.Queue()
-        TASK_QUEUE = asyncio.Queue()
-        OUTPUT_CHAT_QUEUE = asyncio.Queue()
-
-        STEPS_AGENT_TASKS_NAME_QUEUE = asyncio.Queue()
-        STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
         logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
         model = fallback_model(model)
         ai = AI(
@@ -314,22 +299,6 @@ class EngineerAgent(Agent):
 
     @classmethod
     async def create(cls, params: EngineerAgentParams, server):
-        try:
-            import gpt_engineer
-            import gpt_engineer.chat_to_files
-            import gpt_engineer.db
-            from gpt_engineer.ai import AI, fallback_model
-            from gpt_engineer.collect import collect_learnings
-            from gpt_engineer.db import DB, DBs, archive
-            from gpt_engineer.learning import collect_consent
-            from gpt_engineer.steps import STEPS
-            from gpt_engineer.steps import Config as StepsConfig
-
-        except ImportError:
-            raise Exception(
-                '`gpt_engineer` not found. Try `pip install -e "rift-engine[gpt-engineer]"` from the repository root directory.'
-            )
-
         state = EngineerAgentState(
             params=params,
             messages=[openai.Message.assistant("What do you want to build?")],
@@ -361,15 +330,3 @@ class EngineerAgent(Agent):
         await asyncio.create_task(
             self._main(prompt=prompt, project_path=self.state.params.workspaceFolderPath)
         )
-        # counter = 0
-        # while (not main_t.done()) or (UPDATES_QUEUE.qsize() > 0):
-        #     counter += 1
-        #     try:
-        #         updates = await asyncio.wait_for(UPDATES_QUEUE.get(), 1.0)
-        #         for file_path, new_contents in updates:
-        #             await self.server.apply_workspace_edit(lsp.ApplyWorkspaceEditParams(file_diff.edits_from_file_change(file_diff.get_file_change(
-        #                 file_path, new_contents
-        #             ))))
-
-        #     except asyncio.TimeoutError:
-        #         continue

@@ -68,13 +68,6 @@ class SmolAgent(Agent):
 
     @classmethod
     async def create(cls, params: SmolAgentParams, server):
-        try:
-            import smol_dev
-        except ImportError:
-            raise Exception(
-                f"`smol_dev` not found. Try `pip install -e 'rift-engine[smol_dev]' from the repository root directory.`"
-            )
-
         state = SmolAgentState(
             params=params,
             _done=False,
@@ -95,10 +88,17 @@ class SmolAgent(Agent):
           - generate file structure
           - generate code (in parallel)
         """
+
+        try:
+            import smol_dev
+        except ImportError:
+            raise Exception(
+                f"`smol_dev` not found. Try `pip install -e 'rift-engine[smol_dev]' from the repository root directory.`"
+            )
         await self.send_progress()
         prompt = await self.request_chat(RequestChatRequest(messages=self.state.messages))
         documents = resolve_inline_uris(prompt, self.server)
-        prompt = contextual_prompt(prompt)
+        prompt = contextual_prompt(prompt, documents)
         self.state.messages.append(openai.Message.user(prompt))  # update messages history
 
         RESPONSE = ""
@@ -114,12 +114,6 @@ class SmolAgent(Agent):
             nonlocal RESPONSE
             RESPONSE += chunk
 
-            # def stream_string(string):
-            #     for char in string:
-            #         print(char, end="", flush=True)
-            #         time.sleep(0.0012)
-
-            # stream_string(chunk.decode("utf-8"))
             fut = asyncio.run_coroutine_threadsafe(
                 self.send_progress(
                     SmolProgress(
@@ -131,9 +125,13 @@ class SmolAgent(Agent):
             FUTURES[RESPONSE] = asyncio.wrap_future(fut)
 
         async def get_plan():
-            return smol_dev.prompts.plan(
+            fut = asyncio.create_task(asyncio.coroutine(smol_dev.prompts.plan)(
                 prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
-            )
+            ))
+
+            fut.add_done_callback(lambda _: asyncio.run_coroutine_threadsafe(self.send_progress(dict(done_streaming=True)), loop=loop))
+            
+            return 
 
         plan = await self.add_task(description="Generate plan", task=get_plan).run()
 
@@ -149,8 +147,29 @@ class SmolAgent(Agent):
             file_paths = await self.add_task(
                 description="Generate file paths", task=get_file_paths
             ).run()
-
             logger.info(f"Got file paths: {json.dumps(file_paths, indent=2)}")
+
+            # Ask the user where the generated files should be placed
+            self.state.messages.append(
+                openai.Message.assistant("Where should the generated files be placed?")
+            )
+            location_prompt = await self.request_chat(
+                RequestChatRequest(messages=self.state.messages)
+            )
+            self.state.messages.append(
+                openai.Message.user(location_prompt)
+            )  # update messages history
+
+            # Parse any URIs from the user's response
+            documents = resolve_inline_uris(location_prompt, self.server)
+            if documents:
+                # Use the parent directory of the first URI as the parent directory for the generated files
+                parent_dir = os.path.dirname(documents[0].uri)
+                if not os.path.isdir(parent_dir):
+                    parent_dir = os.path.dirname(parent_dir)
+            else:
+                # If no URIs are found, default to the workspace folder
+                parent_dir = self.state.params.workspaceFolderPath
 
             file_changes = []
 
@@ -170,6 +189,8 @@ class SmolAgent(Agent):
 
             updater = PBarUpdater()
 
+            logger.info(f"generate code target dir: {self.state.params.workspaceFolderPath}")
+
             async def generate_code_for_filepath(
                 file_path: str, position: int
             ) -> file_diff.FileChange:
@@ -178,23 +199,29 @@ class SmolAgent(Agent):
                 )
                 done = False
                 code = await code_future
-                logger.info("folder uri:")
-                logger.info(self.state.params.workspaceFolderPath)
                 absolute_file_path = os.path.join(self.state.params.workspaceFolderPath, file_path)
                 file_change = file_diff.get_file_change(path=absolute_file_path, new_content=code)
                 return file_change
 
             fs = []
+            loop = asyncio.get_running_loop()
             for i, fp in enumerate(file_paths):
-                fs.append(
-                    asyncio.create_task(
-                        self.add_task(
-                            description=f"Generate code for {fp}",
-                            task=generate_code_for_filepath,
-                            kwargs=dict(file_path=fp, position=i),
-                        ).run()
-                    )
+                fut = asyncio.create_task(
+                    self.add_task(
+                        description=f"Generate code for {fp}",
+                        task=generate_code_for_filepath,
+                        kwargs=dict(file_path=fp, position=i),
+                    ).run()
                 )
+
+                def done_cb(*args):
+                    async def coro():
+                        await self.send_progress()
+
+                    asyncio.run_coroutine_threadsafe(coro(), loop=loop)
+
+                fut.add_done_callback(done_cb)
+                fs.append(fut)
                 stream_handler(f"Generating code for {fp}.\n")
 
             await asyncio.wait(FUTURES.values())

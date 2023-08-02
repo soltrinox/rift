@@ -474,8 +474,7 @@ class RpcServer:
             raise RuntimeError(f"non-unique request id {id} found")
         self.my_requests[id] = fut
         await self._send(req)
-        result = await fut
-        return result
+        return await fut
 
     async def _send_init(self, init_param):
         """Send an initialization request to the peer."""
@@ -571,6 +570,7 @@ class RpcServer:
         logger.info(f"{self} entered shutdown state")
 
     def _handle_message(self, message: Any):
+        # logger.info(f"incoming message {message=}")
         if "result" in message or "error" in message:
             # message is a Response
             res = ofdict(Response, message)
