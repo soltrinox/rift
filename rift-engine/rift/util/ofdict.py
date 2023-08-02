@@ -12,21 +12,12 @@ from datetime import datetime
 from enum import Enum
 from functools import singledispatch
 from pathlib import Path
-from typing import (
-    Any,
-    ClassVar,
-    Literal,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    get_args,
-    get_origin,
-)
+from typing import Any, ClassVar, Literal, Optional, Type, TypeVar, Union, get_args, get_origin
 
 from pydantic import ValidationError
 
 from rift.util.misc import map_ctx
+
 from .dispatch import classdispatch
 from .type_util import as_list, as_newtype, as_optional, as_set, is_optional
 

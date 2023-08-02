@@ -1,5 +1,6 @@
 {
   "name": "rift",
+  "repository": "https://www.github.com/morph-labs/rift",
   "publisher": "morph",
   "displayName": "rift",
   "description": "",
@@ -182,6 +183,7 @@
     "@tiptap/extension-placeholder": "^2.0.4",
     "@tiptap/pm": "^2.0.4",
     "@tiptap/starter-kit": "^2.0.4",
+    "@tiptap/suggestion": "^2.0.4",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "delay": "^6.0.0",
     "gitignore-parser": "^0.0.2",
@@ -189,6 +191,7 @@
     "morphdom": "^2.7.0",
     "showdown": "^2.1.0",
     "tcp-port-used": "^1.0.2",
+    "tippy.js": "^6.3.7",
     "uuid": "^9.0.0",
     "vscode-jsonrpc": "^8.1.0",
     "vscode-languageclient": "^8.1.0",

@@ -183,6 +183,7 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
             message.agent_id,
             message.messages,
           );
+          
           PubSub.pub(
             `${message.agent_type}_${message.agent_id}_chat_request`,
             message,

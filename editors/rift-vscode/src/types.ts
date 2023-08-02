@@ -182,11 +182,17 @@ export interface AgentIdParams {
 }
 
 export type ChatMessage = {
-  role: "user" | "assistant";
+  role: "assistant";
   content: string;
   name?: null | string | undefined;
-  editorContentString?: string; //there on user
-};
+} | ChatMessageUser
+
+export type ChatMessageUser = {
+  role: "user"
+  content: string
+  name?: null | string | undefined;
+  editorContentString: string //there on user
+}
 
 export interface AgentChatRequest {
   messages: ChatMessage[];
@@ -209,8 +215,12 @@ export type AgentResult = {
   type: string;
 }; //is just an ID rn
 
-export type AtableFile = {
+export interface AtableFile {
   fileName: string; //example.ts
   fullPath: string; //Users/brent/dev/project/src/example.ts
   fromWorkspacePath: string; //project/src/example.ts
-};
+}
+
+export interface AtableFileWithCommand extends AtableFile {
+  onEnter: (...args: any) => void
+}

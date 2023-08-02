@@ -2,10 +2,11 @@ import asyncio
 import logging
 from asyncio import Future
 from dataclasses import dataclass, field
-from typing import ClassVar, Dict, Optional, Any
+from typing import Any, ClassVar, Dict, Optional
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
     AgentParams,
@@ -14,11 +15,10 @@ from rift.agents.abstract import (
     RequestChatRequest,
     agent,
 )
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.llm.abstract import AbstractCodeEditProvider
 from rift.server.selection import RangeSet
-from rift.util.TextStream import TextStream
 from rift.util.context import resolve_inline_uris
+from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,7 @@ class CodeEditProgress(AgentProgress):
 @dataclass
 class CodeEditAgentParams(AgentParams):
     ...
+
 
 # dataclass for representing the state of the code completion agent
 @dataclass

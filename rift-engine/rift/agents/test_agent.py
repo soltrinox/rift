@@ -3,10 +3,10 @@ This module provides a minimal implementation of the Agent API defined in rift.a
 """
 
 from dataclasses import dataclass
-from typing import Optional, ClassVar, Any
+from typing import Any, ClassVar, Optional
 
 import rift.llm.openai_types as openai
-from rift.agents.abstract import Agent, AgentState, RequestChatRequest, AgentParams
+from rift.agents.abstract import Agent, AgentParams, AgentState, RequestChatRequest
 from rift.lsp.types import TextDocumentIdentifier
 
 

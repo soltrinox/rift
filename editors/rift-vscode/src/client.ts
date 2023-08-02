@@ -745,11 +745,16 @@ export class MorphLanguageClient
 
   sendChatHistoryChange(agentId: string, newChatHistory: ChatMessage[]) {
     // const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory
-    console.log(`updating chat history for ${agentId}`);
+    console.log(`updating chat history for ${agentId}`, newChatHistory);
 
     // if (newChatHistory.length > 1) {
     //   throw new Error("No previous messages on client for this ID, but server is giving multiple chat messages.")
     // }
+    if(this.webviewState.value.agents[agentId].chatHistory.length == newChatHistory.length) {
+      return
+    }
+
+    if(this.webviewState.value.agents[agentId].chatHistory.length > 0) console.error('discrepancy between server agent chat history and client agent chathistory. taking server as truth')
     this.webviewState.update((state) => {
       if (!(agentId in state.agents))
         throw new Error("changing chatHistory for nonexistent agent");

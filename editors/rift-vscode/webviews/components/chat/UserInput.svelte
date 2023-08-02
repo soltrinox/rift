@@ -3,38 +3,43 @@
   import UserSvg from "../icons/UserSvg.svelte"
   import { Editor } from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
-  import { FileChip } from "../FileChip"
   import Placeholder from "@tiptap/extension-placeholder"
+  import { FileChip } from "../FileChip"
   
   export let editorContentString: string = "";
-  let textarea: HTMLDivElement; //used to be a textarea
-  let editor: Editor | undefined
-  onMount(() => {
-    editor = new Editor({
-      element: textarea,
-      extensions: [
-        StarterKit,
-        FileChip.configure({
-          HTMLAttributes: {
-            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
-            contenteditable: "false",
-          },
-        })
-      ],
-      editorProps: {
-        attributes: {
-          class: "outline-none focus:outline-none max-h-40 overflow-auto",
-        },
-      },
-      content: editorContentString,
-      onTransaction: (props) => {
-        // force re-render so `editor.isActive` works as expected
-        editor = editor
-      },
-      editable: false,
-    })
 
-  })
+  // export let message:string 
+
+  // TODO Pass in message and add parsing function???
+
+
+  let textarea: HTMLDivElement; //used to be a textarea
+  // let editor: Editor | undefined
+  
+  // let editor: Editor | undefined
+
+  // onMount(() => {
+
+
+//     editor = new Editor({
+//       element: textarea,
+//       extensions: [
+//         StarterKit,
+//         FileChip,
+//       ],
+//       editable: false,
+//       editorProps: {
+//         attributes: {
+//           class: "outline-none focus:outline-none max-h-40 overflow-auto",
+//         },
+//       },
+//       content: `<span data-type="filechip" data-name="example.ts" data-fullpath="path/to/example.ts"></span>`,
+//       onTransaction: (props) => {
+//         // force re-render so `editor.isActive` works as expected
+//         editor = editor
+//       },
+//     })
+//   })
 
 </script>
 
@@ -46,7 +51,8 @@
   </div>
   <div class="text-md flex flex-row items-center">
     <div
-      bind:this={textarea}
+      bind:innerHTML={editorContentString}
+      contenteditable="false"
       >
     </div>
   </div>
