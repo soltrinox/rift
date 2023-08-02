@@ -13,7 +13,7 @@ import rift.lsp.types as lsp
 from pydantic import BaseModel
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
-from rift.lsp import LspServer as BaseLspServer
+from rift.lsp import BaseLspServer as BaseLspServer
 
 logger = logging.getLogger(__name__)
 

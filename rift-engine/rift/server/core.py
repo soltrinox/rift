@@ -6,7 +6,7 @@ from typing import Literal, Optional, Union
 
 from rift.__about__ import __version__
 from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
-from rift.server.lsp import LspServer
+from rift.server.lsp import BaseLspServer
 
 try:
     from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
@@ -54,7 +54,7 @@ ModelType = Literal["openai", "hf", "gpt4all"]
 
 
 class CodeCapabilitiesServer:
-    server: Optional[LspServer] = None
+    server: Optional[BaseLspServer] = None
 
     def __init__(
         self,
@@ -69,7 +69,7 @@ class CodeCapabilitiesServer:
         await self.run_lsp(transport)
 
     async def run_lsp(self, transport):
-        server = LspServer(transport)
+        server = BaseLspServer(transport)
         self.server = server
         try:
             logger.info("[CodeCapabilitiesServer] listening...")

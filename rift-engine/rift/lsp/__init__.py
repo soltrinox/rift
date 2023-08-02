@@ -1,5 +1,4 @@
 # re-exported for convenience
-from rift.rpc import Transport, rpc_method
 
-from .server import LspServer
+from .server import BaseLspServer
 from .types import *

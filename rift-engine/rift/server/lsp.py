@@ -11,7 +11,7 @@ import rift.lsp.types as lsp
 from rift.agents import AGENT_REGISTRY, Agent, AgentParams, AgentRegistryResult
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
-from rift.lsp import LspServer as BaseLspServer
+from rift.lsp import BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
 from rift.util.ofdict import ofdict

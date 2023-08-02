@@ -5,15 +5,11 @@ This file is adapted from  https://github.com/EdAyers/sss
 import asyncio
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, replace
-from typing import Any, Awaitable, Callable, Optional, Union
+from dataclasses import replace
+from typing import Any, Callable, Optional
 
 import rift.lsp.types as lsp
-from rift.util.misc import set_ctx
 from rift.util.ofdict import ofdict
-
-from ..rpc import InitializationMode, rpc_method
-from ..rpc.extrarpc import ExtraRpc
 from .types import (
     ApplyWorkspaceEditParams,
     ApplyWorkspaceEditResponse,
@@ -22,13 +18,15 @@ from .types import (
     PeerInfo,
     ServerCapabilities,
 )
+from ..rpc import InitializationMode, rpc_method
+from ..rpc.extrarpc import ExtraRpc
 
 """ Implementation of an LSP server """
 
 logger = logging.getLogger("LSP")
 
 
-class LspServer(ExtraRpc):
+class BaseLspServer(ExtraRpc):
     capabilities: ServerCapabilities
     position_encoding = "utf-16"
     # [todo] consider using io.StringIO for the documents because they are mutating.
