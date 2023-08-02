@@ -900,7 +900,7 @@ export class MorphLanguageClient
     this.webviewState.update((state) => {
       return {
         ...state,
-        isFocused: true,
+        isOmnibarFocused: true,
       };
     });
   }
@@ -909,7 +909,7 @@ export class MorphLanguageClient
     this.webviewState.update((state) => {
       return {
         ...state,
-        isFocused: false,
+        isOmnibarFocused: false,
       };
     });
   }

@@ -74,7 +74,7 @@ export class WebviewAgent {
 
 export type WebviewState = {
   selectedAgentId: string;
-  isFocused: boolean;
+  isOmnibarFocused: boolean;
   agents: {
     [id: string]: WebviewAgent;
   };
@@ -89,7 +89,7 @@ export type WebviewState = {
 // Do not put more shared logic in here--we shouldn't need it. If we do, we should create a shared folder and update the eslint rules for imports
 export const DEFAULT_STATE: WebviewState = {
   selectedAgentId: "",
-  isFocused: false,
+  isOmnibarFocused: false,
   agents: {},
   availableAgents: [
     {

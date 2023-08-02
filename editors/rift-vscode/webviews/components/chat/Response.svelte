@@ -102,7 +102,9 @@
     }
     if (responseBlock) {
       const dsfa = responseBlock.innerHTML
+      const time = Date.now()
       const newHTML = getHTML(responseBlock)
+      console.log(`gen latency is ${Date.now() - time}`)
       something = newHTML.innerHTML
       morphdom(responseBlock, newHTML)
       responseBlock.contentEditable = "false"

@@ -80,7 +80,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
   let _container: HTMLDivElement | undefined
 
   state.subscribe((s) => {
-    isFocused = s.isFocused
+    isFocused = s.isOmnibarFocused
     if (isFocused) {
       focus()
     }
