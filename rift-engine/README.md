@@ -1,23 +1,22 @@
 # ️🤖⚙️ Rift Code Engine
 
-An AI-first language server for powering your personal, on-device AI software engineer. Built and maintained by [Morph](https://morph.so).
+Rift Code Engine is an AI-first language server designed to power your personal, on-device AI software engineer. It is built and maintained by [Morph](https://morph.so).
 
 ## Installation
 
-For development:
+To install for development, run the following command from this directory:
 
 ```bash
-# from this directory
 pip install -e .
 ```
 
-From PyPI:
+To install from PyPI, use:
 
 ```bash
 pip install pyrift
 ```
 
-Add in your OpenAI key:
+After installation, add your OpenAI key by copying the example environment file:
 
 ```bash
 cp .env_example .env
