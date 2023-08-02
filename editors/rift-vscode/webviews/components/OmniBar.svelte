@@ -79,18 +79,11 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
   let _container: HTMLDivElement | undefined
 
-  let hasInput = false
   state.subscribe((s) => {
-    if (s.selectedAgentId) {
-      if (s.agents[s.selectedAgentId].inputRequest) {
-        hasInput = true
-      }
-    }
     isFocused = s.isFocused
     if (isFocused) {
       focus()
     }
-    hasInput = false
   })
 
   function sendMessage() {
@@ -99,7 +92,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       console.log("cannot send messages while ai is responding")
       return
     }
-    blur()
+
 
     console.log("chat history")
     console.log($state.agents[$state.selectedAgentId].chatHistory)
@@ -123,23 +116,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       editorContentString: HTML,
     })
     console.log("editorContentString for testing:", HTML)
-
-    // clint.
-    // console.log("updating state...");
-
-    // state.update((state: WebviewState) => ({
-    //   ...state,
-    //   agents: {
-    //     ...state.agents,
-    //     [state.selectedAgentId]: {
-    //       ...state.agents[state.selectedAgentId],
-    //       chatHistory: appendedMessages,
-    //     },
-    //   },
-    // }));
     resetTextarea()
-    focus()
-    // resize()
   }
 
   function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
