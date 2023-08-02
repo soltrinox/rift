@@ -10,11 +10,17 @@ The future of AI code assistants is open-source, private, secure, and on-device.
 
 ## Installation
 
-Install the VSCode extension from the VSCode Marketplace or by building and installing from the VSIX bundle produced by the following steps:
+From the VSCode Marketplace:
 
-- Increment the semver number (e.g. 0.0.8 to 0.0.9) in the `package.json`
-- run `vsce package`
-- Install from the VSIX by searching "VSIX" from the VSCode command palette.
+- Click on the extension icon in the sidebar
+- Search for "Rift"
+- Click the install button.
+
+For development / testing:
+
+```bash
+bash reinstall.sh
+```
 
 ## Usage
 
