@@ -258,7 +258,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
   // let latestAtToEndOfTextarea: string | undefined = undefined
   // $: console.log("latestAtTOEndOfTextarea:", latestAtToEndOfTextarea)
 
-  const focus = () => editor?.view.focus()
+  const focus = () => editor?.commands.focus()
   const blur = () => editor?.commands.blur()
 
   function resetTextarea() {
