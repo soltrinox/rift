@@ -81,7 +81,6 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
       agent_id: string;
       messages: ChatMessage[];
       message: string;
-      editorContentString: string;
     }
     interface InputRequestMessage {
       type: "inputRequest";

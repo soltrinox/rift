@@ -17,18 +17,18 @@
   
 
 /// "random text here [uri](path/to/example.ts) something else here"
-// returns "random text here <span type="filechip" data-fullpath="path/to/example.ts" data-filename="example.ts"></span> something else here"
+// returns "random text here <span data-type="filechip" data-fullpath="path/to/example.ts" data-filename="example.ts"></span> something else here"
   function parseProseMirrorHTMLfromMessageContent(message:string) {
     const regex = /\[(.*?)\]\((.*?)\)/g;
     return message.replace(regex, (match, uri, path) => {
       const filename = path.split('/').pop();
-      return `<span type="filechip" data-fullpath="${path}" data-filename="${filename}"></span>`;
+      return `<span data-type="filechip" data-fullpath="${path}" data-filename="${filename}"></span>`;
     });
   }
   
-  console.log('value: ', value)
+
   const editorContent = parseProseMirrorHTMLfromMessageContent(value)
-  console.log('editorContent: ', editorContent)
+
 
   onMount(() => {
 
@@ -46,8 +46,8 @@
         },
       },
       // content: `<span data-type="filechip" data-filename="example.ts" data-fullpath="path/to/example.ts"></span>`,
-      // content: editorContent,
-      content: `<span type="filechip" data-filename="uri" data-fullpath="/Users/brentburdick/Dev/test/nested/nothing.js"></span>`,
+      content: editorContent,
+      // content: `<span type="filechip" data-filename="uri" data-fullpath="/Users/brentburdick/Dev/test/nested/nothing.js"></span>`,
       onTransaction: (props) => {
         // force re-render so `editor.isActive` works as expected
         editor = editor

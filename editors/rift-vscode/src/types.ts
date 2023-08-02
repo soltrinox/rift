@@ -191,7 +191,6 @@ export type ChatMessageUser = {
   role: "user"
   content: string
   name?: null | string | undefined;
-  editorContentString: string //there on user
 }
 
 export interface AgentChatRequest {

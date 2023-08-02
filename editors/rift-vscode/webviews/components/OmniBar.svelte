@@ -99,9 +99,8 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
     let appendedMessages = $state.agents[$state.selectedAgentId].chatHistory
     if(!editor) throw new Error("no editor in sendMEssage() function in OmniBar.svelte")
-    const HTML = editor.getHTML()
 
-    appendedMessages.push({ role: "user", content: editorContent, editorContentString: HTML })
+    appendedMessages.push({ role: "user", content: editorContent })
     console.log("appendedMessages")
     console.log(appendedMessages)
 
@@ -113,9 +112,8 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
       message: editorContent,
-      editorContentString: HTML,
     })
-    console.log("editorContentString for testing:", HTML)
+
     resetTextarea()
   }
 
