@@ -130,5 +130,3 @@ class HuggingFaceClient(AbstractCodeCompletionProvider):
 
         # Return the updated document
         return EditCodeResult(code=updated_document)
-        # The implementation of the method goes here...
-        pass

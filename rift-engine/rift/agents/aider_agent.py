@@ -102,7 +102,7 @@ class Aider(agent.Agent):
 
     async def _run_chat_thread(self, response_stream):
         """
-        Run the chat thread for the Aider agent.
+        Run the chat thread.
         :param response_stream: The stream of responses from the chat.
         """
 
@@ -110,8 +110,8 @@ class Aider(agent.Agent):
         try:
             async with self.state.response_lock:
                 async for delta in before:
-                    self.RESPONSE += delta
-                    await self.send_progress({"response": self.RESPONSE})
+                    self._response_buffer += delta
+                    await self.send_progress({"response": self._response_buffer})
             await asyncio.sleep(0.1)
             await self._run_chat_thread(after)
         except Exception as e:
@@ -123,7 +123,7 @@ class Aider(agent.Agent):
         :return: The result of running the Aider agent.
         """
         await self.send_progress()
-        self.RESPONSE = ""
+        self._response_buffer = ""
 
         response_stream = TextStream()
 
@@ -131,7 +131,7 @@ class Aider(agent.Agent):
 
         loop = asyncio.get_running_loop()
 
-        def send_chat_update_wrapper(prompt: str = "NONE", end="", eof=False):
+        def send_chat_update_wrapper(prompt: str = "感", end="", eof=False):
             def _worker():
                 response_stream.feed_data(prompt)
 
@@ -144,10 +144,10 @@ class Aider(agent.Agent):
                 await asyncio.sleep(0.1)
                 await self.state.response_lock.acquire()
                 # logger.info("acquired response lock")
-                await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
+                await self.send_progress(dict(response=self._response_buffer, done_streaming=True))
                 # logger.info(f"{self.RESPONSE=}")
-                self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
-                self.RESPONSE = ""
+                self.state.messages.append(openai.Message.assistant(content=self._response_buffer))
+                self._response_buffer = ""
                 if prompt is not None:
                     self.state.messages.append(openai.Message.assistant(content=prompt))
                 # logger.info(f"MESSAGE HISTORY BEFORE REQUESTING: {self.state.messages}")
@@ -174,6 +174,8 @@ class Aider(agent.Agent):
             futures.wait([t])
             result = t.result()
             return result
+
+        ##### PATCHES        
 
         def confirm_ask(self, question, default="y"):
             # print(f"[confirm_ask] question={question}")
@@ -322,7 +324,6 @@ class Aider(agent.Agent):
 
         aider.coders.base_coder.Coder.show_send_output_stream = show_send_output_stream
 
-        ##### PATCHES
         import threading
 
         file_changes: List[file_diff.FileChange] = []
