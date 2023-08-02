@@ -148,6 +148,7 @@ class Agent:
 
             # Await to get the result of the task
             result_t = asyncio.create_task(self.task.run())
+            result_t.add_done_callback(lambda fut: asyncio.run_coroutine_threadsafe(self.send_update("finished"), loop=asyncio.get_running_loop()))
             await self.send_progress()
             result = await result_t
 

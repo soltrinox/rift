@@ -14,6 +14,11 @@ except ImportError:
         '`aider` not found. Try `pip install -e "rift-engine[aider]"` from the Rift root directory.'
     )
 
+if aider.__version__ != "0.9.1-morph":
+    raise Exception(
+        'Wrong version of `aider` installed. Please try `pip install -e "rift-engine[aider]" --force-reinstall` from the Rift root directory.'
+    )
+
 import asyncio
 import logging
 import time
@@ -384,10 +389,9 @@ class Aider(agent.Agent):
                     file_changes = []
                 event2.set()
                 event.clear()
-            try:
-                await aider_fut
-            except:
-                pass
-            finally:
-                await self.send_progress()
-        await self.send_update("Aider finished")
+        try:
+            await aider_fut
+        except:
+            pass
+        finally:
+            await self.send_progress()
