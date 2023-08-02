@@ -7,13 +7,39 @@
   import { FileChip } from "../FileChip"
   
   export let editorContentString: string = "";
+
+  // export let message:string 
+
+  // TODO Pass in message and add parsing function???
+
+
   let textarea: HTMLDivElement; //used to be a textarea
   // let editor: Editor | undefined
   
-  
+  // let editor: Editor | undefined
+
   // onMount(() => {
-  // textarea.innerHTML = editorContentString
-  // })
+
+
+//     editor = new Editor({
+//       element: textarea,
+//       extensions: [
+//         StarterKit,
+//         FileChip,
+//       ],
+//       editable: false,
+//       editorProps: {
+//         attributes: {
+//           class: "outline-none focus:outline-none max-h-40 overflow-auto",
+//         },
+//       },
+//       content: `<span data-type="filechip" data-name="example.ts" data-fullpath="path/to/example.ts"></span>`,
+//       onTransaction: (props) => {
+//         // force re-render so `editor.isActive` works as expected
+//         editor = editor
+//       },
+//     })
+//   })
 
 </script>
 

@@ -159,9 +159,20 @@ export const FileChip = Node.create<FileChipOptions>({
     //     span.setAttribute(attribute, attributesMap[attribute])
     // }
 
-    span.classList.add("bg-[var(--vscode-editor-background)]", "text-xs", "inline-flex", "items-center", "h-[1.5rem]")
-
-    span.append(createFileSvg())
+    span.classList.add(
+      "bg-[var(--vscode-editor-background)]",
+      "text-xs",
+      "inline-flex",
+      "items-center",
+      "h-[1.5rem]",
+      "border",
+      "border-[var(--vscode-minimapSlider-hoverBackground,#656565)]",
+      "px-1",
+      "rounded"
+    )
+    const svg = createFileSvg()
+    svg.classList.add('mr-[2px]')
+    span.append(svg)
     span.append(document.createTextNode(`${node.attrs.fileName}`))
 
     return span
