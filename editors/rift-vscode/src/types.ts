@@ -209,8 +209,12 @@ export type AgentResult = {
   type: string;
 }; //is just an ID rn
 
-export type AtableFile = {
+export interface AtableFile {
   fileName: string; //example.ts
   fullPath: string; //Users/brent/dev/project/src/example.ts
   fromWorkspacePath: string; //project/src/example.ts
-};
+}
+
+export interface AtableFileWithCommand extends AtableFile {
+  onEnter: (...args: any) => void
+}

@@ -3,7 +3,6 @@
   import UserSvg from "../icons/UserSvg.svelte"
   import { Editor } from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
-  import { FileChip } from "../FileChip"
   import Placeholder from "@tiptap/extension-placeholder"
   
   export let editorContentString: string = "";
@@ -14,12 +13,7 @@
       element: textarea,
       extensions: [
         StarterKit,
-        FileChip.configure({
-          HTMLAttributes: {
-            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
-            contenteditable: "false",
-          },
-        })
+
       ],
       editorProps: {
         attributes: {

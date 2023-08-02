@@ -1,15 +1,81 @@
 <script lang="ts">
   import SendSvg from "./icons/SendSvg.svelte"
-  import {dropdownStatus, filteredAgents, state} from "./stores"
+  import { dropdownStatus, filteredAgents, filteredFiles, focusedFileIndex, state } from "./stores"
   import SlashDropdown from "./chat/dropdown/SlashDropdown.svelte"
   import {onDestroy, onMount, tick} from "svelte"
   import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
   import type {AgentRegistryItem, AtableFile} from "../../src/types"
   import {CommandProps, Editor} from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
-  import {Placeholder} from "@tiptap/extension-placeholder"
-  import type {Transaction} from "@tiptap/pm/state"
-  import {FileChip} from "./FileChip"
+  import { Placeholder } from "@tiptap/extension-placeholder"
+  import type { Transaction } from "@tiptap/pm/state"
+  import { Mention } from "@tiptap/extension-mention"
+  import type { SuggestionOptions } from "@tiptap/suggestion"
+
+
+const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
+  items: ({ query }) => {
+        const filteredFiles = Array.from(
+          new Set([...$state.files.recentlyOpenedFiles, ...$state.files.nonGitIgnoredFiles])
+        ).filter((file) => {
+        let searchString = query
+        return (
+          file.fileName.toLowerCase().includes(searchString) ||
+          file.fromWorkspacePath.toLowerCase().includes(searchString)
+        )
+      }).slice(0, 4)
+      console.log('new filtered files:', filteredFiles)
+      return filteredFiles
+  },
+
+  render: () => {
+    return {
+      onStart: (props) => {
+        dropdownStatus.set("at") 
+        filteredFiles.set(props.items.map(file => ({...file, onEnter: () => {
+          console.log('onEnter called :D')
+          // @ts-ignore -- Brent this is just some annoying type error, and I'm not changing the name of the property on the Atable file type, and I'm not rewriting the entire class for this, so ts-ignore it is.
+          props.command({id: file.fileName})}}))) // add the enter command to the files
+        },
+        
+        onUpdate(props) {
+          dropdownStatus.set("at") 
+          filteredFiles.set(props.items.map(file => ({...file, onEnter: () => {
+          console.log('onEnter called :D')
+          // @ts-ignore -- see above comment for explanation
+          props.command({id: file.fileName})}})))
+      },
+
+      onKeyDown(props) {
+        console.log('onKeyDown suggestion plugin: props:', props)
+        if (props.event.key === "Escape") {
+          // popup[0].hide()
+          dropdownStatus.set('none')
+          return true // BRENT: I'm guessing return true here means kill the search process.
+          // return true
+        }
+        if(props.event.key == 'ArrowUp') {
+          props.event.preventDefault() //necessary to prevent moving the cursor
+          focusedFileIndex.update(i => (i + $filteredFiles.length - 1) % $filteredFiles.length)
+        }
+        
+        if(props.event.key == 'ArrowDown') {
+          props.event.preventDefault() //necessary to prevent moving the cursor
+          focusedFileIndex.update(i => (i + 1) % $filteredFiles.length)
+        }
+
+        
+        return false
+      },
+
+      onExit() {
+        dropdownStatus.set('none')
+        focusedFileIndex.set(0)
+      },
+    }
+  },
+}
+
 
   let isFocused = true
 
@@ -53,9 +119,9 @@
       agent_type: $state.agents[$state.selectedAgentId].type,
       messages: appendedMessages,
       message: editorContent,
-      editorContentString: editor?.getHTML()
+      editorContentString: editor?.getHTML(),
     })
-    console.log('editorContentString for testing:', editor?.getHTML())
+    console.log("editorContentString for testing:", editor?.getHTML())
 
     // clint.
     // console.log("updating state...");
@@ -79,12 +145,12 @@
     editorContent = editor.getText()
     console.log("handleValueChange: ", editorContent)
 
-    const shouldShowAtDropdown = () => {
-      latestAtToEndOfTextarea =
-        editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
-      return Boolean(latestAtToEndOfTextarea)
-    }
-    let newFilteredAgents:AgentRegistryItem[] = []
+    // const shouldShowAtDropdown = () => {
+    //   latestAtToEndOfTextarea =
+    //     editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
+    //   return Boolean(latestAtToEndOfTextarea)
+    // }
+    let newFilteredAgents: AgentRegistryItem[] = []
     if (editorContent.trim().startsWith("/")) {
       let searchString = editorContent.substring(1).toLowerCase()
       newFilteredAgents = $state.availableAgents.filter((agent) => {
@@ -99,10 +165,7 @@
     if (editorContent.trim().startsWith("/") && newFilteredAgents.length > 0) {
       console.log("setting slash")
       dropdownStatus.set("slash")
-    } else if (shouldShowAtDropdown()) {
-      console.log("setting at")
-      dropdownStatus.set("at")
-    } else {
+     } else if($dropdownStatus == 'slash') {
       console.log("setting none")
       dropdownStatus.set("none")
     }
@@ -115,12 +178,16 @@
 
     if (e.key === "Enter") {
       // 13 is the Enter key code
-      console.log("preventing default")
+      // console.log("preventing default")
       // e.preventDefault() // Prevent default Enter key action
 
       if (e.shiftKey) return
       if (!editorContent) resetTextarea()
-      if (!editorContent || $dropdownStatus == "slash" || $dropdownStatus == "at") return
+      if($dropdownStatus == 'at') {
+        $filteredFiles[$focusedFileIndex].onEnter()
+        return
+      }
+      if (!editorContent || $dropdownStatus == "slash") return
       sendMessage()
     }
   }
@@ -158,7 +225,7 @@
       type: "blurOmnibar",
     })
   }
-
+/* hopefully deprecated --Brent
   function handleAddChip(file: AtableFile) {
     console.log("handle add chip:", file.fileName)
     const spanEl = document.createElement("span")
@@ -185,10 +252,10 @@
       .insertContent(" ")
       .run()
   }
+  */
 
-
-  let latestAtToEndOfTextarea: string | undefined = undefined
-  $: console.log("latestAtTOEndOfTextarea:", latestAtToEndOfTextarea)
+  // let latestAtToEndOfTextarea: string | undefined = undefined
+  // $: console.log("latestAtTOEndOfTextarea:", latestAtToEndOfTextarea)
 
   const focus = () => editor?.view.focus()
   const blur = () => editor?.commands.blur()
@@ -199,11 +266,11 @@
 
   function disableDefaults(event: Event) {
     const e = event as KeyboardEvent
-    const keyCodes = ["ArrowUp", "ArrowDown"]
+    // const keyCodes = ["ArrowUp", "ArrowDown"]
 
-    if (keyCodes.includes(e.code)) {
-      event.preventDefault()
-    }
+    // if (keyCodes.includes(e.code)) {
+    //   event.preventDefault()
+    // }
 
     if (e.code === "Enter" && $dropdownStatus != "none") event.preventDefault()
   }
@@ -214,11 +281,14 @@
       element: _container,
       extensions: [
         StarterKit,
-        FileChip.configure({
+        Mention.configure({
           HTMLAttributes: {
-            class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
-            contenteditable: "false",
+            class: "my-custom-class",
           },
+          renderLabel({ options, node }) {
+            return `${options.suggestion.char}${node.attrs.label ?? node.attrs.id}`
+          },
+          suggestion
         }),
         Placeholder.configure({
           emptyEditorClass: "is-editor-empty",
@@ -247,6 +317,7 @@
     if (!editorRootElement) throw new Error()
     editorRootElement.addEventListener("keydown", disableDefaults, true)
   })
+
   onDestroy(() => {
     const editorRootElement = document.querySelector(".ProseMirror")
     editorRootElement?.removeEventListener("keydown", disableDefaults, true)
@@ -280,7 +351,7 @@
   {/if}
 
   {#if $dropdownStatus == "at"}
-    <AtDropdown {editorContent} {handleAddChip} />
+    <AtDropdown />
   {/if}
 </div>
 
