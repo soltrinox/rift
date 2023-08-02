@@ -69,7 +69,7 @@
   $: {
     const getHTML = (_responseBlock: HTMLDivElement) => {
       const responseBlock = _responseBlock.cloneNode(true) as HTMLDivElement
-      responseBlock.innerHTML = textToFormattedHTML(value)
+      responseBlock.innerHTML = textToFormattedHTML(value.trim())
       responseBlock.querySelectorAll("code").forEach((node) => node.classList.add("code"))
       responseBlock.querySelectorAll("pre").forEach((preblock, i) => {
         // index = i
