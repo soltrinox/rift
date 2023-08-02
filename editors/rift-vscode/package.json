@@ -141,7 +141,7 @@
     "lint": "eslint --ext ts src",
     "format": "prettier --write .",
     "test": "node ./out/test/runTest.js",
-    "clean": "rm -rf out"
+    "clean": "rm -rf out/compiled & rm -rf dist/*"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^17.0.0",
