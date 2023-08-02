@@ -216,8 +216,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
     vscode.postMessage({
       type: "focusOmnibar",
     })
-    focus()
-    await tick()
   }
 
   let onBlur = () => {
@@ -226,37 +224,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       type: "blurOmnibar",
     })
   }
-/* hopefully deprecated --Brent
-  function handleAddChip(file: AtableFile) {
-    console.log("handle add chip:", file.fileName)
-    const spanEl = document.createElement("span")
-
-    if (!editor) throw new Error("")
-    console.log("editorJSON:")
-    console.log(editor.getJSON())
-
-    editor
-      .chain()
-      .command((props: CommandProps) => {
-        const { editor, tr, commands, state, dispatch } = props
-
-        const docsize = state.doc.content.size - 1 // oboe :()
-
-        if (!latestAtToEndOfTextarea)
-          throw new Error("why is this command being run if theres no latestAtToEndOfTextarea")
-
-        tr.delete(docsize - latestAtToEndOfTextarea.length, docsize)
-
-        return true
-      })
-      .insertContent(`<span data-fsPath="${file.fullPath}" data-name="${file.fileName}"></span>`)
-      .insertContent(" ")
-      .run()
-  }
-  */
-
-  // let latestAtToEndOfTextarea: string | undefined = undefined
-  // $: console.log("latestAtTOEndOfTextarea:", latestAtToEndOfTextarea)
 
   const focus = () => editor?.commands.focus()
   const blur = () => editor?.commands.blur()
