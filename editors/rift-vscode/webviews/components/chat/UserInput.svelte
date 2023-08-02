@@ -19,7 +19,8 @@
 /// "random text here [uri](path/to/example.ts) something else here"
 // returns "random text here <span type="filechip" data-fullpath="path/to/example.ts" data-filename="example.ts"></span> something else here"
   function parseProseMirrorHTMLfromMessageContent(message:string) {
-
+    const regex = /\[(.*?)\]\((.*?)\)/g;
+    return message.replace(regex, '<span type="filechip" data-fullpath="$2" data-filename="$1"></span>');
   }
   
   const editorContent = parseProseMirrorHTMLfromMessageContent(value)
