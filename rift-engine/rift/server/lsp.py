@@ -1,14 +1,14 @@
-import glob
-import os
-import json
 import asyncio
+import glob
+import json
 import logging
+import os
 import uuid
 from dataclasses import dataclass
-from typing import Any, List, Optional, Dict
+from typing import Any, Dict, List, Optional
 
 import rift.lsp.types as lsp
-from rift.agents import AGENT_REGISTRY, Agent, AgentRegistryResult, AgentParams
+from rift.agents import AGENT_REGISTRY, Agent, AgentParams, AgentRegistryResult
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.lsp import LspServer as BaseLspServer
@@ -102,53 +102,72 @@ class LspServer(BaseLspServer):
 
     @rpc_method("morph/loadFiles")
     def load_documents(self, params: LoadFilesParams) -> LoadFilesResult:
+        """
+        Accepts a set of file paths, processes them into full, qualified paths.
+        Opens each file and reads its text, stores the text into a list of TextDocumentItem.
+        If a language can be determined from the file's extension using languages.json, sets languageId, else defaults to "*".
+        Updates dictionary of documents tracked by LspServer.
+        """
+        # Try getting absolute path to current directory, default to current working directory on exception.
         try:
             current_dir = os.path.abspath(__file__)
         except:
             current_dir = os.getcwd()
+        # Open the languages.json file to get details for mapping file extension to language id
         with open(os.path.join(current_dir, "languages.json"), "r") as f:
             language_map = json.loads(f)
-    
-        def find_matching_language(
-            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
-        ) -> Optional[str]:
-            extension = filepath.split(".")[-1]  # Get the file extension
-    
+
+        # Helper function to find the matching language id, given a file path and language map
+        # The id of the language is returned, if found in the language map 
+        def find_matching_language(filepath: str, language_map: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
+            # Getting the file extension
+            extension = filepath.split(".")[-1] 
+
+            # loop over the details in the language map
             for details in language_map["languages"]:
+                # Check if file extension matches any in the list, if yes, return that language id
                 if extension in details.get("extensions", []):
                     return details["id"]
-    
+
+            # No language match found, return None
             return None
-    
+
+        # Helper function to expand all environment variables in file paths
         def preprocess_filepaths(filepaths: List[str]) -> List[str]:
             processed_filepaths = []
             for filepath in filepaths:
+                # Expanding all env variables in the file path
                 processed_filepaths.append(os.path.expandvars(filepath))
             return processed_filepaths
-    
+
+        # Helper function to join all the file paths provided
         def join_filepaths(filepaths: List[str]) -> List[str]:
             for filepath in filepaths:
+                # Yielding all file paths matching the glob pattern
                 yield from glob.glob(filepath, root="/" if filepath.startswith("/") else None)
 
+        # Initialize dictionary to store resulting TextDocumentItems
         result_documents: Dict[str, lsp.TextDocumentItem]
+        # Process and combine all file paths, and for each...
         for file_path in join_filepaths(preprocess_filepaths(params.patterns)):
+            # Open the file for reading
             with open(file_path, "r") as f:
+                # Reading the content of the file
                 text = f.read()
+            # Creating a TextDocumentItem instance for each file
             doc_item = lsp.TextDocumentItem(
                 text=text,
+                # Constructing the Uri for each file
                 uri="file://" + os.path.join(os.getcwd(), str(file_path))
                 if not file_path.startswith("/")
                 else str(file_path),
+                # Finding the language ID for each file, or using "*" if language ID cannot be determined
                 languageId=find_matching_language(file_path, language_map) or "*",
                 version=1,
             )
+            # Adding the TextDocumentItem to the result documents dictionary
             result_documents[doc_item.uri] = doc_item
-    
-        result = LoadFilesResult(documents=result_documents)
-    
-        self.documents.update(result.documents)
-    
-        return result
+
 
     @rpc_method("morph/applyWorkspaceEdit")
     async def on_workspace_did_change_configuration(self, params: lsp.ApplyWorkspaceEditParams):
@@ -239,15 +258,20 @@ class LspServer(BaseLspServer):
         agent_type = old_agent.agent_type
         agent_id = old_agent.agent_id
         return await self.on_create(
-            AgentParams(agent_type=agent_type, agent_id=agent_id, textDocument=old_params.textDocument,
-                        selection=old_params.selection, workspaceFolderPath=old_params.workspaceFolderPath)
+            AgentParams(
+                agent_type=agent_type,
+                agent_id=agent_id,
+                textDocument=old_params.textDocument,
+                selection=old_params.selection,
+                workspaceFolderPath=old_params.workspaceFolderPath,
+            )
         )
 
     @rpc_method("morph/create_agent")
     async def on_create(self, params_as_dict: Any):
-        agent_type = params_as_dict['agent_type']
+        agent_type = params_as_dict["agent_type"]
         agent_id = str(uuid.uuid4())[:8]
-        params_as_dict['agent_id'] = agent_id
+        params_as_dict["agent_id"] = agent_id
 
         logger = logging.getLogger(__name__)
         agent_cls = AGENT_REGISTRY[agent_type]

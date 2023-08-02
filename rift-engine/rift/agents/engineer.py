@@ -7,11 +7,12 @@ import time
 from asyncio import Future
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar, Dict, Optional, Any
+from typing import Any, ClassVar, Dict, Optional
 
 import typer
 
 import rift.lsp.types as lsp
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
     AgentParams,
@@ -20,10 +21,9 @@ from rift.agents.abstract import (
     RequestChatRequest,
     agent,
 )
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.util import file_diff
-from rift.util.TextStream import TextStream
 from rift.util.context import contextual_prompt, resolve_inline_uris
+from rift.util.TextStream import TextStream
 
 SEEN = set()
 
@@ -127,6 +127,7 @@ class EngineerProgress(
 ):  # reports what tasks are active and responsible for reporting new tasks
     response: Optional[str] = None
     done_streaming: bool = False
+
 
 @dataclass
 class EngineerAgentState(AgentState):
@@ -326,7 +327,7 @@ class EngineerAgent(Agent):
 
         except ImportError:
             raise Exception(
-                "`gpt_engineer` not found. Try `pip install -e \"rift-engine[gpt-engineer]\"` from the repository root directory."
+                '`gpt_engineer` not found. Try `pip install -e "rift-engine[gpt-engineer]"` from the repository root directory.'
             )
 
         state = EngineerAgentState(

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Type, ClassVar
+from typing import ClassVar, Optional, Type
 
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
@@ -29,7 +29,6 @@ mentat
 
     @classmethod
     async def create(cls, params: MentatAgentParams, server):
-
         state = MentatAgentState(
             params=params,
             messages=[],

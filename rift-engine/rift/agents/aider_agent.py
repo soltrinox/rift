@@ -1,6 +1,6 @@
 import re
-from typing import Any
 from concurrent import futures
+from typing import Any
 
 try:
     import aider
@@ -11,7 +11,7 @@ try:
     from aider.coders.base_coder import ExhaustedContextWindow
 except ImportError:
     raise Exception(
-        "`aider` not found. Try `pip install -e \"rift-engine[aider]\"` from the Rift root directory."
+        '`aider` not found. Try `pip install -e "rift-engine[aider]"` from the Rift root directory.'
     )
 
 import asyncio
@@ -19,7 +19,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import PurePath
-from typing import List, Optional, ClassVar, Any
+from typing import Any, ClassVar, List, Optional
 
 from rich.text import Text
 
@@ -152,10 +152,15 @@ class Aider(agent.Agent):
                 resp = await self.request_chat(
                     agent.RequestChatRequest(messages=self.state.messages)
                 )
+
+                def refactor_uri_match(resp):
+                    pattern = f"\[uri\]\({self.state.params.workspaceFolderPath}/(\S+)\)"
+                    replacement = r"`\1`"
+                    resp = re.sub(pattern, replacement, resp)
+                    return resp
+
                 try:
-                    resp = re.sub(
-                        f"uri://{self.state.params.workspaceFolderPath}/" r"(\S+)", r"`\1`", resp
-                    )
+                    resp = refactor_uri_match(resp)
                 except:
                     pass
                 self.state.messages.append(openai.Message.user(content=resp))
@@ -342,13 +347,23 @@ class Aider(agent.Agent):
                 break
 
         aider_finished = False
+
         def done_cb(fut):
             nonlocal aider_finished
             aider_finished = True
             event.set()
 
         with futures.ThreadPoolExecutor(1) as pool:
-            aider_fut = loop.run_in_executor(pool, aider.main.main, [], on_write, on_commit, None, None, self.state.params.workspaceFolderPath)
+            aider_fut = loop.run_in_executor(
+                pool,
+                aider.main.main,
+                [],
+                on_write,
+                on_commit,
+                None,
+                None,
+                self.state.params.workspaceFolderPath,
+            )
             aider_fut.add_done_callback(done_cb)
             logger.info("Running aider thread")
 

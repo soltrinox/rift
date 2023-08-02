@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def replace_inline_uris(user_response, server):
-    uri_pattern = r"uri://(.*)"
+    uri_pattern = r"\[uri\]\((\S+)\)"
     matches = re.findall(uri_pattern, user_response)
     for match in matches:
         match = match.replace(" ", "")
@@ -26,10 +26,9 @@ def replace_inline_uris(user_response, server):
 
 
 def resolve_inline_uris(user_response, server) -> List[lsp.Document]:
-    uri_pattern = r"uri://(.*)"
+    uri_pattern = r"\[uri\]\((\S+)\)"
     matches = re.findall(uri_pattern, user_response)
     result = []
-    # logger.info(f"{list(server.documents.keys())=}")
     for match in matches:
         match = match.replace(" ", "")
         lsp_uri = "file://" + match
@@ -39,6 +38,13 @@ def resolve_inline_uris(user_response, server) -> List[lsp.Document]:
             result.append(
                 lsp.Document(f"uri://{match}", lsp.DocumentContext(server.documents[lsp_uri].text))
             )
+        else:
+            try:
+                with open(match, "r") as f:
+                    result.append(lsp.Document(f"uri://{match}", lsp.DocumentContext(f.read())))
+            except:
+                pass
+
     return result
 
 

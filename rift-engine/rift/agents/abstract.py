@@ -60,10 +60,11 @@ AgentTaskId = str
 class AgentParams:
     agent_type: str
     agent_id: str
-    textDocument: lsp.TextDocumentIdentifier
-    selection: lsp.Selection
-    position: lsp.Position
-    workspaceFolderPath: str
+    textDocument: Optional[lsp.TextDocumentIdentifier]
+    selection: Optional[lsp.Selection]
+    position: Optional[lsp.Position]
+    workspaceFolderPath: Optional[str]
+
 
 @dataclass
 class AgentProgress:
@@ -328,7 +329,7 @@ class AgentRegistry:
         return self.get_agent(key)
 
     def register_agent(
-            self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
+        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
     ) -> None:
         """
         Registers new agent into the registry.

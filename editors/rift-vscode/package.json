@@ -1,5 +1,6 @@
 {
   "name": "rift",
+  "repository": "https://www.github.com/morph-labs/rift",
   "publisher": "morph",
   "displayName": "rift",
   "description": "",

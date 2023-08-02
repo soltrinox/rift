@@ -1,27 +1,26 @@
-import { mergeAttributes, Node } from "@tiptap/core"
-import Mention, { MentionOptions } from "@tiptap/extension-mention"
+import { Node } from "@tiptap/core"
 import { PluginKey } from "@tiptap/pm/state"
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion"
 
 
 export const MentionPluginKey = new PluginKey("filechip")
 
-// type MentionOptions = {
-//   HTMLAttributes: Record<string, any>
-//   renderLabel: (props: { options: MentionOptions; node: ProseMirrorNode }) => string
-//   suggestion: Omit<SuggestionOptions, "editor">
-// }
-
-
-//derived from mention Options
 type FileChipOptions = {
     HTMLAttributes: Record<string, any>
     suggestion: Omit<SuggestionOptions, "editor">
 }
 
+/**
+ * FileChip class represents a file chip in the editor.
+ * It provides functionalities for creating and manipulating file chips.
+ */
 export const FileChip = Node.create<FileChipOptions>({
   name: "filechip",
 
+  /**
+   * addOptions method is used to add options to the FileChip.
+   * It returns an object containing the options.
+   */
   addOptions() {
     return {
       HTMLAttributes: {},
@@ -74,6 +73,10 @@ export const FileChip = Node.create<FileChipOptions>({
 
   atom: true,
 
+  /**
+   * addAttributes method is used to add attributes to the FileChip.
+   * It returns an object containing the attributes.
+   */
   addAttributes() {
     return {
       fileName: {
@@ -105,6 +108,10 @@ export const FileChip = Node.create<FileChipOptions>({
     }
   },
 
+  /**
+   * parseHTML method is used to parse the HTML of the FileChip.
+   * It returns an array containing the parsed HTML.
+   */
   parseHTML() {
     return [
       {
@@ -113,6 +120,11 @@ export const FileChip = Node.create<FileChipOptions>({
     ]
   },
 
+  /**
+   * renderHTML method is used to render the HTML of the FileChip.
+   * It takes an object containing a node and HTMLAttributes as parameter.
+   * It returns a span element containing the rendered HTML.
+   */
   renderHTML({ node, HTMLAttributes }) {
 
     function createFileSvg() {
@@ -154,10 +166,6 @@ export const FileChip = Node.create<FileChipOptions>({
       return svg
     }
     const span = document.createElement("span")
-    // const attributesMap = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)
-    // for (let attribute in attributesMap) {
-    //     span.setAttribute(attribute, attributesMap[attribute])
-    // }
 
     span.classList.add(
       "bg-[var(--vscode-editor-background)]",
@@ -180,10 +188,19 @@ export const FileChip = Node.create<FileChipOptions>({
     // would prefer to use the nice prosemirror syntax, but prosemirror starts crying whenever you use SVG's (because capitalize attributes (I know ( stupid right we should fork prosemirror)))
   },
 
+  /**
+   * renderText method is used to render the text of the FileChip.
+   * It takes an object containing a node as parameter.
+   * It returns a string containing the rendered text.
+   */
   renderText({ node }) {
     return `[uri](${node.attrs.fullPath})`
   },
 
+  /**
+   * addKeyboardShortcuts method is used to add keyboard shortcuts to the FileChip.
+   * It returns an object containing the keyboard shortcuts.
+   */
   addKeyboardShortcuts() {
     return {
       Backspace: () =>
@@ -210,6 +227,10 @@ export const FileChip = Node.create<FileChipOptions>({
     }
   },
 
+  /**
+   * addProseMirrorPlugins method is used to add ProseMirror plugins to the FileChip.
+   * It returns an array containing the ProseMirror plugins.
+   */
   addProseMirrorPlugins() {
     return [
       Suggestion({
@@ -219,62 +240,3 @@ export const FileChip = Node.create<FileChipOptions>({
     ]
   },
 })
-
-
-/*
-
-  renderHTML({ node, HTMLAttributes }) {
-    console.log("renderHTML called. node:", node)
-    console.log("HTMLAttributes: ", HTMLAttributes)
-
-    const svgString = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_511_33161)"><path d="M1.4248 1.22499C1.4248 1.0084 1.51085 0.800676 1.664 0.647521C1.81716 0.494367 2.02488 0.408325 2.24147 0.408325H6.31745C6.53403 0.408371 6.74172 0.494443 6.89484 0.647609L8.53552 2.28829C8.68869 2.44141 8.77476 2.6491 8.7748 2.86568V8.57499C8.7748 8.79158 8.68876 8.99931 8.53561 9.15246C8.38245 9.30562 8.17473 9.39166 7.95814 9.39166H2.24147C2.02488 9.39166 1.81716 9.30562 1.664 9.15246C1.51085 8.99931 1.4248 8.79158 1.4248 8.57499V1.22499ZM2.24147 1.02083C2.18732 1.02083 2.13539 1.04234 2.0971 1.08062C2.05882 1.11891 2.0373 1.17084 2.0373 1.22499V8.57499C2.0373 8.62914 2.05882 8.68107 2.0971 8.71936C2.13539 8.75765 2.18732 8.77916 2.24147 8.77916H7.95814C8.01229 8.77916 8.06422 8.75765 8.10251 8.71936C8.14079 8.68107 8.1623 8.62914 8.1623 8.57499V3.47083H6.52897C6.31238 3.47083 6.10466 3.38478 5.9515 3.23163C5.79835 3.07847 5.7123 2.87075 5.7123 2.65416V1.02083H2.24147ZM6.3248 1.02083V2.65416C6.3248 2.70831 6.34631 2.76024 6.3846 2.79853C6.42289 2.83681 6.47482 2.85833 6.52897 2.85833H8.1623C8.16051 2.8067 8.1392 2.75767 8.10269 2.72113L6.462 1.08044C6.42546 1.04393 6.37643 1.02262 6.3248 1.02083Z" fill="#CCCCCC"/></g><defs><clipPath id="clip0_511_33161"><rect width="9.8" height="9.8" fill="white" transform="translate(0.200195)"/></clipPath></defs></svg>`
-    function createFileSvg() {
-      const xmlns = "http://www.w3.org/2000/svg"
-
-      let svg = document.createElementNS(xmlns, "svg")
-      svg.setAttribute("width", "10")
-      svg.setAttribute("height", "10")
-      svg.setAttribute("viewBox", "0 0 10 10")
-      svg.setAttribute("fill", "none")
-      svg.setAttribute("xmlns", xmlns)
-
-      let g = document.createElementNS(xmlns, "g")
-      g.setAttribute("clip-path", "url(#clip0_511_33161)")
-      svg.appendChild(g)
-
-      let path = document.createElementNS(xmlns, "path")
-      path.setAttribute(
-        "d",
-        "M1.4248 1.22499C1.4248 1.0084 1.51085 0.800676 1.664 0.647521C1.81716 0.494367 2.02488 0.408325 2.24147 0.408325H6.31745C6.53403 0.408371 6.74172 0.494443 6.89484 0.647609L8.53552 2.28829C8.68869 2.44141 8.77476 2.6491 8.7748 2.86568V8.57499C8.7748 8.79158 8.68876 8.99931 8.53561 9.15246C8.38245 9.30562 8.17473 9.39166 7.95814 9.39166H2.24147C2.02488 9.39166 1.81716 9.30562 1.664 9.15246C1.51085 8.99931 1.4248 8.79158 1.4248 8.57499V1.22499ZM2.24147 1.02083C2.18732 1.02083 2.13539 1.04234 2.0971 1.08062C2.05882 1.11891 2.0373 1.17084 2.0373 1.22499V8.57499C2.0373 8.62914 2.05882 8.68107 2.0971 8.71936C2.13539 8.75765 2.18732 8.77916 2.24147 8.77916H7.95814C8.01229 8.77916 8.06422 8.75765 8.10251 8.71936C8.14079 8.68107 8.1623 8.62914 8.1623 8.57499V3.47083H6.52897C6.31238 3.47083 6.10466 3.38478 5.9515 3.23163C5.79835 3.07847 5.7123 2.87075 5.7123 2.65416V1.02083H2.24147ZM6.3248 1.02083V2.65416C6.3248 2.70831 6.34631 2.76024 6.3846 2.79853C6.42289 2.83681 6.47482 2.85833 6.52897 2.85833H8.1623C8.16051 2.8067 8.1392 2.75767 8.10269 2.72113L6.462 1.08044C6.42546 1.04393 6.37643 1.02262 6.3248 1.02083Z"
-      )
-      path.setAttribute("fill", "#CCCCCC")
-      g.appendChild(path)
-
-      let defs = document.createElementNS(xmlns, "defs")
-      svg.appendChild(defs)
-
-      let clipPath = document.createElementNS(xmlns, "clipPath")
-      clipPath.setAttribute("id", "clip0_511_33161")
-      defs.appendChild(clipPath)
-
-      let rect = document.createElementNS(xmlns, "rect")
-      rect.setAttribute("width", "9.8")
-      rect.setAttribute("height", "9.8")
-      rect.setAttribute("fill", "white")
-      rect.setAttribute("transform", "translate(0.200195)")
-      clipPath.appendChild(rect)
-
-      return svg
-    }
-
-    const span = document.createElement('span')
-    const attributesMap = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)
-    for (let attribute in attributesMap) {
-      span.setAttribute(attribute, attributesMap[attribute])
-    }
-    span.append(createFileSvg())
-    span.append(document.createTextNode(`${node.attrs.name}`))
-    return span
-  },
-})
-*/

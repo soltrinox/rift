@@ -2,10 +2,11 @@ import asyncio
 import logging
 from asyncio import Lock
 from dataclasses import dataclass
-from typing import ClassVar, Optional, List, Any
+from typing import Any, ClassVar, List, Optional
 
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
     AgentParams,
@@ -14,11 +15,8 @@ from rift.agents.abstract import (
     RequestChatRequest,
     agent,
 )
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.agenttask import AgentTask
-from rift.llm.abstract import (
-    AbstractChatCompletionProvider,
-)
+from rift.llm.abstract import AbstractChatCompletionProvider
 from rift.lsp import LspServer as BaseLspServer
 from rift.util.context import resolve_inline_uris
 
