@@ -11,6 +11,9 @@ code --uninstall-extension morph.rift
 echo "Running 'npm run clean'..."
 npm run clean
 
+echo "Running npm i"
+npm i
+
 echo "Creating VSIX package..."
 vsce package
 
