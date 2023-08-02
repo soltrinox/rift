@@ -22,7 +22,7 @@ if aider.__version__ != "0.9.1-morph":
 import asyncio
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import PurePath
 from typing import Any, ClassVar, List, Optional
 
@@ -35,9 +35,6 @@ import rift.util.file_diff as file_diff
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
-
-response_lock = asyncio.Lock()
-
 
 @dataclass
 class AiderRunResult(agent.AgentRunResult):
@@ -60,6 +57,7 @@ class AiderAgentState(agent.AgentState):
 
     params: AiderAgentParams
     messages: list[openai.Message]
+    response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
 @agent.agent(agent_description="Request codebase-wide edits through chat", display_name="Aider")
@@ -110,7 +108,7 @@ class Aider(agent.Agent):
 
         before, after = response_stream.split_once("感")
         try:
-            async with response_lock:
+            async with self.state.response_lock:
                 async for delta in before:
                     self.RESPONSE += delta
                     await self.send_progress({"response": self.RESPONSE})
@@ -144,7 +142,7 @@ class Aider(agent.Agent):
                 # logger.info("acquiring response lock")
                 response_stream.feed_data("感")
                 await asyncio.sleep(0.1)
-                await response_lock.acquire()
+                await self.state.response_lock.acquire()
                 # logger.info("acquired response lock")
                 await self.send_progress(dict(response=self.RESPONSE, done_streaming=True))
                 # logger.info(f"{self.RESPONSE=}")
@@ -169,7 +167,7 @@ class Aider(agent.Agent):
                 except:
                     pass
                 self.state.messages.append(openai.Message.user(content=resp))
-                response_lock.release()
+                self.state.response_lock.release()
                 return resp
 
             t = asyncio.run_coroutine_threadsafe(request_chat(), loop)
@@ -327,7 +325,6 @@ class Aider(agent.Agent):
         ##### PATCHES
         import threading
 
-        file_changes_lock = threading.Lock()
         file_changes: List[file_diff.FileChange] = []
         event = asyncio.Event()
         event2 = asyncio.Event()
