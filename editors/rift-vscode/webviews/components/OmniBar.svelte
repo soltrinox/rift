@@ -159,7 +159,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
   dropdownStatus.subscribe((s) => console.log("dropdownStatus!:", s))
 
   function handleKeyDown(e: KeyboardEvent) {
-    console.log("handleKeydown")
 
     if (e.key === "Enter") {
       // 13 is the Enter key code
@@ -258,7 +257,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       onBlur,
       onUpdate: handleValueChange,
       onSelectionUpdate: (props) => {
-        console.log("onSelection update:", props)
+        // console.log("onSelection update:", props)
       },
     })
 

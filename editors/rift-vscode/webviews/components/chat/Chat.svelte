@@ -47,7 +47,7 @@
     observer.disconnect();
   });
 
-state.subscribe(s => console.log('new state: ', s))
+// state.subscribe(s => console.log('new webview state: ', s))
 </script>
 
 <div

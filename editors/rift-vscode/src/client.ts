@@ -291,7 +291,13 @@ export class MorphLanguageClient
     });
 
     this.changeLensEmitter = new vscode.EventEmitter<void>();
-    this.onDidChangeCodeLenses = this.changeLensEmitter.event;
+    this.onDidChangeCodeLenses = (
+      listener: (e: void) => any,
+      thisArgs?: any,
+      disposables?: vscode.Disposable[] | undefined
+    ) => {
+      return this.changeLensEmitter.event(listener, thisArgs, disposables)
+    }
   }
 
   public getWebviewState() {
@@ -304,7 +310,6 @@ export class MorphLanguageClient
     document: vscode.TextDocument,
     token: vscode.CancellationToken,
   ): AgentStateLens[] {
-    console.log("provideCodeLens");
     // this returns all of the lenses for the document.
     let items: AgentStateLens[] = [];
     // console.log("AGENTS: ", this.agents);
@@ -313,6 +318,8 @@ export class MorphLanguageClient
       if (!["code_edit"].includes(agent.agent_type)) {
         continue;
       }
+          console.log("provideCodeLens called. agent code lens status:");
+          console.log(agent.codeLensStatus)
 
       if (agent?.selection) {
         if (agent?.textDocument?.uri?.toString() == document.uri.toString()) {
@@ -344,6 +351,7 @@ export class MorphLanguageClient
               tooltip: "Accept the edits below",
               arguments: [agent.id],
             });
+
             const reject = new AgentStateLens(linetext.range, agent, {
               title: " Reject ❌",
               command: "rift.reject",
@@ -878,7 +886,9 @@ class Agent {
     this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
     this.onCodeLensStatusChangeEmitter = new vscode.EventEmitter<CodeLensStatus>()
     this.onStatusChangeEmitter.event(() => morph_language_client.changeLensEmitter.fire())
-    this.onCodeLensStatusChangeEmitter.event(() => morph_language_client.changeLensEmitter.fire())
+    this.onCodeLensStatusChangeEmitter.event((e: CodeLensStatus) => {
+      this._codeLensStatus = e
+      morph_language_client.changeLensEmitter.fire()})
   }
 
   async handleInputRequest(params: AgentInputRequest) {
