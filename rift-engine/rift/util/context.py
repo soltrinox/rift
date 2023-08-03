@@ -1,3 +1,4 @@
+import os
 import contextlib
 import contextvars
 import logging
@@ -18,16 +19,24 @@ def extract_uris(user_response: str) -> List[str]:
 
 
 def lookup_match(match: str, server: "Server") -> str:
+    logger.info("in lookup match")
     lsp_uri = "file://" + match
     if lsp_uri in server.documents:
+        logger.info(f"[lookup_match] found in server {server.documents.keys()=}")                        
         return server.documents[lsp_uri].text
     else:
+        logger.info(f"[lookup_match] not found in server")
         try:
             if os.path.isdir(match):
+                logger.info("[lookup_match] match is dir")                
                 return ""
             else:
-                with open(match, "r") as f:
-                    return f.read()
+                logger.info("[lookup_match] reading from filesystem")
+                try:
+                    with open(match, "r") as f:
+                        return f.read()
+                except:
+                    return ""
         except:
             return ""
 
@@ -42,12 +51,15 @@ def replace_inline_uris(user_response: str, server: "Server") -> str:
 
 
 def resolve_inline_uris(user_response: str, server: "Server") -> List[lsp.Document]:
+    logger.info(f"[resolve_inline_uris] {user_response=}")
     matches = extract_uris(user_response)
     result = []
     for match in matches:
         logger.info(f"[resolve_inline_uris] looking for {match=}")
         replacement = lookup_match(match, server)
+        logger.info(f"[resolve_inline_uris] {match=} {replacement=}")
         result.append(lsp.Document(f"uri://{match}", lsp.DocumentContext(replacement)))
+    logger.info(f"[resolve_inline_uris] {result=}")
     return result
 
 

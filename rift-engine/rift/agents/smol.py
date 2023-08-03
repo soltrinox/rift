@@ -37,12 +37,9 @@ from rift.util.context import contextual_prompt, resolve_inline_uris
 
 logger = logging.getLogger(__name__)
 
-
-# dataclass for representing the result of the code completion agent run
 @dataclass
 class SmolRunResult(AgentRunResult):
     ...
-
 
 # dataclass for representing the progress of the code completion agent
 @dataclass

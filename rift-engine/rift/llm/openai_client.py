@@ -601,7 +601,8 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         # calculate truncation for the other context documents, if necessary
         truncated_documents = []
         if documents:
-            max_document_list_size = ((1.0 - current_file_weight) * max_size) // len(document_list)
+            max_document_list_size = ((1.0 - current_file_weight) * max_size) // len(documents)
+            max_document_list_size = int(max_document_list_size)
             for doc in documents:
                 tokens = ENCODER.encode(doc.document.text)
                 if len(tokens) > max_document_list_size:
