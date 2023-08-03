@@ -21,12 +21,12 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
         console.log('filteredFiles1')
         console.log(filteredFiles)
         const filteredfiles2 = filteredFiles.filter((file) => {
-        // let searchString = query.toLowerCase()
-        return true
-        // return (
-        //   file.fileName.toLowerCase().includes(searchString) ||
-        //   file.fromWorkspacePath.toLowerCase().includes(searchString)
-        // )
+        let searchString = query.toLowerCase()
+        // return true
+        return (
+          file.fileName.toLowerCase().includes(searchString) ||
+          file.fromWorkspacePath.toLowerCase().includes(searchString)
+        )
       })
       .slice(0, 4)
       console.log('new filtered files2:', filteredfiles2)
