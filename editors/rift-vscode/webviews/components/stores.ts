@@ -19,7 +19,7 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
 });
 
 // ChatWebview
-export const dropdownStatus = writable<'slash'|'at'|'none'>('none')
+export const dropdownStatus = writable<'slash' | 'at' | 'none'>('none')
 export const filteredAgents = writable<AgentRegistryItem[]>([])
 export const filteredFiles = writable<AtableFileWithCommand[]>([])
 export const focusedFileIndex = writable<number>(0)

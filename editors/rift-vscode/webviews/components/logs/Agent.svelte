@@ -89,7 +89,7 @@
                 <div>{name}</div>
             </div>
             <div
-                class="relative w-fit mr-2 mt-1.5 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
+                class="relative w-fit mr-2 mt-0 ml-auto flex hover:text-[var(--vscode-list-hoverBackground)]"
             >
                 {#if $state.agents[id].chatHistory.length > 0 && hasNotification}
                     <div
@@ -105,7 +105,10 @@
         <div class="dropdown left-auto flex">
             <div class="flex items-center">
                 <div class="dropdown" on:focusout={handleDropdownFocusLoss}>
-                    <button class="btn py-2.5" on:click={handleDropdownClick}>
+                    <button
+                        class="btn pb-2.5 pt-2"
+                        on:click={handleDropdownClick}
+                    >
                         {#if isDropdownOpen}
                             <div class="px-2"><EllipsisDarkSvg /></div>
                         {:else}
