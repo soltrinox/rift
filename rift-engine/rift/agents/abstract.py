@@ -424,7 +424,7 @@ class AgentRegistry:
             AgentRegistryResult(
                 agent_type=item.agent.agent_type,
                 agent_description=item.agent_description,
-                agent_icon=self.get_agent_icon(item),
+                agent_icon=item.agent_icon,
                 display_name=item.display_name,
             )
             for item in self.registry.values()
