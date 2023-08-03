@@ -11,7 +11,7 @@
                 {#if !value.isDeleted}
                     <Agent
                         id={key}
-                        name={value.tasks?.task.description}
+                        name={value.taskWithSubtasks?.task.description}
                         hasNotification={value.hasNotification}
                     />
                 {/if}

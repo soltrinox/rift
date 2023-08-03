@@ -116,13 +116,10 @@ async function code_completion_send_progress_handler(
 ): Promise<void> {
   console.log(`PARAMS: ${params}`);
   console.log(params);
-  if (params.tasks) {
-    if (params.tasks.task.status) {
-      if (agent.codeLensStatus !== params.tasks.task.status) {
-        agent.codeLensStatus = params.tasks.task.status;
-        agent.onStatusChangeEmitter.fire(params.tasks.task.status);
-      }
-    }
+  
+  if (params.tasks && params.tasks.task.status) {
+        agent.codeLensStatus = params.tasks.task.status; // change code lens
+        agent.onStatusChangeEmitter.fire(params.tasks.task.status) // change agent
   }
   // if (params.payload) {
   //   if (params.payload.additive_ranges) {
@@ -139,10 +136,8 @@ async function code_completion_send_progress_handler(
 
     if (params.payload == "accepted" || params.payload == "rejected") {
       agent.codeLensStatus = params.payload;
-      agent.onStatusChangeEmitter.fire(params.payload);
       editor.setDecorations(GREEN, []);
       editor.setDecorations(RED, []);
-      agent.onStatusChangeEmitter.fire(params.payload);
       agent.morph_language_client.sendDoesShowAcceptRejectBarChange(
         agent.id,
         false,
@@ -235,10 +230,8 @@ async function code_edit_send_progress_handler(
     if (params.payload == "accepted" || params.payload == "rejected") {
       // throw new Error('dont think this should ever happen')
       agent.codeLensStatus = params.payload;
-      agent.onStatusChangeEmitter.fire(params.payload);
       editor.setDecorations(GREEN, []);
       editor.setDecorations(RED, []);
-      agent.onStatusChangeEmitter.fire(params.payload);
       agent.morph_language_client.sendDoesShowAcceptRejectBarChange(
         agent.id,
         false,
@@ -733,6 +726,9 @@ export class MorphLanguageClient
     // }
 
     // console.log(nonIgnoredFiles)
+      console.log('allFiles:')
+    console.log(allFiles.map(x => x.path))
+    console.log(allFiles.map(x => x.fsPath))
 
     this.webviewState.update((pS) => ({
       ...pS,
@@ -803,8 +799,8 @@ export class MorphLanguageClient
         [agentId]: {
           ...state.agents[agentId],
           type: params.agent_type,
-          tasks: {
-            ...state.agents[agentId].tasks,
+          taskWithSubtasks: {
+            ...state.agents[agentId].taskWithSubtasks,
             ...params.tasks,
           },
         },
@@ -828,8 +824,8 @@ export class MorphLanguageClient
               agent_type: params.agent_type,
               isStreaming: false,
               streamingText: "",
-              tasks: {
-                ...prevState.agents[agentId].tasks,
+              taskWithSubtasks: {
+                ...prevState.agents[agentId].taskWithSubtasks,
                 ...params.tasks,
               },
               chatHistory: [
@@ -896,7 +892,7 @@ export class MorphLanguageClient
     this.refreshNonGitIgnoredFiles();
   }
 
-  sendAgentStatusChange(agentId: string, status: CodeLensStatus) {
+  sendAgentStatusChange(agentId: string, status: AgentStatus) {
     this.webviewState.update(state => ({...state, agents: {...state.agents, [agentId]: {...state.agents[agentId], status}}}))
   }
 
@@ -928,8 +924,8 @@ class Agent {
   codeLensStatus: CodeLensStatus;
   green: vscode.TextEditorDecorationType;
   ranges: vscode.Range[] = [];
-  onStatusChangeEmitter: vscode.EventEmitter<CodeLensStatus>;
-  onStatusChange: vscode.Event<CodeLensStatus>;
+  onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
+  onStatusChange: vscode.Event<AgentStatus>;
   morph_language_client: MorphLanguageClient;
 
   constructor(
@@ -949,9 +945,9 @@ class Agent {
     this.green = vscode.window.createTextEditorDecorationType({
       backgroundColor: "rgba(0,255,0,0.1)",
     });
-    this.onStatusChangeEmitter = new vscode.EventEmitter<CodeLensStatus>();
+    this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
     this.onStatusChange = this.onStatusChangeEmitter.event;
-    this.onStatusChange((status: CodeLensStatus) => {
+    this.onStatusChange((status: AgentStatus) => {
       this.morph_language_client.sendAgentStatusChange(this.id, status)
     })
   }

@@ -17,15 +17,20 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
   items: ({ query }) => {
         const filteredFiles = Array.from(
           new Set([...$state.files.recentlyOpenedFiles, ...$state.files.nonGitIgnoredFiles])
-        ).filter((file) => {
-        let searchString = query
-        return (
-          file.fileName.toLowerCase().includes(searchString) ||
-          file.fromWorkspacePath.toLowerCase().includes(searchString)
         )
-      }).slice(0, 4)
-      console.log('new filtered files:', filteredFiles)
-      return filteredFiles
+        console.log('filteredFiles1')
+        console.log(filteredFiles)
+        const filteredfiles2 = filteredFiles.filter((file) => {
+        // let searchString = query.toLowerCase()
+        return true
+        // return (
+        //   file.fileName.toLowerCase().includes(searchString) ||
+        //   file.fromWorkspacePath.toLowerCase().includes(searchString)
+        // )
+      })
+      .slice(0, 4)
+      console.log('new filtered files2:', filteredfiles2)
+      return filteredfiles2
   },
 
   render: () => {
@@ -88,7 +93,8 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
   function sendMessage() {
     console.log("sending message")
-    if($state.agents[$state.selectedAgentId].status === 'done' || $state.agents[$state.selectedAgentId].status === 'error') {
+    console.log($state.agents[$state.selectedAgentId])
+    if($state.agents[$state.selectedAgentId].taskWithSubtasks?.task.status === 'done' || $state.agents[$state.selectedAgentId].taskWithSubtasks?.task.status === 'error') {
       console.log('cannot send message while agent has done or error status')
       return
     }

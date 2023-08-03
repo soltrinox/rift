@@ -18,8 +18,8 @@
 
     $: isSelected = id == $state.selectedAgentId;
 
-    let subtasks = $state.agents[id].tasks?.subtasks;
-    $: subtasks = $state.agents[id].tasks?.subtasks;
+    let subtasks = $state.agents[id].taskWithSubtasks?.subtasks;
+    $: subtasks = $state.agents[id].taskWithSubtasks?.subtasks;
 
     let doneAgent = false;
 
@@ -79,9 +79,9 @@
         {/if}
         <div class="flex w-full select-none items-center">
             <div class="flex">
-                {#if $state.agents[id].tasks?.task.status == "done"}
+                {#if $state.agents[id].taskWithSubtasks?.task.status == "done"}
                     <div class="mx-1 mt-0.5"><LogGreenSvg /></div>
-                {:else if $state.agents[id].tasks?.task.status == "running"}
+                {:else if $state.agents[id].taskWithSubtasks?.task.status == "running"}
                     <div class="mx-1 mt-0.5"><LogYellow /></div>
                 {:else}
                     <div class="mx-1 mt-0.5"><LogRed /></div>

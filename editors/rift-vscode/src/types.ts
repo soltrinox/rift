@@ -3,13 +3,14 @@ import type {TextDocumentIdentifier} from "vscode-languageclient/node";
 
 export interface Task {
   description: string;
-  status: CodeLensStatus | AgentStatus;
+  status: AgentStatus; // this should never be code lens status
 }
 
-export interface Tasks {
+export interface TaskWithSubtasks { // TODO turn it into a treeeeeeeeeee
   task: Task;
   subtasks: Task[];
 }
+
 
 // export class ChatMessage {
 //   constructor(
@@ -51,25 +52,24 @@ export class WebviewAgent {
   isDeleted: boolean = false;
   chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
-  tasks?: Tasks;
+  taskWithSubtasks?: TaskWithSubtasks;
   // isChatAgent: boolean = false;
   isStreaming: boolean = false;
   streamingText: string = "";
   doesShowAcceptRejectBar: boolean = false;
-  status: CodeLensStatus = "running";
 
   constructor(
     type: string,
     hasNotification?: boolean,
     chatHistory?: ChatMessage[],
     inputRequest?: InputRequest | null,
-    tasks?: Tasks,
+    tasks?: TaskWithSubtasks,
   ) {
     this.type = type;
     this.hasNotification = hasNotification ?? false;
     this.chatHistory = chatHistory ?? [];
     this.inputRequest = inputRequest;
-    this.tasks = tasks;
+    this.taskWithSubtasks = tasks;
   }
 }
 
@@ -138,8 +138,6 @@ export type AgentStatus =
   | "running"
   | "done"
   | "error"
-  | "accepted"
-  | "rejected";
 
 export type CodeLensStatus =
   | "running"
@@ -172,7 +170,7 @@ export type ChatAgentPayload =
 export interface AgentProgress<T = any> {
   agent_id: string;
   agent_type: string;
-  tasks: Tasks;
+  tasks: TaskWithSubtasks;
   payload: T | undefined;
 }
 
