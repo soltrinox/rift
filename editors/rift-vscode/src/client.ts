@@ -333,9 +333,9 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
   }
 
   public async refreshAvailableAgents() {
-    console.log("refreshing webview agents")
-    const availableAgents = (await this.list_agents()).reverse()
-    this.webviewState.update((state) => ({ ...state, availableAgents }))
+    console.log("refreshing webview agents");
+    const availableAgents = (await this.list_agents());
+    this.webviewState.update((state) => ({ ...state, availableAgents }));
   }
 
   async create_client() {
