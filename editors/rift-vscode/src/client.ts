@@ -126,21 +126,16 @@ type CodeEditPayload =
 
 // FIXME add type interfaces. as of now, this is not typescript.
 async function code_edit_send_progress_handler(
-  params: AgentProgress<any>,
+  params: AgentProgress<CodeEditPayload>,
   agent: Agent,
 ): Promise<void> {
-  console.log(`code_edit_send_progress_handler PARAMS:`, params);
-  if (params.tasks) {
-    // logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
-    if (params.tasks.task.status) {
-      if (agent.codeLensStatus !== params.tasks.task.status) {
-        agent.codeLensStatus = params.tasks.task.status;
-        agent.onStatusChangeEmitter.fire(params.tasks.task.status);
-      }
-    }
+  console.log(`PARAMS:`, params);
+  if (params.tasks.task.status) {
+    agent.onCodeLensStatusChangeEmitter.fire(params.tasks.task.status)
+    agent.onStatusChangeEmitter.fire(params.tasks.task.status);
   }
-  if (params.payload?.ready) {
-    agent.codeLensStatus = "done";
+  if (params.payload !== 'accepted' && params.payload !== 'rejected' && params.payload?.ready) {
+    agent.onCodeLensStatusChangeEmitter.fire('done')
     agent.onStatusChangeEmitter.fire("done");
   }
 
@@ -165,8 +160,7 @@ async function code_edit_send_progress_handler(
     const version = editor.document.version;
 
     if (params.payload == "accepted" || params.payload == "rejected") {
-      // throw new Error('dont think this should ever happen')
-      agent.codeLensStatus = params.payload;
+      agent.onCodeLensStatusChangeEmitter.fire(params.payload)
       editor.setDecorations(GREEN, []);
       editor.setDecorations(RED, []);
       agent.morph_language_client.sendDoesShowAcceptRejectBarChange(
@@ -241,7 +235,7 @@ export class MorphLanguageClient
   green: vscode.TextEditorDecorationType;
   context: vscode.ExtensionContext;
   changeLensEmitter: vscode.EventEmitter<void>;
-  onDidChangeCodeLenses: vscode.Event<void>;
+  onDidChangeCodeLenses: vscode.Event<void>; // call this event to rerender 
   agents: { [id: string]: Agent } = {};
   private webviewState = new Store<WebviewState>(DEFAULT_STATE);
 
@@ -528,7 +522,6 @@ export class MorphLanguageClient
       },
     }));
 
-    agent.onStatusChange((e) => this.changeLensEmitter.fire());
     this.agents[agent_id] = agent;
     console.log(`REGISTERED NEW AGENT of type ${agent_type}`);
     this.changeLensEmitter.fire();
@@ -829,16 +822,6 @@ export class MorphLanguageClient
     this.refreshNonGitIgnoredFiles();
   }
 
-  sendAgentStatusChange(agentId: string, status: AgentStatus) {
-    this.webviewState.update((state) => ({
-      ...state,
-      agents: {
-        ...state.agents,
-        [agentId]: { ...state.agents[agentId], status },
-      },
-    }));
-  }
-
   focusOmnibar() {
     this.webviewState.update((state) => {
       return {
@@ -864,12 +847,15 @@ export class MorphLanguageClient
 
 class Agent {
   status: AgentStatus;
-  codeLensStatus: CodeLensStatus;
+  private _codeLensStatus: CodeLensStatus; // instead call the onCodeLensStatusChangeEmitter.fire() which will rerender the code lenses
   green: vscode.TextEditorDecorationType;
   ranges: vscode.Range[] = [];
   onStatusChangeEmitter: vscode.EventEmitter<AgentStatus>;
-  onStatusChange: vscode.Event<AgentStatus>;
+  onCodeLensStatusChangeEmitter: vscode.EventEmitter<CodeLensStatus>
   morph_language_client: MorphLanguageClient;
+  get codeLensStatus() {
+    return this._codeLensStatus
+  }
 
   constructor(
     morph_language_client: MorphLanguageClient,
@@ -881,7 +867,7 @@ class Agent {
     this.morph_language_client = morph_language_client;
     this.id = id;
     this.status = "running";
-    this.codeLensStatus = "running";
+    this._codeLensStatus = "running";
     this.agent_type = agent_type;
     this.selection = selection;
     this.textDocument = textDocument;
@@ -889,10 +875,9 @@ class Agent {
       backgroundColor: "rgba(0,255,0,0.1)",
     });
     this.onStatusChangeEmitter = new vscode.EventEmitter<AgentStatus>();
-    this.onStatusChange = this.onStatusChangeEmitter.event;
-    this.onStatusChange((status: AgentStatus) => {
-      this.morph_language_client.sendAgentStatusChange(this.id, status);
-    });
+    this.onCodeLensStatusChangeEmitter = new vscode.EventEmitter<CodeLensStatus>()
+    this.onStatusChangeEmitter.event(() => morph_language_client.changeLensEmitter.fire())
+    this.onCodeLensStatusChangeEmitter.event(() => morph_language_client.changeLensEmitter.fire())
   }
 
   async handleInputRequest(params: AgentInputRequest) {

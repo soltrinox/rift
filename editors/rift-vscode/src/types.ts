@@ -163,11 +163,11 @@ export type ChatAgentPayload =
     }
   | undefined;
 
-export interface AgentProgress<T = any> {
+export interface AgentProgress<T = any | undefined> {
   agent_id: string;
   agent_type: string;
   tasks: TaskWithSubtasks;
-  payload: T | undefined;
+  payload: T;
 }
 
 export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
