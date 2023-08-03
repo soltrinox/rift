@@ -106,7 +106,6 @@ type CodeCompletionPayload =
 
 // FIXME add type interfaces. as of now, this is not typescript.
 async function code_edit_send_progress_handler(params: AgentProgress<CodeEditPayload>, agent: Agent): Promise<void> {
-  console.log(`code_edit_send_progress PARAMS:`, params)
   if (params.tasks?.task.status) {
     agent.onCodeLensStatusChangeEmitter.fire(params.tasks.task.status)
     agent.onStatusChangeEmitter.fire(params.tasks.task.status)
@@ -116,12 +115,8 @@ async function code_edit_send_progress_handler(params: AgentProgress<CodeEditPay
     agent.onStatusChangeEmitter.fire("done")
   }
 
-  // if (params.payload) {
-  //   if (params.payload.additive_ranges) {
-  //     agent.additive_ranges = params.payload.additive_ranges;
-  //   }
-  // }
-  console.log(`URI: ${agent?.textDocument?.uri?.toString()}`)
+  //FIXME: URI not always here
+  //console.log(`URI: ${agent?.textDocument?.uri?.toString()}`)
   const editors: TextEditor[] = vscode.window.visibleTextEditors.filter(
     (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString()
   )
@@ -143,9 +138,6 @@ async function code_edit_send_progress_handler(params: AgentProgress<CodeEditPay
       agent.morph_language_client.sendDoesShowAcceptRejectBarChange(agent.id, false)
 
       agent.morph_language_client.changeLensEmitter.fire() // this causes the code lenses to rerender or un-render
-
-      // console.log("SET DECORATIONS TO NONE");
-      // agent.morph_language_client.delete({ id: agent.id })
       continue
     }
 
@@ -203,8 +195,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     this.green = { key: "TEMP_VALUE", dispose: () => {} }
     this.context = context
     this.webviewState.subscribe((state) => {
-      // console.log('webview state:')
-      // console.log(state)
       chatProvider.stateUpdate(state)
       logProvider.stateUpdate(state)
     })
@@ -266,7 +256,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
   public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentStateLens[] {
     // this returns all of the lenses for the document.
     let items: AgentStateLens[] = []
-    // console.log("AGENTS: ", this.agents);
 
     for (const [id, agent] of Object.entries(this.agents)) {
       if (!["code_edit"].includes(agent.agent_type)) {
@@ -279,10 +268,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         if (agent?.textDocument?.uri?.toString() == document.uri.toString()) {
           const line = agent?.selection.isReversed ? agent?.selection.active : agent?.selection.anchor
           const linetext = document.lineAt(line)
-
-          //####### HARDCODED REMOVE THIS #################
-          // agent.status = "done";
-          //##############################################
 
           if (agent.codeLensStatus === "running") {
             const running = new AgentStateLens(linetext.range, agent, {
@@ -392,23 +377,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     throw new Error("no callback set")
   }
 
-  // deprecated
-  // async run_chat(
-  //   params: RunChatParams,
-  //   callback: (progress: ChatAgentProgress) => any
-  // ) {
-  //   console.log("run chat");
-  //   if (!this.client) throw new Error();
-  //   this.morphNotifyChatCallback = callback;
-  //   this.client.onNotification(
-  //     "morph/chat_progress",
-  //     this.morphNotifyChatCallback.bind(this)
-  //   );
-
-  //   const result = await this.client.sendRequest("morph/run_chat", params);
-  //   // note this returns fast and then the updates are sent via notifications
-  //   return "starting...";
-  // }
 
   async create(agent_type: string) {
     if (!this.client) throw new Error()
@@ -445,13 +413,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     console.log("run agent result")
     console.log(result)
     const agent_id = result.id
-
-    // const editor = vscode.window.activeTextEditor;
-    // if (!editor) throw new Error("No active text editor");
-    // get the uri and position of the current cursor
-    // const doc = editor.document;
-    // const textDocument = { uri: doc.uri.toString(), version: 0 };
-    // const position = editor.selection.active;
 
     const agent = new Agent(this, agent_id, agent_type, editor?.selection || null, textDocument)
 
@@ -580,12 +541,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
   }
 
   sendChatHistoryChange(agentId: string, newChatHistory: ChatMessage[]) {
-    // const currentChatHistory = this.webviewState.value.agents[agentId].chatHistory
     console.log(`updating chat history for ${agentId}`, newChatHistory)
 
-    // if (newChatHistory.length > 1) {
-    //   throw new Error("No previous messages on client for this ID, but server is giving multiple chat messages.")
-    // }
     if (this.webviewState.value.agents[agentId].chatHistory.length == newChatHistory.length) {
       return
     }
@@ -610,8 +567,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
   }
 
   sendProgressChange(params: AgentProgress) {
-    // console.log('progress')
-    // console.log(params)
     const {agent_id, tasks} = params
     const payload = params.payload
     if(payload == 'accepted' || payload == 'rejected' || typeof payload == 'string') return
@@ -652,28 +607,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         },
       }))
     }
-    // if (payload) {
-    //   this.webviewState.update((state) => ({
-    //     ...state,
-    //     agents: {
-    //       ...state.agents,
-    //       [agent_id]: {
-    //         ...state.agents[agent_id],
-    //         type: params.agent_type,
-    //         taskWithSubtasks: {
-    //           ...state.agents[agent_id].taskWithSubtasks,
-    //           ...tasks,
-    //         },
-    //       },
-    //     },
-    //   }))
-    // }
+
     if (payload && 'done_streaming' in payload && payload.done_streaming) {
-      // if (!response) {
-      //   console.log("done streaming but no repsonse:");
-      //   console.log(params);
-      //   throw new Error(" done streaming but no response?");
-      // }
       this.webviewState.update((prevState) => {
         return {
           ...prevState,
@@ -816,7 +751,6 @@ class Agent {
     console.log("handleChatRequest")
     console.log(params)
     console.log("agentType:", this.agent_type)
-    // if(!params.id) throw new Error('no params')
 
     this.morph_language_client.sendChatHistoryChange(this.id, params.messages)
     this.morph_language_client.sendHasNotificationChange(this.id, true)
@@ -826,7 +760,6 @@ class Agent {
 
     console.log("agentId:", this.id)
 
-    // return "BLAH BLAH"
     async function getUserInput() {
       console.log("getUserInput")
 

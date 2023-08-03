@@ -12,13 +12,6 @@ export interface TaskWithSubtasks {
   subtasks: Task[];
 }
 
-// export class ChatMessage {
-//   constructor(
-//     public role: "user" | "assistant",
-//     public content: string,
-//   ) {}
-// }
-
 export type InputRequest = {
   msg: string;
   place_holder: string;

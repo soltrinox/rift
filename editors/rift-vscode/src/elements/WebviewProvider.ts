@@ -146,14 +146,12 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
     // Handles messages received from the webview
     webviewView.webview.onDidReceiveMessage(async (message: MessageType) => {
       if (!this._view) throw new Error("no view");
-      // console.log("WebviewProvider.ts received message: ", message);
       switch (message.type) {
         case "selectedAgentId":
           console.log(message.type);
           this.morph_language_client.sendSelectedAgentChange(message.agentId);
           break;
         case "copyText":
-          // let msg = message as CopyTextMessage
           console.log("recieved copy in webview");
           vscode.env.clipboard.writeText(message.content);
           vscode.window.showInformationMessage("Text copied to clipboard!");
@@ -165,8 +163,6 @@ export class WebviewProvider implements vscode.WebviewViewProvider {
           break;
         // Handle 'createAgent' message
         case "createAgent":
-          // console.log("Getting list of available agents")
-          // let availableAgents: client.AgentRegistryItem[] = await this.morph_language_client.list_agents();
           console.log("createAgent ran");
 
           await this.morph_language_client.create(message.agent_type);
