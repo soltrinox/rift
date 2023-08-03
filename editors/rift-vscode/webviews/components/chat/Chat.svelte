@@ -55,17 +55,13 @@ state.subscribe(s => console.log('new state: ', s))
   class="flex items-start flex-grow flex-col overflow-y-auto "
 >
   {#if $state.agents[$state.selectedAgentId]?.inputRequest}
-    <script>
-      console.log('Input request:', $state.agents[$state.selectedAgentId]?.inputRequest?.msg);
-    </script>
+    {console.log('Input request:', $state.agents[$state.selectedAgentId]?.inputRequest?.msg)}
     <Response
       value={$state.agents[$state.selectedAgentId]?.inputRequest?.msg}
     />
   {:else}
     {#each $state.agents[$state.selectedAgentId]?.chatHistory ?? [] as item}
-      <script>
-        console.log('Chat history item:', item);
-      </script>
+      {console.log('Chat history item:', item)}
       {#if item.role == "user"}
         <UserInput value={item.content} />
       {:else}
@@ -73,9 +69,7 @@ state.subscribe(s => console.log('new state: ', s))
       {/if}
     {/each}
     {#if $state.selectedAgentId in $state.agents && $state.agents[$state.selectedAgentId].isStreaming}
-      <script>
-        console.log('Streaming text:', $state.agents[$state.selectedAgentId].streamingText);
-      </script>
+      {console.log('Streaming text:', $state.agents[$state.selectedAgentId].streamingText)}
       <Response value={$state.agents[$state.selectedAgentId].streamingText} {scrollToBottomIfNearBottom} last={true} />
     {/if}
   {/if}
