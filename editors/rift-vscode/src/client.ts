@@ -171,12 +171,6 @@ export class AgentStateLens extends vscode.CodeLens {
   }
 }
 
-interface ModelConfig {
-  chatModel: string
-  completionsModel: string
-  /** The API key for OpenAI, you can also set OPENAI_API_KEY. */
-  openai_api_key?: string
-}
 
 export type AgentIdentifier = string
 
@@ -278,10 +272,9 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             })
             items.push(running)
           } else if (agent.codeLensStatus === "done" || agent.codeLensStatus === "error") {
-            this.sendDoesShowAcceptRejectBarChange(agent.id, agent.codeLensStatus==='done') // too tired sorry for this line -bb
-
+            this.sendDoesShowAcceptRejectBarChange(agent.id, agent.codeLensStatus==='done') 
             const accept = new AgentStateLens(linetext.range, agent, {
-              title: "Accept ✅ ",
+              title: "Accept ✅",
               command: "rift.accept",
               tooltip: "Accept the edits below",
               arguments: [agent.id],
