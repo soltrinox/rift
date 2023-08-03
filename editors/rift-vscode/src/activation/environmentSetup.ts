@@ -155,74 +155,15 @@ export async function getPythonPipCommands() {
 }
 
 function getActivateUpgradeCommands(pythonCmd: string, pipCmd: string) {
-    let activateCmd = ". env/bin/activate";
     let pipUpgradeCmd = `${pipCmd} install --upgrade pip`;
     if (process.platform == "win32") {
-        activateCmd = ".\\env\\Scripts\\activate";
         pipUpgradeCmd = `${pythonCmd} -m pip install --upgrade pip`;
     }
-    return [activateCmd, pipUpgradeCmd];
+    return [pipUpgradeCmd];
 }
 
-function checkEnvExists() {
-    const envBinPath = path.join(
-        serverPath(),
-        "env",
-        process.platform == "win32" ? "Scripts" : "bin"
-    );
-    return (
-        fs.existsSync(path.join(envBinPath, "activate")) &&
-        fs.existsSync(
-            path.join(envBinPath, process.platform == "win32" ? "pip.exe" : "pip")
-        )
-    );
-}
 
-async function checkRequirementsInstalled() {
-    // First, check if the requirements have been installed most recently for a later version of the extension
-    if (fs.existsSync(requirementsVersionPath())) { //(afik) always false???
-        const requirementsVersion = fs.readFileSync(
-            requirementsVersionPath(),
-            "utf8"
-        );
-        if (requirementsVersion !== getExtensionVersion()) {
-            // Remove the old version of pyrift from site-packages
-            const [pythonCmd, pipCmd] = await getPythonPipCommands();
-            const [activateCmd] = getActivateUpgradeCommands(pythonCmd, pipCmd);
-            const removeOldVersionCommand = [
-                `cd "${serverPath()}"`,
-                activateCmd,
-                `${pipCmd} uninstall -y pyrift`,
-            ].join(" ; ");
-            await runCommand(removeOldVersionCommand);
-            return false;
-        }
-    }
 
-    let envLibsPath = path.join(
-        serverPath(),
-        "env",
-        process.platform == "win32" ? "Lib" : "lib"
-    );
-    // If site-packages is directly under env, use that
-    if (fs.existsSync(path.join(envLibsPath, "site-packages"))) {
-        envLibsPath = path.join(envLibsPath, "site-packages");
-    } else {
-        // Get the python version folder name
-        const pythonVersions = fs.readdirSync(envLibsPath).filter((f: string) => {
-            return f.startsWith("python");
-        });
-        if (pythonVersions.length == 0) {
-            return false;
-        }
-        const pythonVersion = pythonVersions[0];
-        envLibsPath = path.join(envLibsPath, pythonVersion, "site-packages");
-    }
-
-    const riftPath = path.join(envLibsPath, "pyrift");
-
-    return fs.existsSync(riftPath);
-}
 
 async function getLinuxAptInstallError(pythonCmd: string) {
     // First, try to run the command to install python3-venv
@@ -240,12 +181,7 @@ async function getLinuxAptInstallError(pythonCmd: string) {
 }
 
 async function createPythonVenv(pythonCmd: string) {
-    if (checkEnvExists()) {
-        console.log("Python env already exists, skipping...");
-    } else {
-        // Assemble the command to create the env
-        const createEnvCommand = [
-            `cd "${serverPath()}"`,
+     const createEnvCommand = [
             `${pythonCmd} -m venv env`,
         ].join(" ; ");
 
@@ -264,8 +200,6 @@ async function createPythonVenv(pythonCmd: string) {
             const msg = await getLinuxAptInstallError(pythonCmd);
             console.log(msg);
             await vscode.window.showErrorMessage(msg);
-        } else if (checkEnvExists()) {
-            console.log("Successfully set up python env at ", `${serverPath()}/env`);
         } else if (
             stderr?.includes("Permission denied") &&
             stderr?.includes("python.exe")
@@ -277,9 +211,6 @@ async function createPythonVenv(pythonCmd: string) {
                 setInterval(() => {
                     if (i > 5) {
                         reject("Timed out waiting for other window to create env...");
-                    }
-                    if (checkEnvExists()) {
-                        resolve(null);
                     } else {
                         console.log("Waiting for other window to create env...");
                     }
@@ -295,14 +226,13 @@ async function createPythonVenv(pythonCmd: string) {
             console.log(msg);
             throw new Error(msg);
         }
-    }
 }
 
 async function setupPythonEnv() {
     console.log("Setting up python env for Rift extension...");
 
     const [pythonCmd, pipCmd] = await getPythonPipCommands();
-    const [activateCmd, pipUpgradeCmd] = getActivateUpgradeCommands(
+    const [, pipUpgradeCmd] = getActivateUpgradeCommands(
         pythonCmd,
         pipCmd
     );
@@ -312,22 +242,17 @@ async function setupPythonEnv() {
         await createPythonVenv(pythonCmd);
 
         // Install the requirements
-        if (await checkRequirementsInstalled()) {
-            console.log("Python requirements already installed, skipping...");
-        } else {
-            const installRequirementsCommand = [
-                `cd "${serverPath()}"`,
-                activateCmd,
+        const installRequirementsCommand = [
                 pipUpgradeCmd,
-                `${pipCmd} install git+https://github.com/morph-labs/rift.git@dev#subdirectory=rift-engine`,
+                `${pipCmd} install git+https://github.com/morph-labs/rift.git#egg=version_subpkg&subdirectory=rift-engine`,
             ].join(" ; ");
             const [, stderr] = await runCommand(installRequirementsCommand);
             if (stderr) {
                 throw new Error(stderr);
             }
             // Write the version number for which requirements were installed
-            fs.writeFileSync(requirementsVersionPath(), getExtensionVersion());
-        }
+            //fs.writeFileSync(requirementsVersionPath(), getExtensionVersion());
+        
     });
 }
 
@@ -379,51 +304,9 @@ async function checkServerRunning(serverUrl: string): Promise<boolean> {
     }
 }
 
-export function getRiftGlobalPath(): string {
-    // This is ~/.rift on mac/linux
-    const riftPath = path.join(os.homedir(), ".rift");
-    if (!fs.existsSync(riftPath)) {
-        fs.mkdirSync(riftPath);
-    }
-    return riftPath;
-}
-
-//copies all extension files to the server for some reason
-function setupServerPath() {
-    const sPath = serverPath();
-    const extensionServerPath = path.join(getExtensionUri().fsPath, "server");
-    const files = fs.readdirSync(extensionServerPath);
-    files.forEach((file) => {
-        const filePath = path.join(extensionServerPath, file);
-        fs.copyFileSync(filePath, path.join(sPath, file));
-    });
-}
-
-function serverPath(): string {
-    const sPath = path.join(getRiftGlobalPath(), "server");
-    if (!fs.existsSync(sPath)) {
-        fs.mkdirSync(sPath);
-    }
-    return sPath;
-}
-
-export function devDataPath(): string {
-    const sPath = path.join(getRiftGlobalPath(), "dev_data");
-    if (!fs.existsSync(sPath)) {
-        fs.mkdirSync(sPath);
-    }
-    return sPath;
-}
-
-function serverVersionPath(): string {
-    return path.join(serverPath(), "server_version.txt");
-}
-
-function requirementsVersionPath(): string {
-    return path.join(serverPath(), "requirements_version.txt");
-}
 
 export function getExtensionVersion() {
+    console.log(vscode.extensions);
     const extension = vscode.extensions.getExtension("morph.rift");
     return extension?.packageJSON.version || "";
 }
@@ -436,50 +319,34 @@ export async function startRiftPythonServer() {
 
     return await retryThenFail(async () => {
         console.log("Checking if server is old version");
-        // Kill the server if it is running an old version
-        if (fs.existsSync(serverVersionPath())) {
-            const serverVersion = fs.readFileSync(serverVersionPath(), "utf8");
-            if ( //TODO: Implement server version check. Right now we just check if server is running. If it's running we won't kill it
-                // serverVersion === getExtensionVersion() &&
-                (await checkServerRunning(serverUrl))
-            ) {
-                // The current version is already up and running, no need to continue
-                return;
-            }
-        }
-        console.log("Killing old server...");
+        //TODO: Kill the server if it is running an old version
+        /*if (!(await checkServerRunning(serverUrl))) {
+            console.log("Killing old server...");
         try {
             await fkill(":7797");
         } catch (e: any) {
             if (!e.message.includes("Process doesn't exist")) {
                 console.log("Failed to kill old server:", e);
             }
-        }
+            */
 
-        // Do this after above check so we don't have to waste time setting up the env
-        await setupPythonEnv();
-
+        setupPythonEnv();
         // Spawn the server process on port 65432
         const [pythonCmd] = await getPythonPipCommands();
-        const activateCmd =
-            process.platform == "win32"
-                ? ".\\env\\Scripts\\activate"
-                : ". env/bin/activate";
 
-        const command = `cd "${serverPath()}" && ${activateCmd} && cd .. && ${pythonCmd} -m rift.server.core --port 7797`;
+        const command = `pip install rift | rift`;
 
         return new Promise(async (resolve, reject) => {
-            console.log("Starting Rift python server...");
+            console.log("Starting Rift python server...   "+command);
             try {
                 const child = spawn(command, {
                     shell: true,
                 });
                 child.stderr.on("data", (data: any) => {
                     if (
-                        data.includes("Uvicorn running on") || // Successfully started the server
-                        data.includes("only one usage of each socket address") || // [windows] The server is already running (probably a simultaneously opened VS Code window)
-                        data.includes("address already in use") // [mac/linux] The server is already running (probably a simultaneously opened VS Code window)
+                        data.includes("rift")
                     ) {
+                        console.log("MYDATA"+data)
                         console.log("Successfully started Rift python server");
                         resolve(null);
                     } else if (data.includes("ERROR") || data.includes("Traceback")) {
@@ -500,8 +367,6 @@ export async function startRiftPythonServer() {
                     console.log(`stdout: ${data}`);
                 });
 
-                // Write the current version of vscode to a file called server_version.txt
-                fs.writeFileSync(serverVersionPath(), getExtensionVersion());
             } catch (e) {
                 console.log("Failed to start Rift python server", e);
                 // If failed, check if it's because the server is already running (might have happened just after we checked above)
@@ -513,11 +378,6 @@ export async function startRiftPythonServer() {
             }
         });
     });
-}
-
-export function isPythonEnvSetup(): boolean {
-    const pathToEnvCfg = path.join(serverPath(), "env", "pyvenv.cfg");
-    return fs.existsSync(pathToEnvCfg);
 }
 
 export async function downloadPython3() {
