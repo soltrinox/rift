@@ -18,4 +18,8 @@ export const state = readable<WebviewState>(DEFAULT_STATE, (set) => {
   return () => window.removeEventListener("message", handler);
 });
 
-export const dropdownOpen = writable(false);
+// ChatWebview
+export const dropdownStatus = writable<'slash' | 'at' | 'none'>('none')
+export const filteredAgents = writable<AgentRegistryItem[]>([])
+export const filteredFiles = writable<AtableFileWithCommand[]>([])
+export const focusedFileIndex = writable<number>(0)
