@@ -48,9 +48,8 @@
     // the following lines are directly copied from https://stackoverflow.com/questions/52031552/multiple-n-instances-are-ignored-in-showdown
     // TODO: re-evaluate my life decisions.
     // (and decision to use showdown. it appears markdown typically doesn't have consecutive \n's? but chatgpt api does or something???)
-  function textToFormattedHTML(text: string) {
     console.log(`Original text: ${text}`);
-    const fixedCodeBlocksText = fixCodeBlocks(text)
+    // const fixedCodeBlocksText = fixCodeBlocks(text)
     const text2 = fixedCodeBlocksText.replace(/\n{2,}/g, (m) => m.replace(/\n/g, "<br/>"))
     const text3 = text2.replace(/<br\/>([^<])/g, "<br/>\n\n$1")
     text = converter.makeHtml(text3)
