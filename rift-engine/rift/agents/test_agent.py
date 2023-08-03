@@ -39,10 +39,18 @@ class TestAgent(Agent):
     state: Optional[TestAgentState] = None
     agent_type: str = "test_agent"
     params_cls: ClassVar[Any] = TestAgentParams
+    response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    _response_buffer: str = ""
 
     async def run(self):
         # Send an initial update
         await self.send_update("test")
+
+        # Run the chat thread
+        await self._run_chat_thread(response_stream)
+
+        # Initialize response_stream
+        response_stream = ""
 
         # Enter a loop to continuously interact with the user
         while True:
@@ -62,6 +70,27 @@ class TestAgent(Agent):
 
             # Append a test response from the assistant to the state's messages
             self.state.messages.append(openai.Message.assistant("test"))
+
+    async def _run_chat_thread(self, response_stream):
+        """
+        Run the chat thread.
+        :param response_stream: The stream of responses from the chat.
+        """
+
+        before, after = response_stream.split_once("感")
+
+        try:
+            async with self.state.response_lock:
+                async for delta in before:
+                    self._response_buffer += delta
+                    await self.send_progress({"response": self._response_buffer})
+
+            await asyncio.sleep(0.1)
+
+            await self._run_chat_thread(after)
+
+        except Exception as e:
+            logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
 
     @classmethod
     async def create(cls, params: TestAgentParams, server):
