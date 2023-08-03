@@ -39,6 +39,18 @@ hf = [
   "torch",
 ]
 
+smol_dev = [
+  "smol_dev @ git+https://www.github.com/jesse-michael-han/smol_dev",
+]
+
+gpt-engineer = [
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
+]
+
+aider = [
+  "aider-chat @ git+https://github.com/morph-labs/aider"
+]
+
 [project.urls]
 Documentation = "https://github.com/morph-labs/rift#readme"
 Issues = "https://github.com/morph-labs/rift/issues"

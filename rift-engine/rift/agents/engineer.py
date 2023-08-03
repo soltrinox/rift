@@ -1,3 +1,27 @@
+try:
+    import gpt_engineer
+    import gpt_engineer.chat_to_files
+    import gpt_engineer.db
+    from gpt_engineer.ai import AI, fallback_model
+    from gpt_engineer.collect import collect_learnings
+    from gpt_engineer.db import DB, DBs, archive
+    from gpt_engineer.learning import collect_consent
+    from gpt_engineer.steps import STEPS
+    from gpt_engineer.steps import Config as StepsConfig
+
+except ImportError:
+    raise Exception(
+        '`gpt_engineer` not found. Try `pip install -e "rift-engine[gpt-engineer]"` from the repository root directory.'
+    )
+
+try:
+    gpt_engineer.__author__
+except AttributeError:
+    raise Exception(
+        'Wrong version of `gpt-engineer` installed. Please try `pip install -e "rift-engine[gpt-engineer]" --force-reinstall` from the Rift root directory.'
+    )
+
+
 import asyncio
 import functools
 import logging
@@ -24,8 +48,6 @@ from rift.agents.abstract import (
 from rift.util import file_diff
 from rift.util.context import contextual_prompt, resolve_inline_uris
 from rift.util.TextStream import TextStream
-
-SEEN = set()
 
 STEPS_AGENT_TASKS_NAME_QUEUE = asyncio.Queue()
 STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
@@ -109,7 +131,10 @@ class EngineerAgentState(AgentState):
 @agent(
     agent_description="Specify what you want it to build, the AI asks for clarification, and then builds it.",
     display_name="GPT Engineer",
-)
+    agent_icon="""\
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.6245 4.13419C14.5656 3.89656 14.2682 3.81603 14.0951 3.98919L12.1382 5.94603L10.3519 5.6484L10.0543 3.86209L12.0111 1.90525C12.1853 1.73104 12.1014 1.4342 11.8622 1.37472C10.6153 1.06578 9.24244 1.39867 8.26797 2.37288C7.22481 3.41604 6.93771 4.92814 7.37192 6.24656L1.75641 11.8621C1.09878 12.5197 1.09878 13.586 1.75641 14.2436C2.41404 14.9013 3.48035 14.9013 4.13798 14.2436L9.74875 8.63287C11.0677 9.0726 12.5769 8.78234 13.6269 7.73234C14.6024 6.75682 14.9348 5.38182 14.6245 4.13419ZM2.94746 13.6842C2.59877 13.6842 2.31588 13.4013 2.31588 13.0526C2.31588 12.7036 2.59877 12.421 2.94746 12.421C3.29614 12.421 3.57903 12.7036 3.57903 13.0526C3.57903 13.4013 3.29614 13.6842 2.94746 13.6842Z" fill="#CCCCCC"/>
+</svg>""")
 @dataclass
 class EngineerAgent(Agent):
     state: EngineerAgentState
@@ -138,22 +163,6 @@ class EngineerAgent(Agent):
         :param kwargs: Additional parameters.
         """
         loop = asyncio.get_event_loop()
-
-        try:
-            import gpt_engineer
-            import gpt_engineer.chat_to_files
-            import gpt_engineer.db
-            from gpt_engineer.ai import AI, fallback_model
-            from gpt_engineer.collect import collect_learnings
-            from gpt_engineer.db import DB, DBs, archive
-            from gpt_engineer.learning import collect_consent
-            from gpt_engineer.steps import STEPS
-            from gpt_engineer.steps import Config as StepsConfig
-
-        except ImportError:
-            raise Exception(
-                '`gpt_engineer` not found. Try `pip install -e "rift-engine[gpt-engineer]"` from the repository root directory.'
-            )
 
         def _popup_chat_wrapper(prompt: str = "NONE", end=""):
             async def _worker():

@@ -63,7 +63,11 @@ class AiderAgentState(agent.AgentState):
     response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
-@agent.agent(agent_description="Request codebase-wide edits through chat.", display_name="Aider")
+@agent.agent(agent_description="Request codebase-wide edits through chat.", display_name="Aider",
+agent_icon="""\
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.7369 5.47266H10.4606V1.26318H5.53949V5.47266H1.26318V10.3166H5.53949V14.5261H10.4606V10.3166H14.7369V5.47266Z" fill="#CCCCCC"/>
+</svg>""")
 @dataclass
 class Aider(agent.Agent):
     agent_type: ClassVar[str] = "aider"
