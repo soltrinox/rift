@@ -40,6 +40,6 @@ https://github.com/morph-labs/rift/assets/122334950/a5fee985-5bba-4cad-84d6-c019
 From the Rift VSCode extension, press `Ctrl + ,` to open the settings tab, then search for `Rift` and select the models you want to use for chat and code completions from the dropdown menu.
 
 ## Contributing
-We welcome contributions to Rift at all levels of the stack, from adding support for new open-source models in the Rift Code Engine, to implementing the Rift API for your favorite programming language, to UX polish in the VSCode extension, to adding support for your [favorite](./editors/emacs) [editor](./editors/vim).
+We welcome contributions to Rift at all levels of the stack, from adding support for new open-source models in the Rift Code Engine, to implementing the Rift API for your favorite programming language, to UX polish in the VSCode extension, to adding support for your editor. See our [contribution guide](/CONTRIBUTORS.md).
 
 Programming is evolving. Join the [community](https://discord.gg/wa5sgWMfqv), contribute to our roadmap, and help shape the future of software.

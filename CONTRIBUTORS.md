@@ -1,16 +1,64 @@
-# Contributors
+# Contributing to Rift
 
-Rift is an open-source project that values contributions from developers like you! Whether you're interested in working on the core components, the API, the VSCode extension, or adding support for your preferred editor, we have opportunities for you to make a difference.
+Love Rift and want to get involved? You're in the right place! We appreciate your interest in contributing. Even if you aren't writing code, there are many ways to help contribute. This guide will help you understand how you can contribute to the project effectively.
 
-Here are some ways you can contribute:
+## Table of Contents
 
-1. [Rift Code Engine](./rift-engine/CONTRIBUTING.md): Help us expand Rift's capabilities by adding support for new open-source models.
+- [How to Contribute](#how-to-contribute)
+  - [Report Bugs](#report-bugs)
+  - [Suggest Features](#suggest-features)
+  - [Update Docs](#update-docs)
+  - [Write Code](#write-code)
+- [Editors](#editors)
+    - [VSCode Extension](#vscode-extension)
+    - [Vim](#vim)
+    - [Emacs](#emacs)
+- [Rift Engine](#rift-engine)
 
-1. [Rift API](./rift-engine/CONTRIBUTING.md): Make it easier for developers to interact with Rift.
+## How to Contribute
 
-1. [VSCode Extension](./editors/rift-vscode-svelte/CONTRIBUTING.md): Improve the user experience of Rift in VSCode by polishing the extension.
+### Report Bugs
 
-1. [Editor Support](./editors): If you're passionate about your favorite editor, help us add Rift support for it! Whether you use [Emacs](./editors/rift-emacs/), [Vim](./editors/rift-vim/), or any other editor.
+If you encounter any bugs or issues while using the Rift, please help us improve by reporting them. To report a bug, follow these steps:
+
+1. Go to the [Issues](https://github.com/morph-labs/rift/issues) section of the project on GitHub.
+1. Click on the "New Issue" button.
+1. Provide a clear and detailed description of the bug you encountered, along with steps to reproduce it if possible.
+
+### Suggest Features
+
+Have a great idea for a new feature? We'd love to hear it! To suggest a new feature for Rift, follow these steps:
+
+1. Go to the [Issues](https://github.com/morph-labs/rift/issues) section of the project on GitHub.
+1. Click on the "New Issue" button.
+1. Describe the feature you'd like to see implemented, providing as much context and use cases as possible.
+
+### Update Docs
+
+Documentation is vital for a successful open-source project. If you find any areas in the documentation that need improvement or want to add missing information, we appreciate your efforts. To contribute to the documentation
+
+### Write Code
+
+We welcome contributions to the Rift codebase. If you want to contribute code, please follow these steps:
+
+1. Browse through the Issues section to find an existing issue you'd like to work on or identify a new improvement to make.
+1. Comment on the issue to express your interest in working on it and wait for approval from project maintainers.
+1. Fork the repository to your GitHub account.
+1. Create a new branch for your contribution, with a descriptive name related to the issue or task you're addressing.
+1. Make the necessary code changes and improvements.
+1. Write tests if applicable to ensure the code behaves as expected.
+1. Submit a Pull Request (PR) to the main repository, clearly explaining the changes you made and referencing the related issue.
+1. We'll review your PR as soon as possible and provide feedback or merge it into the project.
+
+## Editors
+### VSCode Extension
+See [rift-vscode](/editors/rift-vscode/CONTRIBUTING.md)
+### Vim
+See [rift-vim](/editors/rift-vim/README.md)
+### Emacs
+See [rift-vim](/editors/rift-emacs/README.md)
+## Rift Engine
+See [rift-engine](/rift-engine/README.md)
 
 We value every contribution, no matter the level of expertise, and appreciate the effort you put into making Rift better. Join our [community](https://discord.gg/wa5sgWMfqv) of developers and help shape the future of software.
 
