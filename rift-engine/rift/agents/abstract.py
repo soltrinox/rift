@@ -119,7 +119,7 @@ class Agent:
         return f"<{self.agent_type}> {self.agent_id}"
 
     @classmethod
-    async def create(cls, params: Type[AgentParams], server: BaseLspServer):
+    async def create(cls, params: AgentParams, server: BaseLspServer):
         """
         Factory function which is responsible for constructing the agent's state.
         """
