@@ -1,3 +1,4 @@
+import traceback
 import asyncio
 import logging
 from dataclasses import dataclass
@@ -62,7 +63,8 @@ class AgentTask:
             # raise e
         except Exception as e:
             self._error = e
-            logger.debug(f"[AgentTask] caught error: {e}")
+            logger.info(f"[AgentTask] caught error: {e}")
+            logger.info(traceback.format_exc())
         finally:
             self._running = False
 
@@ -106,7 +108,6 @@ class AgentTask:
         """
         status = self._error is not None
         if status:
-            logger.info(f"[AgentTask] exception={self._task.exception()}")
             logger.info(f"[AgentTask] exception={self._error}")
         return status
 

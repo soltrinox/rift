@@ -357,36 +357,34 @@ class Aider(agent.Agent):
             aider_finished = True
             event.set()
 
-        try:
-            with futures.ThreadPoolExecutor(1) as pool:
+        with futures.ThreadPoolExecutor(1) as pool:
 
-                async def run_aider():
-                    aider_fut = loop.run_in_executor(
-                        pool,
-                        aider.main.main,
-                        [],
-                        on_write,
-                        on_commit,
-                        None,
-                        None,
-                        self.state.params.workspaceFolderPath,
-                    )
-                    aider_fut.add_done_callback(done_cb)
-                    logger.info("Running aider thread")
-                    return await aider_fut
 
-                asyncio.create_task(run_aider())
+            aider_fut = loop.run_in_executor(
+                pool,
+                aider.main.main,
+                [],
+                on_write,
+                on_commit,
+                None,
+                None,
+                self.state.params.workspaceFolderPath,
+            )
+            aider_fut.add_done_callback(done_cb)
+            logger.info("Running aider thread")
 
-                while True:
-                    await event.wait()
-                    if aider_finished:
-                        break
-                    if len(file_changes) > 0:
-                        await self.apply_file_changes(file_changes)
-                        file_changes = []
-                    event2.set()
-                    event.clear()
-        except Exception as e:
-            logger.info(f"[Aider] caught exception {e=}")
-        finally:
-            await self.send_progress()
+            while True:
+                await event.wait()
+                if aider_finished:
+                    break
+                if len(file_changes) > 0:
+                    await self.apply_file_changes(file_changes)
+                    file_changes = []
+                event2.set()
+                event.clear()
+            try:
+                await aider_fut
+            except (Exception, SystemExit) as e:
+                logger.info(f"[aider] caught {e}, exiting")
+            finally:
+                await self.send_progress()
