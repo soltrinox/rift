@@ -474,7 +474,8 @@ export class MorphLanguageClient
     const folders = vscode.workspace.workspaceFolders;
     if (!folders) throw new Error("no current workspace");
     const workspaceFolderPath = folders[0].uri.fsPath;
-    let document = editor?.document;
+    if(!editor) throw new Error("make sure you have a file open pls. this is an upsteam error because the server currently doesn't have handling for this.")
+    let document = editor.document;
     let textDocument: OptionalTextDocument = null;
     if (document != undefined) {
       textDocument = { uri: document.uri.toString(), version: 0 };
