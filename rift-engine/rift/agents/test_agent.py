@@ -1,8 +1,8 @@
 """
 This module provides a minimal implementation of the Agent API defined in rift.agents.abstract.
 """
-
-from dataclasses import dataclass
+import asyncio
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
 
 import rift.llm.openai_types as openai
