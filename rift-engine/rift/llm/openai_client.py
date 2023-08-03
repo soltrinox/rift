@@ -670,25 +670,4 @@ class OpenAIClient(BaseSettings, AbstractCodeCompletionProvider, AbstractChatCom
         raise Exception("unreachable code")
 
 
-async def _main():
-    client = OpenAIClient()  # type: ignore
-    print(client)
-    messages = [
-        Message.system("you are a friendly and witty chatbot."),
-        Message.user("please tell me a joke involving a lemon and a rubiks cube."),
-        Message.assistant("i won't unless if you ask nicely"),
-    ]
 
-    stream = await client.run_chat("fee fi fo fum", messages=messages, message="pretty please?")
-    async for delta in stream.text:
-        print(delta)
-    # print("\n\n")
-    # async for x in client.chat_completions(messages, stream=True):
-    #     text = x.choices[0].delta.content or ""
-    #     print(text, end="")
-
-    # print("\n\n")
-
-
-if __name__ == "__main__":
-    asyncio.run(_main())

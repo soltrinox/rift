@@ -250,8 +250,7 @@ class LspServer(BaseLspServer):
 
     @rpc_method("morph/restart_agent")
     async def on_restart_agent(self, params: AgentIdParams) -> CreateAgentResult:
-        logger.info("reset:")
-        print("test")
+        logger.info("restarting agent")
         agent_id = params.id
         old_agent = self.active_agents[agent_id]
         old_params = old_agent.state.params

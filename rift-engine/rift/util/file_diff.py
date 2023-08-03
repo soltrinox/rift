@@ -128,16 +128,3 @@ def edits_from_file_changes(
     return WorkspaceEdit(documentChanges=documentChanges, changeAnnotations=changeAnnotations)
 
 
-if __name__ == "__main__":
-    file1 = "tests/diff/file1.txt"
-    file2 = "tests/diff/file2.txt"
-    with open(file1, "r") as f1, open(file2, "r") as f2:
-        uri = TextDocumentIdentifier(uri="file://" + file1, version=0)
-        file_change = get_file_change(path=file1, new_content=f2.read())
-        workspace_edit = edits_from_file_change(file_change=file_change)
-        print(f"\nworkspace_edit: {workspace_edit}\n")
-        dummy_path = "dummy.txt"
-        dummy_content = "dummy content"
-        file_change = get_file_change(path=dummy_path, new_content=dummy_content)
-        workspace_edit = edits_from_file_change(file_change=file_change)
-        print(f"\ntest_new_file: {workspace_edit}\n")

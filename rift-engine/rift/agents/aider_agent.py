@@ -188,7 +188,6 @@ class Aider(agent.Agent):
         ##### PATCHES
 
         def confirm_ask(self, question, default="y"):
-            # print(f"[confirm_ask] question={question}")
             self.num_user_asks += 1
 
             if self.yes is True:
@@ -299,7 +298,6 @@ class Aider(agent.Agent):
                 messages = list(map(Text, messages))
                 style = dict(style=self.tool_output_color) if self.tool_output_color else dict()
                 if hist:
-                    # print(f"{hist=}")
                     send_chat_update_wrapper(hist + "\n")
 
         aider.io.InputOutput.tool_output = tool_output
