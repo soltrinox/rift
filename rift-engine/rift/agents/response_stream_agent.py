@@ -9,6 +9,7 @@ from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
 
+
 class ResponseStreamAgentState(agent.AgentState):
     """
     A subclass of AgentState for the ResponseStreamAgent.
@@ -17,6 +18,7 @@ class ResponseStreamAgentState(agent.AgentState):
     def __init__(self, params: agent.AgentParams, messages: list[openai.Message]):
         super().__init__(params, messages)
         self.response_lock = asyncio.Lock()
+
 
 class ResponseStreamAgent(agent.Agent, ABC):
     """

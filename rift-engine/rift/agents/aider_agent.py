@@ -28,11 +28,12 @@ from dataclasses import dataclass, field
 from pathlib import PurePath
 from typing import Any, ClassVar, List, Optional
 
+from rich.text import Text
+
 import rift.agents.abstract as agent
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
-from rich.text import Text
 from rift.util.TextStream import TextStream
 
 logger = logging.getLogger(__name__)
@@ -358,6 +359,7 @@ class Aider(agent.Agent):
 
         try:
             with futures.ThreadPoolExecutor(1) as pool:
+
                 async def run_aider():
                     aider_fut = loop.run_in_executor(
                         pool,
@@ -372,6 +374,7 @@ class Aider(agent.Agent):
                     aider_fut.add_done_callback(done_cb)
                     logger.info("Running aider thread")
                     return await aider_fut
+
                 asyncio.create_task(run_aider())
 
                 while True:

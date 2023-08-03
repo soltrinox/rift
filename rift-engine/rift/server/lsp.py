@@ -118,10 +118,12 @@ class LspServer(BaseLspServer):
             language_map = json.loads(f)
 
         # Helper function to find the matching language id, given a file path and language map
-        # The id of the language is returned, if found in the language map 
-        def find_matching_language(filepath: str, language_map: Dict[str, List[Dict[str, str]]]) -> Optional[str]:
+        # The id of the language is returned, if found in the language map
+        def find_matching_language(
+            filepath: str, language_map: Dict[str, List[Dict[str, str]]]
+        ) -> Optional[str]:
             # Getting the file extension
-            extension = filepath.split(".")[-1] 
+            extension = filepath.split(".")[-1]
 
             # loop over the details in the language map
             for details in language_map["languages"]:
@@ -167,7 +169,6 @@ class LspServer(BaseLspServer):
             )
             # Adding the TextDocumentItem to the result documents dictionary
             result_documents[doc_item.uri] = doc_item
-
 
     @rpc_method("morph/applyWorkspaceEdit")
     async def on_workspace_did_change_configuration(self, params: lsp.ApplyWorkspaceEditParams):

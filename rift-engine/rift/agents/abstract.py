@@ -9,8 +9,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
-import rift.lsp.types as lsp
 from pydantic import BaseModel
+
+import rift.lsp.types as lsp
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
@@ -140,11 +141,12 @@ class Agent:
         # Capture the current loop context
         try:
             loop = asyncio.get_running_loop()
-            
+
             # On completion of the task we call the callable object done_cb with the provided arguments
             # done_cb tries to send_progress() using the captured loop context irrespective of where it's called from.
             def done_cb(*args):
                 asyncio.run_coroutine_threadsafe(self.send_progress(), loop=loop)
+
             kwargs["done_callback"] = done_cb
         # Pass if loop context doesn't exist(not running any asynchronous code)
         except:
@@ -190,10 +192,9 @@ class Agent:
                 f"morph/{self.agent_type}_{self.agent_id}_request_input", req
             )
             return response["response"]
-        except Exception as e:# return the response from the user
+        except Exception as e:  # return the response from the user
             return response["response"]
         # exception handling block
-
 
     async def send_update(self, msg: str):
         """
@@ -308,7 +309,7 @@ class Agent:
             logger.info(f"{self} cancelled: {e}")
 
             # Call the cancel method if a CancelledError exception happens
-            await self.cancel()        
+            await self.cancel()
 
 
 @dataclass

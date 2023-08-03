@@ -125,13 +125,19 @@ class SmolAgent(Agent):
             FUTURES[RESPONSE] = asyncio.wrap_future(fut)
 
         async def get_plan():
-            fut = asyncio.create_task(asyncio.coroutine(smol_dev.prompts.plan)(
-                prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
-            ))
+            fut = asyncio.create_task(
+                asyncio.coroutine(smol_dev.prompts.plan)(
+                    prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
+                )
+            )
 
-            fut.add_done_callback(lambda _: asyncio.run_coroutine_threadsafe(self.send_progress(dict(done_streaming=True)), loop=loop))
-            
-            return 
+            fut.add_done_callback(
+                lambda _: asyncio.run_coroutine_threadsafe(
+                    self.send_progress(dict(done_streaming=True)), loop=loop
+                )
+            )
+
+            return
 
         plan = await self.add_task(description="Generate plan", task=get_plan).run()
 
