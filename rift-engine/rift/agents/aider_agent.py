@@ -63,7 +63,7 @@ class AiderAgentState(agent.AgentState):
     response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
-@agent.agent(agent_description="Request codebase-wide edits through chat", display_name="Aider")
+@agent.agent(agent_description="Request codebase-wide edits through chat.", display_name="Aider")
 @dataclass
 class Aider(agent.Agent):
     agent_type: ClassVar[str] = "aider"
