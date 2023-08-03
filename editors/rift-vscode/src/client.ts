@@ -293,7 +293,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             })
             items.push(running)
           } else if (agent.codeLensStatus === "done" || agent.codeLensStatus === "error") {
-            this.sendDoesShowAcceptRejectBarChange(agent.id, true)
+            this.sendDoesShowAcceptRejectBarChange(agent.id, agent.codeLensStatus==='done') // too tired sorry for this line -bb
+
             const accept = new AgentStateLens(linetext.range, agent, {
               title: "Accept ✅ ",
               command: "rift.accept",
