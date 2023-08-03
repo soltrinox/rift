@@ -125,7 +125,7 @@ type CodeEditPayload =
 
 // FIXME add type interfaces. as of now, this is not typescript.
 async function code_edit_send_progress_handler(
-  params: AgentProgress<CodeEditPayload>,
+  params: AgentProgress<any>,
   agent: Agent,
 ): Promise<void> {
   console.log(`PARAMS:`, params);
@@ -138,7 +138,7 @@ async function code_edit_send_progress_handler(
       }
     }
   }
-  if (typeof params.payload !== "string" && params.payload?.ready) {
+  if (params.payload?.ready) {
     agent.codeLensStatus = "done";
     agent.onStatusChangeEmitter.fire("done");
   }

@@ -51,7 +51,6 @@ class CodeEditAgentParams(AgentParams):
 # dataclass for representing the state of the code completion agent
 @dataclass
 class CodeEditAgentState(AgentState):
-    
     model: AbstractCodeEditProvider
     document: lsp.TextDocumentItem
     active_range: lsp.Range
@@ -125,7 +124,7 @@ class CodeEditAgent(Agent):
                         if self.state._done:
                             return CodeEditRunResult()
                     instructionPrompt = await instructionPrompt_task
-                        
+
                     documents = resolve_inline_uris(instructionPrompt, self.server)
                     self.server.register_change_callback(self.on_change, self.state.document.uri)
                     from diff_match_patch import diff_match_patch
@@ -275,6 +274,7 @@ class CodeEditAgent(Agent):
                             ready=True,
                         )
                     )
+                    logger.info("sent ready=True")
                 finally:
                     self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
             return CodeEditRunResult()
