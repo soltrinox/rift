@@ -238,8 +238,7 @@ async function setupPythonEnv() {
     );
 
     await retryThenFail(async () => {
-        // First, create the virtual environment
-        await createPythonVenv(pythonCmd);
+        //TODO: venv
 
         // Install the requirements
         const installRequirementsCommand = [
@@ -250,9 +249,7 @@ async function setupPythonEnv() {
             if (stderr) {
                 throw new Error(stderr);
             }
-            // Write the version number for which requirements were installed
-            //fs.writeFileSync(requirementsVersionPath(), getExtensionVersion());
-        
+
     });
 }
 
@@ -334,7 +331,7 @@ export async function startRiftPythonServer() {
         // Spawn the server process on port 65432
         const [pythonCmd] = await getPythonPipCommands();
 
-        const command = `pip install rift | rift`;
+        const command = `rift`;
 
         return new Promise(async (resolve, reject) => {
             console.log("Starting Rift python server...   "+command);
