@@ -591,9 +591,10 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     }
 
     if (this.webviewState.value.agents[agentId].chatHistory.length > 0)
-      console.error(
+      console.warn(
         "discrepancy between server agent chat history and client agent chathistory. taking server as truth"
       )
+      console.log('newChatHistory:', newChatHistory)
     this.webviewState.update((state) => {
       if (!(agentId in state.agents)) throw new Error("changing chatHistory for nonexistent agent")
       return {
