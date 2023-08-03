@@ -34,7 +34,7 @@ class ResponseStreamAgent(agent.Agent, ABC):
         :param response_stream: The stream of responses from the chat.
         :type response_stream: TextStream
         """
-        # split the shared response stream into two parts around the first occurrence of the character "feeling"  
+        # split the shared response stream into two parts around the first occurrence of the character "feeling"
         before, after = response_stream.split_once("feeling")
 
         try:

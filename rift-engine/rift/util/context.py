@@ -1,7 +1,7 @@
-import os
 import contextlib
 import contextvars
 import logging
+import os
 import re
 from typing import Callable, List, Optional, TypeVar
 
@@ -22,13 +22,13 @@ def lookup_match(match: str, server: "Server") -> str:
     logger.info("in lookup match")
     lsp_uri = "file://" + match
     if lsp_uri in server.documents:
-        logger.info(f"[lookup_match] found in server {server.documents.keys()=}")                        
+        logger.info(f"[lookup_match] found in server {server.documents.keys()=}")
         return server.documents[lsp_uri].text
     else:
         logger.info(f"[lookup_match] not found in server")
         try:
             if os.path.isdir(match):
-                logger.info("[lookup_match] match is dir")                
+                logger.info("[lookup_match] match is dir")
                 return ""
             else:
                 logger.info("[lookup_match] reading from filesystem")
