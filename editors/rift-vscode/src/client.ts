@@ -129,7 +129,7 @@ async function code_edit_send_progress_handler(
   params: AgentProgress<any>,
   agent: Agent,
 ): Promise<void> {
-  console.log(`PARAMS:`, params);
+  console.log(`code_edit_send_progress_handler PARAMS:`, params);
   if (params.tasks) {
     // logProvider.postMessage("tasks", { agent_id: params.agent_id, ...params.tasks });
     if (params.tasks.task.status) {
@@ -660,9 +660,6 @@ export class MorphLanguageClient
     // }
 
     // console.log(nonIgnoredFiles)
-    console.log("allFiles:");
-    console.log(allFiles.map((x) => x.path));
-    console.log(allFiles.map((x) => x.fsPath));
 
     this.webviewState.update((pS) => ({
       ...pS,
