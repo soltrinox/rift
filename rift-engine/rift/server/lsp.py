@@ -12,8 +12,7 @@ from rift.agents import AGENT_REGISTRY, Agent, AgentParams, AgentRegistryResult
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
 from rift.llm.create import ModelConfig
 from rift.lsp import BaseLspServer
-from rift.lsp import rpc_method
-from rift.rpc import RpcServerStatus
+from rift.rpc import RpcServerStatus, rpc_method
 from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
@@ -321,3 +320,7 @@ class LspServer(BaseLspServer):
             self.active_agents.pop(params.id, None)
         else:
             logger.error(f"no agent with id {params.id}")
+
+    @rpc_method("health")
+    async def on_health_check(self):
+        return {"status": "Rift server is running"}

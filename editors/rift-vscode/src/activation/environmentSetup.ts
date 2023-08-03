@@ -1,7 +1,6 @@
-import {getExtensionUri} from "../util/vscode";
 import * as path from "path";
 import * as fs from "fs";
-import {getContinueServerUrl} from "../bridge";
+// import {getRiftServerUrl} from "../bridge";
 import fetch from "node-fetch";
 import * as vscode from "vscode";
 import * as os from "os";
@@ -12,9 +11,14 @@ const exec = util.promisify(require("child_process").exec);
 const {spawn} = require("child_process");
 
 const WINDOWS_REMOTE_SIGNED_SCRIPTS_ERROR =
-    "A Python virtual enviroment cannot be activated because running scripts is disabled for this user. In order to use Continue, please enable signed scripts to run with this command in PowerShell: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`, reload VS Code, and then try again.";
+    "A Python virtual enviroment cannot be activated because running scripts is disabled for this user. In order to use Rift, please enable signed scripts to run with this command in PowerShell: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`, reload VS Code, and then try again.";
 
 const MAX_RETRIES = 3;
+
+
+export function getExtensionUri(): vscode.Uri {
+    return vscode.extensions.getExtension("morph.rift")!.extensionUri;
+}
 
 async function retryThenFail(
     fn: () => Promise<any>,
@@ -40,7 +44,7 @@ async function retryThenFail(
 
         // Show corresponding error message depending on the platform
         let msg =
-            "Failed to set up Continue extension. Please email hi@continue.dev and we'll get this fixed ASAP!";
+            "Failed to set up Rift extension. Please email hi@rift.dev and we'll get this fixed ASAP!";
         try {
             switch (process.platform) {
                 case "win32":
@@ -54,12 +58,12 @@ async function retryThenFail(
                     break;
             }
         } finally {
-            console.log("After retries, failed to set up Continue extension", msg);
+            console.log("After retries, failed to set up Rift extension", msg);
             vscode.window
                 .showErrorMessage(msg, "View Logs", "Retry")
                 .then((selection) => {
                     if (selection === "View Logs") {
-                        vscode.commands.executeCommand("continue.viewLogs");
+                        vscode.commands.executeCommand("rift.viewLogs");
                     } else if (selection === "Retry") {
                         // Reload VS Code window
                         vscode.commands.executeCommand("workbench.action.reloadWindow");
@@ -108,7 +112,7 @@ export async function getPythonPipCommands() {
         } else {
             // Python doesn't exist at all
             vscode.window.showErrorMessage(
-                "Continue requires Python3. Please install from https://www.python.org/downloads, reload VS Code, and try again."
+                "Rift requires Python3. Please install from https://www.python.org/downloads, reload VS Code, and try again."
             );
             throw new Error("Python 3 is not installed.");
         }
@@ -127,7 +131,8 @@ export async function getPythonPipCommands() {
             return typeof stderr === "undefined" || stderr === "";
         };
 
-        const VALID_VERSIONS = [8, 9, 10, 11, 12];
+        //TODO does rift actually work with python 3.9?
+        const VALID_VERSIONS = [9, 10, 11, 12];
         let versionExists = false;
 
         for (const minorVersion of VALID_VERSIONS) {
@@ -140,9 +145,9 @@ export async function getPythonPipCommands() {
 
         if (!versionExists) {
             vscode.window.showErrorMessage(
-                "Continue requires Python version 3.8 or greater. Please update your Python installation, reload VS Code, and try again."
+                "Rift requires Python version 3.9 or greater. Please update your Python installation, reload VS Code, and try again."
             );
-            throw new Error("Python3.8 or greater is not installed.");
+            throw new Error("Python3.9 or greater is not installed.");
         }
     }
 
@@ -175,19 +180,19 @@ function checkEnvExists() {
 
 async function checkRequirementsInstalled() {
     // First, check if the requirements have been installed most recently for a later version of the extension
-    if (fs.existsSync(requirementsVersionPath())) {
+    if (fs.existsSync(requirementsVersionPath())) { //(afik) always false???
         const requirementsVersion = fs.readFileSync(
             requirementsVersionPath(),
             "utf8"
         );
         if (requirementsVersion !== getExtensionVersion()) {
-            // Remove the old version of continuedev from site-packages
+            // Remove the old version of pyrift from site-packages
             const [pythonCmd, pipCmd] = await getPythonPipCommands();
             const [activateCmd] = getActivateUpgradeCommands(pythonCmd, pipCmd);
             const removeOldVersionCommand = [
                 `cd "${serverPath()}"`,
                 activateCmd,
-                `${pipCmd} uninstall -y continuedev`,
+                `${pipCmd} uninstall -y pyrift`,
             ].join(" ; ");
             await runCommand(removeOldVersionCommand);
             return false;
@@ -214,9 +219,9 @@ async function checkRequirementsInstalled() {
         envLibsPath = path.join(envLibsPath, pythonVersion, "site-packages");
     }
 
-    const continuePath = path.join(envLibsPath, "continuedev");
+    const riftPath = path.join(envLibsPath, "pyrift");
 
-    return fs.existsSync(continuePath);
+    return fs.existsSync(riftPath);
 }
 
 async function getLinuxAptInstallError(pythonCmd: string) {
@@ -231,7 +236,7 @@ async function getLinuxAptInstallError(pythonCmd: string) {
     const version = stdout.split(" ")[1].split(".")[1];
     const installVenvCommand = `apt-get install python3.${version}-venv`;
     await runCommand("apt-get update");
-    return `[Important] Continue needs to create a Python virtual environment, but python3.${version}-venv is not installed. Please run this command in your terminal: \`${installVenvCommand}\`, reload VS Code, and then try again.`;
+    return `[Important] Rift needs to create a Python virtual environment, but python3.${version}-venv is not installed. Please run this command in your terminal: \`${installVenvCommand}\`, reload VS Code, and then try again.`;
 }
 
 async function createPythonVenv(pythonCmd: string) {
@@ -294,7 +299,7 @@ async function createPythonVenv(pythonCmd: string) {
 }
 
 async function setupPythonEnv() {
-    console.log("Setting up python env for Continue extension...");
+    console.log("Setting up python env for Rift extension...");
 
     const [pythonCmd, pipCmd] = await getPythonPipCommands();
     const [activateCmd, pipUpgradeCmd] = getActivateUpgradeCommands(
@@ -314,7 +319,7 @@ async function setupPythonEnv() {
                 `cd "${serverPath()}"`,
                 activateCmd,
                 pipUpgradeCmd,
-                `${pipCmd} install -r requirements.txt`,
+                `${pipCmd} install git+https://github.com/morph-labs/rift.git@dev#subdirectory=rift-engine`,
             ].join(" ; ");
             const [, stderr] = await runCommand(installRequirementsCommand);
             if (stderr) {
@@ -374,15 +379,16 @@ async function checkServerRunning(serverUrl: string): Promise<boolean> {
     }
 }
 
-export function getContinueGlobalPath(): string {
-    // This is ~/.continue on mac/linux
-    const continuePath = path.join(os.homedir(), ".continue");
-    if (!fs.existsSync(continuePath)) {
-        fs.mkdirSync(continuePath);
+export function getRiftGlobalPath(): string {
+    // This is ~/.rift on mac/linux
+    const riftPath = path.join(os.homedir(), ".rift");
+    if (!fs.existsSync(riftPath)) {
+        fs.mkdirSync(riftPath);
     }
-    return continuePath;
+    return riftPath;
 }
 
+//copies all extension files to the server for some reason
 function setupServerPath() {
     const sPath = serverPath();
     const extensionServerPath = path.join(getExtensionUri().fsPath, "server");
@@ -394,7 +400,7 @@ function setupServerPath() {
 }
 
 function serverPath(): string {
-    const sPath = path.join(getContinueGlobalPath(), "server");
+    const sPath = path.join(getRiftGlobalPath(), "server");
     if (!fs.existsSync(sPath)) {
         fs.mkdirSync(sPath);
     }
@@ -402,7 +408,7 @@ function serverPath(): string {
 }
 
 export function devDataPath(): string {
-    const sPath = path.join(getContinueGlobalPath(), "dev_data");
+    const sPath = path.join(getRiftGlobalPath(), "dev_data");
     if (!fs.existsSync(sPath)) {
         fs.mkdirSync(sPath);
     }
@@ -418,26 +424,23 @@ function requirementsVersionPath(): string {
 }
 
 export function getExtensionVersion() {
-    const extension = vscode.extensions.getExtension("continue.continue");
+    const extension = vscode.extensions.getExtension("morph.rift");
     return extension?.packageJSON.version || "";
 }
 
-export async function startContinuePythonServer() {
+export async function startRiftPythonServer() {
     // Check vscode settings
-    const serverUrl = getContinueServerUrl();
-    if (serverUrl !== "http://localhost:65432") {
-        return;
-    }
+    const serverUrl = "http://localhost:7797"
 
-    setupServerPath();
+    // setupServerPath();
 
     return await retryThenFail(async () => {
         console.log("Checking if server is old version");
         // Kill the server if it is running an old version
         if (fs.existsSync(serverVersionPath())) {
             const serverVersion = fs.readFileSync(serverVersionPath(), "utf8");
-            if (
-                serverVersion === getExtensionVersion() &&
+            if ( //TODO: Implement server version check. Right now we just check if server is running. If it's running we won't kill it
+                // serverVersion === getExtensionVersion() &&
                 (await checkServerRunning(serverUrl))
             ) {
                 // The current version is already up and running, no need to continue
@@ -446,7 +449,7 @@ export async function startContinuePythonServer() {
         }
         console.log("Killing old server...");
         try {
-            await fkill(":65432");
+            await fkill(":7797");
         } catch (e: any) {
             if (!e.message.includes("Process doesn't exist")) {
                 console.log("Failed to kill old server:", e);
@@ -463,10 +466,10 @@ export async function startContinuePythonServer() {
                 ? ".\\env\\Scripts\\activate"
                 : ". env/bin/activate";
 
-        const command = `cd "${serverPath()}" && ${activateCmd} && cd .. && ${pythonCmd} -m server.run_continue_server`;
+        const command = `cd "${serverPath()}" && ${activateCmd} && cd .. && ${pythonCmd} -m rift.server.core --port 7797`;
 
         return new Promise(async (resolve, reject) => {
-            console.log("Starting Continue python server...");
+            console.log("Starting Rift python server...");
             try {
                 const child = spawn(command, {
                     shell: true,
@@ -477,10 +480,10 @@ export async function startContinuePythonServer() {
                         data.includes("only one usage of each socket address") || // [windows] The server is already running (probably a simultaneously opened VS Code window)
                         data.includes("address already in use") // [mac/linux] The server is already running (probably a simultaneously opened VS Code window)
                     ) {
-                        console.log("Successfully started Continue python server");
+                        console.log("Successfully started Rift python server");
                         resolve(null);
                     } else if (data.includes("ERROR") || data.includes("Traceback")) {
-                        console.log("Error starting Continue python server: ", data);
+                        console.log("Error starting Rift python server: ", data);
                     } else {
                         console.log(`stdout: ${data}`);
                     }
@@ -500,7 +503,7 @@ export async function startContinuePythonServer() {
                 // Write the current version of vscode to a file called server_version.txt
                 fs.writeFileSync(serverVersionPath(), getExtensionVersion());
             } catch (e) {
-                console.log("Failed to start Continue python server", e);
+                console.log("Failed to start Rift python server", e);
                 // If failed, check if it's because the server is already running (might have happened just after we checked above)
                 if (await checkServerRunning(serverUrl)) {
                     resolve(null);
