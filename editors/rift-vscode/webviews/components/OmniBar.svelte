@@ -129,7 +129,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
   function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
     editorContent = editor.getText()
-    console.log("handleValueChange: ", editorContent)
 
     // const shouldShowAtDropdown = () => {
     //   latestAtToEndOfTextarea =
