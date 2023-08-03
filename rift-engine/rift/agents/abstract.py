@@ -321,6 +321,7 @@ class AgentRegistryItem:
     agent: Type[Agent]
     agent_description: str
     display_name: Optional[str] = None
+    agent_icon: Optional[str] = None
 
     def __post_init__(self):
         if self.display_name is None:
@@ -352,7 +353,7 @@ class AgentRegistry:
         return self.get_agent(key)
 
     def register_agent(
-        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None
+        self, agent: Type[Agent], agent_description: str, display_name: Optional[str] = None, agent_icon: Optional[str] = None
     ) -> None:
         if agent.agent_type in self.registry:
             raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
@@ -360,6 +361,7 @@ class AgentRegistry:
             agent=agent,
             agent_description=agent_description,
             display_name=display_name,
+            agent_icon=agent_icon,
         )
 
     def get_agent(self, agent_type: str) -> Type[Agent]:
@@ -387,10 +389,10 @@ class AgentRegistry:
 AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
 
 
-def agent(agent_description: str, display_name: Optional[str] = None):
+def agent(agent_description: str, display_name: Optional[str] = None, agent_icon: Optional[str] = None):
 
     def decorator(cls: Type[Agent]) -> Type[Agent]:
-        AGENT_REGISTRY.register_agent(cls, agent_description, display_name)  # Registering the agent
+        AGENT_REGISTRY.register_agent(cls, agent_description, display_name, agent_icon)  # Registering the agent
         return cls
 
     return decorator
