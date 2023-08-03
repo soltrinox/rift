@@ -57,9 +57,9 @@ def resolve_inline_uris(user_response: str, server: "Server") -> List[lsp.Docume
     for match in matches:
         logger.info(f"[resolve_inline_uris] looking for {match=}")
         replacement = lookup_match(match, server)
-        logger.info(f"[resolve_inline_uris] {match=} {replacement=}")
+        # logger.info(f"[resolve_inline_uris] {match=} {replacement=}")
         result.append(lsp.Document(f"uri://{match}", lsp.DocumentContext(replacement)))
-    logger.info(f"[resolve_inline_uris] {result=}")
+    # logger.info(f"[resolve_inline_uris] {result=}")
     return result
 
 
