@@ -156,18 +156,28 @@ export interface RunAgentProgress {
   status: AgentStatus;
 }
 
-export type ChatAgentPayload =
-  | {
+export type ChatAgentPayload = {
       response?: string;
       done_streaming?: boolean;
     }
   | undefined;
 
-export interface AgentProgress<T = any | undefined> {
+export type CodeEditPayload = {
+      additive_ranges?: vscode.Range[]
+      cursor?: vscode.Position
+      negative_ranges?: vscode.Range[]
+      ready?: boolean
+      textDocument?: TextDocumentIdentifier
+    }
+  | "accepted"
+  | "rejected"
+
+export type AnyPayload = ChatAgentPayload | CodeEditPayload
+export interface AgentProgress<T = AnyPayload> {
   agent_id: string;
   agent_type: string;
-  tasks: TaskWithSubtasks;
-  payload: T;
+  tasks?: TaskWithSubtasks;
+  payload: T | undefined; // dont change this it's T|undefined for this weird typescript reason. cant get the compiler to take payload?: or T = any|undefined
 }
 
 export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
