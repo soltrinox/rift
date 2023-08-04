@@ -113,7 +113,7 @@ class RiftChatAgent(Agent):
             )
             async for delta in stream.text:
                 response += delta
-                logger.info(f"{delta=}")
+                # logger.info(f"{delta=}")
                 async with response_lock:
                     await self.send_progress(ChatProgress(response=response))
             await self.send_progress(ChatProgress(response=response, done_streaming=True))
