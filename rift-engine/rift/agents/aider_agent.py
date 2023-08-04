@@ -348,9 +348,11 @@ class Aider(agent.Agent):
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes
 
+        async def set_event():
+            event.set()
+
         def on_commit():
-            # loop.call_soon_threadsafe(lambda: event.set())
-            asyncio.run_coroutine_threadsafe(asyncio.coroutine(lambda: event.set())(), loop=loop)
+            asyncio.run_coroutine_threadsafe(set_event(), loop=loop)
             while True:
                 if not event2.is_set():
                     time.sleep(0.25)
