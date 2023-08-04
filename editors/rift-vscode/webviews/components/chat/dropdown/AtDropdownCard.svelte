@@ -12,12 +12,12 @@
 <div class="bg-[var(--vscode-editor-background)]">
   <!-- me and my homies love a11y -->
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div
+    <div
     class={`flex flex-col hover:cursor-pointer pl-2 py-2
     ${
       focused
         ? "bg-[var(--vscode-editor-hoverHighlightBackground)]"
-        : "bg-[var(--vscode-editor-background)]"
+        : "bg-[var(--vscode-editor-background)] hover:bg-[var(--vscode-list-hoverBackground)]"
     }`}
     on:click={onClick}
   >
