@@ -22,11 +22,13 @@
     on:click={onClick}
   >
     <div class="flex flex-row ml-[6px] items-center">
+      <div class="mr-[3px]">
         <FileIconSvg/>
+      </div>
       {displayName}
     </div>
     <div
-      class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden ml-[2px]"
+            class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden ml-[6px]"
     >
       {description}
     </div>
