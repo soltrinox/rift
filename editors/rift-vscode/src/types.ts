@@ -172,7 +172,7 @@ export type CodeEditPayload = {
   | "accepted"
   | "rejected"
 
-export type AnyPayload = ChatAgentPayload | CodeEditPayload
+export type AnyPayload = ChatAgentPayload | CodeEditPayload | any
 export interface AgentProgress<T = AnyPayload> {
   agent_id: string;
   agent_type: string;

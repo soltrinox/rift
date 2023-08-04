@@ -610,11 +610,11 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     })
   }
 
+    
   sendProgressChange(params: AgentProgress) {
-    // console.log('progress')
-    // console.log(params)
     const {agent_id, tasks} = params
     const payload = params.payload
+    if (payload && 'messages' in payload && payload.messages) {this.sendChatHistoryChange(agent_id, params.payload.messages)};
     if(payload == 'accepted' || payload == 'rejected' || typeof payload == 'string') return
     
     if (!(agent_id in this.webviewState.value.agents)) {
@@ -674,8 +674,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
       //   console.log("done streaming but no repsonse:");
       //   console.log(params);
       //   throw new Error(" done streaming but no response?");
-      // }
-      this.webviewState.update((prevState) => {
+        // }
+        this.webviewState.update((prevState) => {
         return {
           ...prevState,
           agents: {
@@ -686,6 +686,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
               agent_type: params.agent_type,
               isStreaming: false,
                 streamingText: "",
+                // chatHistory: payload.messages
                 // chatHistory: [...prevState.agents[agent_id].chatHistory, {role: "assistant", content: payload.response ? payload.response : ""}],
             },
           },
