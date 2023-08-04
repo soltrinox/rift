@@ -1,6 +1,5 @@
 import re
 from concurrent import futures
-from typing import Any
 
 try:
     import aider

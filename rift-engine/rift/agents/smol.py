@@ -23,7 +23,6 @@ from typing import Any, ClassVar, Dict, List, Optional
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
-from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
     AgentParams,
@@ -32,6 +31,7 @@ from rift.agents.abstract import (
     RequestChatRequest,
     agent,
 )
+from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.server.selection import RangeSet
 from rift.util.context import contextual_prompt, resolve_inline_uris
 
@@ -117,6 +117,13 @@ class SmolAgent(Agent):
 
         FUTURES = dict()
 
+        async def update_progress():
+            await self.send_progress(
+                SmolProgress(
+                    response=RESPONSE,
+                )
+            )
+
         def stream_handler(chunk):
             try:
                 chunk = chunk.decode("utf-8")
@@ -125,27 +132,22 @@ class SmolAgent(Agent):
             nonlocal RESPONSE
             RESPONSE += chunk
 
-            fut = asyncio.run_coroutine_threadsafe(
-                self.send_progress(
-                    SmolProgress(
-                        response=RESPONSE,
-                    )
-                ),
-                loop=loop,
-            )
+            fut = asyncio.run_coroutine_threadsafe(update_progress(), loop=loop)
             FUTURES[RESPONSE] = asyncio.wrap_future(fut)
 
         async def get_plan():
-            fut = asyncio.create_task(
-                asyncio.coroutine(smol_dev.prompts.plan)(
+            async def plan_task():
+                return smol_dev.prompts.plan(
                     prompt, stream_handler=stream_handler, model="gpt-3.5-turbo"
                 )
-            )
+
+            fut = asyncio.create_task(plan_task())
+
+            async def done_callback():
+                await self.send_progress(dict(done_streaming=True))
 
             fut.add_done_callback(
-                lambda _: asyncio.run_coroutine_threadsafe(
-                    self.send_progress(dict(done_streaming=True)), loop=loop
-                )
+                lambda _: asyncio.run_coroutine_threadsafe(done_callback(), loop=loop)
             )
 
             return
