@@ -8,17 +8,17 @@ from typing import ClassVar, Optional, Type
 
 logger = logging.getLogger(__name__)
 
+import mentat.app
+import rift.agents.abstract as agent
+import rift.llm.openai_types as openai
+import rift.lsp.types as lsp
+import rift.util.file_diff as file_diff
 from mentat.app import get_user_feedback_on_changes, warn_user_wrong_files
 from mentat.code_file_manager import CodeFileManager
 from mentat.config_manager import ConfigManager
 from mentat.conversation import Conversation
 from mentat.llm_api import CostTracker
 from mentat.user_input_manager import UserInputManager
-
-import rift.agents.abstract as agent
-import rift.llm.openai_types as openai
-import rift.lsp.types as lsp
-import rift.util.file_diff as file_diff
 from rift.util.TextStream import TextStream
 
 
@@ -94,7 +94,7 @@ class Mentat(agent.Agent):
 
         loop = asyncio.get_running_loop()
 
-        def send_chat_update_wrapper(prompt: str = "感", end="", eof=False):
+        def send_chat_update_wrapper(prompt: str = "感", end="", eof=False, *args, **kwargs):
             def _worker():
                 response_stream.feed_data(prompt)
 
@@ -102,18 +102,14 @@ class Mentat(agent.Agent):
 
         def request_chat_wrapper(prompt: Optional[str] = None):
             async def request_chat():
-                # logger.info("acquiring response lock")
                 response_stream.feed_data("感")
                 await asyncio.sleep(0.1)
                 await self.state.response_lock.acquire()
-                # logger.info("acquired response lock")
                 await self.send_progress(dict(response=self._response_buffer, done_streaming=True))
-                # logger.info(f"{self.RESPONSE=}")
                 self.state.messages.append(openai.Message.assistant(content=self._response_buffer))
                 self._response_buffer = ""
                 if prompt is not None:
                     self.state.messages.append(openai.Message.assistant(content=prompt))
-                # logger.info(f"MESSAGE HISTORY BEFORE REQUESTING: {self.state.messages}")
 
                 resp = await self.request_chat(
                     agent.RequestChatRequest(messages=self.state.messages)
@@ -138,38 +134,65 @@ class Mentat(agent.Agent):
             result = t.result()
             return result
 
+        ### PATCHES
+
+        # in UserInputManager:
+        # def collect_user_input(self) -> str:
+        #     user_input = self.session.prompt().strip()
+        #     logging.debug(f"User input:\n{user_input}")
+        #     if user_input.lower() == "q":
+        #         raise KeyboardInterrupt("User used 'q' to quit")
+        #     return user_input
+
+        # def ask_yes_no(self, default_yes: bool) -> bool:
+        #     cprint("(Y/n)" if default_yes else "(y/N)")
+        #     while (user_input := self.collect_user_input().lower()) not in [
+        #         "y",
+        #         "n",
+        #         "",
+        #     ]:
+        #         cprint("(Y/n)" if default_yes else "(y/N)")
+        #     return user_input == "y" or (user_input != "n" and default_yes)
+
+        # in mentat.streaming_printer:
+        # patch print
+
+        # everywhere: cprint (output streaming)
+
+        mentat.app.cprint = send_chat_update_wrapper
+
+        # grab message history from mentat.conversation
+
+        # code_file_manager.write_changes_to_files
+
+        ###
+
         # Initialize necessary objects and variables
         config = ConfigManager()
         cost_tracker = CostTracker()
         conv = Conversation(config, cost_tracker)
         user_input_manager = UserInputManager(config)
 
-        def compute_paths():
-            return []  # TODO
+        def compute_paths(resp):
+            pattern = f"\[uri\]\((\S+)\)"
+            replacement = r"`\1`"
+            matches = re.match(pattern, replacement, matches)
+            return matches
 
         paths = compute_paths()
         code_file_manager = CodeFileManager(paths, user_input_manager, config)
 
-        # We set a flag that signals when we need a user request.
         need_user_request = True
-        # We start an infinite loop, continually getting user input, modeling responses, and implementing changes.
         while True:
-            # If we need a user request, we acquire one.
             if need_user_request:
-                # We call a function to collect user input.
                 user_response = user_input_manager.collect_user_input()
-                # We add the user's input to our conversation object.
                 conv.add_user_message(user_response)
-            # We generate a model response and corresponding code changes based on the current state of the conversation and code files.
             explanation, code_changes = conv.get_model_response(code_file_manager, config)
-            # We inform the user if their files seem incorrect based on the proposed code changes.
             warn_user_wrong_files(code_file_manager, code_changes)
 
-            # If there are code changes, we prompt the user for feedback.
             if code_changes:
                 need_user_request = get_user_feedback_on_changes(
                     config, conv, user_input_manager, code_file_manager, code_changes
                 )
             else:
-                # If there are no code changes, we flag that we need a new user request.
                 need_user_request = True

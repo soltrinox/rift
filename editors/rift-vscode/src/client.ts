@@ -685,7 +685,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
               agent_id: agent_id,
               agent_type: params.agent_type,
               isStreaming: false,
-              streamingText: "",
+                streamingText: "",
+                // chatHistory: [...prevState.agents[agent_id].chatHistory, {role: "assistant", content: payload.response ? payload.response : ""}],
             },
           },
         }

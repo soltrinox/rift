@@ -33,9 +33,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Dict, Optional
 
-import typer
-
 import rift.lsp.types as lsp
+import typer
 from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,

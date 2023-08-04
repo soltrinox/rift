@@ -9,9 +9,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
-from pydantic import BaseModel
-
 import rift.lsp.types as lsp
+from pydantic import BaseModel
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
@@ -212,7 +211,7 @@ class Agent:
             response = await self.server.request(
                 f"morph/{self.agent_type}_{self.agent_id}_request_chat", req
             )
-            return response["message"]
+            return response["message"].strip()
         except Exception as exception:
             logger.info(f"[request_chat] failed, caught {exception=}")
             raise exception
