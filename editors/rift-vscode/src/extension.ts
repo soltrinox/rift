@@ -5,38 +5,54 @@ import {MorphLanguageClient} from "./client";
 // import { join } from 'path';
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import {WebviewProvider} from "./elements/WebviewProvider";
-
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
-// export let morph_language_client: MorphLanguageClient;
+import { exec } from 'child_process';
 
-async function dynamicImportAndActivate(context: vscode.ExtensionContext) {
-  const { activateExtension } = await import("./activation/activate");
-  try {
-    await activateExtension(context);
-  } catch (e) {
-    console.log("Error activating extension: ", e);
-    vscode.window
-      .showInformationMessage(
-        "Error activating the Rift.",
-        "View Logs",
-        "Retry"
-      )
-      .then((selection) => {
-        if (selection === "View Logs") {
-          vscode.commands.executeCommand("continue.viewLogs");
-        } else if (selection === "Retry") {
-          // Reload VS Code window
-          vscode.commands.executeCommand("workbench.action.reloadWindow");
+export function dynamicImportAndActivate(context: vscode.ExtensionContext) {
+
+    console.log('Extension "rift" is now active!');
+
+    // Command to install pyrift
+    exec('pip3 install pyrift', (error, stdout, stderr) => {
+        if (error) {
+            vscode.window.showErrorMessage(`Error installing pyrift: ${error.message}`);
+            return;
         }
-      });
-  }
+        console.log('rift installed!');
+
+       
+        exec('rift --version', (versionError, versionStdout, versionStderr) => {
+            //if (versionError) {
+            //    vscode.window.showErrorMessage(`Error getting pyrift version: ${versionError.message}`);
+            //    return;
+            //}
+            const installedVersion = versionStdout.trim();
+            const expectedVersion = 'X.X.X';  // TODO: JESSE
+
+            //if (installedVersion !== expectedVersion) {
+            //    vscode.window.showErrorMessage(`Version mismatch: Expected ${expectedVersion} but got ${installedVersion}`);
+            //    return;
+            //}
+
+            console.log('Version check passed!');
+
+            exec('rift', (pyriftError, pyriftStdout, pyriftStderr) => {
+                if (pyriftError) {
+                    vscode.window.showErrorMessage(`Error running rift: ${pyriftError.message}`);
+                    return;
+                }
+                console.log('rift started!');
+            });
+        });
+    });
+
 }
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  dynamicImportAndActivate(context);
+  //dynamicImportAndActivate(context);
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(

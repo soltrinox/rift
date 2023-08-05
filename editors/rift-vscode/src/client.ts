@@ -428,10 +428,10 @@ export class MorphLanguageClient
 
   async on_config_change(_args: any) {
     if (!this.client) throw new Error("no client");
-    const x = await this.client.sendRequest(
-      "workspace/didChangeConfiguration",
-      {},
-    );
+    //const x = await this.client.sendRequest(
+    //  "workspace/didChangeConfiguration",
+    //  {},
+    //);
   }
 
   async notify_focus(tdpp: TextDocumentPositionParams | { symbol: string }) {
