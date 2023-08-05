@@ -5,14 +5,54 @@ import { MorphLanguageClient } from "./client";
 // import { join } from 'path';
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { WebviewProvider } from "./elements/WebviewProvider";
+import { exec } from "child_process";
 
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
-// export let morph_language_client: MorphLanguageClient;
+
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  console.log('Extension "pyrift-installer" is now active!');
+
+  exec('pip install pyrift', (error, stdout, stderr) => {
+      if (error) {
+          vscode.window.showErrorMessage(`Error installing pyrift: ${error.message} Trying pip3`);
+          exec('pip3 install pyrift', (error, stdout, stderr) => {
+            if (error) {
+                vscode.window.showErrorMessage(`Error installing pyrift: ${error.message}`);
+                return;
+            }
+      })
+      }
+      console.log('rift installed!');
+
+      /**exec('rift --version', (versionError, versionStdout, versionStderr) => {
+          if (versionError) {
+              vscode.window.showErrorMessage(`Error getting rift version: ${versionError.message}`);
+              return;
+          }
+          const installedVersion = versionStdout.trim();
+          const expectedVersion = 'X.X.X';  
+
+          if (installedVersion !== expectedVersion) {
+              vscode.window.showErrorMessage(`Version mismatch: Expected ${expectedVersion} but got ${installedVersion}`);
+              return;
+          }
+
+          console.log('Version check passed!');
+**/
+          exec('rift', (pyriftError, pyriftStdout, pyriftStderr) => {
+              if (pyriftError) {
+                  vscode.window.showErrorMessage(`Error running pyrift: ${pyriftError.message}`);
+                  return;
+              }
+              console.log('rift server started!');
+            });
+      });
+//  });
+
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(
