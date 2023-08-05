@@ -220,7 +220,7 @@ class SmolAgent(Agent):
             self.state.messages.append(
                 openai.Message.assistant(
                     f"\nProposed filepaths:\n```\n{json.dumps(file_paths, indent=2)}\n```"
-                    "\n\nWhere should the generated files be placed?\n\n"
+                    "\n\nWhere should the generated files be placed?\nTry `@`-mentioning a folder in the workspace, or say '.' to use the workspace root.\n"
                 )
             )
 
@@ -313,7 +313,7 @@ class SmolAgent(Agent):
             for i, fp in enumerate(file_paths):
                 fut = asyncio.create_task(
                     self.add_task(
-                        description=f"Generate code for {fp}",
+                        description=f"Generate {fp}",
                         task=generate_code_for_filepath,
                         kwargs=dict(file_path=fp, position=i),
                     ).run()

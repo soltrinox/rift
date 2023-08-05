@@ -546,7 +546,21 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
       `latency in regetting gitignore globs is ${latency}ms. If too high, consider adding event listeners to when the gitignores change instead of refetching them every time`
     )
 
-    let allFiles = await vscode.workspace.findFiles("**/*", "**/node_modules/*") //TODO: make work for nested .gitignores. I think we can just do this by prepending filepaths to the globs. Not sure though
+      let vsCodeFiles: vscode.Uri[] = await vscode.workspace.findFiles("**/*", "**/node_modules/*");
+      let allPaths: Set<vscode.Uri> = new Set();
+
+      for (let file of vsCodeFiles) {
+          console.log("yeehaw")
+          let parentDir = file.fsPath.split("/").slice(0, -1).join("/");
+          console.log(`parentDir=${parentDir}`)
+          allPaths.add(vscode.Uri.parse(parentDir));
+          allPaths.add(file);
+      }
+
+      let allFiles: vscode.Uri[] = [...allPaths];
+
+
+      //TODO: make work for nested .gitignores. I think we can just do this by prepending filepaths to the globs. Not sure though
     // function isPathWithin(parentPath, childPath) {
     //   const relativePath = path.relative(parentPath, childPath)
     //   const isWithin = !relativePath.startsWith("..") && !path.isAbsolute(relativePath)
