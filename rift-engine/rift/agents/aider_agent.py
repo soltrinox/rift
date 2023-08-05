@@ -1,6 +1,5 @@
 import re
 from concurrent import futures
-from typing import Any
 
 try:
     import aider
@@ -62,7 +61,14 @@ class AiderAgentState(agent.AgentState):
     response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
-@agent.agent(agent_description="Request codebase-wide edits through chat", display_name="Aider")
+@agent.agent(
+    agent_description="Request codebase-wide edits through chat.",
+    display_name="Aider",
+    agent_icon="""\
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.7369 5.47266H10.4606V1.26318H5.53949V5.47266H1.26318V10.3166H5.53949V14.5261H10.4606V10.3166H14.7369V5.47266Z" fill="#CCCCCC"/>
+</svg>""",
+)
 @dataclass
 class Aider(agent.Agent):
     agent_type: ClassVar[str] = "aider"
@@ -340,9 +346,11 @@ class Aider(agent.Agent):
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes
 
+        async def set_event():
+            event.set()
+
         def on_commit():
-            # loop.call_soon_threadsafe(lambda: event.set())
-            asyncio.run_coroutine_threadsafe(asyncio.coroutine(lambda: event.set())(), loop=loop)
+            asyncio.run_coroutine_threadsafe(set_event(), loop=loop)
             while True:
                 if not event2.is_set():
                     time.sleep(0.25)
@@ -356,34 +364,32 @@ class Aider(agent.Agent):
             aider_finished = True
             event.set()
 
-        try:
-            with futures.ThreadPoolExecutor(1) as pool:
-                async def run_aider():
-                    aider_fut = loop.run_in_executor(
-                        pool,
-                        aider.main.main,
-                        [],
-                        on_write,
-                        on_commit,
-                        None,
-                        None,
-                        self.state.params.workspaceFolderPath,
-                    )
-                    aider_fut.add_done_callback(done_cb)
-                    logger.info("Running aider thread")
-                    return await aider_fut
-                asyncio.create_task(run_aider())
+        with futures.ThreadPoolExecutor(1) as pool:
+            aider_fut = loop.run_in_executor(
+                pool,
+                aider.main.main,
+                [],
+                on_write,
+                on_commit,
+                None,
+                None,
+                self.state.params.workspaceFolderPath,
+            )
+            aider_fut.add_done_callback(done_cb)
+            logger.info("Running aider thread")
 
-                while True:
-                    await event.wait()
-                    if aider_finished:
-                        break
-                    if len(file_changes) > 0:
-                        await self.apply_file_changes(file_changes)
-                        file_changes = []
-                    event2.set()
-                    event.clear()
-        except Exception as e:
-            logger.info(f"[Aider] caught exception {e=}")
-        finally:
-            await self.send_progress()
+            while True:
+                await event.wait()
+                if aider_finished:
+                    break
+                if len(file_changes) > 0:
+                    await self.apply_file_changes(file_changes)
+                    file_changes = []
+                event2.set()
+                event.clear()
+            try:
+                await aider_fut
+            except (Exception, SystemExit) as e:
+                logger.info(f"[aider] caught {e}, exiting")
+            finally:
+                await self.send_progress()

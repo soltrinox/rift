@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { AtableFile } from "../types";
 export const AtableFileFromUri = (Uri: vscode.Uri): AtableFile => {
-  console.log(Uri.path.split("/").pop() ?? Uri.path)
   return {
     fileName: Uri.path.split("/").pop() ?? Uri.path,
     fullPath: Uri.fsPath,

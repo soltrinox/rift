@@ -1,16 +1,16 @@
 import type * as vscode from "vscode";
-import type {TextDocumentIdentifier} from "vscode-languageclient/node";
+import type { TextDocumentIdentifier } from "vscode-languageclient/node";
 
 export interface Task {
   description: string;
   status: AgentStatus; // this should never be code lens status
 }
 
-export interface TaskWithSubtasks { // TODO turn it into a treeeeeeeeeee
+export interface TaskWithSubtasks {
+  // TODO turn it into a treeeeeeeeeee
   task: Task;
   subtasks: Task[];
 }
-
 
 // export class ChatMessage {
 //   constructor(
@@ -109,16 +109,15 @@ export const DEFAULT_STATE: WebviewState = {
 export type OptionalTextDocument = {
   uri: string;
   version: number;
-} | null
-
+} | null;
 
 export interface AgentParams {
   agent_type: string;
-  agent_id: string | null
-  position: vscode.Position | null
-  selection: vscode.Selection | null
-  textDocument: OptionalTextDocument
-  workspaceFolderPath: string | null
+  agent_id: string | null;
+  position: vscode.Position | null;
+  selection: vscode.Selection | null;
+  textDocument: OptionalTextDocument;
+  workspaceFolderPath: string | null;
 }
 
 export interface RunChatParams {
@@ -134,10 +133,7 @@ export interface RunAgentResult {
   id: string;
 }
 
-export type AgentStatus =
-  | "running"
-  | "done"
-  | "error"
+export type AgentStatus = "running" | "done" | "error";
 
 export type CodeLensStatus =
   | "running"
@@ -160,18 +156,29 @@ export interface RunAgentProgress {
   status: AgentStatus;
 }
 
-export type ChatAgentPayload =
-  | {
-    response?: string;
-    done_streaming?: boolean;
-  }
+export type ChatAgentPayload = {
+      response?: string;
+      done_streaming?: boolean;
+    }
   | undefined;
 
-export interface AgentProgress<T = any> {
+// export type CodeEditPayload = {
+//       additive_ranges?: vscode.Range[]
+//       cursor?: vscode.Position
+//       negative_ranges?: vscode.Range[]
+//       ready?: boolean
+//       textDocument?: TextDocumentIdentifier
+//     }
+//   | "accepted"
+//   | "rejected"
+
+export type CodeEditPayload = any
+export type AnyPayload = ChatAgentPayload | CodeEditPayload | any
+export interface AgentProgress<T = AnyPayload> {
   agent_id: string;
   agent_type: string;
-  tasks: TaskWithSubtasks;
-  payload: T | undefined;
+  tasks?: TaskWithSubtasks;
+  payload: T | undefined; // dont change this it's T|undefined for this weird typescript reason. cant get the compiler to take payload?: or T = any|undefined
 }
 
 export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;
@@ -180,17 +187,19 @@ export interface AgentIdParams {
   id: string;
 }
 
-export type ChatMessage = {
-  role: "assistant";
-  content: string;
-  name?: null | string | undefined;
-} | ChatMessageUser
+export type ChatMessage =
+  | {
+      role: "assistant";
+      content: string;
+      name?: null | string | undefined;
+    }
+  | ChatMessageUser;
 
 export type ChatMessageUser = {
-  role: "user"
-  content: string
+  role: "user";
+  content: string;
   name?: null | string | undefined;
-}
+};
 
 export interface AgentChatRequest {
   messages: ChatMessage[];
@@ -220,5 +229,5 @@ export interface AtableFile {
 }
 
 export interface AtableFileWithCommand extends AtableFile {
-  onEnter: (...args: any) => void
+  onEnter: (...args: any) => void;
 }

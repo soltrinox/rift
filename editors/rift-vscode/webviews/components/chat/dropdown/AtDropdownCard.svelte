@@ -12,21 +12,23 @@
 <div class="bg-[var(--vscode-editor-background)]">
   <!-- me and my homies love a11y -->
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div
+    <div
     class={`flex flex-col hover:cursor-pointer pl-2 py-2
     ${
       focused
         ? "bg-[var(--vscode-editor-hoverHighlightBackground)]"
-        : "bg-[var(--vscode-editor-background)]"
+        : "bg-[var(--vscode-editor-background)] hover:bg-[var(--vscode-list-hoverBackground)]"
     }`}
     on:click={onClick}
   >
     <div class="flex flex-row ml-[6px] items-center">
+      <div class="mr-[3px]">
         <FileIconSvg/>
+      </div>
       {displayName}
     </div>
     <div
-      class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden ml-[2px]"
+            class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden ml-[6px]"
     >
       {description}
     </div>

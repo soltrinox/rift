@@ -101,7 +101,7 @@ class RiftChatAgent(Agent):
             documents: List[lsp.Document] = resolve_inline_uris(user_response, self.server)
             logger.info(f"resolved document uris {documents=}")
 
-            doc_text = self.state.document.text
+            doc_text = self.state.document.text if self.state.document is not None else ""
 
             logger.info("running chat")
             stream = await self.state.model.run_chat(
@@ -113,7 +113,7 @@ class RiftChatAgent(Agent):
             )
             async for delta in stream.text:
                 response += delta
-                logger.info(f"{delta=}")
+                # logger.info(f"{delta=}")
                 async with response_lock:
                     await self.send_progress(ChatProgress(response=response))
             await self.send_progress(ChatProgress(response=response, done_streaming=True))

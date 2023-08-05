@@ -3,9 +3,8 @@
   import UserSvg from "../icons/UserSvg.svelte"
   import { Editor } from "@tiptap/core"
   import StarterKit from "@tiptap/starter-kit"
-  import Placeholder from "@tiptap/extension-placeholder"
   import { FileChip } from "../FileChip"
-  
+  import { starterKitConfig } from "../stores"
 
   export let value:string 
 
@@ -30,13 +29,14 @@
   const editorContent = parseProseMirrorHTMLfromMessageContent(value)
 
 
+
   onMount(() => {
-
-
     editor = new Editor({
       element: textarea,
       extensions: [
-        StarterKit,
+        StarterKit.configure(
+          starterKitConfig
+          ),
         FileChip,
       ],
       editable: false,

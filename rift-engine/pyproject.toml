@@ -27,8 +27,9 @@ dependencies = [
   "transformers",
   "diff_match_patch",
   "art",
-  "typer",
-  "aider-chat @ git+https://github.com/morph-labs/aider",
+  "smol_dev @ git+https://www.github.com/jesse-michael-han/smol_dev",
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
+  "aider-chat @ git+https://github.com/morph-labs/aider"
 ]
 dynamic = ["version"]
 
@@ -37,11 +38,17 @@ dynamic = ["version"]
 hf = [
   "torch",
 ]
+
 smol_dev = [
   "smol_dev @ git+https://www.github.com/jesse-michael-han/smol_dev",
 ]
+
 gpt-engineer = [
-   "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
+]
+
+aider = [
+  "aider-chat @ git+https://github.com/morph-labs/aider"
 ]
 
 [project.urls]

@@ -104,7 +104,7 @@
 
         <div class="dropdown left-auto flex">
             <div class="flex items-center">
-                <div class="dropdown" on:focusout={handleDropdownFocusLoss}>
+                <div class="dropdown flex" on:focusout={handleDropdownFocusLoss}>
                     <button
                         class="btn pb-2.5 pt-2"
                         on:click={handleDropdownClick}

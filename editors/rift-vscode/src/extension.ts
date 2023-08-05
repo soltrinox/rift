@@ -1,10 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import {MorphLanguageClient} from "./client";
+import { MorphLanguageClient } from "./client";
 // import { join } from 'path';
-// import { TextDocumentIdentifier } from 'vscode-languageclient';
-import {WebviewProvider} from "./elements/WebviewProvider";
+
+import { WebviewProvider } from "./elements/WebviewProvider";
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
 import { exec } from 'child_process';
@@ -132,10 +132,8 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
 
-
   context.subscriptions.push(disposablefocusOmnibar);
   context.subscriptions.push(morph_language_client);
-
 }
 
 // This method is called when your extension is deactivated

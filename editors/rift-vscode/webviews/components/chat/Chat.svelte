@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from "svelte";
-  import {  state } from "../stores";
+  import { state, dropdownStatus } from "../stores";
   import UserSvg from "../icons/oldUserSvg.svelte";
   import UserInput from "./UserInput.svelte";
   import Response from "./Response.svelte";
   import OmniBar from "../OmniBar.svelte";
 
-
   let observer: MutationObserver;
   let chatWindow: HTMLDivElement;
   let fixedToBottom: boolean;
+  dropdownStatus.subscribe((s) => console.log("dropdownStatus!:", s));
 
   function scrollToBottomIfNearBottom() {
     if (fixedToBottom) chatWindow.scrollTo(0, chatWindow.scrollHeight);
@@ -28,7 +28,7 @@
     observer = new MutationObserver(scrollToBottomIfNearBottom);
     observer.observe(chatWindow, { childList: true, subtree: true });
 
-    fixedToBottom = true
+    fixedToBottom = true;
 
     chatWindow.addEventListener("scroll", function () {
       if (!chatWindow.scrollTop || !chatWindow.scrollHeight) {
@@ -47,25 +47,21 @@
     observer.disconnect();
   });
 
-state.subscribe(s => console.log('new state: ', s))
+  // state.subscribe(s => console.log('new webview state: ', s))
 </script>
 
 <div
   bind:this={chatWindow}
-  class="flex items-start flex-grow flex-col overflow-y-auto "
+  class={`flex items-start flex-grow flex-col overflow-y-auto ${
+    $dropdownStatus != "none" ? "opacity-10" : ""
+  }`}
 >
   {#if $state.agents[$state.selectedAgentId]?.inputRequest}
-    <script>
-      console.log('Input request:', $state.agents[$state.selectedAgentId]?.inputRequest?.msg);
-    </script>
     <Response
       value={$state.agents[$state.selectedAgentId]?.inputRequest?.msg}
     />
   {:else}
     {#each $state.agents[$state.selectedAgentId]?.chatHistory ?? [] as item}
-      <script>
-        console.log('Chat history item:', item);
-      </script>
       {#if item.role == "user"}
         <UserInput value={item.content} />
       {:else}
@@ -73,10 +69,11 @@ state.subscribe(s => console.log('new state: ', s))
       {/if}
     {/each}
     {#if $state.selectedAgentId in $state.agents && $state.agents[$state.selectedAgentId].isStreaming}
-      <script>
-        console.log('Streaming text:', $state.agents[$state.selectedAgentId].streamingText);
-      </script>
-      <Response value={$state.agents[$state.selectedAgentId].streamingText} {scrollToBottomIfNearBottom} last={true} />
+      <Response
+        value={$state.agents[$state.selectedAgentId].streamingText}
+        {scrollToBottomIfNearBottom}
+        last={true}
+      />
     {/if}
   {/if}
 </div>

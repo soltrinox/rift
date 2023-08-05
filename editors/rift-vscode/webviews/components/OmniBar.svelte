@@ -1,6 +1,6 @@
 <script lang="ts">
   import SendSvg from "./icons/SendSvg.svelte"
-  import { dropdownStatus, filteredAgents, filteredFiles, focusedFileIndex, state } from "./stores"
+  import { dropdownStatus, filteredAgents, filteredFiles, focusedFileIndex, starterKitConfig, state } from "./stores"
   import SlashDropdown from "./chat/dropdown/SlashDropdown.svelte"
   import {onDestroy, onMount, tick} from "svelte"
   import AtDropdown from "./chat/dropdown/AtDropdown.svelte"
@@ -21,12 +21,12 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
         console.log('filteredFiles1')
         console.log(filteredFiles)
         const filteredfiles2 = filteredFiles.filter((file) => {
-        // let searchString = query.toLowerCase()
-        return true
-        // return (
-        //   file.fileName.toLowerCase().includes(searchString) ||
-        //   file.fromWorkspacePath.toLowerCase().includes(searchString)
-        // )
+        let searchString = query.toLowerCase()
+        // return true
+        return (
+          file.fileName.toLowerCase().includes(searchString) ||
+          file.fromWorkspacePath.toLowerCase().includes(searchString)
+        )
       })
       .slice(0, 4)
       console.log('new filtered files2:', filteredfiles2)
@@ -129,7 +129,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
   function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
     editorContent = editor.getText()
-    console.log("handleValueChange: ", editorContent)
 
     // const shouldShowAtDropdown = () => {
     //   latestAtToEndOfTextarea =
@@ -160,8 +159,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
   dropdownStatus.subscribe((s) => console.log("dropdownStatus!:", s))
 
   function handleKeyDown(e: KeyboardEvent) {
-    console.log("handleKeydown")
-
     if (e.key === "Enter") {
       // 13 is the Enter key code
       // console.log("preventing default")
@@ -214,6 +211,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
   const blur = () => editor?.commands.blur()
 
   function resetTextarea() {
+    console.log('resetting text area')
     editor?.commands.clearContent()
   }
 
@@ -224,7 +222,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
     // if (keyCodes.includes(e.code)) {
     //   event.preventDefault()
     // }
-
+    
     if (e.code === "Enter" && $dropdownStatus != "none") event.preventDefault()
   }
 
@@ -233,7 +231,8 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
     editor = new Editor({
       element: _container,
       extensions: [
-        StarterKit,
+        StarterKit.configure(starterKitConfig),
+        // StarterKit,
         FileChip.configure({
           HTMLAttributes: {
             // class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
@@ -259,7 +258,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       onBlur,
       onUpdate: handleValueChange,
       onSelectionUpdate: (props) => {
-        console.log("onSelection update:", props)
+        // console.log("onSelection update:", props)
       },
     })
 

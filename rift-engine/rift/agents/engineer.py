@@ -1,3 +1,28 @@
+from concurrent import futures
+try:
+    import gpt_engineer
+    import gpt_engineer.chat_to_files
+    import gpt_engineer.db
+    from gpt_engineer.ai import AI, fallback_model
+    from gpt_engineer.collect import collect_learnings
+    from gpt_engineer.db import DB, DBs, archive
+    from gpt_engineer.learning import collect_consent
+    from gpt_engineer.steps import STEPS
+    from gpt_engineer.steps import Config as StepsConfig
+
+except ImportError:
+    raise Exception(
+        '`gpt_engineer` not found. Try `pip install -e "rift-engine[gpt-engineer]"` from the repository root directory.'
+    )
+
+try:
+    gpt_engineer.__author__
+except AttributeError:
+    raise Exception(
+        'Wrong version of `gpt-engineer` installed. Please try `pip install -e "rift-engine[gpt-engineer]" --force-reinstall` from the Rift root directory.'
+    )
+
+
 import asyncio
 import functools
 import logging
@@ -23,8 +48,6 @@ from rift.agents.abstract import (
 from rift.util import file_diff
 from rift.util.context import contextual_prompt, resolve_inline_uris
 from rift.util.TextStream import TextStream
-
-SEEN = set()
 
 STEPS_AGENT_TASKS_NAME_QUEUE = asyncio.Queue()
 STEPS_AGENT_TASKS_EVENT_QUEUE = asyncio.Queue()
@@ -108,6 +131,10 @@ class EngineerAgentState(AgentState):
 @agent(
     agent_description="Specify what you want it to build, the AI asks for clarification, and then builds it.",
     display_name="GPT Engineer",
+    agent_icon="""\
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.6245 4.13419C14.5656 3.89656 14.2682 3.81603 14.0951 3.98919L12.1382 5.94603L10.3519 5.6484L10.0543 3.86209L12.0111 1.90525C12.1853 1.73104 12.1014 1.4342 11.8622 1.37472C10.6153 1.06578 9.24244 1.39867 8.26797 2.37288C7.22481 3.41604 6.93771 4.92814 7.37192 6.24656L1.75641 11.8621C1.09878 12.5197 1.09878 13.586 1.75641 14.2436C2.41404 14.9013 3.48035 14.9013 4.13798 14.2436L9.74875 8.63287C11.0677 9.0726 12.5769 8.78234 13.6269 7.73234C14.6024 6.75682 14.9348 5.38182 14.6245 4.13419ZM2.94746 13.6842C2.59877 13.6842 2.31588 13.4013 2.31588 13.0526C2.31588 12.7036 2.59877 12.421 2.94746 12.421C3.29614 12.421 3.57903 12.7036 3.57903 13.0526C3.57903 13.4013 3.29614 13.6842 2.94746 13.6842Z" fill="#CCCCCC"/>
+</svg>""",
 )
 @dataclass
 class EngineerAgent(Agent):
@@ -119,7 +146,7 @@ class EngineerAgent(Agent):
         self,
         prompt: Optional[str] = None,
         project_path: str = "",
-        model: str = "gpt-4",
+        model: str = "gpt-3.5-turbo",
         temperature: float = 0.1,
         steps_config: Any = None,
         verbose: bool = typer.Option(False, "--verbose", "-v"),
@@ -138,52 +165,96 @@ class EngineerAgent(Agent):
         """
         loop = asyncio.get_event_loop()
 
-        try:
-            import gpt_engineer
-            import gpt_engineer.chat_to_files
-            import gpt_engineer.db
-            from gpt_engineer.ai import AI, fallback_model
-            from gpt_engineer.collect import collect_learnings
-            from gpt_engineer.db import DB, DBs, archive
-            from gpt_engineer.learning import collect_consent
-            from gpt_engineer.steps import STEPS
-            from gpt_engineer.steps import Config as StepsConfig
-
-        except ImportError:
-            raise Exception(
-                '`gpt_engineer` not found. Try `pip install -e "rift-engine[gpt-engineer]"` from the repository root directory.'
-            )
-
-        def _popup_chat_wrapper(prompt: str = "NONE", end=""):
+        request_chat_event = asyncio.Event()
+        def send_chat_update_wrapper(prompt: str = "感", end="", sync=False):
             async def _worker():
-                await self.response_stream.feed_data(prompt)
+                # logger.info(f"_worker {sync=}")
+                if not sync:
+                    self.response_stream.feed_data(prompt)
+                # logger.info("fed data")
+                if sync or prompt == "感":
+                    self.response_stream.feed_data("感")
+                    # logger.info("with sync")
+                    async with response_lock:
+                        request_chat_event.set()
+                        # logger.info("acquired lock")
+                        if self.RESPONSE:
+                            self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
+                        if prompt and prompt != "感":
+                            self.state.messages.append(openai.Message.assistant(prompt))
+                        await self.send_progress(
+                            dict(done_streaming=True, **{"response": None if not self.RESPONSE else self.RESPONSE}, messages=self.state.messages)
+                        )
+                        # logger.info("done streaming")
+                        # logger.info(f"{self.state.messages=}")
+                        self.RESPONSE = ""
+                    await asyncio.sleep(0.1)
 
-            asyncio.run_coroutine_threadsafe(_worker(), loop)
 
-        def _popup_input_wrapper(prompt="", loop=None):
-            asyncio.set_event_loop(loop)
-            # print("SET EVENT LOOP")
-            self.state.messages.append(openai.Message.assistant(prompt))
+            fut = asyncio.run_coroutine_threadsafe(_worker(), loop)
+            # futures.wait([fut])
 
-            async def request_chat():
-                async with response_lock:
-                    await self.send_progress(
-                        EngineerProgress(response=self.RESPONSE, done_streaming=True)
-                    )
+        async def request_chat(prompt = ""):
+            # sync = True
+            # logger.info(f"_worker {sync=}")
+            # self.response_stream.feed_data("感")
+            # logger.info("fed data")
+            # # ensure that the messsages are updated
+            # if sync:
+            #     logger.info("with sync")
+            #     # await asyncio.sleep(0.1)
+            #     async with response_lock:
+            #         logger.info("acquired lock")
+            #         if self.RESPONSE:
+            #             self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
+            #         if prompt:
+            #             self.state.messages.append(openai.Message.assistant(prompt))
+            #         await self.send_progress(
+            #             dict(done_streaming=True, **{"response": None if not self.RESPONSE else self.RESPONSE}, messages=self.state.messages)
+            #         )
+            #         logger.info("done streaming")
+            #         logger.info(f"{self.state.messages=}")
+            #         self.RESPONSE = ""
+            #     await asyncio.sleep(0.1)
+            async with response_lock:
+                await request_chat_event.wait()
+                if self.RESPONSE:
                     self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
+                    await self.send_progress(
+                        dict(response=self.RESPONSE)
+                    )
+                if prompt:
+                    self.state.messages.append(openai.Message.assistant(prompt))
+
+                if self.RESPONSE:
+                    await self.send_progress(
+                        dict(done_streaming=True, messages=self.state.messages)
+                    )
 
                     self.RESPONSE = ""
-                    return await self.request_chat(RequestChatRequest(messages=self.state.messages))
+            request_chat_event.clear()
+            return await self.request_chat(RequestChatRequest(messages=self.state.messages))
 
-            t = loop.create_task(request_chat())
-            while not t.done():
-                time.sleep(1)
-            return t.result()
+        def request_chat_wrapper(prompt="", loop=None):
+            asyncio.set_event_loop(loop)
+            # print("SET EVENT LOOP")
 
-        gpt_engineer.ai.print = _popup_chat_wrapper
-        gpt_engineer.steps.print = _popup_chat_wrapper
-        gpt_engineer.steps.input = functools.partial(_popup_input_wrapper, loop=loop)
-        gpt_engineer.learning.input = functools.partial(_popup_input_wrapper, loop=loop)
+            # t = loop.create_task(request_chat())
+            # while not t.done():
+            #     time.sleep(1)
+            # return t.result()
+            fut = asyncio.run_coroutine_threadsafe(request_chat(prompt), loop)
+            futures.wait([fut])
+            return fut.result()
+
+        _colored = lambda x,y: x
+        gpt_engineer.ai.print = send_chat_update_wrapper
+        gpt_engineer.steps.colored = _colored
+        gpt_engineer.steps.print = functools.partial(send_chat_update_wrapper, sync=True)
+        gpt_engineer.steps.input = functools.partial(request_chat_wrapper, loop=loop)
+        gpt_engineer.learning.input = functools.partial(request_chat_wrapper, loop=loop)
+        gpt_engineer.learning.colored = _colored
+        gpt_engineer.learning.print = functools.partial(send_chat_update_wrapper, sync=True)
         # TODO: more coverage
         logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
         model = fallback_model(model)
@@ -218,18 +289,7 @@ class EngineerAgent(Agent):
 
         steps_config = StepsConfig.DEFAULT
 
-        # if steps_config not in [
-        #     StepsConfig.EXECUTE_ONLY,
-        #     StepsConfig.USE_FEEDBACK,
-        #     StepsConfig.EVALUATE,
-        # ]:
-        #     archive(dbs)
-
-        steps = STEPS[steps_config]
-
-        # Add all steps to task list
-        steps = STEPS[steps_config]
-        from concurrent import futures
+        steps = STEPS[steps_config][:-1] # TODO: restore after debugging
 
         step_events: Dict[int, asyncio.Event] = dict()
         for i, step in enumerate(steps):
@@ -284,15 +344,12 @@ class EngineerAgent(Agent):
 
     async def _run_chat_thread(self, response_stream):
         # logger.info("Started handler thread")
-        self.RESPONSE = ""
-        before, after = response_stream.split_once("NONE")
-
+        before, after = response_stream.split_once("感")
         try:
             async with response_lock:
                 async for delta in before:
                     self.RESPONSE += delta
-                    await self.send_progress(EngineerProgress(response=self.RESPONSE))
-            await asyncio.sleep(0.1)
+                    await self.send_progress(dict(response=self.RESPONSE))
             await self._run_chat_thread(after)
         except Exception as e:
             logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
@@ -312,6 +369,7 @@ class EngineerAgent(Agent):
         return obj
 
     async def run(self) -> AgentRunResult:  # main entry point
+        self.RESPONSE = ""
         self.response_stream = TextStream()
         await self.send_progress()
         asyncio.create_task(self._run_chat_thread(self.response_stream))
@@ -322,6 +380,7 @@ class EngineerAgent(Agent):
             return prompt
 
         get_prompt_task = self.add_task("Get prompt for workspace", get_prompt)
+        await self.send_progress()
         prompt = await get_prompt_task.run()
 
         documents = resolve_inline_uris(prompt, self.server)

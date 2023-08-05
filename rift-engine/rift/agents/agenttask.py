@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, Iterable, Optional, Union
 
@@ -24,6 +25,7 @@ class AgentTask:
     args: Union[Iterable, Callable[Any, Awaitable[Iterable[Any]]], None] = None
     kwargs: Union[Dict, Callable[Any, Awaitable[Dict[Any, Any]]], None] = None
     done_callback: Optional[Callable[Any, Any]] = None
+    start_callback: Optional[Callable[Any, Any]] = None
     _task: Optional[asyncio.Task] = None
     _running: bool = False
     _error: Optional[Exception] = None
@@ -56,13 +58,16 @@ class AgentTask:
             self._task: asyncio.Task = asyncio.create_task(self.task(*args, **kwargs))
             if self.done_callback is not None:
                 self._task.add_done_callback(self.done_callback)
+            if self.start_callback is not None:
+                self.start_callback()
             return await self._task
         except asyncio.CancelledError as e:
             self._cancelled = True
             # raise e
         except Exception as e:
             self._error = e
-            logger.debug(f"[AgentTask] caught error: {e}")
+            logger.info(f"[AgentTask] caught error: {e}")
+            logger.info(traceback.format_exc())
         finally:
             self._running = False
 
@@ -106,7 +111,6 @@ class AgentTask:
         """
         status = self._error is not None
         if status:
-            logger.info(f"[AgentTask] exception={self._task.exception()}")
             logger.info(f"[AgentTask] exception={self._error}")
         return status
 

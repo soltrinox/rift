@@ -131,7 +131,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run clean && npm run compile && npm run package",
+    "vscode:prepublish": "npm run clean && npm run package",
     "compile": "concurrently \"rollup -c rollup.config.js\" \"webpack --config ./build/node-extension.webpack.config.cjs\"",
     "watch": "concurrently \"rollup -c rollup.config.js -w\" \"webpack --watch --config ./build/node-extension.webpack.config.cjs\"",
     "package": "concurrently \"rollup -c rollup.config.js\" \"webpack --mode production --devtool hidden-source-map --config ./build/node-extension.webpack.config.cjs\"",
