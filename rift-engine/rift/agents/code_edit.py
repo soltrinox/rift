@@ -178,12 +178,99 @@ class CodeEditAgent(Agent):
                     logger.info("starting to iterate through text stream")
                     self.DIFF = None
 
+                    diff_queue = asyncio.Queue()
+
+                    async def send_diff(new_text: str):
+                        fuel = 10
+                        while True:
+                            if self.state._done._value:
+                                break
+                            if fuel <= 0:
+                                raise Exception(":(")
+                            try:
+                                diff = dmp.diff_lineMode(selection_text, new_text, None)
+                                dmp.diff_cleanupSemantic(diff)
+                                self.DIFF = diff  # store the latest diff
+                                diff_text = "".join([text for _, text in diff])
+                                if diff_text == selection_text:
+                                    break
+                                # logger.info(f"{diff=}")
+
+                                cf = asyncio.get_running_loop().create_future()
+                                self.state.change_futures[diff_text] = cf
+
+                                await self.server.apply_range_edit(
+                                    self.state.document.uri, self.RANGE, diff_text
+                                )
+
+                                def add_pos_text(pos: lsp.Position, text: str):
+                                    line_delta = text.count("\n")
+                                    if line_delta == 0:
+                                        offset = pos.character + len(text)
+                                    else:
+                                        offset = list(reversed(text)).index("\n")
+                                    return lsp.Position(pos.line + line_delta, offset)
+
+                                self.RANGE = lsp.Range(
+                                    self.state.selection.first,
+                                    add_pos_text(self.state.selection.first, diff_text),
+                                )
+
+                                try:
+                                    await asyncio.wait_for(cf, timeout=2)
+                                    break
+                                except asyncio.TimeoutError:
+                                    break
+                                finally:
+                                    del self.state.change_futures[diff_text]
+                                    self.state.additive_ranges = RangeSet()
+                                    self.state.negative_ranges = RangeSet()
+                                    with lsp.setdoc(self.state.document):
+                                        cursor = self.state.selection.first
+                                        for op, text in diff:
+                                            next_cursor = add_pos_text(cursor, text)
+                                            if op == -1:  # delete
+                                                self.state.negative_ranges.add(
+                                                    lsp.Range(cursor, next_cursor)
+                                                )
+                                            elif op == 0:  # keep
+                                                pass
+                                            elif op == 1:  # add
+                                                self.state.additive_ranges.add(
+                                                    lsp.Range(cursor, next_cursor)
+                                                )
+                                            cursor = next_cursor
+
+                                    progress = CodeEditProgress(
+                                        response=None,
+                                        textDocument=self.state.document,
+                                        cursor=self.state.cursor,
+                                        additive_ranges=list(self.state.additive_ranges),
+                                        negative_ranges=list(self.state.negative_ranges),
+                                    )
+                                    await self.send_progress(progress)
+                            except Exception as e:
+                                logger.info(f"caught {e=} retrying")
+                                fuel -= 1                    
+
                     async def generate_code():
                         nonlocal all_deltas
                         # async for substream in edit_code_result.code.asplit("\n"):
                         after = edit_code_result.code
                         line_flag = False
+                        
+                        async def _watch_queue():
+                            while True:
+                                x = await diff_queue.get()
+                                if x is None:
+                                    return
+                                else:
+                                    await send_diff(x)
+                                    
+                        diff_queue_task = asyncio.create_task(_watch_queue())
                         while True:
+                            if after.at_eof():
+                                break
                             flag = False
                             before, after = after.split_once("\n")
                             # logger.info("yeehaw")
@@ -193,83 +280,19 @@ class CodeEditAgent(Agent):
                                 if not flag:
                                     flag = True
                                 all_deltas.append(delta)
-                            if not flag:
-                                break
+                            # if not flag:
+                            #     break
                             if not line_flag:
                                 line_flag = True
-                            logger.info(f"{all_deltas=}")
-                            fuel = 10
-                            while True:
-                                if self.state._done._value:
-                                    break
-                                if fuel <= 0:
-                                    raise Exception(":(")
-                                try:
-                                    new_text = "".join(all_deltas)
-                                    diff = dmp.diff_lineMode(selection_text, new_text, None)
-                                    dmp.diff_cleanupSemantic(diff)
-                                    self.DIFF = diff  # store the latest diff
-                                    diff_text = "".join([text for _, text in diff])
-                                    if diff_text == selection_text:
-                                        break
-                                    # logger.info(f"{diff=}")
+                            # logger.info(f"{all_deltas=}")
 
-                                    cf = asyncio.get_running_loop().create_future()
-                                    self.state.change_futures[diff_text] = cf
+                            await diff_queue.put("".join(all_deltas))
+                        await diff_queue.put(None)
+                        await diff_queue_task
+                        
+                            # asyncio.create_task(send_diff("".join(all_deltas)))
 
-                                    await self.server.apply_range_edit(
-                                        self.state.document.uri, self.RANGE, diff_text
-                                    )
 
-                                    def add_pos_text(pos: lsp.Position, text: str):
-                                        line_delta = text.count("\n")
-                                        if line_delta == 0:
-                                            offset = pos.character + len(text)
-                                        else:
-                                            offset = list(reversed(text)).index("\n")
-                                        return lsp.Position(pos.line + line_delta, offset)
-
-                                    self.RANGE = lsp.Range(
-                                        self.state.selection.first,
-                                        add_pos_text(self.state.selection.first, diff_text),
-                                    )
-
-                                    try:
-                                        await asyncio.wait_for(cf, timeout=2)
-                                        break
-                                    except asyncio.TimeoutError:
-                                        break
-                                    finally:
-                                        del self.state.change_futures[diff_text]
-                                        self.state.additive_ranges = RangeSet()
-                                        self.state.negative_ranges = RangeSet()
-                                        with lsp.setdoc(self.state.document):
-                                            cursor = self.state.selection.first
-                                            for op, text in diff:
-                                                next_cursor = add_pos_text(cursor, text)
-                                                if op == -1:  # delete
-                                                    self.state.negative_ranges.add(
-                                                        lsp.Range(cursor, next_cursor)
-                                                    )
-                                                elif op == 0:  # keep
-                                                    pass
-                                                elif op == 1:  # add
-                                                    self.state.additive_ranges.add(
-                                                        lsp.Range(cursor, next_cursor)
-                                                    )
-                                                cursor = next_cursor
-
-                                        progress = CodeEditProgress(
-                                            response=None,
-                                            textDocument=self.state.document,
-                                            cursor=self.state.cursor,
-                                            additive_ranges=list(self.state.additive_ranges),
-                                            negative_ranges=list(self.state.negative_ranges),
-                                        )
-                                        await self.send_progress(progress)
-                                except Exception as e:
-                                    logger.info(f"caught {e=} retrying")
-                                    fuel -= 1
 
                     await self.add_task("Generate code", generate_code).run()
                     await gather_thoughts()
