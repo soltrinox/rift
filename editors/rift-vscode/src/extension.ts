@@ -14,19 +14,18 @@ export let logProvider: WebviewProvider;
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Extension "pyrift-installer" is now active!');
 
   exec('pip install pyrift', (error, stdout, stderr) => {
       if (error) {
-          vscode.window.showErrorMessage(`Error installing pyrift: ${error.message} Trying pip3`);
           exec('pip3 install pyrift', (error, stdout, stderr) => {
             if (error) {
                 vscode.window.showErrorMessage(`Error installing pyrift: ${error.message}`);
                 return;
+            } else {
+              
             }
       })
       }
-      console.log('rift installed!');
 
       /**exec('rift --version', (versionError, versionStdout, versionStderr) => {
           if (versionError) {
@@ -48,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
                   vscode.window.showErrorMessage(`Error running pyrift: ${pyriftError.message}`);
                   return;
               }
-              console.log('rift server started!');
+              vscode.window.showInformationMessage(`Rift server started`);
             });
       });
 //  });
