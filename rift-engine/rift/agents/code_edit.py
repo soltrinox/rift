@@ -173,7 +173,7 @@ class CodeEditAgent(Agent):
                         self.state.selection.first
                     )
                     offset_end = self.state.document.position_to_offset(self.state.selection.second)
-                    selection_text = self.state.document.text[offset_start:offset_end]
+                    self.selection_text = self.state.document.text[offset_start:offset_end]
 
                     logger.info("starting to iterate through text stream")
                     self.DIFF = None
@@ -188,11 +188,25 @@ class CodeEditAgent(Agent):
                             if fuel <= 0:
                                 raise Exception(":(")
                             try:
-                                diff = dmp.diff_lineMode(selection_text, new_text, None)
+                                
+                                # diff = dmp.diff_lineMode(self.selection_text, new_text, None)
+                                # # dmp.diff_cleanupSemantic(diff)
+                                # dmp.diff_cleanupMerge
+
+                                (x, y, linearray) = dmp.diff_linesToChars(self.selection_text, new_text)
+
+                                diff = dmp.diff_main(x, y, False)
+
+                                # Convert the diff back to original text.
+                                dmp.diff_charsToLines(diff, linearray)
+                                # Eliminate freak matches (e.g. blank lines)
                                 dmp.diff_cleanupSemantic(diff)
+
+                                
                                 self.DIFF = diff  # store the latest diff
+                                # logger.info(f"{diff=}")
                                 diff_text = "".join([text for _, text in diff])
-                                if diff_text == selection_text:
+                                if diff_text == self.selection_text:
                                     break
                                 # logger.info(f"{diff=}")
 
@@ -414,15 +428,16 @@ class CodeEditAgent(Agent):
         self.state._done.set()
 
     def rejected_diff_text(self, diff):
-        result = ""
-        for op, text in diff:
-            if op == -1:  # remove
-                result += text
-            elif op == 0:
-                result += text
-            elif op == 1:
-                pass
-        return result
+        # result = ""
+        # for op, text in diff:
+        #     if op == -1:  # remove
+        #         result += text
+        #     elif op == 0:
+        #         result += text
+        #     elif op == 1:
+        #         pass
+        # return result
+        return self.selection_text
 
     async def reject(self):
         logger.info(f"{self} user rejected result")
