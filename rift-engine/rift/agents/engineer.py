@@ -212,7 +212,7 @@ class EngineerAgent(Agent):
             #         await self.send_progress(
             #             dict(done_streaming=True, **{"response": None if not self.RESPONSE else self.RESPONSE}, messages=self.state.messages)
             #         )
-            #         logger.info("done streaming")                            
+            #         logger.info("done streaming")
             #         logger.info(f"{self.state.messages=}")
             #         self.RESPONSE = ""
             #     await asyncio.sleep(0.1)
@@ -222,9 +222,9 @@ class EngineerAgent(Agent):
                     self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
                     await self.send_progress(
                         dict(response=self.RESPONSE)
-                    )                    
+                    )
                 if prompt:
-                    self.state.messages.append(openai.Message.assistant(prompt))          
+                    self.state.messages.append(openai.Message.assistant(prompt))
 
                 if self.RESPONSE:
                     await self.send_progress(
@@ -233,7 +233,7 @@ class EngineerAgent(Agent):
 
                     self.RESPONSE = ""
             request_chat_event.clear()
-            return await self.request_chat(RequestChatRequest(messages=self.state.messages))            
+            return await self.request_chat(RequestChatRequest(messages=self.state.messages))
 
         def request_chat_wrapper(prompt="", loop=None):
             asyncio.set_event_loop(loop)
