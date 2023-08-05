@@ -104,23 +104,21 @@ type CodeCompletionPayload =
   | "rejected"
 
 
-// FIXME add type interfaces. as of now, this is not typescript.
 async function code_edit_send_progress_handler(params: AgentProgress<CodeEditPayload>, agent: Agent): Promise<void> {
   console.log(`code_edit_send_progress PARAMS:`, params)
   if (params.tasks?.task.status) {
-    agent.onCodeLensStatusChangeEmitter.fire(params.tasks.task.status)
     agent.onStatusChangeEmitter.fire(params.tasks.task.status)
   }
-  if (params.payload !== "accepted" && params.payload !== "rejected" && params.payload?.ready) {
-    agent.onCodeLensStatusChangeEmitter.fire("done")
-    agent.onStatusChangeEmitter.fire("done")
+    if (params.tasks?.task.status === "done" || params.tasks?.task.status === "error") {
+        agent.onCodeLensStatusChangeEmitter.fire(params.tasks?.task.status)
+    }
+
+    if (params.payload !== "accepted" && params.payload !== "rejected" && params.payload?.ready) {
+    console.log("READY, FIRING");
+    agent.onCodeLensStatusChangeEmitter.fire("ready")
+    agent.onStatusChangeEmitter.fire("running")
   }
 
-  // if (params.payload) {
-  //   if (params.payload.additive_ranges) {
-  //     agent.additive_ranges = params.payload.additive_ranges;
-  //   }
-  // }
   console.log(`URI: ${agent?.textDocument?.uri?.toString()}`)
   const editors: TextEditor[] = vscode.window.visibleTextEditors.filter(
     (e) => e.document.uri.toString() == agent?.textDocument?.uri?.toString()
@@ -141,10 +139,8 @@ async function code_edit_send_progress_handler(params: AgentProgress<CodeEditPay
       editor.setDecorations(GREEN, [])
       editor.setDecorations(RED, [])
       agent.morph_language_client.sendDoesShowAcceptRejectBarChange(agent.id, false)
-
       agent.morph_language_client.changeLensEmitter.fire() // this causes the code lenses to rerender or un-render
-
-      // console.log("SET DECORATIONS TO NONE");
+      console.log("SET DECORATIONS TO NONE");
       // agent.morph_language_client.delete({ id: agent.id })
       continue
     }
@@ -261,8 +257,6 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     return this.webviewState.value
   }
 
-  // This code is not dead. It is called by the LSP or some shit. -- Brent it is called every time onStatusChangeEmitter is called
-  // TODO: needs to be modified to account for whether or not an agent has an active cursor in the document whatsoever
   public provideCodeLenses(document: vscode.TextDocument, token: vscode.CancellationToken): AgentStateLens[] {
     // this returns all of the lenses for the document.
     let items: AgentStateLens[] = []
@@ -292,9 +286,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
               arguments: [agent.id],
             })
             items.push(running)
-          } else if (agent.codeLensStatus === "done" || agent.codeLensStatus === "error") {
-            this.sendDoesShowAcceptRejectBarChange(agent.id, agent.codeLensStatus==='done') // too tired sorry for this line -bb
-
+          } else if (agent.codeLensStatus === "ready") {
+            this.sendDoesShowAcceptRejectBarChange(agent.id, agent.codeLensStatus==='ready')
             const accept = new AgentStateLens(linetext.range, agent, {
               title: "Accept ✅ ",
               command: "rift.accept",
@@ -309,6 +302,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
               arguments: [agent.id],
             })
             items.push(accept, reject)
+          } else {
+              this.sendDoesShowAcceptRejectBarChange(agent.id, false);
           }
         }
       }
@@ -610,7 +605,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
   sendProgressChange(params: AgentProgress) {
     const {agent_id, tasks} = params
     const payload = params.payload
-    if (payload && 'messages' in payload && payload.messages) {this.sendChatHistoryChange(agent_id, params.payload.messages)};
+    if (payload && {}.hasOwnProperty.call(payload, 'messages') && payload.messages) {this.sendChatHistoryChange(agent_id, params.payload.messages)};
     if(payload == 'accepted' || payload == 'rejected' || typeof payload == 'string') return
     
     if (!(agent_id in this.webviewState.value.agents)) {
@@ -618,7 +613,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
       throw new Error(`progress for nonexistent agent: ${agent_id}`)
     }
 
-    const response = payload && 'response' in payload ? payload.response : undefined
+    const response = payload && {}.hasOwnProperty.call(payload, 'response') ? payload.response : undefined
 
     if (response)
       this.webviewState.update((state) => ({

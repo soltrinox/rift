@@ -25,6 +25,7 @@ class AgentTask:
     args: Union[Iterable, Callable[Any, Awaitable[Iterable[Any]]], None] = None
     kwargs: Union[Dict, Callable[Any, Awaitable[Dict[Any, Any]]], None] = None
     done_callback: Optional[Callable[Any, Any]] = None
+    start_callback: Optional[Callable[Any, Any]] = None
     _task: Optional[asyncio.Task] = None
     _running: bool = False
     _error: Optional[Exception] = None
@@ -57,6 +58,8 @@ class AgentTask:
             self._task: asyncio.Task = asyncio.create_task(self.task(*args, **kwargs))
             if self.done_callback is not None:
                 self._task.add_done_callback(self.done_callback)
+            if self.start_callback is not None:
+                self.start_callback()
             return await self._task
         except asyncio.CancelledError as e:
             self._cancelled = True

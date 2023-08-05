@@ -144,9 +144,11 @@ class Agent:
             # On completion of the task we call the callable object done_cb with the provided arguments
             # done_cb tries to send_progress() using the captured loop context irrespective of where it's called from.
             def done_cb(*args):
+                nonlocal self
                 asyncio.run_coroutine_threadsafe(self.send_progress(), loop=loop)
 
             kwargs["done_callback"] = done_cb
+            kwargs["start_callback"] = done_cb
         # Pass if loop context doesn't exist(not running any asynchronous code)
         except:
             pass

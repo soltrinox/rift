@@ -162,16 +162,17 @@ export type ChatAgentPayload = {
     }
   | undefined;
 
-export type CodeEditPayload = {
-      additive_ranges?: vscode.Range[]
-      cursor?: vscode.Position
-      negative_ranges?: vscode.Range[]
-      ready?: boolean
-      textDocument?: TextDocumentIdentifier
-    }
-  | "accepted"
-  | "rejected"
+// export type CodeEditPayload = {
+//       additive_ranges?: vscode.Range[]
+//       cursor?: vscode.Position
+//       negative_ranges?: vscode.Range[]
+//       ready?: boolean
+//       textDocument?: TextDocumentIdentifier
+//     }
+//   | "accepted"
+//   | "rejected"
 
+export type CodeEditPayload = any
 export type AnyPayload = ChatAgentPayload | CodeEditPayload | any
 export interface AgentProgress<T = AnyPayload> {
   agent_id: string;

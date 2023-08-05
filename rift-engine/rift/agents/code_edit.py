@@ -109,9 +109,7 @@ class CodeEditAgent(Agent):
 
                 for fut in asyncio.as_completed([response_fut, waiter_fut]):
                     return await fut
-
                 # return await self.request_chat(RequestChatRequest(messages=self.state.messages))
-
             await self.send_progress()
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
             # logger.info(f"{self.RANGE=}")
@@ -182,8 +180,24 @@ class CodeEditAgent(Agent):
 
                     async def generate_code():
                         nonlocal all_deltas
-                        async for delta in edit_code_result.code:
-                            all_deltas.append(delta)
+                        # async for substream in edit_code_result.code.asplit("\n"):
+                        after = edit_code_result.code
+                        line_flag = False
+                        while True:
+                            flag = False
+                            before, after = after.split_once("\n")
+                            # logger.info("yeehaw")
+                            if line_flag:
+                                all_deltas.append("\n")
+                            async for delta in before:
+                                if not flag:
+                                    flag = True
+                                all_deltas.append(delta)
+                            if not flag:
+                                break
+                            if not line_flag:
+                                line_flag = True
+                            logger.info(f"{all_deltas=}")
                             fuel = 10
                             while True:
                                 if self.state._done._value:
@@ -198,6 +212,7 @@ class CodeEditAgent(Agent):
                                     diff_text = "".join([text for _, text in diff])
                                     if diff_text == selection_text:
                                         break
+                                    # logger.info(f"{diff=}")
 
                                     cf = asyncio.get_running_loop().create_future()
                                     self.state.change_futures[diff_text] = cf
@@ -256,7 +271,7 @@ class CodeEditAgent(Agent):
                                     logger.info(f"caught {e=} retrying")
                                     fuel -= 1
 
-                    await generate_code()
+                    await self.add_task("Generate code", generate_code).run()
                     await gather_thoughts()
                     t = asyncio.create_task(cleanup())
                     assistant_response = await generate_response_t
@@ -276,10 +291,12 @@ class CodeEditAgent(Agent):
                             ready=True,
                         )
                     )
+                    logger.info("sent ready=True")
                 finally:
                     self.server.change_callbacks[self.state.document.uri].discard(self.on_change)
             return CodeEditRunResult()
         except asyncio.CancelledError as e:
+            logger.info("cancelling")
             try:
                 await self.reject()
             except:
