@@ -164,7 +164,7 @@ class SmolAgent(Agent):
             async with self.state.response_lock:
                 self.state.messages.append(openai.Message.assistant(self._response_buffer))
                 await self.send_progress(
-                    {"response": self._response_buffer, "done_streaming": True}
+                    {"response": self._response_buffer, "done_streaming": True, "messages": self.state.messages}
                 )
                 self._response_buffer = ""
 
@@ -224,7 +224,7 @@ class SmolAgent(Agent):
                 )
             )
 
-            location_prompt = await self.request_chat(
+            generated_code_location_response = await self.request_chat(
                 RequestChatRequest(messages=self.state.messages)
             )
 
@@ -249,11 +249,11 @@ class SmolAgent(Agent):
             #     )
 
             self.state.messages.append(
-                openai.Message.user(location_prompt)
+                openai.Message.user(generated_code_location_response)
             )  # update messages history
 
             # Parse any URIs from the user's response
-            matches = extract_uris(location_prompt)
+            matches = extract_uris(generated_code_location_response)
             if matches:
                 parent_dir = matches[0]
                 if not os.path.isdir(parent_dir):
