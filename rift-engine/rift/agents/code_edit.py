@@ -60,7 +60,7 @@ class CodeEditAgentState(AgentState):
     additive_ranges: RangeSet = field(default_factory=RangeSet)
     negative_ranges: RangeSet = field(default_factory=RangeSet)
     change_futures: Dict[str, Future] = field(default_factory=dict)
-    _done: bool = False
+    _done: asyncio.Event = field(default_factory=asyncio.Event)
 
 
 # decorator for creating the code completion agent
@@ -87,7 +87,6 @@ class CodeEditAgent(Agent):
             params=params,
             selection=params.selection,
             messages=[openai.Message.assistant("What do you want me to do?")],
-            _done=False,
         )
         obj = cls(
             state=state,
@@ -102,7 +101,16 @@ class CodeEditAgent(Agent):
             self.RANGE = None
 
             async def get_user_response() -> str:
-                return await self.request_chat(RequestChatRequest(messages=self.state.messages))
+                response_fut = asyncio.create_task(self.request_chat(RequestChatRequest(messages=self.state.messages)))
+                async def waiter():
+                    await self.state._done.wait()
+                    return
+                waiter_fut = asyncio.create_task(waiter())
+
+                for fut in asyncio.as_completed([response_fut, waiter_fut]):
+                    return await fut
+
+                # return await self.request_chat(RequestChatRequest(messages=self.state.messages))
 
             await self.send_progress()
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
@@ -117,7 +125,9 @@ class CodeEditAgent(Agent):
                     # get the next prompt
                     # logger.info("getting user response")
                     get_user_response_t = self.add_task("Get user response", get_user_response)
-                    instructionPrompt = await get_user_response_t.run()
+                    instructionPrompt: Optional[str] = await get_user_response_t.run()
+                    if not instructionPrompt:
+                        break
                     documents = resolve_inline_uris(instructionPrompt, self.server)
                     self.server.register_change_callback(self.on_change, self.state.document.uri)
                     from diff_match_patch import diff_match_patch
@@ -152,7 +162,6 @@ class CodeEditAgent(Agent):
                     generate_response_t = asyncio.create_task(generate_response())
 
                     async def gather_thoughts():
-                        flag = False
                         async for delta in edit_code_result.thoughts:
                             response_stream.feed_data(delta)
 
@@ -177,7 +186,7 @@ class CodeEditAgent(Agent):
                             all_deltas.append(delta)
                             fuel = 10
                             while True:
-                                if self.state._done:
+                                if self.state._done._value:
                                     break
                                 if fuel <= 0:
                                     raise Exception(":(")
@@ -362,7 +371,7 @@ class CodeEditAgent(Agent):
             payload="accepted",
             payload_only=True,
         )
-        self.state._done = True
+        self.state._done.set()
 
     def rejected_diff_text(self, diff):
         result = ""
@@ -385,4 +394,4 @@ class CodeEditAgent(Agent):
             payload="rejected",
             payload_only=True,
         )
-        self.state._done = True
+        self.state._done.set()
