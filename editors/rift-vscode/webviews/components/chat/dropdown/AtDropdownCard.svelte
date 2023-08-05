@@ -1,18 +1,16 @@
 <script lang="ts">
-  import FileIconSvg from "../../icons/FileIconSvg.svelte"
+  import FileIconSvg from "../../icons/FileIconSvg.svelte";
 
   export let focused: boolean = false;
   export let onClick: (...args: any) => any;
-  export let displayName = 'example.ts'
-  export let description = '/project/server/example.ts'
-
+  export let displayName = "example.ts";
+  export let description = "/project/server/example.ts";
 </script>
-
 
 <div class="bg-[var(--vscode-editor-background)]">
   <!-- me and my homies love a11y -->
   <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div
+  <div
     class={`flex flex-col hover:cursor-pointer pl-2 py-2
     ${
       focused
@@ -23,12 +21,12 @@
   >
     <div class="flex flex-row ml-[6px] items-center">
       <div class="mr-[3px]">
-        <FileIconSvg/>
+        <FileIconSvg />
       </div>
       {displayName}
     </div>
     <div
-            class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden ml-[6px]"
+      class="text-[var(--vscode-gitDecoration-ignoredResourceForeground)] truncate overflow-hidden ml-[6px]"
     >
       {description}
     </div>
