@@ -78,7 +78,7 @@ dev = "python -m rift.server.core --debug {args}"
 bundle = "pyinstaller rift/server/core.py --name rift -y --collect-all gpt4all --onefile --log-level=DEBUG {args}"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["39", "310", "311"]
+python = ["310", "311"]
 
 [tool.coverage.run]
 branch = true

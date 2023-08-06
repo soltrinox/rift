@@ -177,7 +177,8 @@ def main(
     debug=False,
 ):
     metaserver = create_metaserver(host, port, version, debug)
-    asyncio.run(metaserver.run_forever(), debug=debug)
+    if metaserver:
+        asyncio.run(metaserver.run_forever(), debug=debug)
 
 
 if __name__ == "__main__":
