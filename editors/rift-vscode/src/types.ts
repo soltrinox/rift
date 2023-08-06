@@ -156,7 +156,8 @@ export interface RunAgentProgress {
   status: AgentStatus;
 }
 
-export type ChatAgentPayload = {
+export type ChatAgentPayload =
+  | {
       response?: string;
       done_streaming?: boolean;
     }
@@ -172,8 +173,8 @@ export type ChatAgentPayload = {
 //   | "accepted"
 //   | "rejected"
 
-export type CodeEditPayload = any
-export type AnyPayload = ChatAgentPayload | CodeEditPayload | any
+export type CodeEditPayload = any;
+export type AnyPayload = ChatAgentPayload | CodeEditPayload | any;
 export interface AgentProgress<T = AnyPayload> {
   agent_id: string;
   agent_type: string;

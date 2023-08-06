@@ -10,24 +10,23 @@ import { exec } from "child_process";
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
 
-
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  exec("pip install pyrift", (error, stdout, stderr) => {
+    if (error) {
+      exec("pip3 install pyrift", (error, stdout, stderr) => {
+        if (error) {
+          vscode.window.showErrorMessage(
+            `Error installing pyrift: ${error.message}`,
+          );
+          return;
+        } else {
+        }
+      });
+    }
 
-  exec('pip install pyrift', (error, stdout, stderr) => {
-      if (error) {
-          exec('pip3 install pyrift', (error, stdout, stderr) => {
-            if (error) {
-                vscode.window.showErrorMessage(`Error installing pyrift: ${error.message}`);
-                return;
-            } else {
-              
-            }
-      })
-      }
-
-      /**exec('rift --version', (versionError, versionStdout, versionStderr) => {
+    /**exec('rift --version', (versionError, versionStdout, versionStderr) => {
           if (versionError) {
               vscode.window.showErrorMessage(`Error getting rift version: ${versionError.message}`);
               return;
@@ -42,15 +41,17 @@ export function activate(context: vscode.ExtensionContext) {
 
           console.log('Version check passed!');
 **/
-          exec('rift', (pyriftError, pyriftStdout, pyriftStderr) => {
-              if (pyriftError) {
-                  vscode.window.showErrorMessage(`Error running pyrift: ${pyriftError.message}`);
-                  return;
-              }
-              vscode.window.showInformationMessage(`Rift server started`);
-            });
-      });
-//  });
+    exec("rift", (pyriftError, pyriftStdout, pyriftStderr) => {
+      if (pyriftError) {
+        vscode.window.showErrorMessage(
+          `Error running pyrift: ${pyriftError.message}`,
+        );
+        return;
+      }
+      vscode.window.showInformationMessage(`Rift server started`);
+    });
+  });
+  //  });
 
   let morph_language_client = new MorphLanguageClient(context);
 
