@@ -69,7 +69,7 @@ function createServerOptions(context: vscode.ExtensionContext, port = DEFAULT_PO
   // [todo]: we will supply different bundles for the 3 main platforms; windows, linux, osx.
   // there needs to be a decision point here where we decide which platform we are on and
   // then choose the appropriate bundle.
-  let command = join(context.extensionPath, "resources", "lspai")
+  let command = join(context.extensionPath, "resources", "rift")
   let args: string[] = []
   args = [...args, "--port", port.toString()]
   let e: Executable = {
@@ -363,7 +363,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         await this.create_client()
       }
     })
-    await this.client.start()
+      await this.client.start()
     console.log("rift-engine started")
   }
 

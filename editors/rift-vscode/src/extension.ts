@@ -6,13 +6,20 @@ import { MorphLanguageClient } from "./client";
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { WebviewProvider } from "./elements/WebviewProvider";
 
+import { startRiftCodeEngine } from "./activation/environmentSetup"
+
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
+
+import { PythonExtension } from "@vscode/python-extension";
 // export let morph_language_client: MorphLanguageClient;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+
+  startRiftCodeEngine().catch((e) => vscode.window.showErrorMessage(`${e}`))
+    
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(
@@ -64,17 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     morph_language_client.sendRecentlyOpenedFilesChange(recentlyOpenedFiles);
   });
-
-  // const infoview = new Infoview(context)
-  // context.subscriptions.push(infoview)
-
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "rift" is now active!');
-
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
 
   let disposablefocusOmnibar = vscode.commands.registerCommand(
     "rift.focus_omnibar",
