@@ -6,7 +6,7 @@ import { MorphLanguageClient } from "./client";
 // import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { WebviewProvider } from "./elements/WebviewProvider";
 
-import { startRiftCodeEngine } from "./activation/environmentSetup"
+import { ensureRiftHook } from "./activation/environmentSetup"
 
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
@@ -18,8 +18,10 @@ import { PythonExtension } from "@vscode/python-extension";
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-  startRiftCodeEngine().catch((e) => vscode.window.showErrorMessage(`${e}`))
-    
+  const autostart: boolean | undefined = vscode.workspace.getConfiguration('rift').get('autostart')
+
+  if (autostart) { ensureRiftHook() };
+
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(
@@ -94,4 +96,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }

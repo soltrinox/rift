@@ -34,6 +34,14 @@
     "configuration": {
       "title": "Rift",
       "properties": {
+        "rift.autostart" : {
+            "type": [
+                "boolean",
+                "null"
+            ],
+            "default": true,
+            "enum": [true, false]
+        },
         "rift.openaiKey": {
           "type": [
             "string",
@@ -111,6 +119,11 @@
       {
         "command": "rift.run_agent",
         "title": "Rift: Code Completion"
+      },
+      {
+
+        "command": "rift.start_server",
+        "title": "Rift: Start Server"
       },
       {
         "command": "rift.reset_chat",

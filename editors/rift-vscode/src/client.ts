@@ -94,12 +94,12 @@ const RED = vscode.window.createTextEditorDecorationType({
 
 type CodeCompletionPayload =
   | {
-      additive_ranges?: vscode.Range[]
-      cursor?: vscode.Position
-      negative_ranges?: vscode.Range[]
-      response?: string
-      textDocument?: TextDocumentIdentifier
-    }
+    additive_ranges?: vscode.Range[]
+    cursor?: vscode.Position
+    negative_ranges?: vscode.Range[]
+    response?: string
+    textDocument?: TextDocumentIdentifier
+  }
   | "accepted"
   | "rejected"
 
@@ -109,11 +109,11 @@ async function code_edit_send_progress_handler(params: AgentProgress<CodeEditPay
   if (params.tasks?.task.status) {
     agent.onStatusChangeEmitter.fire(params.tasks.task.status)
   }
-    if (params.tasks?.task.status === "done" || params.tasks?.task.status === "error") {
-        agent.onCodeLensStatusChangeEmitter.fire(params.tasks?.task.status)
-    }
+  if (params.tasks?.task.status === "done" || params.tasks?.task.status === "error") {
+    agent.onCodeLensStatusChangeEmitter.fire(params.tasks?.task.status)
+  }
 
-    if (params.payload !== "accepted" && params.payload !== "rejected" && params.payload?.ready) {
+  if (params.payload !== "accepted" && params.payload !== "rejected" && params.payload?.ready) {
     console.log("READY, FIRING");
     agent.onCodeLensStatusChangeEmitter.fire("ready")
     agent.onStatusChangeEmitter.fire("running")
@@ -195,8 +195,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
   private webviewState = new Store<WebviewState>(DEFAULT_STATE)
 
   constructor(context: vscode.ExtensionContext) {
-    this.red = { key: "TEMP_VALUE", dispose: () => {} }
-    this.green = { key: "TEMP_VALUE", dispose: () => {} }
+    this.red = { key: "TEMP_VALUE", dispose: () => { } }
+    this.green = { key: "TEMP_VALUE", dispose: () => { } }
     this.context = context
     this.webviewState.subscribe((state) => {
       // console.log('webview state:')
@@ -287,7 +287,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             })
             items.push(running)
           } else if (agent.codeLensStatus === "ready") {
-            this.sendDoesShowAcceptRejectBarChange(agent.id, agent.codeLensStatus==='ready')
+            this.sendDoesShowAcceptRejectBarChange(agent.id, agent.codeLensStatus === 'ready')
             const accept = new AgentStateLens(linetext.range, agent, {
               title: "Accept ✅ ",
               command: "rift.accept",
@@ -303,7 +303,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
             })
             items.push(accept, reject)
           } else {
-              this.sendDoesShowAcceptRejectBarChange(agent.id, false);
+            this.sendDoesShowAcceptRejectBarChange(agent.id, false);
           }
         }
       }
@@ -329,8 +329,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
 
   public async refreshAvailableAgents() {
     console.log("refreshing webview agents");
-      const availableAgents = (await this.list_agents()).reverse();
-      this.webviewState.update((state) => ({ ...state, availableAgents }));
+    const availableAgents = (await this.list_agents()).reverse();
+    this.webviewState.update((state) => ({ ...state, availableAgents }));
   }
 
   async create_client() {
@@ -363,7 +363,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
         await this.create_client()
       }
     })
-      await this.client.start()
+    await this.client.start()
     console.log("rift-engine started")
   }
 
@@ -546,21 +546,21 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
       `latency in regetting gitignore globs is ${latency}ms. If too high, consider adding event listeners to when the gitignores change instead of refetching them every time`
     )
 
-      let vsCodeFiles: vscode.Uri[] = await vscode.workspace.findFiles("**/*", "**/node_modules/*");
-      let allPaths: Set<vscode.Uri> = new Set();
+    let vsCodeFiles: vscode.Uri[] = await vscode.workspace.findFiles("**/*", "**/node_modules/*");
+    let allPaths: Set<vscode.Uri> = new Set();
 
-      for (let file of vsCodeFiles) {
-          console.log("yeehaw")
-          let parentDir = file.fsPath.split("/").slice(0, -1).join("/");
-          console.log(`parentDir=${parentDir}`)
-          allPaths.add(vscode.Uri.parse(parentDir));
-          allPaths.add(file);
-      }
+    for (let file of vsCodeFiles) {
+      // console.log("yeehaw")
+      let parentDir = file.fsPath.split("/").slice(0, -1).join("/");
+      // console.log(`parentDir=${parentDir}`)
+      allPaths.add(vscode.Uri.parse(parentDir));
+      allPaths.add(file);
+    }
 
-      let allFiles: vscode.Uri[] = [...allPaths];
+    let allFiles: vscode.Uri[] = [...allPaths];
 
 
-      //TODO: make work for nested .gitignores. I think we can just do this by prepending filepaths to the globs. Not sure though
+    //TODO: make work for nested .gitignores. I think we can just do this by prepending filepaths to the globs. Not sure though
     // function isPathWithin(parentPath, childPath) {
     //   const relativePath = path.relative(parentPath, childPath)
     //   const isWithin = !relativePath.startsWith("..") && !path.isAbsolute(relativePath)
@@ -599,7 +599,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
       console.warn(
         "discrepancy between server agent chat history and client agent chathistory. taking server as truth"
       )
-      console.log('newChatHistory:', newChatHistory)
+    console.log('newChatHistory:', newChatHistory)
     this.webviewState.update((state) => {
       if (!(agentId in state.agents)) throw new Error("changing chatHistory for nonexistent agent")
       return {
@@ -615,13 +615,13 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
     })
   }
 
-    
+
   sendProgressChange(params: AgentProgress) {
-    const {agent_id, tasks} = params
+    const { agent_id, tasks } = params
     const payload = params.payload
-    if (payload && {}.hasOwnProperty.call(payload, 'messages') && payload.messages) {this.sendChatHistoryChange(agent_id, params.payload.messages)};
-    if(payload == 'accepted' || payload == 'rejected' || typeof payload == 'string') return
-    
+    if (payload && {}.hasOwnProperty.call(payload, 'messages') && payload.messages) { this.sendChatHistoryChange(agent_id, params.payload.messages) };
+    if (payload == 'accepted' || payload == 'rejected' || typeof payload == 'string') return
+
     if (!(agent_id in this.webviewState.value.agents)) {
       console.log(params)
       throw new Error(`progress for nonexistent agent: ${agent_id}`)
@@ -641,7 +641,7 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
           },
         },
       }))
-    
+
     if (tasks) {
       this.webviewState.update((state) => ({
         ...state,
@@ -679,8 +679,8 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
       //   console.log("done streaming but no repsonse:");
       //   console.log(params);
       //   throw new Error(" done streaming but no response?");
-        // }
-        this.webviewState.update((prevState) => {
+      // }
+      this.webviewState.update((prevState) => {
         return {
           ...prevState,
           agents: {
@@ -690,9 +690,9 @@ export class MorphLanguageClient implements vscode.CodeLensProvider<AgentStateLe
               agent_id: agent_id,
               agent_type: params.agent_type,
               isStreaming: false,
-                streamingText: "",
-                // chatHistory: payload.messages
-                // chatHistory: [...prevState.agents[agent_id].chatHistory, {role: "assistant", content: payload.response ? payload.response : ""}],
+              streamingText: "",
+              // chatHistory: payload.messages
+              // chatHistory: [...prevState.agents[agent_id].chatHistory, {role: "assistant", content: payload.response ? payload.response : ""}],
             },
           },
         }

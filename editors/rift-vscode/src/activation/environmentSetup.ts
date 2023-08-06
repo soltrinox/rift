@@ -1,4 +1,3 @@
-
 import * as path from "path";
 import * as fs from "fs";
 // import {getRiftServerUrl} from "../bridge";
@@ -16,389 +15,128 @@ const WINDOWS_REMOTE_SIGNED_SCRIPTS_ERROR =
 
 const MAX_RETRIES = 3;
 
+const RIFT_COMMIT = "ea0ee39bd86c331616bdaf3e8c02ed7c913b0933"
+const PIP_INSTALL_COMMAND = `pip install "git+https://github.com/morph-labs/rift.git@${RIFT_COMMIT}#subdirectory=rift-engine&egg=pyrift"`
+const PIP_INSTALL_ARGS = `install "git+https://github.com/morph-labs/rift.git@${RIFT_COMMIT}#subdirectory=rift-engine&egg=pyrift"`
+
+const morphDir = path.join(os.homedir(), '.morph');
 
 export function getExtensionUri(): vscode.Uri {
     return vscode.extensions.getExtension("morph.rift")!.extensionUri;
 }
 
-async function retryThenFail(
-    fn: () => Promise<any>,
-    retries: number = MAX_RETRIES
-): Promise<any> {
+export async function ensureRift(): Promise<void> {
+    console.log("Start - Checking if `rift` is in PATH.");
+
+    let riftIsInPath = true;
+    const command = process.platform === "win32" ? 'where' : 'which';
+
+    console.log("Command set for 'which'/'where' based on platform.");
+
+    console.log("Initiating 'exec' command to check for 'rift'.");
     try {
-        if (retries < MAX_RETRIES && process.platform === "win32") {
-            let [stdout, stderr] = await runCommand("Get-ExecutionPolicy");
-            if (!stdout.includes("RemoteSigned")) {
-                [stdout, stderr] = await runCommand(
-                    "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser"
-                );
-                console.log("Execution policy stdout: ", stdout);
-                console.log("Execution policy stderr: ", stderr);
+        const { stdout } = await exec(`${command} rift`);
+        console.log("`exec` command executed successfully.");
+        riftIsInPath = Boolean(stdout);
+        console.log("Set 'riftIsInPath' based on command output.");
+    } catch (error: any) {
+        console.log("Exception caught while executing 'exec' command.", error);
+        riftIsInPath = false;
+        console.log("Set 'riftIsInPath' to false due to exception.");
+    }
+    const riftInMorphDir = fs.existsSync(path.join(morphDir, 'env', 'bin', 'rift'));
+
+    if (!riftIsInPath && !riftInMorphDir) {
+        console.error("`rift` executable not found in PATH or .morph/env/bin directory.");
+        throw new Error("`rift` executable is not found in your PATH or .morph/env/bin. Please make sure it is correctly installed and try again.");
+    }
+    console.log("End - `rift` found in PATH or .morph/env/bin directory.");
+
+}
+
+// invoke this optionally via popup in case `ensureRift` fails
+async function autoInstall() {
+    console.log('Executing: const morphDir = path.join(os.homedir(), \'.morph\');');
+    const morphDir = path.join(os.homedir(), '.morph');
+    console.log('Executing: if (!fs.existsSync(morphDir))...');
+    if (!fs.existsSync(morphDir)) {
+        console.log('Executing: fs.mkdirSync(morphDir);');
+        fs.mkdirSync(morphDir);
+    }
+    console.log('Executing: const pythonCommands = process.platform === "win32" ?...');
+    const pythonCommands = process.platform === "win32" ? ['py -3.10', 'py -3', 'py'] : ['python3.10', 'python3', 'python'];
+    console.log('Executing: let pythonCommand: string | null = null;');
+    let pythonCommand: string | null = null;
+    console.log('Executing: for... loop over pythonCommands');
+    for (const command of pythonCommands) {
+        console.log('Executing: const { stdout } = await exec(`${command} --version`);');
+        const { stdout } = await exec(`${command} --version`);
+        console.log('Executing: const versionMatch = stdout.match(/Python (\\d+\\.\\d+)/);');
+        const versionMatch = stdout.match(/Python (\d+\.\d+)/);
+        console.log('Executing: if (versionMatch)...');
+        if (versionMatch) {
+            console.log('Executing: const version = parseFloat(versionMatch[1]);');
+            const version = parseFloat(versionMatch[1]);
+            console.log('Executing: if (version >= 3.10)...');
+            if (version >= 3.10) {
+                console.log('Executing: pythonCommand = command;');
+                pythonCommand = command;
+                break;
             }
         }
-
-        return await fn();
-    } catch (e: any) {
-        if (retries > 0) {
-            return await retryThenFail(fn, retries - 1);
-        }
-
-        // Show corresponding error message depending on the platform
-        let msg =
-            "Failed to set up Rift. Please email jesse@morph.so and we'll get this fixed ASAP!";
-        try {
-            switch (process.platform) {
-                case "win32":
-                    msg = WINDOWS_REMOTE_SIGNED_SCRIPTS_ERROR;
-                    break;
-                case "darwin":
-                    break;
-                case "linux":
-                    const [pythonCmd] = await getPythonPipCommands();
-                    msg = await getLinuxAptInstallError(pythonCmd);
-                    break;
-            }
-        } finally {
-            console.log("After retries, failed to set up Rift extension", msg);
-            vscode.window
-                .showErrorMessage(msg, "View Logs", "Retry")
-                .then((selection) => {
-                    if (selection === "View Logs") {
-                        vscode.commands.executeCommand("rift.viewLogs");
-                    } else if (selection === "Retry") {
-                        // Reload VS Code window
-                        vscode.commands.executeCommand("workbench.action.reloadWindow");
-                    }
-                });
-        }
-
-        throw e;
     }
+    console.log('Executing: if (pythonCommand === null)...');
+    if (pythonCommand === null) {
+        console.log('Throwing new Error(\'Python 3.10 or above is not found...\');');
+        throw new Error('Python 3.10 or above is not found on your system. Please install it and try again.');
+    }
+    console.log('Executing: const createVenvCommand = `${pythonCommand}...`');
+    const createVenvCommand = `${pythonCommand} -m venv ${morphDir}/env`;
+    console.log('Executing: await exec(createVenvCommand);');
+    await exec(createVenvCommand);
+
+    console.log('Executing: const activateVenvAndInstallRiftCommand = `source...`');
+    const activateVenvAndInstallRiftCommand = process.platform === "win32" ? `${morphDir}\\env\\Scripts\\pip ${PIP_INSTALL_ARGS}` :
+        `${morphDir}/env/bin/pip ${PIP_INSTALL_ARGS}`;
+
+    console.log('Executing: await exec(activateVenvAndInstallRiftCommand);');
+    await exec(activateVenvAndInstallRiftCommand);
+    console.log('autoInstall finished');
 }
 
-async function runCommand(cmd: string): Promise<[string, string | undefined]> {
-    console.log("Running command: ", cmd);
-    var stdout: any = "";
-    var stderr: any = "";
-    try {
-        var {stdout, stderr} = await exec(cmd, {
-            shell: process.platform === "win32" ? "powershell.exe" : undefined,
-        });
-    } catch (e: any) {
-        stderr = e.stderr;
-        stdout = e.stdout;
-    }
-    if (stderr === "") {
-        stderr = undefined;
-    }
-    if (typeof stdout === "undefined") {
-        stdout = "";
-    }
+async function autoInstallHook() { await autoInstall().catch((error: any) => { vscode.window.showErrorMessage(`${error.message}\nTry installing Rift manually: https://www.github.com/morph-labs/rift`, "Close") }) }
 
-    return [stdout, stderr];
-}
-
-export async function getPythonPipCommands() {
-    var [stdout, stderr] = await runCommand("python3 --version");
-    let pythonCmd = "python3";
-    if (stderr) {
-        // If not, first see if python3 is aliased to python
-        var [stdout, stderr] = await runCommand("python --version");
-        if (
-            (typeof stderr === "undefined" || stderr === "") &&
-            stdout.split(" ")[1][0] === "3"
-        ) {
-            // Python3 is aliased to python
-            pythonCmd = "python";
-        } else {
-            // Python doesn't exist at all
-            vscode.window.showErrorMessage(
-                "Rift requires Python >=3.10. Please install from https://www.python.org/downloads, reload VS Code, and try again."
-            );
-            throw new Error("Python 3 is not installed.");
-        }
-    }
-
-    let pipCmd = pythonCmd.endsWith("3") ? "pip3" : "pip";
-
-    const version = stdout.split(" ")[1];
-    const [major, minor] = version.split(".");
-    if (parseInt(major) !== 3 || parseInt(minor) < 8) {
-        // Need to check specific versions
-        const checkPython3VersionExists = async (minorVersion: number) => {
-            const [stdout, stderr] = await runCommand(
-                `python3.${minorVersion} --version`
-            );
-            return typeof stderr === "undefined" || stderr === "";
-        };
-
-        const VALID_VERSIONS = [10, 11, 12];
-        let versionExists = false;
-
-        for (const minorVersion of VALID_VERSIONS) {
-            if (await checkPython3VersionExists(minorVersion)) {
-                versionExists = true;
-                pythonCmd = `python3.${minorVersion}`;
-                pipCmd = `pip3.${minorVersion}`;
-            }
-        }
-
-        if (!versionExists) {
-            vscode.window.showErrorMessage(
-                "Rift requires Python version 3.10 or greater. Please update your Python installation, reload VS Code, and try again."
-            );
-            throw new Error("Python3.10 or greater is not installed.");
-        }
-    }
-
-    return [pythonCmd, pipCmd];
-}
-
-function getActivateUpgradeCommands(pythonCmd: string, pipCmd: string) {
-    let pipUpgradeCmd = `${pipCmd} install --upgrade pip`;
-    if (process.platform == "win32") {
-        pipUpgradeCmd = `${pythonCmd} -m pip install --upgrade pip`;
-    }
-    return [pipUpgradeCmd];
-}
-
-
-async function getLinuxAptInstallError(pythonCmd: string) {
-    // First, try to run the command to install python3-venv
-    let [stdout, stderr] = await runCommand(`${pythonCmd} --version`);
-    if (stderr) {
-        await vscode.window.showErrorMessage(
-            "Python3 is not installed. Please install from https://www.python.org/downloads, reload VS Code, and try again."
-        );
-        throw new Error(stderr);
-    }
-    const version = stdout.split(" ")[1].split(".")[1];
-    const installVenvCommand = `apt-get install python3.${version}-venv`;
-    await runCommand("apt-get update");
-    return `[Important] Rift needs to create a Python virtual environment, but python3.${version}-venv is not installed. Please run this command in your terminal: \`${installVenvCommand}\`, reload VS Code, and then try again.`;
-}
-
-async function createPythonVenv(pythonCmd: string) {
-     const createEnvCommand = [
-            `${pythonCmd} -m venv env`,
-     ];
-
-        const [stdout, stderr] = await runCommand(createEnvCommand);
-        if (
-            stderr &&
-            stderr.includes("running scripts is disabled on this system")
-        ) {
-            console.log("Scripts disabled error when trying to create env");
-            await vscode.window.showErrorMessage(WINDOWS_REMOTE_SIGNED_SCRIPTS_ERROR);
-            throw new Error(stderr);
-        } else if (
-            stderr?.includes("On Debian/Ubuntu systems") ||
-            stdout?.includes("On Debian/Ubuntu systems")
-        ) {
-            const msg = await getLinuxAptInstallError(pythonCmd);
-            console.log(msg);
-            await vscode.window.showErrorMessage(msg);
-        } else if (
-            stderr?.includes("Permission denied") &&
-            stderr?.includes("python.exe")
-        ) {
-            // This might mean that another window is currently using the python.exe file to install requirements
-            // So we want to wait and try again
-            let i = 0;
-            await new Promise((resolve, reject) =>
-                setInterval(() => {
-                    if (i > 5) {
-                        reject("Timed out waiting for other window to create env...");
-                    } else {
-                        console.log("Waiting for other window to create env...");
-                    }
-                    i++;
-                }, 5000)
-            );
-        } else {
-            const msg = [
-                "Python environment not successfully created. Trying again. Here was the stdout + stderr: ",
-                `stdout: ${stdout}`,
-                `stderr: ${stderr}`,
-            ].join("\n\n");
-            console.log(msg);
-            throw new Error(msg);
-        }
-}
-
-async function setupPythonEnv() {
-    console.log("Setting up python env for Rift extension...");
-
-    const [pythonCmd, pipCmd] = await getPythonPipCommands();
-    const [, pipUpgradeCmd] = getActivateUpgradeCommands(
-        pythonCmd,
-        pipCmd
-    );
-
-    await retryThenFail(async () => {
-        //TODO: venv
-
-        // Install the requirements
-        const installRequirementsCommand = [
-                pipUpgradeCmd,
-                `${pipCmd} install git+https://github.com/morph-labs/rift.git#egg=version_subpkg&subdirectory=rift-engine`,
-            ].join("\n\n");
-            const [, stderr] = await runCommand(installRequirementsCommand);
-            if (stderr) {
-                throw new Error(stderr);
-            }
-
-    });
-}
-
-function readEnvFile(path: string) {
-    if (!fs.existsSync(path)) {
-        return {};
-    }
-    let envFile = fs.readFileSync(path, "utf8");
-
-    let env: { [key: string]: string } = {};
-    envFile.split("\n").forEach((line) => {
-        let [key, value] = line.split("=");
-        if (typeof key === "undefined" || typeof value === "undefined") {
-            return;
-        }
-        env[key] = value.replace(/"/g, "");
-    });
-    return env;
-}
-
-function writeEnvFile(path: string, key: string, value: string) {
-    if (!fs.existsSync(path)) {
-        fs.writeFileSync(path, `${key}="${value}"`);
-        return;
-    }
-
-    let env = readEnvFile(path);
-    env[key] = value;
-
-    let newEnvFile = "";
-    for (let key in env) {
-        newEnvFile += `${key}="${env[key]}"\n`;
-    }
-    fs.writeFileSync(path, newEnvFile);
-}
-
-async function checkServerRunning(serverUrl: string): Promise<boolean> {
-    // Check if already running by calling /health
-    try {
-        const response = await fetch(serverUrl + "/health");
-        if (response.status === 200) {
-            console.log("Rift python server already running");
-            return true;
-        } else {
-            return false;
-        }
-    } catch (e) {
-        return false;
-    }
-}
-
-
-export function getExtensionVersion() {
-    console.log(vscode.extensions);
-    const extension = vscode.extensions.getExtension("morph.rift");
-    return extension?.packageJSON.version || "";
-}
-
-export async function startRiftCodeEngine() {
-    // Check vscode settings
-    const serverUrl = "http://localhost:7797"
-
-    // setupServerPath();
-
-    return await retryThenFail(async () => {
-        console.log("Checking if server is old version");
-        //TODO: Kill the server if it is running an old version
-        /*if (!(await checkServerRunning(serverUrl))) {
-            console.log("Killing old server...");
-        try {
-            await fkill(":7797");
-        } catch (e: any) {
-            if (!e.message.includes("Process doesn't exist")) {
-                console.log("Failed to kill old server:", e);
-            }
-            */
-
-        setupPythonEnv();
-        console.log("set up python env")
-        // Spawn the server process on port 65432
-        const [pythonCmd] = await getPythonPipCommands();
-
-        const command = `rift`;
-
-        return new Promise(async (resolve, reject) => {
-            console.log("Starting Rift Code Engine...   " + command);
-            try {
-                const child = spawn(command, {
-                    shell: true,
-                });
-                child.stderr.on("data", (data: any) => {
-                    if (
-                        data.includes("rift")
-                    ) {
-                        console.log("MYDATA"+data)
-                        console.log("Successfully started Rift Code Engine");
-                        resolve(null);
-                    } else if (data.includes("ERROR") || data.includes("Traceback")) {
-                        const msg = `Error starting Rift Code Engine: ${data}`;
-                        console.log(msg);
-                        throw msg;
-                    } else {
-                        console.log(`stdout: ${data}`);
-                    }
-                });
-                child.on("error", (error: any) => {
-                    console.log(`error: ${error.message}`);
-                });
-
-                child.on("close", (code: any) => {
-                    console.log(`child process exited with code ${code}`);
-                });
-
-                child.stdout.on("data", (data: any) => {
-                    console.log(`stdout: ${data}`);
-                });
-
-            } catch (e) {
-                console.log("Failed to start Rift Code Engine", e);
-                // If failed, check if it's because the server is already running (might have happened just after we checked above)
-                if (await checkServerRunning(serverUrl)) {
-                    resolve(null);
-                } else {
-                    reject();
+export function ensureRiftHook() {
+    // First, try to run ensureRift. upon catching an error, display a `vscode.window.showErrorMessage` with the caught error with a single selection choice called "Try auto install", then `.then` the promise, ensuring that the `selection` is equal to `Try auto install` and then rnning `autoInstall`.
+    ensureRift().catch(e => {
+        vscode.window
+            .showErrorMessage(e.message, 'Try auto install')
+            .then((selection) => {
+                if (selection === 'Try auto install') {
+                    autoInstallHook().then(
+                        (_) => {
+                            vscode.window.showInformationMessage("Rift installation successful.");
+                            ensureRift().catch(
+                                (e => { vscode.window.showErrorMessage(`unexpected error: ` + e.message + `\n Try installing Rift manually: https://www.github.com/morph-labs/rift`) })
+                            )
+                        }
+                    ).catch((e) => vscode.window.showErrorMessage(`unexpected error: ` + e.message + `\n Try installing Rift manually: https://www.github.com/morph-labs/rift`))
                 }
-            }
+            });
+    });
+    vscode.commands.executeCommand('rift.start_server');
+}
+
+async function runRiftCodeEngine() {
+    // try to execute rift command
+    exec("rift").then(_ => { vscode.window.showInformationMessage("Rift Code Engine started successfully.") }).catch((_) => {
+        console.log('Executing: Using Rift at custom path');
+        // attempt to execute rift at custom path
+        exec(`${morphDir}/env/bin/rift`).then(_ => { vscode.window.showInformationMessage("Rift Code Engine started successfully.") }).catch((e) => {
+            // display error message 
+            vscode.window.showErrorMessage("unexpected error: " + e.message + "\nTry installing Rift manually: https://www.github.com/morph-labs/rift");
         });
     });
 }
 
-export async function downloadPython3() {
-    // Download python3 and return the command to run it (python or python3)
-    let os = process.platform;
-    let command: string = "";
-    let pythonCmd = "python3";
-    if (os === "darwin") {
-        throw new Error("python3 not found");
-    } else if (os === "linux") {
-        command =
-            "sudo apt install python3 python3-pip";
-    } else if (os === "win32") {
-        command =
-            "wget -O python_installer.exe https://www.python.org/ftp/python/3.11.3/python-3.11.3-amd64.exe ; python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0";
-        pythonCmd = "python";
-    }
-
-    var [stdout, stderr] = await runCommand(command);
-    if (stderr) {
-        throw new Error(stderr);
-    }
-    console.log("Successfully downloaded python3");
-
-    return pythonCmd;
-}
+vscode.commands.registerCommand('rift.start_server', runRiftCodeEngine);
