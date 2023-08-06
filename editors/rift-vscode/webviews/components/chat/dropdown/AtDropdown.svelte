@@ -6,7 +6,9 @@
 <div
   class="absolute bottom-full left-0 pr-2 pl-6 w-full z-20 drop-shadow-[0_-4px_16px_0px_rgba(0,0,0,0.36)]"
 >
-  <div class="border">
+  <div
+    class="border border-[var(--vscode-gitDecoration-ignoredResourceForeground)]"
+  >
     {#each $filteredFiles as file, index}
       <AtDropdownCard
         focused={index === $focusedFileIndex}
