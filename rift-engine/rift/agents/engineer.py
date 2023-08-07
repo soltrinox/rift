@@ -1,5 +1,7 @@
-import rift.agents.registry as registry
 from concurrent import futures
+
+import rift.agents.registry as registry
+
 try:
     import gpt_engineer
     import gpt_engineer.chat_to_files
@@ -35,16 +37,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Dict, Optional
 
-import rift.lsp.types as lsp
 import typer
+
+import rift.lsp.types as lsp
 from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
-    ThirdPartyAgent,
     AgentParams,
     AgentRunResult,
     AgentState,
     RequestChatRequest,
+    ThirdPartyAgent,
 )
 from rift.util import file_diff
 from rift.util.context import contextual_prompt, resolve_inline_uris
@@ -167,6 +170,7 @@ class EngineerAgent(ThirdPartyAgent):
         loop = asyncio.get_event_loop()
 
         request_chat_event = asyncio.Event()
+
         def send_chat_update_wrapper(prompt: str = "感", end="", sync=False):
             async def _worker():
                 # logger.info(f"_worker {sync=}")
@@ -180,22 +184,27 @@ class EngineerAgent(ThirdPartyAgent):
                         request_chat_event.set()
                         # logger.info("acquired lock")
                         if self.RESPONSE:
-                            self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
+                            self.state.messages.append(
+                                openai.Message.assistant(content=self.RESPONSE)
+                            )
                         if prompt and prompt != "感":
                             self.state.messages.append(openai.Message.assistant(prompt))
                         await self.send_progress(
-                            dict(done_streaming=True, **{"response": None if not self.RESPONSE else self.RESPONSE}, messages=self.state.messages)
+                            dict(
+                                done_streaming=True,
+                                **{"response": None if not self.RESPONSE else self.RESPONSE},
+                                messages=self.state.messages,
+                            )
                         )
                         # logger.info("done streaming")
                         # logger.info(f"{self.state.messages=}")
                         self.RESPONSE = ""
                     await asyncio.sleep(0.1)
 
-
             fut = asyncio.run_coroutine_threadsafe(_worker(), loop)
             # futures.wait([fut])
 
-        async def request_chat(prompt = ""):
+        async def request_chat(prompt=""):
             # sync = True
             # logger.info(f"_worker {sync=}")
             # self.response_stream.feed_data("感")
@@ -221,9 +230,7 @@ class EngineerAgent(ThirdPartyAgent):
                 await request_chat_event.wait()
                 if self.RESPONSE:
                     self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
-                    await self.send_progress(
-                        dict(response=self.RESPONSE)
-                    )
+                    await self.send_progress(dict(response=self.RESPONSE))
                 if prompt:
                     self.state.messages.append(openai.Message.assistant(prompt))
 
@@ -248,7 +255,7 @@ class EngineerAgent(ThirdPartyAgent):
             futures.wait([fut])
             return fut.result()
 
-        _colored = lambda x,y: x
+        _colored = lambda x, y: x
         gpt_engineer.ai.print = send_chat_update_wrapper
         gpt_engineer.steps.colored = _colored
         gpt_engineer.steps.print = functools.partial(send_chat_update_wrapper, sync=True)
@@ -290,7 +297,7 @@ class EngineerAgent(ThirdPartyAgent):
 
         steps_config = StepsConfig.DEFAULT
 
-        steps = STEPS[steps_config][:-1] # TODO: restore after debugging
+        steps = STEPS[steps_config][:-1]  # TODO: restore after debugging
 
         step_events: Dict[int, asyncio.Event] = dict()
         for i, step in enumerate(steps):

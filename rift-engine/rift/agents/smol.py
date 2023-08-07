@@ -1,6 +1,6 @@
-import rift.agents.registry as registry
 from concurrent import futures
 
+import rift.agents.registry as registry
 from rift.util.TextStream import TextStream
 
 try:
@@ -35,7 +35,7 @@ from rift.agents.abstract import (
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    ThirdPartyAgent
+    ThirdPartyAgent,
 )
 from rift.server.selection import RangeSet
 from rift.util.context import contextual_prompt, extract_uris, resolve_inline_uris
@@ -73,6 +73,7 @@ class SmolAgentState(AgentState):
     _done: bool = False
     messages: List[openai.Message] = field(default_factory=list)
     response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+
 
 @registry.agent(
     agent_description="Quickly generate a workspace with smol_dev.",
@@ -164,7 +165,11 @@ class SmolAgent(ThirdPartyAgent):
             async with self.state.response_lock:
                 self.state.messages.append(openai.Message.assistant(self._response_buffer))
                 await self.send_progress(
-                    {"response": self._response_buffer, "done_streaming": True, "messages": self.state.messages}
+                    {
+                        "response": self._response_buffer,
+                        "done_streaming": True,
+                        "messages": self.state.messages,
+                    }
                 )
                 self._response_buffer = ""
 
@@ -175,9 +180,14 @@ class SmolAgent(ThirdPartyAgent):
 
                 return await loop.run_in_executor(executor, partial(fn, *args, **kwargs))
 
-            
             async def get_plan():
-                await run_in_executor(smol_dev.prompts,plan, prompt, stream_handler=send_chat_update_wrapper, model="gpt-3.5-turbo")
+                await run_in_executor(
+                    smol_dev.prompts,
+                    plan,
+                    prompt,
+                    stream_handler=send_chat_update_wrapper,
+                    model="gpt-3.5-turbo",
+                )
 
             plan_fut = loop.create_future()
             plan_task = self.add_task(
@@ -342,7 +352,9 @@ class SmolAgent(ThirdPartyAgent):
 
             # await self.send_progress({"response": RESPONSE, "done_streaming": True})
 
-            file_changes: List[file_diff.FileChange] = [file_change for _, file_change in await asyncio.gather(*fs)]
+            file_changes: List[file_diff.FileChange] = [
+                file_change for _, file_change in await asyncio.gather(*fs)
+            ]
             await asyncio.sleep(0.1)
             # await flush_response_buffer()
             workspace_edit = file_diff.edits_from_file_changes(file_changes, user_confirmation=True)

@@ -2,9 +2,9 @@
 This module provides a minimal implementation of the Agent API defined in rift.agents.abstract.
 """
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
-import logging
 
 import rift.llm.openai_types as openai
 from rift.agents.abstract import Agent, AgentParams, AgentState, RequestChatRequest

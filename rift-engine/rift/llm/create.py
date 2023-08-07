@@ -55,6 +55,7 @@ def create_client(
         CLIENTS[config] = client
         return client
 
+
 def parse_type_name_path(config: str) -> Tuple[str, str, str]:
     assert ":" in config, f"Invalid config: {config}"
     type, rest = config.split(":", 1)
@@ -67,6 +68,7 @@ def parse_type_name_path(config: str) -> Tuple[str, str, str]:
     name = name.strip()
     path = path.strip()
     return (type, name, path)
+
 
 def create_client_core(
     config: str, openai_api_key: Optional[SecretStr]

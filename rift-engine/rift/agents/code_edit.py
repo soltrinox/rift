@@ -1,20 +1,14 @@
-import rift.agents.registry as registry
 import asyncio
 import logging
 from asyncio import Future
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict, Optional
 
+import rift.agents.registry as registry
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
 from rift.agents.abstract import AgentProgress  # AgentTask,
-from rift.agents.abstract import (
-    Agent,
-    AgentParams,
-    AgentRunResult,
-    AgentState,
-    RequestChatRequest,
-)
+from rift.agents.abstract import Agent, AgentParams, AgentRunResult, AgentState, RequestChatRequest
 from rift.llm.abstract import AbstractCodeEditProvider
 from rift.server.selection import RangeSet
 from rift.util.context import resolve_inline_uris
@@ -101,15 +95,20 @@ class CodeEditAgent(Agent):
             self.RANGE = None
 
             async def get_user_response() -> str:
-                response_fut = asyncio.create_task(self.request_chat(RequestChatRequest(messages=self.state.messages)))
+                response_fut = asyncio.create_task(
+                    self.request_chat(RequestChatRequest(messages=self.state.messages))
+                )
+
                 async def waiter():
                     await self.state._done.wait()
                     return
+
                 waiter_fut = asyncio.create_task(waiter())
 
                 for fut in asyncio.as_completed([response_fut, waiter_fut]):
                     return await fut
                 # return await self.request_chat(RequestChatRequest(messages=self.state.messages))
+
             await self.send_progress()
             self.RANGE = lsp.Range(self.state.selection.first, self.state.selection.second)
             # logger.info(f"{self.RANGE=}")
@@ -188,12 +187,13 @@ class CodeEditAgent(Agent):
                             if fuel <= 0:
                                 raise Exception(":(")
                             try:
-                                
                                 # diff = dmp.diff_lineMode(self.selection_text, new_text, None)
                                 # # dmp.diff_cleanupSemantic(diff)
                                 # dmp.diff_cleanupMerge
 
-                                (x, y, linearray) = dmp.diff_linesToChars(self.selection_text, new_text)
+                                (x, y, linearray) = dmp.diff_linesToChars(
+                                    self.selection_text, new_text
+                                )
 
                                 diff = dmp.diff_main(x, y, False)
 
@@ -202,7 +202,6 @@ class CodeEditAgent(Agent):
                                 # Eliminate freak matches (e.g. blank lines)
                                 dmp.diff_cleanupSemantic(diff)
 
-                                
                                 self.DIFF = diff  # store the latest diff
                                 # logger.info(f"{diff=}")
                                 diff_text = "".join([text for _, text in diff])
@@ -265,14 +264,14 @@ class CodeEditAgent(Agent):
                                     await self.send_progress(progress)
                             except Exception as e:
                                 logger.info(f"caught {e=} retrying")
-                                fuel -= 1                    
+                                fuel -= 1
 
                     async def generate_code():
                         nonlocal all_deltas
                         # async for substream in edit_code_result.code.asplit("\n"):
                         after = edit_code_result.code
                         line_flag = False
-                        
+
                         async def _watch_queue():
                             while True:
                                 x = await diff_queue.get()
@@ -280,7 +279,7 @@ class CodeEditAgent(Agent):
                                     return
                                 else:
                                     await send_diff(x)
-                                    
+
                         diff_queue_task = asyncio.create_task(_watch_queue())
                         while True:
                             if after.at_eof():
@@ -303,10 +302,8 @@ class CodeEditAgent(Agent):
                             await diff_queue.put("".join(all_deltas))
                         await diff_queue.put(None)
                         await diff_queue_task
-                        
-                            # asyncio.create_task(send_diff("".join(all_deltas)))
 
-
+                        # asyncio.create_task(send_diff("".join(all_deltas)))
 
                     await self.add_task("Generate code", generate_code).run()
                     await gather_thoughts()

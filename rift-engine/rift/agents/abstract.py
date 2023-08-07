@@ -1,7 +1,6 @@
 """
 This module defines the abstract base classes and types for the Agent API.
 """
-import rift.llm.openai_types as openai
 import asyncio
 import logging
 from abc import ABC
@@ -9,8 +8,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
-import rift.lsp.types as lsp
 from pydantic import BaseModel
+
+import rift.llm.openai_types as openai
+import rift.lsp.types as lsp
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
@@ -221,7 +222,6 @@ class Agent:
             self.state.messages = [openai.Message.assistant(msg)] + self.state.messages
         await self.send_progress(dict(done_streaming=True, messages=self.state.messages))
 
-
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
         """
         Send an update about the progress of the agent's tasks to the server at `morph/{agent_type}_{agent_id}_send_progress`.
@@ -279,7 +279,7 @@ class Agent:
         The main method called by the LSP server to handle method `morph/run`.
 
         This method:
-            - Creates a task to be run 
+            - Creates a task to be run
            - Logs the status of the running task
             - Awaits the result of the running task
             - Sends progress of the task
@@ -316,9 +316,13 @@ class Agent:
             # Call the cancel method if a CancelledError exception happens
             await self.cancel()
 
+
 @dataclass
 class ThirdPartyAgent(Agent):
-    third_party_warning_message: str = "This is a third-party agent. It does not use Rift's primitives for on-device LLMs."
+    third_party_warning_message: str = (
+        "This is a third-party agent. It does not use Rift's primitives for on-device LLMs."
+    )
+
     async def main(self):
         # Create a task to run with assigned description and run method
         self.task = AgentTask(description=self.agent_type, task=self.run)
@@ -351,7 +355,8 @@ class ThirdPartyAgent(Agent):
             logger.info(f"{self} cancelled: {e}")
 
             # Call the cancel method if a CancelledError exception happens
-            await self.cancel()            
+            await self.cancel()
+
 
 @dataclass
 class AgentRegistryItem:
@@ -428,10 +433,11 @@ class AgentRegistry:
                 display_name=item.display_name,
             )
             for item in self.registry.values()
-        ]    
+        ]
 
 
 AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
+
 
 def agent(
     agent_description: str, display_name: Optional[str] = None, agent_icon: Optional[str] = None
@@ -443,4 +449,3 @@ def agent(
         return cls
 
     return decorator
-            

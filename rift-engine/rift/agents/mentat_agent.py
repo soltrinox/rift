@@ -9,16 +9,17 @@ from typing import ClassVar, Optional, Type
 logger = logging.getLogger(__name__)
 
 import mentat.app
-import rift.agents.abstract as agent
-import rift.llm.openai_types as openai
-import rift.lsp.types as lsp
-import rift.util.file_diff as file_diff
 from mentat.app import get_user_feedback_on_changes, warn_user_wrong_files
 from mentat.code_file_manager import CodeFileManager
 from mentat.config_manager import ConfigManager
 from mentat.conversation import Conversation
 from mentat.llm_api import CostTracker
 from mentat.user_input_manager import UserInputManager
+
+import rift.agents.abstract as agent
+import rift.llm.openai_types as openai
+import rift.lsp.types as lsp
+import rift.util.file_diff as file_diff
 from rift.util.TextStream import TextStream
 
 

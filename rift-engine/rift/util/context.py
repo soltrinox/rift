@@ -71,9 +71,21 @@ def contextual_prompt(
         ...
 
     result = (
-        "Visible files:\n"
-        + "\n".join("`" + doc.uri[len("uri://"):] + "`\n===\n" + "\n```\n" + doc.document.text + "```\n\n" for doc in documents)
-        + "\n"
-        f"{prompt}"
-    ) if documents else prompt
+        (
+            "Visible files:\n"
+            + "\n".join(
+                "`"
+                + doc.uri[len("uri://") :]
+                + "`\n===\n"
+                + "\n```\n"
+                + doc.document.text
+                + "```\n\n"
+                for doc in documents
+            )
+            + "\n"
+            f"{prompt}"
+        )
+        if documents
+        else prompt
+    )
     return result
