@@ -1,11 +1,19 @@
 # Rift
 
+Rift is an open-source AI-native [language server](https://microsoft.github.io/language-server-protocol/) for your personal AI software engineer.
+
+<!-- TODO: color on the value prop of using Rift and what Rift unlocks -->
+
+We provide a reference client implementation for Rift with the Rift [VSCode extension](./editors/rift-vscode).
+
 At [Morph](https://morph.so), we believe that:
 - Future software will be mostly written by AI, and augmented/supervised by humans.
 - Keeping personal data safe and computations secure will become increasingly important.
 - The future of software belongs to everyone.
 
 That is why we are releasing Rift, an [open-source language server](./rift-engine) and [IDE extension](./editors/rift-vscode) that lets everyone deploy a personal AI software engineer — locally hosted, private, secure, open-source, and free.
+
+<!-- TODO: gif -->
 
 https://github.com/morph-labs/rift/assets/122334950/83c56f1c-1d9d-4d7f-b789-a131d09e8d1c
 
