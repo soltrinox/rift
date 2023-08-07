@@ -18,6 +18,8 @@ from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
+print(f"REGISTRY: {AGENT_REGISTRY}")
+
 
 class LspLogHandler(logging.Handler):
     def __init__(self, server: "LspServer"):
