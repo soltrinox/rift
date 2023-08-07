@@ -27,11 +27,6 @@ class CurlAgentState(AgentState):
     messages: list[openai.Message]
 
 
-# uncomment to try this out
-# @registry.agent(
-#     "Curl things. Test agent.",
-#     "Curl"
-# )
 @dataclass
 class CurlAgent(Agent):
     """

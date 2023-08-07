@@ -1,8 +1,8 @@
 # Rift
 
-Rift is an open-source AI-native [language server](https://microsoft.github.io/language-server-protocol/) for your personal AI software engineer. The software of the future will be written by AI software engineers that work alongside you
+Rift is an open-source AI-native [language server](https://microsoft.github.io/language-server-protocol/) for the IDEs of the future. Software will soon be written mostly by AI software engineers that work alongside you
 
-<!-- TODO: color on the value prop of using Rift and what Rift unlocks -->
+<!-- TODO: color on the value prop of using Rift and what Rift unlocks -- find a way to introduce the concept of an agentic IDE -->
 
 We provide a reference implementation of the Rift protocol with the Rift [VSCode extension](./editors/rift-vscode).
 
@@ -28,7 +28,7 @@ Install the VSCode extension from the VSCode Marketplace. By default, the extens
 If the automatic installation of the Rift Code Engine fails, follow the below instructions for manual installation.
 
 ### Manual installation
-*Rift Code Engine*:
+**Rift Code Engine**:
 - Set up a Python virtual environment for Python 3.10 or higher.
   - On Mac OSX:
     - Install [homebrew](https://brew.sh).
@@ -55,10 +55,19 @@ If the automatic installation of the Rift Code Engine fails, follow the below in
   - From source:
     - `cd ~/.morph/ && git clone git@github.com:morph-labs/rift && cd ./rift/rift-engine/ && pip install -e .`
       
-*Rift VSCode Extension* (via `code --install-extension`, change the executable as needed):
+**Rift VSCode Extension** (via `code --install-extension`, change the executable as needed):
 - `cd ./editors/rift-vscode && npm i && bash reinstall.sh`
 
+
+
 ## Contributing
-We welcome contributions to Rift at all levels of the stack, from adding support for new open-source models in the Rift Code Engine, to implementing the Rift API for your favorite programming language, to UX polish in the VSCode extension, to adding support for your editor. See our [contribution guide](/CONTRIBUTORS.md).
+We welcome contributions to Rift at all levels of the stack, for example:
+- adding support for new open-source models in the Rift Code Engine
+- implementing the Rift API for your favorite programming language
+- UX polish in the VSCode extension
+- adding support for your favorite editor.
+
+See our [contribution guide](/CONTRIBUTORS.md) for details and guidelines.
 
 Programming is evolving. Join the [community](https://discord.gg/wa5sgWMfqv), contribute to our roadmap, and help shape the future of software.
+
