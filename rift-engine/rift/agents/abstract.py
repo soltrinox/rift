@@ -218,7 +218,7 @@ class Agent:
             logger.info(f"[request_chat] failed, caught {exception=}")
             raise exception
 
-    async def send_chat_update(msg: str, prepend: bool = False):
+    async def send_chat_update(self, msg: str, prepend: bool = False):
         await self.send_progress(dict(response=msg))
         if not prepend:
             self.state.messages += [openai.Message.assistant(msg)]
