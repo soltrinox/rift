@@ -1,3 +1,4 @@
+import rift.agents.registry as registry
 import asyncio
 import logging
 from asyncio import Future
@@ -13,7 +14,6 @@ from rift.agents.abstract import (
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    agent,
 )
 from rift.llm.abstract import AbstractCodeEditProvider
 from rift.server.selection import RangeSet
@@ -64,7 +64,7 @@ class CodeEditAgentState(AgentState):
 
 
 # decorator for creating the code completion agent
-@agent(
+@registry.agent(
     agent_description="Generate code edit for currently selected region.",
     display_name="Code Edit",
 )

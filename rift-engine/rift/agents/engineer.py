@@ -1,3 +1,4 @@
+import rift.agents.registry as registry
 from concurrent import futures
 try:
     import gpt_engineer
@@ -44,7 +45,6 @@ from rift.agents.abstract import (
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    agent,
 )
 from rift.util import file_diff
 from rift.util.context import contextual_prompt, resolve_inline_uris
@@ -129,7 +129,7 @@ class EngineerAgentState(AgentState):
 
 
 # decorator for creating the code completion agent
-@agent(
+@registry.agent(
     agent_description="Specify what you want it to build, the AI asks for clarification, and then builds it.",
     display_name="GPT Engineer",
     agent_icon="""\

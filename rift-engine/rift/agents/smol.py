@@ -1,3 +1,4 @@
+import rift.agents.registry as registry
 from concurrent import futures
 
 from rift.util.TextStream import TextStream
@@ -34,7 +35,6 @@ from rift.agents.abstract import (
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    agent,
     ThirdPartyAgent
 )
 from rift.server.selection import RangeSet
@@ -74,8 +74,7 @@ class SmolAgentState(AgentState):
     messages: List[openai.Message] = field(default_factory=list)
     response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
-
-@agent(
+@registry.agent(
     agent_description="Quickly generate a workspace with smol_dev.",
     display_name="Smol Developer",
     agent_icon="""\

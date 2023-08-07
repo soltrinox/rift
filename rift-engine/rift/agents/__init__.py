@@ -1,4 +1,5 @@
 from .abstract import *
+from .registry import *
 from .aider_agent import *
 from .code_edit import *
 from .curl_agent import *

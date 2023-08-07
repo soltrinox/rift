@@ -218,6 +218,15 @@ class Agent:
             logger.info(f"[request_chat] failed, caught {exception=}")
             raise exception
 
+    async def send_chat_update(msg: str, prepend: bool = False):
+        await self.send_progress(dict(response=msg))
+        if not prepend:
+            self.state.messages += [openai.Message.assistant(msg)]
+        else:
+            self.state.messages = [openai.Message.assistant(msg)] + self.state.messages
+        await self.send_progress(dict(done_streaming=True, messages=self.state.messages))
+
+
     async def send_progress(self, payload: Optional[Any] = None, payload_only: bool = False):
         """
         Send an update about the progress of the agent's tasks to the server at `morph/{agent_type}_{agent_id}_send_progress`.
@@ -311,88 +320,6 @@ class Agent:
             # Call the cancel method if a CancelledError exception happens
             await self.cancel()
 
-
-@dataclass
-class AgentRegistryItem:
-    """
-    Stored in the registry by the @agent decorator, created upon Rift initialization.
-    """
-
-    agent: Type[Agent]
-    agent_description: str
-    display_name: Optional[str] = None
-    agent_icon: Optional[str] = None
-
-    def __post_init__(self):
-        if self.display_name is None:
-            self.display_name = self.agent.agent_type
-
-
-@dataclass
-class AgentRegistryResult:
-    """
-    To be returned as part of a list of available agent workflows to the language server client.
-    """
-
-    agent_type: str
-    agent_description: str
-    display_name: Optional[str] = None
-    agent_icon: Optional[str] = None  # svg icon information
-
-
-@dataclass
-class AgentRegistry:
-    """
-    AgentRegistry is an organizational class that is used to track all agents in one central location.
-    """
-
-    # Initial registry to store agents
-    registry: Dict[str, AgentRegistryItem] = field(default_factory=dict)
-
-    def __getitem__(self, key):
-        return self.get_agent(key)
-
-    def register_agent(
-        self,
-        agent: Type[Agent],
-        agent_description: str,
-        display_name: Optional[str] = None,
-        agent_icon: Optional[str] = None,
-    ) -> None:
-        if agent.agent_type in self.registry:
-            raise ValueError(f"Agent '{agent.agent_type}' is already registered.")
-        self.registry[agent.agent_type] = AgentRegistryItem(
-            agent=agent,
-            agent_description=agent_description,
-            display_name=display_name,
-            agent_icon=agent_icon,
-        )
-
-    def get_agent(self, agent_type: str) -> Type[Agent]:
-        result: AgentRegistryItem | None = self.registry.get(agent_type)
-        if result is not None:
-            return result.agent
-        else:
-            raise ValueError(f"Agent not found: {agent_type}")
-
-    def get_agent_icon(self, item: AgentRegistryItem) -> ...:
-        return None  # TODO
-
-    def list_agents(self) -> List[AgentRegistryResult]:
-        return [
-            AgentRegistryResult(
-                agent_type=item.agent.agent_type,
-                agent_description=item.agent_description,
-                agent_icon=item.agent_icon,
-                display_name=item.display_name,
-            )
-            for item in self.registry.values()
-        ]    
-
-
-AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
-
-
 @dataclass
 class ThirdPartyAgent(Agent):
     third_party_warning_message: str = "This is a third-party agent. It does not use Rift's primitives for on-device LLMs."
@@ -407,9 +334,7 @@ class ThirdPartyAgent(Agent):
             # Await to get the result of the task
             await self.send_progress()
 
-            await self.send_progress(dict(response=self.third_party_warning_message))
-            self.state.messages = [openai.Message.assistant(self.third_party_warning_message)] + self.state.messages
-            await self.send_progress(dict(done_streaming=True, messages=self.state.messages))
+            await self.send_chat_update(self.third_party_warning_message, prepend=True)
 
             result_t = asyncio.create_task(self.task.run())
             result_t.add_done_callback(
@@ -430,15 +355,4 @@ class ThirdPartyAgent(Agent):
             logger.info(f"{self} cancelled: {e}")
 
             # Call the cancel method if a CancelledError exception happens
-            await self.cancel()
-
-def agent(
-    agent_description: str, display_name: Optional[str] = None, agent_icon: Optional[str] = None
-):
-    def decorator(cls: Type[Agent]) -> Type[Agent]:
-        AGENT_REGISTRY.register_agent(
-            cls, agent_description, display_name, agent_icon
-        )  # Registering the agent
-        return cls
-
-    return decorator
+            await self.cancel()            

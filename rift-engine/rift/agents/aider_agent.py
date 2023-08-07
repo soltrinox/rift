@@ -33,6 +33,7 @@ import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 from rich.text import Text
 from rift.util.TextStream import TextStream
+import rift.agents.registry as registry
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class AiderAgentState(agent.AgentState):
     response_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
-@agent.agent(
+@registry.agent(
     agent_description="Request codebase-wide edits through chat.",
     display_name="Aider",
     agent_icon="""\

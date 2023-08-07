@@ -1,3 +1,4 @@
+import rift.agents.registry as registry
 import asyncio
 import logging
 from asyncio import Lock
@@ -13,7 +14,6 @@ from rift.agents.abstract import (
     AgentRunResult,
     AgentState,
     RequestChatRequest,
-    agent,
 )
 from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractChatCompletionProvider
@@ -55,7 +55,7 @@ class RiftChatAgentState(AgentState):
     params: RiftChatAgentParams
 
 
-@agent(
+@registry.agent(
     agent_description="Ask questions about your code.",
     display_name="Chat",
 )
