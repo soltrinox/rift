@@ -276,7 +276,7 @@ class Agent:
         if self.task.status == "error":
             logger.info(f"[error]: {self.task._task.exception()}")
 
-        logger.info(f"{progress=}")
+        # logger.info(f"{progress=}")
         await self.server.notify(f"morph/{self.agent_type}_{self.agent_id}_send_progress", progress)
 
     async def main(self):
