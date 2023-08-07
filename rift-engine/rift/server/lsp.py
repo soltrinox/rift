@@ -5,12 +5,12 @@ import logging
 import os
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import rift.lsp.types as lsp
 from rift.agents import AGENT_REGISTRY, Agent, AgentParams, AgentRegistryResult
 from rift.llm.abstract import AbstractChatCompletionProvider, AbstractCodeCompletionProvider
-from rift.llm.create import ModelConfig
+from rift.llm.create import ModelConfig, parse_type_name_path
 from rift.lsp import LspServer as BaseLspServer
 from rift.lsp import rpc_method
 from rift.rpc import RpcServerStatus
@@ -197,7 +197,7 @@ class LspServer(BaseLspServer):
         if not isinstance(settings, list) or len(settings) != 1:
             raise RuntimeError(f"Invalid settings:\n{settings}\nExpected a list of dictionaries.")
         settings = settings[0]
-        config = ModelConfig.parse_obj(settings)
+        config: ModelConfig = ModelConfig.parse_obj(settings)
         if self.chat_model and self.completions_model and self.model_config == config:
             logger.debug("config unchanged")
             return
@@ -220,6 +220,12 @@ class LspServer(BaseLspServer):
             logger.info(f"{self} finished loading")
         finally:
             self._loading_task = None
+
+    def parse_current_chat_config(self) -> Tuple[str, str, str]:
+        return parse_type_name_path(self.model_config.chatModel)
+
+    def parse_current_completions_config(self) -> Tuple[str, str, str]:
+        return parse_type_name_path(self.model_config.completionsModel)
 
     async def send_update(self, msg: str):
         await self.notify("morph/send_update", {"msg": msg})

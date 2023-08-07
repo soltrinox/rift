@@ -387,10 +387,17 @@ class AgentRegistry:
                 display_name=item.display_name,
             )
             for item in self.registry.values()
-        ]
+        ]    
 
 
 AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
+
+
+class ThirdPartyAgentMixin:
+    """
+    Mixin which intercepts the `run()` method to send a chat message warning the user that this is a third-party agent which does not use Rift's primitives for on-device LLMs.
+    """
+    # TODO
 
 
 def agent(

@@ -1,6 +1,6 @@
 import functools
 import weakref
-from typing import Literal, Optional
+from typing import Literal, Optional, Tuple
 
 from pydantic import BaseModel, SecretStr
 
@@ -55,6 +55,18 @@ def create_client(
         CLIENTS[config] = client
         return client
 
+def parse_type_name_path(config: str) -> Tuple[str, str, str]:
+    assert ":" in config, f"Invalid config: {config}"
+    type, rest = config.split(":", 1)
+    type = type.strip()
+    if "@" in rest:
+        name, path = rest.split("@", 1)
+    else:
+        name = rest
+        path = ""
+    name = name.strip()
+    path = path.strip()
+    return (type, name, path)
 
 def create_client_core(
     config: str, openai_api_key: Optional[SecretStr]
@@ -66,16 +78,7 @@ def create_client_core(
 
     If the `type` is none of the above, it raises a `ValueError` with a message indicating that the model is unknown.
     """
-    assert ":" in config, f"Invalid config: {config}"
-    type, rest = config.split(":", 1)
-    type = type.strip()
-    if "@" in rest:
-        name, path = rest.split("@", 1)
-    else:
-        name = rest
-        path = ""
-    name = name.strip()
-    path = path.strip()
+    type, name, path = parse_type_name_path(config)
     if type == "hf":
         from rift.llm.hf_client import HuggingFaceClient
 

@@ -1,10 +1,12 @@
 import * as path from "path";
 import * as fs from "fs";
+import * as net from "net";
 // import {getRiftServerUrl} from "../bridge";
 import fetch from "node-fetch";
 import * as vscode from "vscode";
 import * as os from "os";
 import fkill from "fkill";
+import * as tcpPortUsed from "tcp-port-used"
 
 import * as util from "util";
 const exec = util.promisify(require("child_process").exec);
@@ -51,7 +53,6 @@ export async function ensureRift(): Promise<void> {
         throw new Error("`rift` executable is not found in your PATH or .morph/env/bin. Please make sure it is correctly installed and try again.");
     }
     console.log("End - `rift` found in PATH or .morph/env/bin directory.");
-
 }
 
 // invoke this optionally via popup in case `ensureRift` fails
@@ -104,10 +105,15 @@ async function autoInstall() {
     console.log('autoInstall finished');
 }
 
-async function autoInstallHook() { await autoInstall().catch((error: any) => { vscode.window.showErrorMessage(`${error.message}\nTry installing Rift manually: https://www.github.com/morph-labs/rift`, "Close") }) }
+async function autoInstallHook() { await autoInstall().catch((error: any) => { vscode.window.showErrorMessage(`${error.message}\nEnsure that python3.10 is available and try installing Rift manually: https://www.github.com/morph-labs/rift`, "Close") }) }
 
 export function ensureRiftHook() {
-    // First, try to run ensureRift. upon catching an error, display a `vscode.window.showErrorMessage` with the caught error with a single selection choice called "Try auto install", then `.then` the promise, ensuring that the `selection` is equal to `Try auto install` and then rnning `autoInstall`.
+    /**
+     * The ensureRiftHook function handles errors during ensureRift execution. If an error is encountered, 
+     * an error message is shown in the vscode window with an option "Try auto install". Choosing this 
+     * option initiates autoInstall. If autoInstall runs successfully, ensureRift is executed again. 
+     * If new errors appear during these operations, an error message instructs the user on how to install Rift manually.
+     */
     ensureRift().catch(e => {
         vscode.window
             .showErrorMessage(e.message, 'Try auto install')
@@ -127,16 +133,22 @@ export function ensureRiftHook() {
     vscode.commands.executeCommand('rift.start_server');
 }
 
-async function runRiftCodeEngine() {
-    // try to execute rift command
+export function runRiftCodeEngine() {
+    // check if port 7797 is already being used, if so clear it
+    tcpPortUsed.check(7797).then((flag) => {
+        console.log(`tcpPortUsed=${flag}`);
+        if (flag) {
+            const { exec } = require('child_process');
+            exec('fuser -k 7797/tcp');  // execute kill command
+        }
+    })
+
+    // run the rift server
     exec("rift").then(_ => { vscode.window.showInformationMessage("Rift Code Engine started successfully.") }).catch((_) => {
         console.log('Executing: Using Rift at custom path');
-        // attempt to execute rift at custom path
         exec(`${morphDir}/env/bin/rift`).then(_ => { vscode.window.showInformationMessage("Rift Code Engine started successfully.") }).catch((e) => {
-            // display error message 
             vscode.window.showErrorMessage("unexpected error: " + e.message + "\nTry installing Rift manually: https://www.github.com/morph-labs/rift");
         });
     });
 }
-
 vscode.commands.registerCommand('rift.start_server', runRiftCodeEngine);
