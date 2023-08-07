@@ -35,6 +35,7 @@ from rift.agents.abstract import (
     AgentState,
     RequestChatRequest,
     agent,
+    ThirdPartyAgent
 )
 from rift.server.selection import RangeSet
 from rift.util.context import contextual_prompt, extract_uris, resolve_inline_uris
@@ -84,7 +85,7 @@ class SmolAgentState(AgentState):
 </svg>""",
 )
 @dataclass
-class SmolAgent(Agent):
+class SmolAgent(ThirdPartyAgent):
     state: SmolAgentState
     agent_type: ClassVar[str] = "smol_dev"
     params_cls: ClassVar[Any] = SmolAgentParams

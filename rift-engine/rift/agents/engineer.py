@@ -39,6 +39,7 @@ import typer
 from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
+    ThirdPartyAgent,
     AgentParams,
     AgentRunResult,
     AgentState,
@@ -137,7 +138,7 @@ class EngineerAgentState(AgentState):
 </svg>""",
 )
 @dataclass
-class EngineerAgent(Agent):
+class EngineerAgent(ThirdPartyAgent):
     state: EngineerAgentState
     agent_type: ClassVar[str] = "engineer"
     params_cls: ClassVar[Any] = EngineerAgentParams

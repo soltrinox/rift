@@ -1,7 +1,7 @@
 """
 This module defines the abstract base classes and types for the Agent API.
 """
-
+import rift.llm.openai_types as openai
 import asyncio
 import logging
 from abc import ABC
@@ -393,12 +393,44 @@ class AgentRegistry:
 AGENT_REGISTRY = AgentRegistry()  # Creating an instance of AgentRegistry
 
 
-class ThirdPartyAgentMixin:
-    """
-    Mixin which intercepts the `run()` method to send a chat message warning the user that this is a third-party agent which does not use Rift's primitives for on-device LLMs.
-    """
-    # TODO
+@dataclass
+class ThirdPartyAgent(Agent):
+    third_party_warning_message: str = "This is a third-party agent. It does not use Rift's primitives for on-device LLMs."
+    async def main(self):
+        # Create a task to run with assigned description and run method
+        self.task = AgentTask(description=self.agent_type, task=self.run)
 
+        try:
+            # Log the status of the running task
+            logger.info(f"{self} running")
+
+            # Await to get the result of the task
+            await self.send_progress()
+
+            await self.send_progress(dict(response=self.third_party_warning_message))
+            self.state.messages = [openai.Message.assistant(self.third_party_warning_message)] + self.state.messages
+            await self.send_progress(dict(done_streaming=True, messages=self.state.messages))
+
+            result_t = asyncio.create_task(self.task.run())
+            result_t.add_done_callback(
+                lambda fut: asyncio.run_coroutine_threadsafe(
+                    self.send_update("finished"), loop=asyncio.get_running_loop()
+                )
+            )
+            await self.send_progress()
+
+            result = await result_t
+            # Send the progress of the task
+            await self.send_progress()
+            await self.done()
+            await self.send_progress()
+            return result
+        except asyncio.CancelledError as e:
+            # Log information if task is cancelled
+            logger.info(f"{self} cancelled: {e}")
+
+            # Call the cancel method if a CancelledError exception happens
+            await self.cancel()
 
 def agent(
     agent_description: str, display_name: Optional[str] = None, agent_icon: Optional[str] = None

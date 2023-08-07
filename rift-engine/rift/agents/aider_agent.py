@@ -70,7 +70,7 @@ class AiderAgentState(agent.AgentState):
 </svg>""",
 )
 @dataclass
-class Aider(agent.Agent):
+class Aider(agent.ThirdPartyAgent):
     agent_type: ClassVar[str] = "aider"
     params_cls: ClassVar[Any] = AiderAgentParams
 
