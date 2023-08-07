@@ -18,11 +18,6 @@ from rift.lsp import LspServer as BaseLspServer
 logger = logging.getLogger(__name__)
 
 
-"""
-Status is an enumeration representing the possible states of an agent task.
-"""
-
-
 class Status(Enum):
     running = "running"
     done = "done"
@@ -284,8 +279,8 @@ class Agent:
         The main method called by the LSP server to handle method `morph/run`.
 
         This method:
-            - Creates a task to be run
-            - Logs the status of the running task
+            - Creates a task to be run 
+           - Logs the status of the running task
             - Awaits the result of the running task
             - Sends progress of the task
             - Handles cancellation and exception situations

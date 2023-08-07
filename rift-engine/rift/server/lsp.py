@@ -18,8 +18,6 @@ from rift.util.ofdict import ofdict
 
 logger = logging.getLogger(__name__)
 
-print(f"REGISTRY: {AGENT_REGISTRY}")
-
 
 class LspLogHandler(logging.Handler):
     def __init__(self, server: "LspServer"):
@@ -258,8 +256,7 @@ class LspServer(BaseLspServer):
 
     @rpc_method("morph/restart_agent")
     async def on_restart_agent(self, params: AgentIdParams) -> CreateAgentResult:
-        logger.info("reset:")
-        print("test")
+        logger.info(f"morph/restart_agent firing with {params=}")
         agent_id = params.id
         old_agent = self.active_agents[agent_id]
         old_params = old_agent.state.params
