@@ -1,6 +1,3 @@
-"""
-This module defines the abstract base classes and types for the Agent API.
-"""
 import asyncio
 import logging
 from abc import ABC
