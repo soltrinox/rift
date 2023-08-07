@@ -45,11 +45,7 @@
     }
 
     const fixedCodeBlocksText = fixCodeBlocks(text)
-    // the following lines are directly copied from https://stackoverflow.com/questions/52031552/multiple-n-instances-are-ignored-in-showdown
-    // TODO: re-evaluate my life decisions.
-    // (and decision to use showdown. it appears markdown typically doesn't have consecutive \n's? but chatgpt api does or something???)
     console.log(`Original text: ${text}`);
-    // const fixedCodeBlocksText = fixCodeBlocks(text)
     const text2 = fixedCodeBlocksText.replace(/\n{2,}/g, (m) => m.replace(/\n/g, "<br/>"))
     const text3 = text2.replace(/<br\/>([^<])/g, "<br/>\n\n$1")
     text = converter.makeHtml(text3)
@@ -57,15 +53,7 @@
     return text
   }
   let something: string
-  // let scrollLeftArr:{[x: number|string]: number} = {}
-  // let index:number = 0
-  // let scrollLeft:number = 0
-  // const handler = (ev: Event) => {
-  //         console.log('scroll')
-  //         scrollLeft = (ev.target as HTMLPreElement).scrollLeft
-  //         console.log(scrollLeft)
-  //         // scrollLeftArr[index] = (ev.target as HTMLPreElement).scrollLeft
-  //       }
+
 
   const preblockToCopyContent: string[] = []
   $: {
@@ -88,8 +76,6 @@
         copyButton.appendChild(copyCodeWords)
         preblockToCopyContent[i] = preblock.textContent ?? ""
         copyButton.addEventListener("click", () => {
-          // navigator.clipboard.writeText(copyContent)
-          // console.log('copying: ', copyContent)
 
           vscode.postMessage({
             type: "copyText",
@@ -97,8 +83,6 @@
           })
         })
         preblock.insertBefore(copyButton, preblock.firstChild)
-        // if(index in scrollLeftArr) preblock.scrollLeft = scrollLeftArr[index]
-        // preblock.addEventListener('scroll', handler)
       })
       return responseBlock
     }

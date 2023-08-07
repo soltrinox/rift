@@ -1,53 +1,45 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import { MorphLanguageClient } from "./client";
-// import { join } from 'path';
-// import { TextDocumentIdentifier } from 'vscode-languageclient';
 import { WebviewProvider } from "./elements/WebviewProvider";
-
-import { ensureRiftHook } from "./activation/environmentSetup"
-
+import { ensureRiftHook } from "./activation/environmentSetup";
 export let chatProvider: WebviewProvider;
 export let logProvider: WebviewProvider;
 
-import { PythonExtension } from "@vscode/python-extension";
-// export let morph_language_client: MorphLanguageClient;
-
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  const autostart: boolean | undefined = vscode.workspace
+    .getConfiguration("rift")
+    .get("autostart");
 
-  const autostart: boolean | undefined = vscode.workspace.getConfiguration('rift').get('autostart')
-
-  if (autostart) { ensureRiftHook() };
+  if (autostart) {
+    ensureRiftHook();
+  }
 
   let morph_language_client = new MorphLanguageClient(context);
 
   context.subscriptions.push(
-    vscode.languages.registerCodeLensProvider("*", morph_language_client),
+    vscode.languages.registerCodeLensProvider("*", morph_language_client)
   );
 
   chatProvider = new WebviewProvider(
     "Chat",
     context.extensionUri,
-    morph_language_client,
+    morph_language_client
   );
   logProvider = new WebviewProvider(
     "Logs",
     context.extensionUri,
-    morph_language_client,
+    morph_language_client
   );
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("RiftChat", chatProvider, {
       webviewOptions: { retainContextWhenHidden: true },
-    }),
+    })
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("RiftLogs", logProvider, {
       webviewOptions: { retainContextWhenHidden: true },
-    }),
+    })
   );
 
   let recentlyOpenedFiles: string[] = [];
@@ -82,13 +74,13 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.executeCommand("RiftChat.focus");
 
       morph_language_client.focusOmnibar();
-    },
+    }
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("rift.reset_chat", () => {
       morph_language_client.restartActiveAgent();
-    }),
+    })
   );
 
   context.subscriptions.push(disposablefocusOmnibar);
@@ -96,4 +88,4 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}

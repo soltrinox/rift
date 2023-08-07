@@ -3,21 +3,13 @@ import type { TextDocumentIdentifier } from "vscode-languageclient/node";
 
 export interface Task {
   description: string;
-  status: AgentStatus; // this should never be code lens status
+  status: AgentStatus;
 }
 
 export interface TaskWithSubtasks {
-  // TODO turn it into a treeeeeeeeeee
   task: Task;
   subtasks: Task[];
 }
-
-// export class ChatMessage {
-//   constructor(
-//     public role: "user" | "assistant",
-//     public content: string,
-//   ) {}
-// }
 
 export type InputRequest = {
   msg: string;
@@ -36,16 +28,6 @@ export type AgentRegistryItem = {
   agent_icon: string | null;
 };
 
-// export class Agent {
-//   constructor(
-//     public type: string, // aider, gpt-engineer, etc
-//     public hasNotification: boolean = false,
-//     public chatHistory: ChatMessage[] = [],
-//     public inputRequest: InputRequest | null = null,
-//     public tasks?: Tasks
-//   ) {}
-// }
-
 export class WebviewAgent {
   type: string;
   hasNotification: boolean;
@@ -53,7 +35,6 @@ export class WebviewAgent {
   chatHistory: ChatMessage[];
   inputRequest?: InputRequest | null;
   taskWithSubtasks?: TaskWithSubtasks;
-  // isChatAgent: boolean = false;
   isStreaming: boolean = false;
   streamingText: string = "";
   doesShowAcceptRejectBar: boolean = false;
@@ -63,7 +44,7 @@ export class WebviewAgent {
     hasNotification?: boolean,
     chatHistory?: ChatMessage[],
     inputRequest?: InputRequest | null,
-    tasks?: TaskWithSubtasks,
+    tasks?: TaskWithSubtasks
   ) {
     this.type = type;
     this.hasNotification = hasNotification ?? false;
@@ -86,8 +67,6 @@ export type WebviewState = {
   };
 };
 
-// the only reason this is here is because types.ts is used for shared logic between the webviews and the extension.
-// Do not put more shared logic in here--we shouldn't need it. If we do, we should create a shared folder and update the eslint rules for imports
 export const DEFAULT_STATE: WebviewState = {
   selectedAgentId: "",
   isOmnibarFocused: false,
@@ -123,7 +102,6 @@ export interface AgentParams {
 export interface RunChatParams {
   message: string;
   messages: {
-    // does not include latest message
     role: string;
     content: string;
   }[];
@@ -156,29 +134,20 @@ export interface RunAgentProgress {
   status: AgentStatus;
 }
 
-export type ChatAgentPayload = {
+export type ChatAgentPayload =
+  | {
       response?: string;
       done_streaming?: boolean;
     }
   | undefined;
 
-// export type CodeEditPayload = {
-//       additive_ranges?: vscode.Range[]
-//       cursor?: vscode.Position
-//       negative_ranges?: vscode.Range[]
-//       ready?: boolean
-//       textDocument?: TextDocumentIdentifier
-//     }
-//   | "accepted"
-//   | "rejected"
-
-export type CodeEditPayload = any
-export type AnyPayload = ChatAgentPayload | CodeEditPayload | any
+export type CodeEditPayload = any;
+export type AnyPayload = ChatAgentPayload | CodeEditPayload | any;
 export interface AgentProgress<T = AnyPayload> {
   agent_id: string;
   agent_type: string;
   tasks?: TaskWithSubtasks;
-  payload: T | undefined; // dont change this it's T|undefined for this weird typescript reason. cant get the compiler to take payload?: or T = any|undefined
+  payload: T | undefined;
 }
 
 export type ChatAgentProgress = AgentProgress<ChatAgentPayload>;

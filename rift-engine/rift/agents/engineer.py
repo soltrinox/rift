@@ -205,27 +205,6 @@ class EngineerAgent(ThirdPartyAgent):
             # futures.wait([fut])
 
         async def request_chat(prompt=""):
-            # sync = True
-            # logger.info(f"_worker {sync=}")
-            # self.response_stream.feed_data("感")
-            # logger.info("fed data")
-            # # ensure that the messsages are updated
-            # if sync:
-            #     logger.info("with sync")
-            #     # await asyncio.sleep(0.1)
-            #     async with response_lock:
-            #         logger.info("acquired lock")
-            #         if self.RESPONSE:
-            #             self.state.messages.append(openai.Message.assistant(content=self.RESPONSE))
-            #         if prompt:
-            #             self.state.messages.append(openai.Message.assistant(prompt))
-            #         await self.send_progress(
-            #             dict(done_streaming=True, **{"response": None if not self.RESPONSE else self.RESPONSE}, messages=self.state.messages)
-            #         )
-            #         logger.info("done streaming")
-            #         logger.info(f"{self.state.messages=}")
-            #         self.RESPONSE = ""
-            #     await asyncio.sleep(0.1)
             async with response_lock:
                 await request_chat_event.wait()
                 if self.RESPONSE:
@@ -245,12 +224,6 @@ class EngineerAgent(ThirdPartyAgent):
 
         def request_chat_wrapper(prompt="", loop=None):
             asyncio.set_event_loop(loop)
-            # print("SET EVENT LOOP")
-
-            # t = loop.create_task(request_chat())
-            # while not t.done():
-            #     time.sleep(1)
-            # return t.result()
             fut = asyncio.run_coroutine_threadsafe(request_chat(prompt), loop)
             futures.wait([fut])
             return fut.result()
@@ -311,10 +284,6 @@ class EngineerAgent(ThirdPartyAgent):
                 self.add_task(description=step.__name__, task=_step_task, args=[event]).run()
             )
 
-        # # Add all steps to task list
-        # for step in steps:
-        #     await STEPS_AGENT_TASKS_NAME_QUEUE.put(step._name_)
-
         counter = 0
         with futures.ThreadPoolExecutor(1) as pool:
             for i, step in enumerate(steps):
@@ -343,9 +312,6 @@ class EngineerAgent(ThirdPartyAgent):
                         else:
                             SEEN.add(x[0])
 
-                # Mark this step as complete
-                # # event = await STEPS_AGENT_TASKS_EVENT_QUEUE.get()
-                # event.set()
                 step_events[i].set()
                 await asyncio.sleep(0.5)
                 counter += 1

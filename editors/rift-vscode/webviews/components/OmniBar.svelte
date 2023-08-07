@@ -52,9 +52,8 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       onKeyDown(props) {
         console.log('onKeyDown suggestion plugin: props:', props)
         if (props.event.key === "Escape") {
-          // popup[0].hide()
           dropdownStatus.set('none')
-          return true // BRENT: I'm guessing return true here means kill the search process.
+          return true 
           // return true
         }
         if(props.event.key == 'ArrowUp') {
@@ -130,11 +129,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
   function handleValueChange({ editor, transaction }: { editor: Editor; transaction: Transaction }) {
     editorContent = editor.getText()
 
-    // const shouldShowAtDropdown = () => {
-    //   latestAtToEndOfTextarea =
-    //     editorContent.lastIndexOf("@") > -1 ? editorContent.slice(editorContent.lastIndexOf("@")) : undefined
-    //   return Boolean(latestAtToEndOfTextarea)
-    // }
     let newFilteredAgents: AgentRegistryItem[] = []
     if (editorContent.trim().startsWith("/")) {
       let searchString = editorContent.substring(1).toLowerCase()
@@ -144,7 +138,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
           agent.display_name.toLowerCase().includes(searchString)
         )
       })
-      filteredAgents.set(newFilteredAgents) // im not proud
+      filteredAgents.set(newFilteredAgents)
     } else filteredAgents.set([])
 
     if (editorContent.trim().startsWith("/") && newFilteredAgents.length > 0) {
@@ -160,9 +154,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
   function handleKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
-      // 13 is the Enter key code
-      // console.log("preventing default")
-      // e.preventDefault() // Prevent default Enter key action
 
       if (e.shiftKey) return
       if (!editorContent) resetTextarea()
@@ -183,7 +174,6 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       agent_type,
     })
 
-    // textareaValue = ""; //clear omnibar text
     resetTextarea()
     dropdownStatus.set("none")
   }
@@ -217,11 +207,7 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
 
   function disableDefaults(event: Event) {
     const e = event as KeyboardEvent
-    // const keyCodes = ["ArrowUp", "ArrowDown"]
 
-    // if (keyCodes.includes(e.code)) {
-    //   event.preventDefault()
-    // }
     
     if (e.code === "Enter" && $dropdownStatus != "none") event.preventDefault()
   }
@@ -232,10 +218,9 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       element: _container,
       extensions: [
         StarterKit.configure(starterKitConfig),
-        // StarterKit,
         FileChip.configure({
           HTMLAttributes: {
-            // class: "bg-[var(--vscode-editor-background)] text-xs inline-flex items-center h-[1.5rem]",
+
           },
           suggestion
         }),
@@ -251,14 +236,12 @@ const suggestion:Omit<SuggestionOptions<AtableFile>, 'editor'> = {
       },
       content: "",
       onTransaction: (props) => {
-        // force re-render so `editor.isActive` works as expected
         editor = editor
       },
       onFocus,
       onBlur,
       onUpdate: handleValueChange,
       onSelectionUpdate: (props) => {
-        // console.log("onSelection update:", props)
       },
     })
 

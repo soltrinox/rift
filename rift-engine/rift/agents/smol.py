@@ -105,11 +105,6 @@ class SmolAgent(ThirdPartyAgent):
         return obj
 
     async def _run_chat_thread(self, response_stream):
-        """
-        Run the chat thread.
-        :param response_stream: The stream of responses from the chat.
-        """
-
         before, after = response_stream.split_once("感")
         try:
             async with self.state.response_lock:
@@ -123,13 +118,6 @@ class SmolAgent(ThirdPartyAgent):
             logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
 
     async def run(self) -> AgentRunResult:
-        """
-        run through smol dev chat loop:
-          - get prompt from user via chat
-          - generate plan
-          - generate file structure
-          - generate code (in parallel)
-        """
         await self.send_progress()
         response_stream = TextStream()
         self._response_buffer = ""
@@ -201,8 +189,6 @@ class SmolAgent(ThirdPartyAgent):
                 ],
             )
 
-            # plan_task.add_done_callback(lambda fut: plan_fut.set_result(fut.result()))
-
             async def get_file_paths_args():
                 return [
                     smol_dev.prompts.specify_file_paths,
@@ -237,26 +223,6 @@ class SmolAgent(ThirdPartyAgent):
             generated_code_location_response = await self.request_chat(
                 RequestChatRequest(messages=self.state.messages)
             )
-
-            #     await self.send_progress()
-
-            #     file_paths = await get_file_paths_task.run()
-
-            #     await self.send_progress()
-
-            #     # await flush_response_buffer()
-            #     # stream_handler(f"\nFiles to generate: {json.dumps(file_paths, indent=2)}")
-            #     send_chat_update_wrapper(f"\nFiles to generate: {json.dumps(file_paths, indent=2)}")
-            #     # await flush_response_buffer()
-
-            #     # Ask the user where the generated files should be placed
-            #     self.state.messages.append(
-            #         openai.Message.assistant("Where should the generated files be placed?")
-            #     )
-
-            #     location_prompt = await self.request_chat(
-            #         RequestChatRequest(messages=self.state.messages)
-            #     )
 
             self.state.messages.append(
                 openai.Message.user(generated_code_location_response)
@@ -350,13 +316,10 @@ class SmolAgent(ThirdPartyAgent):
                 fs.append(fut)
                 send_chat_update_wrapper(f"Generating code for {fp}.\n")
 
-            # await self.send_progress({"response": RESPONSE, "done_streaming": True})
-
             file_changes: List[file_diff.FileChange] = [
                 file_change for _, file_change in await asyncio.gather(*fs)
             ]
             await asyncio.sleep(0.1)
-            # await flush_response_buffer()
             workspace_edit = file_diff.edits_from_file_changes(file_changes, user_confirmation=True)
             await self.server.apply_workspace_edit(
                 lsp.ApplyWorkspaceEditParams(edit=workspace_edit, label="rift")

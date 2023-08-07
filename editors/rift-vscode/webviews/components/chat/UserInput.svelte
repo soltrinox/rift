@@ -15,8 +15,6 @@
   let editor: Editor | undefined
   
 
-/// "random text here [uri](path/to/example.ts) something else here"
-// returns "random text here <span data-type="filechip" data-fullpath="path/to/example.ts" data-filename="example.ts"></span> something else here"
   function parseProseMirrorHTMLfromMessageContent(message:string) {
     const regex = /\[(.*?)\]\((.*?)\)/g;
     return message.replace(regex, (match, uri, path) => {
