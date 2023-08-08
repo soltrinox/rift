@@ -52,7 +52,7 @@ We welcome contributions to the Rift codebase. If you want to contribute code, p
 
 ## Editors
 ### VSCode Extension
-See [rift-vscode](/editors/rift-vscode/CONTRIBUTING.md)
+See [rift-vscode](/editors/rift-vscode/README.md)
 ### Vim
 See [rift-vim](/editors/rift-vim/README.md)
 ### Emacs

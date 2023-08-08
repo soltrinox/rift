@@ -81,4 +81,3 @@ The Rift Agents API is the entry point for third-party contributors who want to 
 
 ## Contributing
 [Fork](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) this repository and make a pull request.
-
