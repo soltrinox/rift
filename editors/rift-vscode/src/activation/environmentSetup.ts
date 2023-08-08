@@ -35,22 +35,22 @@ export async function ensureRift(): Promise<void> {
 
   console.log("Command set for 'which'/'where' based on platform.");
 
-  console.log("Initiating 'exec' command to check for 'rift'.");
-  try {
-    const { stdout } = await exec(`${command} rift`);
-    console.log("`exec` command executed successfully.");
-    riftIsInPath = Boolean(stdout);
-    console.log("Set 'riftIsInPath' based on command output.");
-  } catch (error: any) {
-    console.log("Exception caught while executing 'exec' command.", error);
-    riftIsInPath = false;
-    console.log("Set 'riftIsInPath' to false due to exception.");
-  }
+  // console.log("Initiating 'exec' command to check for 'rift'.");
+  // try {
+  //   const { stdout } = await exec(`${command} rift`);
+  //   console.log("`exec` command executed successfully.");
+  //   riftIsInPath = Boolean(stdout);
+  //   console.log("Set 'riftIsInPath' based on command output.");
+  // } catch (error: any) {
+  //   console.log("Exception caught while executing 'exec' command.", error);
+  //   riftIsInPath = false;
+  //   console.log("Set 'riftIsInPath' to false due to exception.");
+  // }
   const riftInMorphDir = fs.existsSync(
     path.join(morphDir, "env", "bin", "rift")
   );
 
-  if (!riftIsInPath && !riftInMorphDir) {
+  if (!riftInMorphDir) {
     console.error(
       "`rift` executable not found in PATH or .morph/env/bin directory."
     );
@@ -143,6 +143,7 @@ export function ensureRiftHook() {
    * If new errors appear during these operations, an error message instructs the user on how to install Rift manually.
    */
   ensureRift().catch((e) => {
+    console.log("ensure rift failed")
     vscode.window
       .showErrorMessage(e.message, "Try auto install")
       .then((selection) => {
@@ -184,14 +185,14 @@ export function runRiftCodeEngine() {
   });
 
   // run the rift server
-  exec("rift")
-    .then((_) => {
-      vscode.window.showInformationMessage(
-        "Rift Code Engine started successfully."
-      );
-    })
-    .catch((_) => {
-      console.log("Executing: Using Rift at custom path");
+  // exec("rift")
+  //   .then((_) => {
+  //     vscode.window.showInformationMessage(
+  //       "Rift Code Engine started successfully."
+  //     );
+  //   })
+  //   .catch((_) => {
+  //     console.log("Executing: Using Rift at custom path");
       exec(`${morphDir}/env/bin/rift`)
         .then((_) => {
           vscode.window.showInformationMessage(
@@ -205,6 +206,6 @@ export function runRiftCodeEngine() {
               "\nTry installing Rift manually: https://www.github.com/morph-labs/rift"
           );
         });
-    });
+    // });
 }
 vscode.commands.registerCommand("rift.start_server", runRiftCodeEngine);
