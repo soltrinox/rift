@@ -132,10 +132,11 @@ async function autoInstall() {
 }
 
 async function autoInstallHook() {
+    const autoInstallPromise = autoInstall();
     vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, }, async (progress) => {
             progress.report({ message: `installing Rift...` })
-            await autoInstall().catch((error: any) => {
+            await autoInstallPromise.catch((error: any) => {
                 vscode.window.showErrorMessage(
                     `${error.message}\nEnsure that python3.10 is available and try installing Rift manually: https://www.github.com/morph-labs/rift`,
                     "Close"
@@ -143,6 +144,7 @@ async function autoInstallHook() {
             });
         }
     )
+    await autoInstallPromise;
 }
 
 export function ensureRiftHook() {
@@ -159,10 +161,10 @@ export function ensureRiftHook() {
         console.log("ensure rift failed")
         vscode.window
             .showErrorMessage(e.message, "Try auto install")
-            .then(async (selection) => {
+            .then((selection) => {
                 if (selection === "Try auto install") {
-                    await autoInstallHook()
-                        .then(async (_) => {
+                    autoInstallHook()
+                        .then((_) => {
                             vscode.window.showInformationMessage(
                                 "Rift installation successful."
                             );
@@ -173,15 +175,18 @@ export function ensureRiftHook() {
                                 e.message +
                                 `\n Try installing Rift manually: https://www.github.com/morph-labs/rift`
                             )
-                        );
+                        ).then((_) => {
+                            console.log("executeCommand rift.start_server");
+                            vscode.commands.executeCommand("rift.start_server");
+                        });
                 }
             });
     }
 }
 
-export function runRiftCodeEngine() {
+export async function runRiftCodeEngine() {
     // check if port 7797 is already being used, if so clear it
-    tcpPortUsed.check(7797).then((flag) => {
+    await tcpPortUsed.check(7797).then((flag) => {
         console.log(`tcpPortUsed=${flag}`);
         if (flag) {
             // const { exec } = require("child_process");
@@ -236,7 +241,8 @@ export function runRiftCodeEngine() {
     //   })
     //   .catch((_) => {
     //     console.log("Executing: Using Rift at custom path");
-    exec(`${morphDir}/env/bin/rift`)
+
+    await exec(`${morphDir}/env/bin/rift`)
         .then((_) => {
             vscode.window.showInformationMessage(
                 "Rift Code Engine started successfully."
