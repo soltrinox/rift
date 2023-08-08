@@ -86,9 +86,9 @@ async function autoInstall() {
     );
     const { stdout } = await exec(`${command} --version`);
     console.log(
-      "Executing: const versionMatch = stdout.match(/Python (\\d+\\.\\d+)/);"
+      "Executing: const versionMatch = stdout.match(/Python (\d+\.\d+)(?:\.\d+)?/);"
     );
-    const versionMatch = stdout.match(/Python (\d+\.\d+)/);
+    const versionMatch = stdout.match(/Python (\d+\.\d+)(?:\.\d+)?/);
     console.log("Executing: if (versionMatch)...");
     if (versionMatch) {
       console.log("Executing: const version = parseFloat(versionMatch[1]);");
