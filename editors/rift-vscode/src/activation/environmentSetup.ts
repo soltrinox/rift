@@ -85,7 +85,7 @@ async function autoInstall() {
             `Command: ${command}`
         );
         try {
-            const {stdout} = await exec(`${command} --version`);
+            const { stdout } = await exec(`${command} --version`);
             console.log(
                 "Executing: const versionMatch = stdout.match(/Python (\d+\.\d+)(?:\.\d+)?/);"
             );
@@ -176,6 +176,7 @@ export function ensureRiftHook() {
                 }
             });
     });
+    console.log("executeCommand rift.start_server");
     vscode.commands.executeCommand("rift.start_server");
 }
 
@@ -184,10 +185,48 @@ export function runRiftCodeEngine() {
     tcpPortUsed.check(7797).then((flag) => {
         console.log(`tcpPortUsed=${flag}`);
         if (flag) {
-            const {exec} = require("child_process");
-            exec("fuser -k 7797/tcp"); // execute kill command
+            // const { exec } = require("child_process");
+            // exec("fuser -k 7797/tcp"); // execute kill command
+            vscode.window.showErrorMessage("Error: port 7797 is already in use.", "Kill rift processes", "Kill processes bound to port 7797")
+                .then((selection) => {
+                    if (selection === "Kill rift processes") {
+                        if (process.platform === "win32") {
+                            exec("taskkill /IM rift.exe /F", (err, stdout, stderr) => {
+                                if (err) {
+                                    vscode.window.showErrorMessage("Could not kill the rift processes. Error - " + err.message);
+                                }
+                            });
+                        } else if (process.platform === "linux") {
+                            exec("pkill -f rift", (err, stdout, stderr) => {
+                                if (err) {
+                                    vscode.window.showErrorMessage("Could not kill the rift processes. Error - " + err.message);
+                                }
+                            });
+                        } else {
+                            vscode.window.showErrorMessage("Sorry, this feature is not supported on your platform.");
+                        }
+                    }
+                    if (selection === "Kill processes bound to port 7797") {
+                        if (process.platform === "win32") {
+                            exec('FOR /F "tokens=5" %a IN (\'netstat -aon ^| find "7797" ^| find "LISTENING"\') DO taskkill /F /PID %a', (err, stdout, stderr) => {
+                                if (err) {
+                                    vscode.window.showErrorMessage("Could not kill the port 7797 processes. Error - " + err.message);
+                                }
+                            });
+                        } else if (process.platform === "linux") {
+                            exec("fuser -k 7797/tcp", (err, stdout, stderr) => {
+                                if (err) {
+                                    vscode.window.showErrorMessage("Could not kill the port 7797 processes. Error - " + err.message);
+                                }
+                            });
+                        } else {
+                            vscode.window.showErrorMessage("Sorry, this feature is not supported on your platform.");
+                        }
+                    }
+                });
         }
-    });
+    }
+    );
 
     // run the rift server
     // exec("rift")

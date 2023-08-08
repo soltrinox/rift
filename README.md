@@ -28,7 +28,7 @@ Rift is an open-source AI-native [language server](https://microsoft.github.io/l
 ![smol screencast](assets/smol-screencast.gif) <!-- TODO: pranav -->
 
 ## Usage
-<!-- TODO(jesse): write -->
+Once the Rift VSCode extension is [installed](#manual-installation), the Rift icon should appear in your sidebar. Click on that icon to activate the extension.
 
 ## Tips
 - Press Command+K to focus the Rift Omnibar.
@@ -46,7 +46,7 @@ Install the VSCode extension from the VSCode Marketplace. By default, the extens
 
 If the automatic installation of the Rift Code Engine fails, follow the below instructions for manual installation.
 
-### Manual nstallation
+### Manual installation
 **Rift Code Engine**:
 - Set up a Python virtual environment for Python 3.10 or higher.
   - On Mac OSX:
