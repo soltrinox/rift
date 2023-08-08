@@ -12,6 +12,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   if (autostart) {
     ensureRiftHook();
+    console.log("executeCommand rift.start_server");
+    vscode.commands.executeCommand("rift.start_server");
   }
 
   let morph_language_client = new MorphLanguageClient(context);

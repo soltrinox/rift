@@ -132,12 +132,17 @@ async function autoInstall() {
 }
 
 async function autoInstallHook() {
-    await autoInstall().catch((error: any) => {
-        vscode.window.showErrorMessage(
-            `${error.message}\nEnsure that python3.10 is available and try installing Rift manually: https://www.github.com/morph-labs/rift`,
-            "Close"
-        );
-    });
+    vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, }, async (progress) => {
+            progress.report({message: `installing Rift...`})
+            await autoInstall().catch((error: any) => {
+                vscode.window.showErrorMessage(
+                    `${error.message}\nEnsure that python3.10 is available and try installing Rift manually: https://www.github.com/morph-labs/rift`,
+                    "Close"
+                );
+            });
+        }
+    )
 }
 
 export function ensureRiftHook() {
@@ -176,8 +181,6 @@ export function ensureRiftHook() {
                 }
             });
     });
-    console.log("executeCommand rift.start_server");
-    vscode.commands.executeCommand("rift.start_server");
 }
 
 export function runRiftCodeEngine() {
