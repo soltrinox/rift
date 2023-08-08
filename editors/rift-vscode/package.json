@@ -4,9 +4,9 @@
   "publisher": "morph",
   "displayName": "rift",
   "description": "",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "engines": {
-    "vscode": "^1.54.0"
+    "vscode": "^1.71.0"
   },
   "enabledApiProposals": [
     "extensionRuntime"
