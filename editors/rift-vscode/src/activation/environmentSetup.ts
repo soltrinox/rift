@@ -6,8 +6,12 @@ import * as os from "os";
 import * as tcpPortUsed from "tcp-port-used";
 
 import * as util from "util";
+import fetch from "node-fetch";
 
 const exec = util.promisify(require("child_process").exec);
+
+const PACKAGE_JSON_RAW_GITHUB_URL =
+  "https://raw.githubusercontent.com/morph-labs/rift/HEAD/editors/rift-vscode/package.json";
 
 const WINDOWS_REMOTE_SIGNED_SCRIPTS_ERROR =
     "A Python virtual enviroment cannot be activated because running scripts is disabled for this user. In order to use Rift, please enable signed scripts to run with this command in PowerShell: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`, reload VS Code, and then try again.";
@@ -22,6 +26,24 @@ const morphDir = path.join(os.homedir(), ".morph");
 
 export function getExtensionUri(): vscode.Uri {
     return vscode.extensions.getExtension("morph.rift")!.extensionUri;
+}
+
+function getExtensionVersion() {
+  const extension = vscode.extensions.getExtension("morph.rift");
+  return extension?.packageJSON.version || "";
+}
+
+export function checkExtensionVersion() {
+    fetch(PACKAGE_JSON_RAW_GITHUB_URL)
+        .then(async (res) => res.json())
+        .then((packageJson: any) => {
+            if (packageJson.version !== getExtensionVersion()) {
+                vscode.window.showInformationMessage(
+                    `You are using an out-of-date version of the Rift VSCode Extension. Please update to the latest version.`
+                );
+            }
+        })
+        .catch((e) => console.log("Error checking for extension updates: ", e));
 }
 
 export function ensureRift(): void {
