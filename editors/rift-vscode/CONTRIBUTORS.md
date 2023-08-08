@@ -48,107 +48,16 @@ We welcome contributions to the Rift VSCode Extension's codebase. If you want to
 1. We'll review your PR as soon as possible and provide feedback or merge it into the project.
 
 ## VSCode Extension Setup
+For development:
+1. Open VSCode in this directory.
+1. Select "Run and Debug" or press "Ctrl + F5" to load the extension development host.
 
-TODO: Provide instructions on setting up the Rift VSCode Extension locally for development and testing purposes.
+For testing:
+```bash
+# clone latest version of extension and rift language server
+git clone https://www.github.com/morph-labs/rift
 
-## Architecture
-
-The following output is the directory structure and organization of rift-vscode:
-
-```sh
-tree -I 'node_modules|out|dist'
+# reinstall the extension
+cd editors/rift-vscode
+bash reinstall.sh # installs the extension to `code`, change the executable as needed
 ```
-
-```sh
-.
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── README.md
-├── build
-│   └── node-extension.webpack.config.cjs
-├── media
-│   ├── icon.svg
-│   ├── icons
-│   │   ├── resetDark.svg
-│   │   └── resetLight.svg
-│   ├── reset.css
-│   ├── scripts
-│   │   ├── microlight.min.js
-│   │   ├── showdown.min.js
-│   │   └── tailwind.min.js
-│   └── vscode.css
-├── package-lock.json
-├── package.json
-├── resources
-│   ├── icon.png
-│   ├── icon.svg
-│   ├── iconold.png
-│   └── vsce-icon.png
-├── rollup.config.js
-├── src
-│   ├── client.ts
-│   ├── elements
-│   │   └── WebviewProvider.ts
-│   ├── extension.ts
-│   ├── getNonce.ts
-│   ├── lib
-│   │   ├── PubSub.ts
-│   │   └── Store.ts
-│   ├── test
-│   │   ├── runTest.ts
-│   │   └── suite
-│   │       ├── extension.test.ts
-│   │       └── index.ts
-│   └── types.ts
-├── tsconfig.json
-├── vsc-extension-quickstart.md
-├── webpack.config.js
-└── webviews
-    ├── components
-    │   ├── AcceptRejectBar.svelte
-    │   ├── ChatWebview.svelte
-    │   ├── LogsWebview.svelte
-    │   ├── OmniBar.svelte
-    │   ├── chat
-    │   │   ├── Chat.svelte
-    │   │   ├── Response.svelte
-    │   │   ├── UserInput.svelte
-    │   │   └── dropdown
-    │   │       ├── Dropdown.svelte
-    │   │       └── DropdownCard.svelte
-    │   ├── icons
-    │   │   ├── AcceptRejectCheck.svelte
-    │   │   ├── AcceptRejectClose.svelte
-    │   │   ├── ArrowDownSvg.svelte
-    │   │   ├── ArrowRightSvg.svelte
-    │   │   ├── ChatSvg.svelte
-    │   │   ├── CopySvg.svelte
-    │   │   ├── EllipsisDarkSvg.svelte
-    │   │   ├── EllipsisSvg.svelte
-    │   │   ├── LogGreenSvg.svelte
-    │   │   ├── LogRedSvg.svelte
-    │   │   ├── LogYellowSvg.svelte
-    │   │   ├── ResetSvg.svelte
-    │   │   ├── RiftSvg.svelte
-    │   │   ├── SendSvg.svelte
-    │   │   ├── UserSvg.svelte
-    │   │   ├── copySvg.js
-    │   │   ├── oldUserSvg.svelte
-    │   │   └── vscode-icon.svg
-    │   ├── logs
-    │   │   ├── Agent.svelte
-    │   │   ├── Log.svelte
-    │   │   └── Logs.svelte
-    │   └── stores.ts
-    ├── globals.d.ts
-    ├── pages
-    │   ├── Chat.ts
-    │   └── Logs.ts
-    └── tsconfig.json
-
-18 directories, 68 files
-
-```
-
-Thank you for your interest in contributing to Rift VSCode Extension! Happy coding!
