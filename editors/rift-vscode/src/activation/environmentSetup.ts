@@ -232,17 +232,7 @@ export async function runRiftCodeEngine() {
     }
     );
 
-    // run the rift server
-    // exec("rift")
-    //   .then((_) => {
-    //     vscode.window.showInformationMessage(
-    //       "Rift Code Engine started successfully."
-    //     );
-    //   })
-    //   .catch((_) => {
-    //     console.log("Executing: Using Rift at custom path");
-
-    await exec(`${morphDir}/env/bin/rift`)
+    exec(`${morphDir}/env/bin/rift`)
         .then((_) => {
             vscode.window.showInformationMessage(
                 "Rift Code Engine started successfully."
@@ -258,4 +248,13 @@ export async function runRiftCodeEngine() {
     // });
 }
 
-vscode.commands.registerCommand("rift.start_server", runRiftCodeEngine);
+async function runRiftCodeEngineWithProgress() {
+    vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Notification, }, async (progress) => {
+            progress.report({ message: `Starting Rift Code Engine...` })
+            await runRiftCodeEngine();
+            }
+        );
+}
+
+vscode.commands.registerCommand("rift.start_server", runRiftCodeEngineWithProgress);
