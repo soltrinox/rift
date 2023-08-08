@@ -84,30 +84,27 @@ async function autoInstall() {
         console.log(
             `Command: ${command}`
         );
-        let stdout: string | null = null;
         try {
-            stdout = await exec(`${command} --version`);
+            const {stdout} = await exec(`${command} --version`);
+            console.log(
+                "Executing: const versionMatch = stdout.match(/Python (\d+\.\d+)(?:\.\d+)?/);"
+            );
+            const versionMatch = stdout.match(/Python (\d+\.\d+)(?:\.\d+)?/);
+            console.log("Executing: if (versionMatch)...");
+            if (versionMatch) {
+                console.log("Executing: const version = parseFloat(versionMatch[1]);");
+                const version = parseFloat(versionMatch[1]);
+                console.log("Executing: if (version >= 3.10)...");
+                if (version >= 3.1) {
+                    console.log("Executing: pythonCommand = command;");
+                    pythonCommand = command;
+                    break;
+                }
+            }
         } catch (error) {
             continue;
         }
-        if (!stdout) {
-            continue
-        }
-        console.log(
-            "Executing: const versionMatch = stdout.match(/Python (\d+\.\d+)(?:\.\d+)?/);"
-        );
-        const versionMatch = stdout.match(/Python (\d+\.\d+)(?:\.\d+)?/);
-        console.log("Executing: if (versionMatch)...");
-        if (versionMatch) {
-            console.log("Executing: const version = parseFloat(versionMatch[1]);");
-            const version = parseFloat(versionMatch[1]);
-            console.log("Executing: if (version >= 3.10)...");
-            if (version >= 3.1) {
-                console.log("Executing: pythonCommand = command;");
-                pythonCommand = command;
-                break;
-            }
-        }
+
     }
     console.log("Executing: if (pythonCommand === null)...");
     if (pythonCommand === null) {
