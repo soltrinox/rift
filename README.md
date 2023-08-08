@@ -7,7 +7,6 @@ Rift is an open-source AI-native [language server](https://microsoft.github.io/l
 - [Getting started](#getting-started)
 - [Installation](#manual-installation)
 - [Features](#features)
-- [Usage](#usage)
 - [Tips](#tips)
 - [The road ahead](#the-road-ahead)
 
@@ -26,9 +25,6 @@ Rift is an open-source AI-native [language server](https://microsoft.github.io/l
 
 <!-- TODO: pranav -->
 ![smol screencast](assets/smol-screencast.gif) <!-- TODO: pranav -->
-
-## Usage
-Once the Rift VSCode extension is [installed](#manual-installation), the Rift icon should appear in your sidebar. Click on the icon to activate the extension.
 
 ## Tips
 - Press Command+K to focus the Rift Omnibar.
