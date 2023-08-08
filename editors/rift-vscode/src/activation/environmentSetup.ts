@@ -155,7 +155,7 @@ export function ensureRiftHook() {
      * If new errors appear during these operations, an error message instructs the user on how to install Rift manually.
      */
     try {
-        ensureRift()
+        ensureRift(); vscode.commands.executeCommand("rift.start_server");
     }
     catch (e: any) {
         console.log("ensure rift failed")
