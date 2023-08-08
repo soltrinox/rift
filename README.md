@@ -1,38 +1,33 @@
 # Rift
 
-Rift is an open-source AI-native [language server](https://microsoft.github.io/language-server-protocol/) for the development environments of the future. Software will soon be written mostly by AI software engineers that work alongside you. Rift makes your IDE *agentic*. The codebases of the future will be living, spatial artifacts that *anticipate*, *listen to*, *maintain context*, *react to*, and *execute* your every intent. Rift is the software infrastructure for that future.
+Rift is an open-source AI-native [language server](https://microsoft.github.io/language-server-protocol/) for the development environments of the future. Rift makes your development environments *agentic*. Software will soon be written mostly by AI software engineers that work alongside you. The codebases of the future will be living, spatial artifacts that *maintain context*, *listen to*, *anticipate*, *react to*, and *execute* your every intent. Rift is the software infrastructure for that future. The [Rift Code Engine](./rift-engine/) implements an AI-native extension of the language server protocol. The [Rift VSCode extension](./editors/rift-vscode) implements a client/end-user interface which is the first step into that future.
 
-The [Rift Code Engine](./rift-engine/) implements an AI-native extension of the language server protocol. The [Rift VSCode extension](./editors/rift-vscode) implements a client and end-user application
-
-<!-- TODO: color on the value prop of using Rift and what Rift unlocks -- find a way to introduce the concept of an agentic IDE -->
-
-We provide a reference implementation of the Rift protocol with the [Rift VSCode extension](./editors/rift-vscode).
-
-![rift screencast](assets/rift-screencast.gif)
+![rift screencast](assets/rift-screencast.gif) <!-- TODO: pranav -->
 
 - [Discord](https://discord.gg/wa5sgWMfqv)
-/- [Getting started](#getting-started)
+- [Getting started](#getting-started)
+- [Installation](#manual-installation)
 - [Features](#features)
 - [Usage](#usage)
 - [Tips](#tips)
-- [Installation](#installation)
+- [The road ahead](#the-road-ahead)
 - [FAQ](#faq)
 
-
-<!-- ## The road ahead -->
-<!-- Existing code generation tooling is presently mostly code-agnostic, operating at the level of tokens in / tokens out of code LMs. The [language server protocol](https://microsoft.github.io/language-server-protocol/) (LSP) defines a standard for *language servers*, objects which index a codebase and provide structure- and runtime-aware interfaces to external development tools like IDEs. -->
-
-<!-- The Rift Code Engine is an AI-native language server which will expose interfaces for code transformations and code understanding in a uniform, model- and language-agnostic way --- e.g. `rift.summarize_callsites` or `rift.launch_ai_swe_async` should work on a Python codebase with [StarCoder](https://huggingface.co/blog/starcoder) as well as it works on a Rust codebase using [CodeGen](https://github.com/salesforce/CodeGen). Within the language server, models will have full programatic access to language-specific tooling like compilers, unit and integration test frameworks, and static analyzers to produce correct code with minimal user intervention. We will develop UX idioms as needed to support this functionality in the Rift IDE extensions. -->
-
 ## Features
-Rift makes your IDE *agentic*. With an AI-native language server, your 
+<!-- TODO(jesse): talk about features available with Rift 2.0 -->
+
+## Usage
+<!-- TODO(jesse): write -->
+
+## Tips
+<!-- TODO(jesse): write -->
 
 ## Getting started
 Install the VSCode extension from the VSCode Marketplace. By default, the extension will attempt to automatically start the Rift Code Engine every time the extension is activated. During this process, if the `rift` executable is not found, the extension will ask you to attempt an automatic installation of a Python environment and the Rift Code Engine. To disable this behavior, such as for development, go to the VSCode settings, search for "rift", and set `rift.autostart` to `false`.
 
 If the automatic installation of the Rift Code Engine fails, follow the below instructions for manual installation.
 
-### Manual installation
+### Manual nstallation
 **Rift Code Engine**:
 - Set up a Python virtual environment for Python 3.10 or higher.
   - On Mac OSX:
@@ -63,7 +58,14 @@ If the automatic installation of the Rift Code Engine fails, follow the below in
 **Rift VSCode Extension** (via `code --install-extension`, change the executable as needed):
 - `cd ./editors/rift-vscode && npm i && bash reinstall.sh`
 
+## FAQ 
+<!-- TODO(jesse): write -->
 
+## The road ahead
+<!-- TODO(jesse): rephrase / polish in light of Rift 2.0 -->
+Existing code generation tooling is presently mostly code-agnostic, operating at the level of tokens in / tokens out of code LMs. The [language server protocol](https://microsoft.github.io/language-server-protocol/) (LSP) defines a standard for *language servers*, objects which index a codebase and provide structure- and runtime-aware interfaces to external development tools like IDEs.
+
+The Rift Code Engine is an AI-native language server which will expose interfaces for code transformations and code understanding in a uniform, model- and language-agnostic way --- e.g. `rift.summarize_callsites` or `rift.launch_ai_swe_async` should work on a Python codebase with [StarCoder](https://huggingface.co/blog/starcoder) as well as it works on a Rust codebase using [CodeGen](https://github.com/salesforce/CodeGen). Within the language server, models will have full programatic access to language-specific tooling like compilers, unit and integration test frameworks, and static analyzers to produce correct code with minimal user intervention. We will develop UX idioms as needed to support this functionality in the Rift IDE extensions.
 
 ## Contributing
 We welcome contributions to Rift at all levels of the stack, for example:
@@ -75,4 +77,3 @@ We welcome contributions to Rift at all levels of the stack, for example:
 See our [contribution guide](/CONTRIBUTORS.md) for details and guidelines.
 
 Programming is evolving. Join the [community](https://discord.gg/wa5sgWMfqv), contribute to our roadmap, and help shape the future of software.
-
