@@ -24,11 +24,11 @@ export function getExtensionUri(): vscode.Uri {
     return vscode.extensions.getExtension("morph.rift")!.extensionUri;
 }
 
-export async function ensureRift(): Promise<void> {
+export function ensureRift(): void {
     console.log("Start - Checking if `rift` is in PATH.");
 
-    let riftIsInPath = true;
-    const command = process.platform === "win32" ? "where" : "which";
+    // let riftIsInPath = true;
+    // const command = process.platform === "win32" ? "where" : "which";
 
     console.log("Command set for 'which'/'where' based on platform.");
 
@@ -134,7 +134,7 @@ async function autoInstall() {
 async function autoInstallHook() {
     vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, }, async (progress) => {
-            progress.report({message: `installing Rift...`})
+            progress.report({ message: `installing Rift...` })
             await autoInstall().catch((error: any) => {
                 vscode.window.showErrorMessage(
                     `${error.message}\nEnsure that python3.10 is available and try installing Rift manually: https://www.github.com/morph-labs/rift`,
@@ -152,7 +152,10 @@ export function ensureRiftHook() {
      * option initiates autoInstall. If autoInstall runs successfully, ensureRift is executed again.
      * If new errors appear during these operations, an error message instructs the user on how to install Rift manually.
      */
-    ensureRift().catch(async (e) => {
+    try {
+        ensureRift()
+    }
+    catch (e: any) {
         console.log("ensure rift failed")
         vscode.window
             .showErrorMessage(e.message, "Try auto install")
@@ -163,24 +166,17 @@ export function ensureRiftHook() {
                             vscode.window.showInformationMessage(
                                 "Rift installation successful."
                             );
-                            await ensureRift().catch((e) => {
-                                vscode.window.showErrorMessage(
-                                    `unexpected error: ` +
-                                    e.message +
-                                    `\n Try installing Rift manually: https://www.github.com/morph-labs/rift`
-                                );
-                            });
                         })
-                        .catch(async (e) =>
+                        .catch((e) =>
                             vscode.window.showErrorMessage(
-                                `unexpected error: ` +
+                                `unexpected error during auto install: ` +
                                 e.message +
                                 `\n Try installing Rift manually: https://www.github.com/morph-labs/rift`
                             )
                         );
                 }
             });
-    });
+    }
 }
 
 export function runRiftCodeEngine() {
