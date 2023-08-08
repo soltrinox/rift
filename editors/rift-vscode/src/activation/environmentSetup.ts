@@ -152,18 +152,18 @@ export function ensureRiftHook() {
      * option initiates autoInstall. If autoInstall runs successfully, ensureRift is executed again.
      * If new errors appear during these operations, an error message instructs the user on how to install Rift manually.
      */
-    ensureRift().catch((e) => {
+    ensureRift().catch(async (e) => {
         console.log("ensure rift failed")
         vscode.window
             .showErrorMessage(e.message, "Try auto install")
-            .then((selection) => {
+            .then(async (selection) => {
                 if (selection === "Try auto install") {
-                    autoInstallHook()
-                        .then((_) => {
+                    await autoInstallHook()
+                        .then(async (_) => {
                             vscode.window.showInformationMessage(
                                 "Rift installation successful."
                             );
-                            ensureRift().catch((e) => {
+                            await ensureRift().catch((e) => {
                                 vscode.window.showErrorMessage(
                                     `unexpected error: ` +
                                     e.message +
@@ -171,7 +171,7 @@ export function ensureRiftHook() {
                                 );
                             });
                         })
-                        .catch((e) =>
+                        .catch(async (e) =>
                             vscode.window.showErrorMessage(
                                 `unexpected error: ` +
                                 e.message +
