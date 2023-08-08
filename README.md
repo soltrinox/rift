@@ -10,19 +10,39 @@ Rift is an open-source AI-native [language server](https://microsoft.github.io/l
 - [Usage](#usage)
 - [Tips](#tips)
 - [The road ahead](#the-road-ahead)
-- [FAQ](#faq)
 
 ## Features
-<!-- TODO(jesse): talk about features available with Rift 2.0 -->
+**Conversational code editing**
+
+<!-- TODO: pranav -->
+![code edit screencast](assets/code-edit-screencast.gif) <!-- TODO: pranav -->
+
+**Codebase-wide edits**
+
+<!-- TODO: pranav -->
+![aider screencast](assets/aider-screencast.gif) <!-- TODO: pranav -->
+
+**Contextual codebase generation**
+
+<!-- TODO: pranav -->
+![smol screencast](assets/smol-screencast.gif) <!-- TODO: pranav -->
 
 ## Usage
 <!-- TODO(jesse): write -->
 
 ## Tips
-<!-- TODO(jesse): write -->
+- Press Command+K to focus the Rift Omnibar.
+  - Once focused, you can either engage with the current chat or use a slash-command (e.g. `/aider`) to spawn a new agent.
+- Each instance of a Rift Chat or Code Edit agent will remain attached to the open file / selection you used to spawn it.
+  - To switch to a new file or request a code edit on a new selection, spawn a new agent by pressing Command+K and running a slash-command (e.g. `/edit`)
+  - Both Rift Chat and Code Edit see a window around your cursor or selection in the currently active editor window. To tell them about other resources in your codebase, mention them with `@`.
+  - Code Edit 
+- You can `@`-mention files and directories to tell your agents about other parts of the codebase.
+- Currently, Rift works best when the active workspace directory is the same as the root directory of the `git` project.
+
 
 ## Getting started
-Install the VSCode extension from the VSCode Marketplace. By default, the extension will attempt to automatically start the Rift Code Engine every time the extension is activated. During this process, if the `rift` executable is not found, the extension will ask you to attempt an automatic installation of a Python environment and the Rift Code Engine. To disable this behavior, such as for development, go to the VSCode settings, search for "rift", and set `rift.autostart` to `false`.
+Install the VSCode extension from the VSCode Marketplace. By default, the extension will attempt to automatically start the Rift Code Engine every time the extension is activated. During this process, if a `rift` executable is not found in a virtual environment under `~/.morph`, the extension will ask you to attempt an automatic installation of a Python environment and the Rift Code Engine. To disable this behavior, such as for development, go to the VSCode settings, search for "rift", and set `rift.autostart` to `false`.
 
 If the automatic installation of the Rift Code Engine fails, follow the below instructions for manual installation.
 
@@ -56,9 +76,6 @@ If the automatic installation of the Rift Code Engine fails, follow the below in
       
 **Rift VSCode Extension** (via `code --install-extension`, change the executable as needed):
 - `cd ./editors/rift-vscode && npm i && bash reinstall.sh`
-
-## FAQ 
-<!-- TODO(jesse): write -->
 
 ## The road ahead
 <!-- TODO(jesse): rephrase / polish in light of Rift 2.0 -->
