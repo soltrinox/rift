@@ -61,7 +61,7 @@ If the automatic installation of the Rift Code Engine fails, follow the below in
       - `yay -S python310`
       - `mkdir ~/.morph/ && cd ~/.morph/ && python3.10 -m venv env`
       - `source ./env/bin/activate/`
-- Install Rift.
+- Install Rift. We recommend that you `pip install` Rift in a dedicated Python >=3.10 virtual environment from this repository.
   - Make sure that `which pip` returns a path whose prefix matches the location of a virtual environment, such as the one installed above.
   <!-- - Using `pip` and PyPI: -->
   <!--   - `pip install --upgrade 'pyrift[all]'` -->
@@ -69,7 +69,7 @@ If the automatic installation of the Rift Code Engine fails, follow the below in
   - using `pip` from GitHub:
     - `pip install "git+https://github.com/morph-labs/rift.git@dc27f3b299b79e37b1bcd169efa2216aa07f65b0#egg=pyrift&subdirectory=rift-engine"`
   - From source:
-    - `cd ~/.morph/ && git clone git@github.com:morph-labs/rift && cd ./rift/rift-engine/ && pip install -e '.[all]'`
+    - `cd ~/.morph/ && git clone git@github.com:morph-labs/rift && cd ./rift/rift-engine/ && pip install -e .`
       
 **Rift VSCode Extension** (via `code --install-extension`, change the executable as needed):
 - `cd ./editors/rift-vscode && npm i && bash reinstall.sh`
