@@ -27,7 +27,10 @@ dependencies = [
   "sentencepiece",
   "transformers",
   "diff_match_patch",
-  "art"
+  "art",
+  "smol_dev @ git+https://www.github.com/jesse-michael-han/smol_dev",
+  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
+  "aider-chat @ git+https://github.com/morph-labs/aider"
 ]
 
 [project.optional-dependencies]
