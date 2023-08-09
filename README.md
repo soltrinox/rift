@@ -64,7 +64,8 @@ If the automatic installation of the Rift Code Engine fails, follow the below in
 - Install Rift.
   - Make sure that `which pip` returns a path whose prefix matches the location of a virtual environment, such as the one installed above.
   - Using `pip` and PyPI:
-    - `pip install --upgrade pyrift`
+    - `pip install --upgrade 'pyrift[all]'`
+      - `[all]` is required to pull in direct dependencies needed for third-party agents like Aider, Smol Dev, and GPT Engineer.
   - Using `pip` from GitHub:
     - `pip install "git+https://github.com/morph-labs/rift.git@ea0ee39bd86c331616bdaf3e8c02ed7c913b0933#egg=pyrift&subdirectory=rift-engine"`
   - From source:

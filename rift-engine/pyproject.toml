@@ -7,7 +7,7 @@ allow-direct-references = true
 
 [project]
 name = "pyrift"
-version = "0.1.0"
+version = "2.0.0"
 description = ''
 readme = "README.md"
 requires-python = ">=3.9"
@@ -27,12 +27,8 @@ dependencies = [
   "sentencepiece",
   "transformers",
   "diff_match_patch",
-  "art",
-  "smol_dev @ git+https://www.github.com/jesse-michael-han/smol_dev",
-  "gpt-engineer @ git+https://www.github.com/morph-labs/gpt-engineer",
-  "aider-chat @ git+https://github.com/morph-labs/aider"
+  "art"
 ]
-dynamic = ["version"]
 
 [project.optional-dependencies]
 # install these to use huggingface models
