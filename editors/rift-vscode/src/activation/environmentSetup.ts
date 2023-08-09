@@ -18,7 +18,7 @@ const WINDOWS_REMOTE_SIGNED_SCRIPTS_ERROR =
 
 const MAX_RETRIES = 3;
 
-const RIFT_COMMIT = "b20f0a20caa0f5b207ee972f3782accd85253bbd";
+const RIFT_COMMIT = "dc27f3b299b79e37b1bcd169efa2216aa07f65b0";
 const PIP_INSTALL_COMMAND = `pip install "git+https://github.com/morph-labs/rift.git@${RIFT_COMMIT}#subdirectory=rift-engine&egg=pyrift"`;
 const PIP_INSTALL_ARGS = `install "git+https://github.com/morph-labs/rift.git@${RIFT_COMMIT}#subdirectory=rift-engine&egg=pyrift"`;
 
