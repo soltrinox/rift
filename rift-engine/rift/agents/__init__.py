@@ -6,3 +6,4 @@ from .engineer import *
 from .registry import *
 from .rift_chat import *
 from .smol import *
+from .add_missing_types import *
