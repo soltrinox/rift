@@ -39,7 +39,7 @@ export function checkExtensionVersion() {
         .then((packageJson: any) => {
             if (packageJson.version !== getExtensionVersion()) {
                 vscode.window.showInformationMessage(
-                    `You are using an out-of-date version of the Rift VSCode Extension. Please update to the latest version.`
+                    `You are using an out-of-date version (${getExtensionVersion()}) of the Rift VSCode Extension (latest ${packageJson.version}). Please update to the latest version from the VSCode Marketplace, or from source at https://www.github.com/morph-labs/rift.`
                 );
             }
         })
