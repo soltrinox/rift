@@ -98,15 +98,16 @@ def create_client_core(
         return OpenAIClient.parse_obj(kwargs)
 
     elif type == "gpt4all":
-        from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
+        # from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
 
-        kwargs = {}
-        if name:
-            kwargs["model_name"] = name
-        if path:
-            kwargs["model_path"] = path
-        settings = Gpt4AllSettings.parse_obj(kwargs)
-        return Gpt4AllModel(settings)
+        # kwargs = {}
+        # if name:
+        #     kwargs["model_name"] = name
+        # if path:
+        #     kwargs["model_path"] = path
+        # settings = Gpt4AllSettings.parse_obj(kwargs)
+        # return Gpt4AllModel(settings)
+        raise Exception("unreachable")
 
     else:
         raise ValueError(f"Unknown model: {config}")

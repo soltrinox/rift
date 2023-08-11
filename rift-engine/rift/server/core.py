@@ -8,10 +8,10 @@ from rift.__about__ import __version__
 from rift.rpc.io_transport import AsyncStreamTransport, create_pipe_streams
 from rift.server.lsp import LspServer
 
-try:
-    from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
-except ImportError as e:
-    Gpt4AllModel = e
+# try:
+#     from rift.llm.gpt4all_model import Gpt4AllModel, Gpt4AllSettings
+# except ImportError as e:
+#     Gpt4AllModel = e
 
 logger = logging.getLogger(__name__)
 
