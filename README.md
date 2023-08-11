@@ -73,7 +73,7 @@ If the automatic installation of the Rift Code Engine fails, follow the below in
     - `cd ~/.morph/ && git clone git@github.com:morph-labs/rift && cd ./rift/rift-engine/ && pip install -e .`
       
 **Rift VSCode Extension** (via `code --install-extension`, change the executable as needed):
-- `cd ./editors/rift-vscode && npm i && bash reinstall.sh`
+- From the repository root: `cd ./editors/rift-vscode && npm i && bash reinstall.sh`
 
 ## The road ahead
 <!-- TODO(jesse): rephrase / polish in light of Rift 2.0 -->
