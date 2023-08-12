@@ -114,11 +114,27 @@ def find_c_cpp_function_declarator(node: Node) -> Optional[Tuple[List[str], Node
     else:
         return None
 
+def contains_direct_return(body: Node):
+    """
+    Recursively check if the function body contains a direct return statement.
+    """
+    for child in body.children:
+        # If the child is a function or method, skip it.
+        if child.type in ['class_definition', 'class_declaration', 'function_definition', 'method_definition']:
+            continue
+        # If the child is a return statement, return True.
+        if child.type == "return_statement":
+            return True
+        # If the child has its own children, recursively check them.
+        if contains_direct_return(child):
+            return True
+    return False
 
 def find_declaration(code: Code, file: File, language: Language, node: Node, scope: Scope) -> Optional[SymbolInfo]:
+    body_sub = None
     docstring: str = ""
     exported = False
-    body_sub = None
+    has_return = False
 
     def mk_fun_decl(id: Node, parameters: List[Parameter] = [], return_type: Optional[str] = None):
         return FunctionDeclaration(
@@ -126,6 +142,7 @@ def find_declaration(code: Code, file: File, language: Language, node: Node, sco
             code=code,
             docstring=docstring,
             exported=exported,
+            has_return=has_return,
             language=language,
             name=code.bytes[id.start_byte:id.end_byte].decode(),
             parameters=parameters,
@@ -253,6 +270,8 @@ def find_declaration(code: Code, file: File, language: Language, node: Node, sco
                 docstring_node = stmt.children[0]
                 docstring = code.bytes[docstring_node.start_byte:docstring_node.end_byte].decode(
                 )
+        if body_node is not None:
+            has_return = contains_direct_return(body_node)
         if id is not None:
             declaration = (mk_fun_decl(
                 id=id, parameters=parameters, return_type=return_type))

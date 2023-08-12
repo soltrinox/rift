@@ -109,6 +109,7 @@ class SymbolInfo(ABC):
 
 @dataclass
 class FunctionDeclaration(SymbolInfo):
+    has_return: bool
     parameters: List[Parameter]
     return_type: Optional[str] = None
 
@@ -125,6 +126,8 @@ class FunctionDeclaration(SymbolInfo):
             lines.append(f"   docstring: {self.docstring}")
         if self.body_sub is not None:
             lines.append(f"   body: {self.body_sub}")
+        if self.has_return:
+            lines.append(f"   has_return: {self.has_return}")
 
 
 @dataclass
