@@ -208,10 +208,6 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
 
     async def process_file(self, file_process: FileProcess, project: parser.Project) -> None:
         fmt = file_process.file_missing_types
-        await self.send_chat_update(
-            f"Fetching types for `{fmt.file.path}`")
-        await self.send_progress()
-
         language = fmt.language
         document = fmt.code
         groups_of_missing_types = self.split_missing_types_in_groups(
@@ -262,7 +258,7 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
         return self.server
 
     async def run(self) -> MissingTypesResult:
-        def print_missing(fmt: FileMissingTypes) -> None:
+        def log_missing(fmt: FileMissingTypes) -> None:
             logger.info(f"File: {fmt.file.path}")
             for mt in fmt.missing_types:
                 logger.info(f"  {mt}")
@@ -279,59 +275,69 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             raise Exception("OPENAI_API_KEY environment variable not set")
         openai.api_key = api_key
 
-        while True:
-            text_document = self.get_state().params.textDocument
-            if text_document is not None:
-                current_file_uri = text_document.uri
-            else:
-                raise Exception("Missing textDocument")
+        await self.send_progress()
+        text_document = self.get_state().params.textDocument
+        if text_document is not None:
+            current_file_uri = text_document.uri
+        else:
+            raise Exception("Missing textDocument")
 
-            await self.send_chat_update(
-                "Press enter to start adding missing types to the current file, or specify files and directories by typing @ and following autocomplete.")
+        await self.send_chat_update(
+            "Press enter to start adding missing types to the current file, or specify files and directories by typing @ and following autocomplete.")
 
-            get_user_response_task = AgentTask(
-                "Get user response", get_user_response)
-            self.set_tasks([get_user_response_task])
-            await self.send_progress()
-            user_response_task = asyncio.create_task(
-                get_user_response_task.run())
-            user_response = await user_response_task or ""
+        get_user_response_task = AgentTask(
+            "Get user response", get_user_response)
+        self.set_tasks([get_user_response_task])
+        user_response_task = asyncio.create_task(
+            get_user_response_task.run())
+        await self.send_progress()
+        user_response = await user_response_task
+        if user_response is None:
+            user_paths = []
+        else:
             user_paths = re.findall(r"\[uri\]\((\S+)\)", user_response)
-            if user_paths == []:
-                user_paths = [urlparse(current_file_uri).path]
+        if user_paths == []:
+            user_paths = [urlparse(current_file_uri).path]
 
-            file_processes: List[FileProcess] = []
-            tot_num_missing = 0
-            project = parser.parse_files_in_paths(paths=user_paths)
-            if self.debug:
-                logger.info(f"\n=== Project Map ===\n{project.dump_map()}\n")
-            files_missing_types = files_missing_types_in_project(project)
-            logger.info(f"\n=== Missing Types ===\n")
-            for fmt in files_missing_types:
-                print_missing(fmt)
-                tot_num_missing += count_missing(fmt.missing_types)
-                file_processes.append(FileProcess(
-                    file_missing_types=fmt))
-
-            await self.send_progress()
-
-            tasks: List[asyncio.Task] = [
-                asyncio.create_task(self.process_file(
-                    file_process=file_processes[i], project=project))
-                for i in range(len(files_missing_types))
-            ]
-            await asyncio.gather(*tasks)
-
-            file_changes: List[file_diff.FileChange] = []
-            tot_new_missing = 0
-            for fp in file_processes:
-                if fp.file_change is not None:
-                    file_changes.append(fp.file_change)
-                if fp.new_num_missing is not None:
-                    tot_new_missing += fp.new_num_missing
-                else:
-                    tot_new_missing += count_missing(
-                        fp.file_missing_types.missing_types)
+        file_processes: List[FileProcess] = []
+        tot_num_missing = 0
+        project = parser.parse_files_in_paths(paths=user_paths)
+        if self.debug:
+            logger.info(f"\n=== Project Map ===\n{project.dump_map()}\n")
+        files_missing_types = files_missing_types_in_project(project)
+        logger.info(f"\n=== Missing Types ===\n")
+        files_missing_str = ""
+        for fmt in files_missing_types:
+            files_missing_str += f"`{fmt.file.path}` "
+            log_missing(fmt)
+            tot_num_missing += count_missing(fmt.missing_types)
+            file_processes.append(FileProcess(
+                file_missing_types=fmt))
+        if tot_num_missing == 0:
             await self.send_chat_update(
-                f"Missing types after responses: {tot_new_missing}/{tot_num_missing} ({tot_new_missing/tot_num_missing*100:.2f}%)")
-            await self.apply_file_changes(file_changes)
+                "No missing types found in the current file.")
+            return MissingTypesResult()
+        await self.send_chat_update(
+            f"Missing {tot_num_missing} types in {files_missing_str}")
+
+        tasks: List[asyncio.Task] = [
+            asyncio.create_task(self.process_file(
+                file_process=file_processes[i], project=project))
+            for i in range(len(files_missing_types))
+        ]
+        await asyncio.gather(*tasks)
+
+        file_changes: List[file_diff.FileChange] = []
+        tot_new_missing = 0
+        for fp in file_processes:
+            if fp.file_change is not None:
+                file_changes.append(fp.file_change)
+            if fp.new_num_missing is not None:
+                tot_new_missing += fp.new_num_missing
+            else:
+                tot_new_missing += count_missing(
+                    fp.file_missing_types.missing_types)
+        await self.send_chat_update(
+            f"Missing types after responses: {tot_new_missing}/{tot_num_missing} ({tot_new_missing/tot_num_missing*100:.2f}%)")
+        await self.apply_file_changes(file_changes)
+        return MissingTypesResult()

@@ -349,15 +349,29 @@ def parse_files_in_paths(paths: List[str]) -> Project:
         root_path = os.path.commonpath(paths)
     project = Project(root_path=root_path)
     for path in paths:
-        language = language_from_file_extension(path)
-        if language is not None:
-            path_from_root = os.path.relpath(path, root_path)
-            with open(path, 'r', encoding='utf-8') as f:
-                code = Code(f.read().encode('utf-8'))
-            file_ir = File(path=path_from_root)
-            parse_code_block(file=file_ir, code=code,
-                             language=language)
-            project.add_file(file=file_ir)
+        if os.path.isfile(path):
+            language = language_from_file_extension(path)
+            if language is not None:
+                path_from_root = os.path.relpath(path, root_path)
+                with open(path, 'r', encoding='utf-8') as f:
+                    code = Code(f.read().encode('utf-8'))
+                file_ir = File(path=path_from_root)
+                parse_code_block(file=file_ir, code=code,
+                                language=language)
+                project.add_file(file=file_ir)
+        else:
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    language = language_from_file_extension(file)
+                    if language is not None:
+                        full_path = os.path.join(root, file)
+                        path_from_root = os.path.relpath(full_path, root_path)
+                        with open(os.path.join(root_path, full_path), 'r', encoding='utf-8') as f:
+                            code = Code(f.read().encode('utf-8'))
+                        file_ir = File(path=path_from_root)
+                        parse_code_block(file=file_ir, code=code,
+                                        language=language)
+                        project.add_file(file=file_ir)
     return project
 
 
