@@ -114,13 +114,14 @@ def find_c_cpp_function_declarator(node: Node) -> Optional[Tuple[List[str], Node
     else:
         return None
 
+
 def contains_direct_return(body: Node):
     """
     Recursively check if the function body contains a direct return statement.
     """
     for child in body.children:
         # If the child is a function or method, skip it.
-        if child.type in ['class_definition', 'class_declaration', 'function_definition', 'method_definition']:
+        if child.type in ['arrow_function', 'class_definition', 'class_declaration', 'function_declaration', 'function_definition', 'method_definition']:
             continue
         # If the child is a return statement, return True.
         if child.type == "return_statement":
@@ -129,6 +130,7 @@ def contains_direct_return(body: Node):
         if contains_direct_return(child):
             return True
     return False
+
 
 def find_declaration(code: Code, file: File, language: Language, node: Node, scope: Scope) -> Optional[SymbolInfo]:
     body_sub = None
@@ -376,7 +378,7 @@ def parse_files_in_paths(paths: List[str]) -> Project:
                     code = Code(f.read().encode('utf-8'))
                 file_ir = File(path=path_from_root)
                 parse_code_block(file=file_ir, code=code,
-                                language=language)
+                                 language=language)
                 project.add_file(file=file_ir)
         else:
             for root, dirs, files in os.walk(path):
@@ -389,7 +391,7 @@ def parse_files_in_paths(paths: List[str]) -> Project:
                             code = Code(f.read().encode('utf-8'))
                         file_ir = File(path=path_from_root)
                         parse_code_block(file=file_ir, code=code,
-                                        language=language)
+                                         language=language)
                         project.add_file(file=file_ir)
     return project
 

@@ -49,7 +49,10 @@ def functions_missing_types_in_file(file: IR.File) -> List[MissingType]:
                 if p.type is None:
                     missing_parameters.append(p.name)
         if d.return_type is None:
-            missing_return = True
+            if not d.has_return and d.language in ['javascript', 'typescript', 'tsx']:
+                pass
+            else:
+                missing_return = True
         if missing_parameters != [] or missing_return:
             functions_missing_types.append(MissingType(
                 function_declaration=d, parameters=missing_parameters, return_type=missing_return))
