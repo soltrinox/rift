@@ -80,19 +80,41 @@ class MissingTypePrompt:
         return IR.Code(bytes)
 
     @staticmethod
-    def create_prompt_for_file(missing_types: List[MissingType]) -> Prompt:
+    def example_code_block() -> str:
+        return dedent("""
+            ```python
+                def mul(a: t1, b : t2) -> t3
+                    ...
+            ```
+        """).lstrip()
+
+    @staticmethod
+    def create_prompt_for_file(language: IR.Language, missing_types: List[MissingType]) -> Prompt:
         code = MissingTypePrompt.code_for_missing_types(missing_types)
+        example_py = """
+            ```python
+                def foo(a: t1, b : t2) -> t3
+                    ...
+            ```
+        """
+        example_ts = """
+            ```typescript
+                function foo(a: t1, b : t2): t3 {
+                    ...
+                }
+            ```
+        """
+        if language in ['javascript', 'typescript', 'tsx']:
+            example = example_ts
+        else:
+            example = example_py
+
         system_msg = dedent("""
             Act as an expert software developer.
             For each function to modify, give an *edit block* per the example below.
 
             You MUST format EVERY code change with an *edit block* like this:
-
-            ```python
-                def mul(a: t1, b : t2) -> t3
-                    ...
-            ```
-
+            """ + example + """
             Every *edit block* must be fenced with ```...``` with the correct code language.
             Edits to different functions each need their own *edit block*.
             Give all the required changes at once in the reply.
@@ -171,6 +193,7 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
     async def code_edits_for_missing_files(self, document: IR.Code, language: IR.Language,  missing_types: List[MissingType]) -> List[IR.CodeEdit]:
         loop = asyncio.get_event_loop()
         prompt = MissingTypePrompt.create_prompt_for_file(
+            language=language,
             missing_types=missing_types)
         # Partially apply parameters to ChatCompletion.create for later execution
         func = functools.partial(openai.ChatCompletion.create, model=Config.model,
@@ -269,7 +292,10 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             result = await self.request_chat(agent.RequestChatRequest(messages=self.get_state().messages))
             return result
 
-        config = cast(ModelConfig, self.get_server().model_config) # type: ignore
+        config = cast(ModelConfig,
+                      self.get_server().model_config  # type: ignore
+                      )
+
         logger.info(f"config: {config}")
 
         if config.openaiKey is None:
