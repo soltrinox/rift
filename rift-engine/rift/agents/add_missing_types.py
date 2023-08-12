@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import openai
 import os
 from textwrap import dedent
-from typing import AsyncIterable, ClassVar, List, Optional, Type, Dict
+from typing import AsyncIterable, ClassVar, List, Optional, Type, Dict, cast
 
 import rift.agents.abstract as agent
 from rift.agents.agenttask import AgentTask
@@ -16,8 +16,9 @@ import rift.ir.IR as IR
 from rift.ir.missing_types import FileMissingTypes, MissingType, files_missing_types_in_project, functions_missing_types_in_file
 import rift.ir.parser as parser
 from rift.ir.response import extract_blocks_from_response, replace_functions_from_code_blocks
+from rift.llm.create import ModelConfig
 import rift.llm.openai_types as openai_types
-from rift.lsp.server import LspServer
+from rift.lsp import LspServer
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 
@@ -268,12 +269,14 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             result = await self.request_chat(agent.RequestChatRequest(messages=self.get_state().messages))
             return result
 
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if api_key is None:
+        config = cast(ModelConfig, self.get_server().model_config) # type: ignore
+        logger.info(f"config: {config}")
+
+        if config.openaiKey is None:
             await self.send_chat_update(
-                "Missing OPENAI_API_KEY environment variable.\nRestart the server with the environment variable set.")
-            raise Exception("OPENAI_API_KEY environment variable not set")
-        openai.api_key = api_key
+                "OpenAI key missing: set the Openai Key in the Rift settings and run the agent again.")
+            return MissingTypesResult()
+        openai.api_key = config.openaiKey.get_secret_value()
 
         await self.send_progress()
         text_document = self.get_state().params.textDocument
