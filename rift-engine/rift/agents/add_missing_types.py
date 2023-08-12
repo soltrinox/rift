@@ -2,18 +2,22 @@ import asyncio
 from dataclasses import dataclass, field
 import functools
 import logging
+import re
+from urllib.parse import urlparse
 import openai
 import os
 from textwrap import dedent
 from typing import AsyncIterable, ClassVar, List, Optional, Type, Dict
 
 import rift.agents.abstract as agent
+from rift.agents.agenttask import AgentTask
 import rift.agents.registry as registry
 import rift.ir.IR as IR
 from rift.ir.missing_types import FileMissingTypes, MissingType, files_missing_types_in_project, functions_missing_types_in_file
 import rift.ir.parser as parser
 from rift.ir.response import extract_blocks_from_response, replace_functions_from_code_blocks
 import rift.llm.openai_types as openai_types
+from rift.lsp.server import LspServer
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
 
@@ -40,11 +44,6 @@ class Config:
     max_size_group_missing_types = 10  # maximum size for a group of missing types
     model = "gpt-3.5-turbo-0613"  # ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k"]
     temperature = 0
-
-    @classmethod
-    def root_dir(cls) -> str:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.dirname(script_dir) + "/llm"
 
 
 logger = logging.getLogger(__name__)
@@ -141,7 +140,6 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
     params_cls: ClassVar[type[MissingTypesParams]] = MissingTypesParams
 
     debug = Config.debug
-    root_dir: str = Config.root_dir()
 
     @classmethod
     async def create(cls, params: MissingTypesParams, server):
@@ -208,14 +206,11 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             groups_of_missing_types.append(group)
         return groups_of_missing_types
 
-    async def process_file(self, file_process: FileProcess) -> None:
+    async def process_file(self, file_process: FileProcess, project: parser.Project) -> None:
         fmt = file_process.file_missing_types
         await self.send_chat_update(
             f"Fetching types for `{fmt.file.path}`")
-        api_key = os.environ["OPENAI_API_KEY"]
-        if api_key is None:
-            raise Exception("OPENAI_API_KEY environment variable not set")
-        openai.api_key = api_key
+        await self.send_progress()
 
         language = fmt.language
         document = fmt.code
@@ -233,7 +228,7 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             f"Received types for `{fmt.file.path}` ({new_num_missing}/{old_num_missing} missing)")
         if self.debug:
             logger.info(f"new_document:\n{new_document}\n")
-        path = os.path.join(self.root_dir, fmt.file.path)
+        path = os.path.join(project.root_path, fmt.file.path)
         file_change = file_diff.get_file_change(
             path=path, new_content=str(new_document))
         if self.debug:
@@ -241,20 +236,30 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
         file_process.file_change = file_change
         file_process.new_num_missing = new_num_missing
 
-    async def apply_file_changes(self, updates: List[file_diff.FileChange]) -> lsp.ApplyWorkspaceEditResponse:
+    async def apply_file_changes(self, file_changes: List[file_diff.FileChange]) -> lsp.ApplyWorkspaceEditResponse:
         """
         Apply file changes to the workspace.
         :param updates: The updates to be applied.
         :return: The response from applying the workspace edit.
         """
-        return await self.server.apply_workspace_edit(
+        return await self.get_server().apply_workspace_edit(
             lsp.ApplyWorkspaceEditParams(
                 file_diff.edits_from_file_changes(
-                    updates,
+                    file_changes,
                     user_confirmation=True,
                 )
             )
         )
+
+    def get_state(self) -> MissingTypesAgentState:
+        if not isinstance(self.state, MissingTypesAgentState):
+            raise Exception("Agent not initialized")
+        return self.state
+
+    def get_server(self) -> LspServer:
+        if self.server is None:
+            raise Exception("Server not initialized")
+        return self.server
 
     async def run(self) -> MissingTypesResult:
         def print_missing(fmt: FileMissingTypes) -> None:
@@ -263,37 +268,70 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
                 logger.info(f"  {mt}")
             logger.info("")
 
-        file_processes: List[FileProcess] = []
-        tot_num_missing = 0
-        project = parser.parse_files_in_project(self.root_dir)
-        if self.debug:
-            logger.info(f"\n=== Project Map ===\n{project.dump_map()}\n")
-        files_missing_types = files_missing_types_in_project(project)
-        logger.info(f"\n=== Missing Types ===\n")
-        for fmt in files_missing_types:
-            print_missing(fmt)
-            tot_num_missing += count_missing(fmt.missing_types)
-            file_processes.append(FileProcess(
-                file_missing_types=fmt))
+        async def get_user_response() -> str:
+            result = await self.request_chat(agent.RequestChatRequest(messages=self.get_state().messages))
+            return result
 
-        await self.send_progress()
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if api_key is None:
+            await self.send_chat_update(
+                "Missing OPENAI_API_KEY environment variable.\nRestart the server with the environment variable set.")
+            raise Exception("OPENAI_API_KEY environment variable not set")
+        openai.api_key = api_key
 
-        tasks: List[asyncio.Task] = [
-            asyncio.create_task(self.process_file(file_processes[i]))
-            for i in range(len(files_missing_types))
-        ]
-        await asyncio.gather(*tasks)
-
-        file_changes: List[file_diff.FileChange] = []
-        tot_new_missing = 0
-        for fp in file_processes:
-            if fp.file_change is not None:
-                file_changes.append(fp.file_change)
-            if fp.new_num_missing is not None:
-                tot_new_missing += fp.new_num_missing
+        while True:
+            text_document = self.get_state().params.textDocument
+            if text_document is not None:
+                current_file_uri = text_document.uri
             else:
-                tot_new_missing += count_missing(
-                    fp.file_missing_types.missing_types)
-        logger.info(
-            f"Missing types: {tot_new_missing}/{tot_num_missing} ({tot_new_missing/tot_num_missing*100:.2f}%)")
-        await self.apply_file_changes(file_changes)
+                raise Exception("Missing textDocument")
+
+            await self.send_chat_update(
+                "Press enter to start adding missing types to the current file, or specify files and directories by typing @ and following autocomplete.")
+
+            get_user_response_task = AgentTask(
+                "Get user response", get_user_response)
+            self.set_tasks([get_user_response_task])
+            await self.send_progress()
+            user_response_task = asyncio.create_task(
+                get_user_response_task.run())
+            user_response = await user_response_task or ""
+            user_paths = re.findall(r"\[uri\]\((\S+)\)", user_response)
+            if user_paths == []:
+                user_paths = [urlparse(current_file_uri).path]
+
+            file_processes: List[FileProcess] = []
+            tot_num_missing = 0
+            project = parser.parse_files_in_paths(paths=user_paths)
+            if self.debug:
+                logger.info(f"\n=== Project Map ===\n{project.dump_map()}\n")
+            files_missing_types = files_missing_types_in_project(project)
+            logger.info(f"\n=== Missing Types ===\n")
+            for fmt in files_missing_types:
+                print_missing(fmt)
+                tot_num_missing += count_missing(fmt.missing_types)
+                file_processes.append(FileProcess(
+                    file_missing_types=fmt))
+
+            await self.send_progress()
+
+            tasks: List[asyncio.Task] = [
+                asyncio.create_task(self.process_file(
+                    file_process=file_processes[i], project=project))
+                for i in range(len(files_missing_types))
+            ]
+            await asyncio.gather(*tasks)
+
+            file_changes: List[file_diff.FileChange] = []
+            tot_new_missing = 0
+            for fp in file_processes:
+                if fp.file_change is not None:
+                    file_changes.append(fp.file_change)
+                if fp.new_num_missing is not None:
+                    tot_new_missing += fp.new_num_missing
+                else:
+                    tot_new_missing += count_missing(
+                        fp.file_missing_types.missing_types)
+            await self.send_chat_update(
+                f"Missing types after responses: {tot_new_missing}/{tot_num_missing} ({tot_new_missing/tot_num_missing*100:.2f}%)")
+            await self.apply_file_changes(file_changes)

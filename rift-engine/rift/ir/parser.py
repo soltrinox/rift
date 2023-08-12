@@ -1,4 +1,5 @@
 import difflib
+import logging
 import os
 from textwrap import dedent
 from tree_sitter import Node
@@ -333,6 +334,30 @@ def parse_files_in_project(root_path: str, filter: Optional[Callable[[str], bool
                     parse_code_block(file=file_ir, code=code,
                                      language=language)
                     project.add_file(file=file_ir)
+    return project
+
+
+def parse_files_in_paths(paths: List[str]) -> Project:
+    """
+    Parses all files with known extensions in the provided list of paths.
+    """
+    if len(paths) == 0:
+        raise Exception("No paths provided")
+    if len(paths) == 1 and os.path.isfile(paths[0]):
+        root_path = os.path.dirname(paths[0])
+    else:
+        root_path = os.path.commonpath(paths)
+    project = Project(root_path=root_path)
+    for path in paths:
+        language = language_from_file_extension(path)
+        if language is not None:
+            path_from_root = os.path.relpath(path, root_path)
+            with open(path, 'r', encoding='utf-8') as f:
+                code = Code(f.read().encode('utf-8'))
+            file_ir = File(path=path_from_root)
+            parse_code_block(file=file_ir, code=code,
+                             language=language)
+            project.add_file(file=file_ir)
     return project
 
 
