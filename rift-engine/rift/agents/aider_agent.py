@@ -77,7 +77,7 @@ class Aider(agent.ThirdPartyAgent):
     params_cls: ClassVar[Any] = AiderAgentParams
 
     @classmethod
-    async def create(cls, params: AiderAgentParams, server: Any) -> agent.Agent:
+    async def create(cls, params: AiderAgentParams, server: Any) -> agent.ThirdPartyAgent:
         """
         Class method to create an instance of the Aider class.
         :param params: Parameters for the Aider agent.

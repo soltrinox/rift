@@ -154,7 +154,7 @@ class EngineerAgent(ThirdPartyAgent):
         steps_config: Any = None,
         verbose: bool = typer.Option(False, "--verbose", "-v"),
         **kwargs,
-    ):
+    ) -> None:
         """
         Main function for the EngineerAgent. It initializes the AI model and starts the engineering process.
 
@@ -315,8 +315,8 @@ class EngineerAgent(ThirdPartyAgent):
                 await asyncio.sleep(0.5)
                 counter += 1
 
-    async def _run_chat_thread(self, response_stream):
-        # logger.info("Started handler thread")
+    async def _run_chat_thread(self, response_stream: str) -> None:
+    # logger.info("Started handler thread")
         before, after = response_stream.split_once("感")
         try:
             async with response_lock:
@@ -328,7 +328,7 @@ class EngineerAgent(ThirdPartyAgent):
             logger.info(f"[_run_chat_thread] caught exception={e}, exiting")
 
     @classmethod
-    async def create(cls, params: EngineerAgentParams, server):
+    async def create(cls, params: EngineerAgentParams, server: Any) -> ThirdPartyAgent:
         state = EngineerAgentState(
             params=params,
             messages=[openai.Message.assistant("What do you want to build?")],
