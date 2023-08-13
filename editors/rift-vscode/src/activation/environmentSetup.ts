@@ -11,15 +11,13 @@ import fetch from "node-fetch";
 const exec = util.promisify(require("child_process").exec);
 
 const PACKAGE_JSON_RAW_GITHUB_URL =
-  "https://raw.githubusercontent.com/morph-labs/rift/HEAD/editors/rift-vscode/package.json";
+    "https://raw.githubusercontent.com/morph-labs/rift/HEAD/editors/rift-vscode/package.json";
 
 const WINDOWS_REMOTE_SIGNED_SCRIPTS_ERROR =
     "A Python virtual enviroment cannot be activated because running scripts is disabled for this user. In order to use Rift, please enable signed scripts to run with this command in PowerShell: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`, reload VS Code, and then try again.";
 
-const MAX_RETRIES = 3;
 
 const RIFT_COMMIT = "43021788ad370fa98eef8600157da6b25df26fe3";
-const PIP_INSTALL_COMMAND = `pip install "git+https://github.com/morph-labs/rift.git@${RIFT_COMMIT}#subdirectory=rift-engine&egg=pyrift"`;
 const PIP_INSTALL_ARGS = `install "git+https://github.com/morph-labs/rift.git@${RIFT_COMMIT}#subdirectory=rift-engine&egg=pyrift"`;
 
 const morphDir = path.join(os.homedir(), ".morph");
@@ -28,9 +26,9 @@ export function getExtensionUri(): vscode.Uri {
     return vscode.extensions.getExtension("morph.rift-vscode")!.extensionUri;
 }
 
-function getExtensionVersion() {
-  const extension = vscode.extensions.getExtension("morph.rift-vscode");
-  return extension?.packageJSON.version || "";
+function getExtensionVersion(): string {
+    const extension = vscode.extensions.getExtension("morph.rift-vscode");
+    return extension?.packageJSON.version || "";
 }
 
 export function checkExtensionVersion() {
@@ -46,7 +44,7 @@ export function checkExtensionVersion() {
         .catch((e) => console.log("Error checking for extension updates: ", e));
 }
 
-export function ensureRift(): void {
+export function ensureRift() {
     console.log("Start - Checking if `rift` is in PATH.");
 
     // let riftIsInPath = true;
@@ -54,17 +52,6 @@ export function ensureRift(): void {
 
     console.log("Command set for 'which'/'where' based on platform.");
 
-    // console.log("Initiating 'exec' command to check for 'rift'.");
-    // try {
-    //   const { stdout } = await exec(`${command} rift`);
-    //   console.log("`exec` command executed successfully.");
-    //   riftIsInPath = Boolean(stdout);
-    //   console.log("Set 'riftIsInPath' based on command output.");
-    // } catch (error: any) {
-    //   console.log("Exception caught while executing 'exec' command.", error);
-    //   riftIsInPath = false;
-    //   console.log("Set 'riftIsInPath' to false due to exception.");
-    // }
     const riftInMorphDir = fs.existsSync(
         path.join(morphDir, "env", "bin", "rift")
     );
@@ -275,8 +262,8 @@ async function runRiftCodeEngineWithProgress() {
         { location: vscode.ProgressLocation.Notification, }, async (progress) => {
             progress.report({ message: `Starting Rift Code Engine...` })
             await runRiftCodeEngine();
-            }
-        );
+        }
+    );
 }
 
 vscode.commands.registerCommand("rift.start_server", runRiftCodeEngineWithProgress);

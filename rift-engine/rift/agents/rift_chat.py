@@ -4,8 +4,6 @@ from asyncio import Lock
 from dataclasses import dataclass
 from typing import Any, ClassVar, List, Optional
 
-from tqdm import tqdm
-
 import rift.agents.registry as registry
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
@@ -15,6 +13,7 @@ from rift.agents.agenttask import AgentTask
 from rift.llm.abstract import AbstractChatCompletionProvider
 from rift.lsp import LspServer as BaseLspServer
 from rift.util.context import resolve_inline_uris
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 

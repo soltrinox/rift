@@ -1,26 +1,33 @@
+from concurrent import futures
 import asyncio
-from dataclasses import dataclass, field
 import functools
 import logging
-import re
-from urllib.parse import urlparse
-import openai
 import os
+import re
+from dataclasses import dataclass, field
 from textwrap import dedent
-from typing import AsyncIterable, ClassVar, List, Optional, Type, Dict, cast
+from typing import AsyncIterable, ClassVar, Dict, List, Optional, Type, cast
+from rift.util.TextStream import TextStream
+from urllib.parse import urlparse
 
+import openai
 import rift.agents.abstract as agent
-from rift.agents.agenttask import AgentTask
 import rift.agents.registry as registry
 import rift.ir.IR as IR
-from rift.ir.missing_types import FileMissingTypes, MissingType, files_missing_types_in_project, functions_missing_types_in_file
 import rift.ir.parser as parser
-from rift.ir.response import extract_blocks_from_response, replace_functions_from_code_blocks
-from rift.llm.create import ModelConfig
 import rift.llm.openai_types as openai_types
-from rift.lsp import LspServer
 import rift.lsp.types as lsp
 import rift.util.file_diff as file_diff
+from rift.agents.agenttask import AgentTask
+from rift.ir.missing_types import (
+    FileMissingTypes,
+    MissingType,
+    files_missing_types_in_project,
+    functions_missing_types_in_file,
+)
+from rift.ir.response import extract_blocks_from_response, replace_functions_from_code_blocks
+from rift.llm.create import ModelConfig
+from rift.lsp import LspServer
 
 
 @dataclass
@@ -61,7 +68,8 @@ class MissingTypePrompt:
         for mt in missing_types:
             n += 1
             missing_str += f"{n}. {mt}\n"
-        return dedent(f"""
+        return dedent(
+            f"""
         Add missing types for the following functions:
         {missing_str}
 
@@ -69,7 +77,8 @@ class MissingTypePrompt:
         ```
         {code}
         ```
-        """).lstrip()
+        """
+        ).lstrip()
 
     @staticmethod
     def code_for_missing_types(missing_types: List[MissingType]) -> IR.Code:
@@ -81,12 +90,14 @@ class MissingTypePrompt:
 
     @staticmethod
     def example_code_block() -> str:
-        return dedent("""
+        return dedent(
+            """
             ```python
                 def mul(a: t1, b : t2) -> t3
                     ...
             ```
-        """).lstrip()
+        """
+        ).lstrip()
 
     @staticmethod
     def create_prompt_for_file(language: IR.Language, missing_types: List[MissingType]) -> Prompt:
@@ -104,25 +115,31 @@ class MissingTypePrompt:
                 }
             ```
         """
-        if language in ['javascript', 'typescript', 'tsx']:
+        if language in ["javascript", "typescript", "tsx"]:
             example = example_ts
         else:
             example = example_py
 
-        system_msg = dedent("""
+        system_msg = dedent(
+            """
             Act as an expert software developer.
             For each function to modify, give an *edit block* per the example below.
 
             You MUST format EVERY code change with an *edit block* like this:
-            """ + example + """
+            """
+            + example
+            + """
             Every *edit block* must be fenced with ```...``` with the correct code language.
             Edits to different functions each need their own *edit block*.
             Give all the required changes at once in the reply.
-            """).lstrip()
+            """
+        ).lstrip()
         return [
             dict(role="system", content=system_msg),
-            dict(role="user", content=MissingTypePrompt.mk_user_msg(
-                missing_types=missing_types, code=code)),
+            dict(
+                role="user",
+                content=MissingTypePrompt.mk_user_msg(missing_types=missing_types, code=code),
+            ),
         ]
 
 
@@ -145,8 +162,8 @@ def get_num_missing_in_code(code: IR.Code, language: IR.Language) -> int:
 
 
 @registry.agent(
-    agent_description="Request To Add Missing Types.",
-    display_name="MissingTypes",
+    agent_description="Infer missing type signatures",
+    display_name="Type Inference",
     agent_icon="""\
 <svg width="34px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- T remains unchanged -->
@@ -177,38 +194,83 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
         )
         return obj
 
-    def process_response(self, document: IR.Code, language: IR.Language,  missing_types: List[MissingType], response: str) -> List[IR.CodeEdit]:
+    def process_response(
+        self,
+        document: IR.Code,
+        language: IR.Language,
+        missing_types: List[MissingType],
+        response: str,
+    ) -> List[IR.CodeEdit]:
         if self.debug:
             logger.info(f"response:\n{response}\n")
         code_blocks = extract_blocks_from_response(response)
         if self.debug:
             logger.info(f"code_blocks:\n{code_blocks}\n")
-        filter_function_ids = [
-            mt.function_declaration.get_qualified_id() for mt in missing_types]
+        filter_function_ids = [mt.function_declaration.get_qualified_id() for mt in missing_types]
         edits = replace_functions_from_code_blocks(
-            code_blocks=code_blocks, document=document,
-            filter_function_ids=filter_function_ids, language=language, replace_body=False)
+            code_blocks=code_blocks,
+            document=document,
+            filter_function_ids=filter_function_ids,
+            language=language,
+            replace_body=False,
+        )
         return edits
 
-    async def code_edits_for_missing_files(self, document: IR.Code, language: IR.Language,  missing_types: List[MissingType]) -> List[IR.CodeEdit]:
+    async def code_edits_for_missing_files(
+        self, document: IR.Code, language: IR.Language, missing_types: List[MissingType]
+    ) -> List[IR.CodeEdit]:
         loop = asyncio.get_event_loop()
         prompt = MissingTypePrompt.create_prompt_for_file(
-            language=language,
-            missing_types=missing_types)
+            language=language, missing_types=missing_types
+        )
         # Partially apply parameters to ChatCompletion.create for later execution
-        func = functools.partial(openai.ChatCompletion.create, model=Config.model,
-                                 messages=prompt, temperature=Config.temperature)
+        func = functools.partial(
+            openai.ChatCompletion.create,
+            model=Config.model,
+            messages=prompt,
+            temperature=Config.temperature,
+            stream=True,
+        )
         # Run OpenAI API call concurrently to avoid blocking event loop
-        completion = await loop.run_in_executor(None, func)
-        if not isinstance(completion, dict):
-            raise Exception(
-                f"Unexpected type for completion: {type(completion)}")
-        response: str = completion['choices'][0]['message']['content']
+        # completion =  await loop.run_in_executor(None, func)
+
+        # completion = func()
+
+        futs = []
+
+        # def stream_handler(chunk):
+        #     futs.append(asyncio.run_coroutine_threadsafe(self.send_chat_update(chunk), loop))
+        response_stream = TextStream()
+        collected_messages = []
+
+        async def feed_task():
+            completion = openai.ChatCompletion.create(
+                model=Config.model,
+                messages=prompt,
+                temperature=Config.temperature,
+                stream=True
+            )            
+            for chunk in completion:
+                await asyncio.sleep(0.0001)
+                chunk_message_dict = chunk["choices"][0]
+                chunk_message = chunk_message_dict["delta"].get("content")  # extract the message
+                if chunk_message_dict["finish_reason"] is None and chunk_message:
+                    collected_messages.append(chunk_message)  # save the message
+                    response_stream.feed_data(chunk_message)
+            response_stream.feed_eof()
+
+        response_stream._feed_task = asyncio.create_task(self.add_task(f"Generate type annotations for {'/'.join(mt.function_declaration.name for mt in missing_types)}", feed_task).run())
+
+        await self.send_chat_update(response_stream)
+        response = "".join(collected_messages)
         edits = self.process_response(
-            document=document, language=language, missing_types=missing_types, response=response)
+            document=document, language=language, missing_types=missing_types, response=response
+        )
         return edits
 
-    def split_missing_types_in_groups(self, missing_types: List[MissingType]) -> List[List[MissingType]]:
+    def split_missing_types_in_groups(
+        self, missing_types: List[MissingType]
+    ) -> List[List[MissingType]]:
         """Split the missing types in groups of at most Config.max_size_group_missing_types,
         and that don't contain functions with the same name."""
         groups_of_missing_types: List[List[MissingType]] = []
@@ -234,29 +296,29 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
         fmt = file_process.file_missing_types
         language = fmt.language
         document = fmt.code
-        groups_of_missing_types = self.split_missing_types_in_groups(
-            fmt.missing_types)
+        groups_of_missing_types = self.split_missing_types_in_groups(fmt.missing_types)
 
         for missing_types in groups_of_missing_types:
             new_edits = await self.code_edits_for_missing_files(document, language, missing_types)
             file_process.edits += new_edits
         new_document = fmt.code.apply_edits(file_process.edits)
-        old_num_missing = count_missing(
-            file_process.file_missing_types.missing_types)
+        old_num_missing = count_missing(file_process.file_missing_types.missing_types)
         new_num_missing = get_num_missing_in_code(new_document, fmt.language)
         await self.send_chat_update(
-            f"Received types for `{fmt.file.path}` ({new_num_missing}/{old_num_missing} missing)")
+            f"Received types for `{fmt.file.path}` ({new_num_missing}/{old_num_missing} missing)"
+        )
         if self.debug:
             logger.info(f"new_document:\n{new_document}\n")
         path = os.path.join(project.root_path, fmt.file.path)
-        file_change = file_diff.get_file_change(
-            path=path, new_content=str(new_document))
+        file_change = file_diff.get_file_change(path=path, new_content=str(new_document))
         if self.debug:
             logger.info(f"file_change:\n{file_change}\n")
         file_process.file_change = file_change
         file_process.new_num_missing = new_num_missing
 
-    async def apply_file_changes(self, file_changes: List[file_diff.FileChange]) -> lsp.ApplyWorkspaceEditResponse:
+    async def apply_file_changes(
+        self, file_changes: List[file_diff.FileChange]
+    ) -> lsp.ApplyWorkspaceEditResponse:
         """
         Apply file changes to the workspace.
         :param updates: The updates to be applied.
@@ -285,6 +347,7 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
         async def info_update(msg):
             logger.info(msg)
             await self.send_chat_update(msg)
+
         async def log_missing(fmt: FileMissingTypes) -> None:
             await info_update(f"File: {fmt.file.path}")
             for mt in fmt.missing_types:
@@ -292,12 +355,12 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             await info_update("")
 
         async def get_user_response() -> str:
-            result = await self.request_chat(agent.RequestChatRequest(messages=self.get_state().messages))
+            result = await self.request_chat(
+                agent.RequestChatRequest(messages=self.get_state().messages)
+            )
             return result
 
-        config = cast(ModelConfig,
-                      self.get_server().model_config  # type: ignore
-                      )
+        config = cast(ModelConfig, self.get_server().model_config)  # type: ignore
 
         logger.info(f"config: {config}")
 
@@ -308,7 +371,8 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
 
         if openai.api_key is None:
             await self.send_chat_update(
-                "OpenAI key missing: set the Openai Key in the Rift settings or as the `OPENAI_API_KEY` environment variable and run the agent again.")
+                "OpenAI key missing: set the Openai Key in the Rift settings or as the `OPENAI_API_KEY` environment variable and run the agent again."
+            )
             return MissingTypesResult()
 
         await self.send_progress()
@@ -319,13 +383,12 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             raise Exception("Missing textDocument")
 
         await self.send_chat_update(
-            "Reply with 'c' to start adding missing types to the current file, or specify files and directories by typing @ and following autocomplete.")
+            "Reply with 'c' to start adding missing types to the current file, or specify files and directories by typing @ and following autocomplete."
+        )
 
-        get_user_response_task = AgentTask(
-            "Get user response", get_user_response)
+        get_user_response_task = AgentTask("Get user response", get_user_response)
         self.set_tasks([get_user_response_task])
-        user_response_task = asyncio.create_task(
-            get_user_response_task.run())
+        user_response_task = asyncio.create_task(get_user_response_task.run())
         await self.send_progress()
         user_response = await user_response_task
         if user_response is None:
@@ -347,18 +410,14 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             files_missing_str += f"`{fmt.file.path}` "
             await log_missing(fmt)
             tot_num_missing += count_missing(fmt.missing_types)
-            file_processes.append(FileProcess(
-                file_missing_types=fmt))
+            file_processes.append(FileProcess(file_missing_types=fmt))
         if tot_num_missing == 0:
-            await self.send_chat_update(
-                "No missing types found in the current file.")
+            await self.send_chat_update("No missing types found in the current file.")
             return MissingTypesResult()
-        await self.send_chat_update(
-            f"Missing {tot_num_missing} types in {files_missing_str}")
+        await self.send_chat_update(f"Missing {tot_num_missing} types in {files_missing_str}")
 
         tasks: List[asyncio.Task] = [
-            asyncio.create_task(self.process_file(
-                file_process=file_processes[i], project=project))
+            asyncio.create_task(self.process_file(file_process=file_processes[i], project=project))
             for i in range(len(files_missing_types))
         ]
         await asyncio.gather(*tasks)
@@ -371,9 +430,9 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             if fp.new_num_missing is not None:
                 tot_new_missing += fp.new_num_missing
             else:
-                tot_new_missing += count_missing(
-                    fp.file_missing_types.missing_types)
+                tot_new_missing += count_missing(fp.file_missing_types.missing_types)
         await self.apply_file_changes(file_changes)
         await self.send_chat_update(
-            f"Missing types after responses: {tot_new_missing}/{tot_num_missing} ({tot_new_missing/tot_num_missing*100:.2f}%)")
+            f"Missing types after responses: {tot_new_missing}/{tot_num_missing} ({tot_new_missing/tot_num_missing*100:.2f}%)"
+        )
         return MissingTypesResult()
