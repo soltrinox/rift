@@ -2,7 +2,7 @@ import asyncio
 import logging
 from asyncio import Future
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Dict, Optional, List, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 import rift.agents.registry as registry
 import rift.llm.openai_types as openai
@@ -337,12 +337,12 @@ class CodeEditAgent(Agent):
                 raise e
 
     async def on_change(
-    self,
-    *,
-    before: lsp.TextDocumentItem,
-    after: lsp.TextDocumentItem,
-    changes: lsp.DidChangeTextDocumentParams,
-) -> None:
+        self,
+        *,
+        before: lsp.TextDocumentItem,
+        after: lsp.TextDocumentItem,
+        changes: lsp.DidChangeTextDocumentParams,
+    ) -> None:
         if self.task.status != "running":
             return
         """
@@ -425,15 +425,15 @@ class CodeEditAgent(Agent):
         self.state._done.set()
 
     def rejected_diff_text(self, diff: List[Tuple[int, str]]) -> str:
-    # result = ""
-    # for op, text in diff:
-    #     if op == -1:  # remove
-    #         result += text
-    #     elif op == 0:
-    #         result += text
-    #     elif op == 1:
-    #         pass
-    # return result
+        # result = ""
+        # for op, text in diff:
+        #     if op == -1:  # remove
+        #         result += text
+        #     elif op == 0:
+        #         result += text
+        #     elif op == 1:
+        #         pass
+        # return result
         return self.selection_text
 
     async def reject(self) -> None:

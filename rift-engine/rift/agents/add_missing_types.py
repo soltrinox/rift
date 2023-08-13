@@ -1,16 +1,16 @@
-from concurrent import futures
 import asyncio
 import functools
 import logging
 import os
 import re
+from concurrent import futures
 from dataclasses import dataclass, field
 from textwrap import dedent
 from typing import AsyncIterable, ClassVar, Dict, List, Optional, Type, cast
-from rift.util.TextStream import TextStream
 from urllib.parse import urlparse
 
 import openai
+
 import rift.agents.abstract as agent
 import rift.agents.registry as registry
 import rift.ir.IR as IR
@@ -28,6 +28,7 @@ from rift.ir.missing_types import (
 from rift.ir.response import extract_blocks_from_response, replace_functions_from_code_blocks
 from rift.llm.create import ModelConfig
 from rift.lsp import LspServer
+from rift.util.TextStream import TextStream
 
 
 @dataclass
@@ -245,11 +246,8 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
 
         async def feed_task():
             completion = openai.ChatCompletion.create(
-                model=Config.model,
-                messages=prompt,
-                temperature=Config.temperature,
-                stream=True
-            )            
+                model=Config.model, messages=prompt, temperature=Config.temperature, stream=True
+            )
             for chunk in completion:
                 await asyncio.sleep(0.0001)
                 chunk_message_dict = chunk["choices"][0]
@@ -259,7 +257,12 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
                     response_stream.feed_data(chunk_message)
             response_stream.feed_eof()
 
-        response_stream._feed_task = asyncio.create_task(self.add_task(f"Generate type annotations for {'/'.join(mt.function_declaration.name for mt in missing_types)}", feed_task).run())
+        response_stream._feed_task = asyncio.create_task(
+            self.add_task(
+                f"Generate type annotations for {'/'.join(mt.function_declaration.name for mt in missing_types)}",
+                feed_task,
+            ).run()
+        )
 
         await self.send_chat_update(response_stream)
         response = "".join(collected_messages)

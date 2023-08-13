@@ -37,8 +37,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Dict, Optional
 
-import rift.lsp.types as lsp
 import typer
+
+import rift.lsp.types as lsp
 from rift.agents.abstract import AgentProgress  # AgentTask,
 from rift.agents.abstract import (
     Agent,
@@ -316,7 +317,7 @@ class EngineerAgent(ThirdPartyAgent):
                 counter += 1
 
     async def _run_chat_thread(self, response_stream: str) -> None:
-    # logger.info("Started handler thread")
+        # logger.info("Started handler thread")
         before, after = response_stream.split_once("感")
         try:
             async with response_lock:

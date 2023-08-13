@@ -5,9 +5,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
+from pydantic import BaseModel
+
 import rift.llm.openai_types as openai
 import rift.lsp.types as lsp
-from pydantic import BaseModel
 from rift.agents.agenttask import AgentTask
 from rift.llm.openai_types import Message as ChatMessage
 from rift.lsp import LspServer as BaseLspServer
