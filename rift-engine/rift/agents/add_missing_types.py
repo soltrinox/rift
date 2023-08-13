@@ -282,11 +282,14 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
         return self.server
 
     async def run(self) -> MissingTypesResult:
-        def log_missing(fmt: FileMissingTypes) -> None:
-            logger.info(f"File: {fmt.file.path}")
+        async def info_update(msg):
+            logger.info(msg)
+            await self.send_chat_update(msg)
+        async def log_missing(fmt: FileMissingTypes) -> None:
+            await info_update(f"File: {fmt.file.path}")
             for mt in fmt.missing_types:
-                logger.info(f"  {mt}")
-            logger.info("")
+                await info_update(f"  {mt}")
+            await info_update("")
 
         async def get_user_response() -> str:
             result = await self.request_chat(agent.RequestChatRequest(messages=self.get_state().messages))
@@ -298,11 +301,15 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
 
         logger.info(f"config: {config}")
 
-        if config.openaiKey is None:
+        if config.openaiKey is not None:
+            openai.api_key = config.openaiKey.get_secret_value()
+        else:
+            openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+        if openai.api_key is None:
             await self.send_chat_update(
-                "OpenAI key missing: set the Openai Key in the Rift settings and run the agent again.")
+                "OpenAI key missing: set the Openai Key in the Rift settings or as the `OPENAI_API_KEY` environment variable and run the agent again.")
             return MissingTypesResult()
-        openai.api_key = config.openaiKey.get_secret_value()
 
         await self.send_progress()
         text_document = self.get_state().params.textDocument
@@ -312,7 +319,7 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             raise Exception("Missing textDocument")
 
         await self.send_chat_update(
-            "Press enter to start adding missing types to the current file, or specify files and directories by typing @ and following autocomplete.")
+            "Reply with 'c' to start adding missing types to the current file, or specify files and directories by typing @ and following autocomplete.")
 
         get_user_response_task = AgentTask(
             "Get user response", get_user_response)
@@ -334,11 +341,11 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
         if self.debug:
             logger.info(f"\n=== Project Map ===\n{project.dump_map()}\n")
         files_missing_types = files_missing_types_in_project(project)
-        logger.info(f"\n=== Missing Types ===\n")
+        await info_update("\n=== Missing Types ===\n")
         files_missing_str = ""
         for fmt in files_missing_types:
             files_missing_str += f"`{fmt.file.path}` "
-            log_missing(fmt)
+            await log_missing(fmt)
             tot_num_missing += count_missing(fmt.missing_types)
             file_processes.append(FileProcess(
                 file_missing_types=fmt))
@@ -366,7 +373,7 @@ class MissingTypesAgent(agent.ThirdPartyAgent):
             else:
                 tot_new_missing += count_missing(
                     fp.file_missing_types.missing_types)
+        await self.apply_file_changes(file_changes)
         await self.send_chat_update(
             f"Missing types after responses: {tot_new_missing}/{tot_num_missing} ({tot_new_missing/tot_num_missing*100:.2f}%)")
-        await self.apply_file_changes(file_changes)
         return MissingTypesResult()
