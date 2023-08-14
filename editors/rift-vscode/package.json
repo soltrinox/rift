@@ -191,6 +191,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@iarna/toml": "^2.2.5",
     "@tiptap/core": "^2.0.4",
     "@tiptap/extension-mention": "^2.0.4",
     "@tiptap/extension-placeholder": "^2.0.4",

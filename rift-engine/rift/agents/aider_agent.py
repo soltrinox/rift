@@ -78,7 +78,7 @@ class Aider(agent.ThirdPartyAgent):
     params_cls: ClassVar[Any] = AiderAgentParams
 
     @classmethod
-    async def create(cls, params: AiderAgentParams, server):
+    async def create(cls, params: AiderAgentParams, server: Any) -> agent.ThirdPartyAgent:
         """
         Class method to create an instance of the Aider class.
         :param params: Parameters for the Aider agent.
@@ -96,7 +96,9 @@ class Aider(agent.ThirdPartyAgent):
         )
         return obj
 
-    async def apply_file_changes(self, updates) -> lsp.ApplyWorkspaceEditResponse:
+    async def apply_file_changes(
+        self, updates: List[file_diff.FileChange]
+    ) -> lsp.ApplyWorkspaceEditResponse:
         """
         Apply file changes to the workspace.
         :param updates: The updates to be applied.
@@ -111,7 +113,7 @@ class Aider(agent.ThirdPartyAgent):
             )
         )
 
-    async def _run_chat_thread(self, response_stream):
+    async def _run_chat_thread(self, response_stream: str) -> None:
         """
         Run the chat thread.
         :param response_stream: The stream of responses from the chat.
@@ -311,7 +313,7 @@ class Aider(agent.ThirdPartyAgent):
 
         aider.io.InputOutput.tool_output = tool_output
 
-        def show_send_output_stream(self, completion, silent):
+        def show_send_output_stream(self, completion, silent=False):
             for chunk in completion:
                 if chunk.choices[0].finish_reason == "length":
                     raise ExhaustedContextWindow()
@@ -351,6 +353,7 @@ class Aider(agent.ThirdPartyAgent):
                 filename = filename.__fspath__()
             file_change = file_diff.get_file_change(path=filename, new_content=new_content)
             file_changes.append(file_change)
+            print(f"{file_changes=}")
 
         # This is called when aider wants to commit after writing all the files
         # This is where the user should accept/reject the changes

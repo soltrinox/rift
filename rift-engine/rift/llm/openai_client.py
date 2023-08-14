@@ -125,20 +125,29 @@ MAX_LEN_SAMPLED_COMPLETION = 768  # Reserved tokens for model's responses
 MAX_SYSTEM_MESSAGE_SIZE = 1024  # Token limit for system message
 
 
-def calc_max_non_system_msgs_size(system_message_size: int) -> int:
+def calc_max_non_system_msgs_size(
+    system_message_size: int,
+    max_context_size: int = MAX_CONTEXT_SIZE,
+    max_len_sampled_completion: int = MAX_LEN_SAMPLED_COMPLETION,
+) -> int:
     """Maximum size of the non-system messages"""
-    return MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - system_message_size
+    return max_context_size - max_len_sampled_completion - system_message_size
 
 
-def calc_max_system_message_size(non_system_messages_size: int) -> int:
+def calc_max_system_message_size(
+    non_system_messages_size: int,
+    max_system_message_size: int = MAX_SYSTEM_MESSAGE_SIZE,
+    max_context_size: int = MAX_CONTEXT_SIZE,
+    max_len_sampled_completion: int = MAX_LEN_SAMPLED_COMPLETION,
+) -> int:
     """Maximum size of the system message"""
 
     # Calculate the maximum size for the system message. It's either the maximum defined limit
     # or the remaining tokens in the context size after accounting for model responses and non-system messages,
     # whichever is larger. This ensures that the system message can take advantage of spare space, if available.
     return max(
-        MAX_SYSTEM_MESSAGE_SIZE,
-        MAX_CONTEXT_SIZE - MAX_LEN_SAMPLED_COMPLETION - non_system_messages_size,
+        max_system_message_size,
+        max_context_size - max_len_sampled_completion - non_system_messages_size,
     )
 
 
@@ -213,6 +222,7 @@ def create_system_message_chat_truncated(
     cursor_offset_end: Optional[int] = None,
     document_list: Optional[List[lsp.Document]] = None,
     current_file_weight: float = 0.5,
+    encoder = ENCODER,
 ) -> Message:
     """
     Create system message with up to max_size tokens
@@ -228,12 +238,12 @@ def create_system_message_chat_truncated(
     else:
         max_document_size = max_size
 
-    document_tokens = ENCODER.encode(document)
+    document_tokens = encoder.encode(document)
     if len(document_tokens) > max_document_size:
         document_tokens: List[int] = truncate_around_region(
             document, document_tokens, cursor_offset_start, cursor_offset_end, max_document_size
         )
-    truncated_document = ENCODER.decode(document_tokens)
+    truncated_document = encoder.decode(document_tokens)
 
     truncated_document_list = []
     logger.info(f"document list = {document_list}")
@@ -244,23 +254,31 @@ def create_system_message_chat_truncated(
             # TODO: Need a check for using up our limit
             document_contents = doc.document.text
             # logger.info(f"{document_contents=}")
-            tokens = ENCODER.encode(document_contents)
+            tokens = encoder.encode(document_contents)
             logger.info("got tokens")
             if len(tokens) > max_document_list_size:
                 tokens = tokens[:max_document_list_size]
                 logger.info("truncated tokens")
                 logger.debug(f"Truncating document to first {len(tokens)} tokens")
             logger.info("creating new doc")
-            new_doc = lsp.Document(doc.uri, document=lsp.DocumentContext(ENCODER.decode(tokens)))
+            new_doc = lsp.Document(doc.uri, document=lsp.DocumentContext(encoder.decode(tokens)))
             logger.info("created new doc")
             truncated_document_list.append(new_doc)
 
     return create_system_message_chat(truncated_document, truncated_document_list)
 
 
-def truncate_messages(messages: List[Message]):
+def truncate_messages(
+    messages: List[Message],
+    max_context_size: int = MAX_CONTEXT_SIZE,
+    max_len_sampled_completion=MAX_LEN_SAMPLED_COMPLETION,
+):
     system_message_size = message_size(messages[0])
-    max_size = calc_max_non_system_msgs_size(system_message_size)
+    max_size = calc_max_non_system_msgs_size(
+        system_message_size,
+        max_context_size=max_context_size,
+        max_len_sampled_completion=max_len_sampled_completion,
+    )
     # logger.info(f"{max_size=}")
     tail_messages: List[Message] = []
     running_length = 0
